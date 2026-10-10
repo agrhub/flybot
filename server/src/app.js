@@ -5,7 +5,8 @@ const bodyParser = require('body-parser');
 const path = require('path');
 const fs = require('fs');
 
-const { PORT, JWT_SECRET, CORS_ORIGINS, TRUST_PROXY } = require('./config/env');
+const mongoose = require('mongoose');
+const { PORT, JWT_SECRET, CORS_ORIGINS, TRUST_PROXY, ENABLE_CRON } = require('./config/env');
 const { connectDB } = require('./config/db');
 const routes = require('./routes');
 const { syncCameraStatus } = require('./services/ezvizService');
@@ -112,8 +113,13 @@ async function startServer() {
     await connectDB();
 
     // 2. Start Express HTTP Server
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
         console.log(`🚀 Server is running at http://localhost:${PORT}`);
+
+        if (!ENABLE_CRON) {
+            console.log('⏸️ Background jobs disabled (ENABLE_CRON=false).');
+            return;
+        }
 
         // 3. Initial camera status sync & capture
         syncCameraStatus();
@@ -122,6 +128,21 @@ async function startServer() {
         // 4. Start periodic cron jobs
         startCronJobs();
     });
+
+    // Graceful shutdown: Cloud Run / Docker send SIGTERM before stopping the container
+    let shuttingDown = false;
+    const shutdown = (signal) => {
+        if (shuttingDown) return;
+        shuttingDown = true;
+        console.log(`🛑 ${signal} received, shutting down...`);
+        setTimeout(() => process.exit(1), 10000).unref();
+        server.close(async () => {
+            await mongoose.disconnect().catch(() => {});
+            process.exit(0);
+        });
+    };
+    process.on('SIGTERM', () => shutdown('SIGTERM'));
+    process.on('SIGINT', () => shutdown('SIGINT'));
 }
 
 // Direct execution

@@ -66,6 +66,8 @@ const config = {
     CORS_ORIGINS: (process.env.CORS_ORIGINS || "").split(',').map(o => o.trim()).filter(Boolean),
     // Express "trust proxy" setting (e.g. 1 behind one reverse proxy) so rate limits see the real client IP
     TRUST_PROXY: process.env.TRUST_PROXY || "",
+    // Set ENABLE_CRON=false on every deployment except one, so captures/cleanup don't run twice
+    ENABLE_CRON: process.env.ENABLE_CRON !== 'false',
     // Set ALLOW_REGISTRATION=false to close public sign-up
     ALLOW_REGISTRATION: process.env.ALLOW_REGISTRATION !== 'false',
     APP_KEY: (process.env.APP_KEY || "").trim(),

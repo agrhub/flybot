@@ -1,0 +1,46 @@
+# Cloud Run deployment: gcloud builds submit --config cloudbuild.yaml --substitutions=_MAPS_KEY=...
+# See DEPLOY.md for the one-time setup (Artifact Registry, secrets, service account).
+substitutions:
+  _REGION: asia-southeast1
+  _SERVICE: camhub
+  _REPO: camhub
+  _MAPS_KEY: ""
+
+steps:
+  - id: build
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - --build-arg=VITE_GOOGLE_MAP_KEY=${_MAPS_KEY}
+      - -t=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_SERVICE}:${BUILD_ID}
+      - .
+
+  - id: push
+    name: gcr.io/cloud-builders/docker
+    args: [push, "${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_SERVICE}:${BUILD_ID}"]
+
+  - id: deploy
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - ${_SERVICE}
+      - --image=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_SERVICE}:${BUILD_ID}
+      - --region=${_REGION}
+      - --service-account=camhub-run@${PROJECT_ID}.iam.gserviceaccount.com
+      - --allow-unauthenticated
+      - --port=8080
+      - --memory=1Gi
+      # Cron jobs and in-memory state (rate limits, chat history, streams) need exactly one always-on instance
+      - --min-instances=1
+      - --max-instances=1
+      - --no-cpu-throttling
+      - --env-vars-file=deploy/cloudrun.env.yaml
+      - --set-secrets=JWT_SECRET=camhub-jwt-secret:latest,MONGO_URI=camhub-mongo-uri:latest,APP_KEY=camhub-ezviz-app-key:latest,SECRET_KEY=camhub-ezviz-secret-key:latest,S3_ACCESS_KEY=camhub-s3-access-key:latest,S3_SECRET_KEY=camhub-s3-secret-key:latest,ROBOFLOW_API_KEY=camhub-roboflow-api-key:latest
+
+images:
+  - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_SERVICE}:${BUILD_ID}
+
+options:
+  logging: CLOUD_LOGGING_ONLY

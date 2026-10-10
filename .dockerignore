@@ -1,0 +1,19 @@
+# Never send secrets into the build context
+.env
+**/.env
+**/.env.*
+**/gcp-service-account.json
+
+# Not needed in the image
+.git
+**/node_modules
+**/dist
+origin
+tmp
+server/tests
+server/test_ezopen.js
+*.log
+compose.yaml
+cloudbuild.yaml
+DEPLOY.md
+deploy
