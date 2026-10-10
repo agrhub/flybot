@@ -392,7 +392,7 @@ const createCustomIcon = (cam) => {
       </div>
       <div class="map-marker__tip" style="background-color: ${color}"></div>
       <div class="map-marker__label">
-        ${cam.deviceName || cam.deviceSerial} <span style="color: ${color}">(${cam.currentCount})</span>
+        ${escapeHtml(cam.deviceName || cam.deviceSerial)} <span style="color: ${color}">(${escapeHtml(cam.currentCount)})</span>
       </div>
     </div>
   `;
@@ -740,20 +740,20 @@ const renderMarkers = () => {
     const thumbUrl = (cam.thumbnailUrl || cam.picUrl) ? api.getImageUrl(cam.thumbnailUrl || cam.picUrl) : '';
     const thumbImgHtml = thumbUrl
       ? `<img id="popup-thumb-${escapeHtml(cam.deviceSerial)}" class="map-popup__thumb" src="${escapeHtml(thumbUrl)}" style="display: block;" onerror="this.style.display='none'" />`
-      : `<div id="popup-thumb-${cam.deviceSerial}" class="map-popup__placeholder" style="display: flex;">📷</div>`;
+      : `<div id="popup-thumb-${escapeHtml(cam.deviceSerial)}" class="map-popup__placeholder" style="display: flex;">📷</div>`;
 
     // Popup is a raw HTML string rendered by Leaflet; styled via the .map-popup classes below.
     // Inline display values are kept because the stream logic toggles them directly.
     const popupContent = `
       <div class="map-popup">
         <!-- Video / thumbnail area (in-place player) -->
-        <div id="popup-media-box-${cam.deviceSerial}" class="map-popup__media">
+        <div id="popup-media-box-${escapeHtml(cam.deviceSerial)}" class="map-popup__media">
           ${thumbImgHtml}
-          <div id="popup-player-${cam.deviceSerial}" class="map-popup__layer" style="display: none;"></div>
-          <div id="popup-play-overlay-${cam.deviceSerial}" class="map-popup__layer map-popup__overlay" style="display: flex;">
+          <div id="popup-player-${escapeHtml(cam.deviceSerial)}" class="map-popup__layer" style="display: none;"></div>
+          <div id="popup-play-overlay-${escapeHtml(cam.deviceSerial)}" class="map-popup__layer map-popup__overlay" style="display: flex;">
             <div class="map-popup__play">▶</div>
           </div>
-          <div id="popup-loading-${cam.deviceSerial}" class="map-popup__layer map-popup__loading" style="display: none;">
+          <div id="popup-loading-${escapeHtml(cam.deviceSerial)}" class="map-popup__layer map-popup__loading" style="display: none;">
             <div class="popup-spinner"></div>
             <span>${t('cameras.connectingStream')}</span>
           </div>
@@ -777,7 +777,7 @@ const renderMarkers = () => {
         </div>
 
         <!-- In-place live view button -->
-        <button id="view-stream-${cam.deviceSerial}" class="map-popup__btn" data-state="idle">
+        <button id="view-stream-${escapeHtml(cam.deviceSerial)}" class="map-popup__btn" data-state="idle">
           ▶ ${t('dashboard.watchStream')}
         </button>
       </div>
@@ -789,7 +789,7 @@ const renderMarkers = () => {
       selectedCam.value = cam;
 
       // Click button to toggle stream
-      const btn = document.getElementById(`view-stream-${cam.deviceSerial}`);
+      const btn = document.getElementById(`view-stream-${escapeHtml(cam.deviceSerial)}`);
       if (btn) {
         btn.onclick = () => {
           playPopupStream(cam);
@@ -797,7 +797,7 @@ const renderMarkers = () => {
       }
 
       // Click thumbnail box directly to start stream
-      const mediaBox = document.getElementById(`popup-media-box-${cam.deviceSerial}`);
+      const mediaBox = document.getElementById(`popup-media-box-${escapeHtml(cam.deviceSerial)}`);
       if (mediaBox) {
         mediaBox.onclick = () => {
           playPopupStream(cam);

@@ -1,6 +1,7 @@
 const axios = require('axios');
 const { Camera, Snapshot } = require('../models');
-const { AI_PROVIDER, S3_PUBLIC_URL } = require('../config/env');
+const { AI_PROVIDER, S3_PUBLIC_URL, CAPTURE_CONCURRENCY } = require('../config/env');
+const { runPool } = require('../utils/concurrency');
 const ezvizService = require('../services/ezvizService');
 const s3Service = require('../services/s3Service');
 const aiService = require('../services/aiService');
@@ -140,11 +141,12 @@ async function autoCaptureDueCameras() {
         const cameras = await Camera.find({}).select('deviceSerial captureIntervalMinutes captureDaytimeOnly lastCaptureAt');
         const due = dueSerials(cameras, new Date());
         if (due.length === 0) return;
-        console.log(`🚀 Capturing ${due.length} due camera(s)...`);
-        for (const serial of due) {
-            await captureAndSaveSnapshot(serial);
-            await new Promise(resolve => setTimeout(resolve, 2000)); // Delay to avoid rate limit
-        }
+        console.log(`🚀 Capturing ${due.length} due camera(s), ${CAPTURE_CONCURRENCY} at a time...`);
+        // Several cameras in parallel (each one waits on EZVIZ, S3 and the AI), with
+        // starts spaced out so EZVIZ is not hit in a burst
+        const started = Date.now();
+        await runPool(due, { limit: CAPTURE_CONCURRENCY, minStartGapMs: 1000 }, captureAndSaveSnapshot);
+        console.log(`✅ Captured ${due.length} camera(s) in ${Math.round((Date.now() - started) / 1000)}s`);
     } catch (error) {
         console.error("❌ Auto-capture error:", error.message);
     } finally {

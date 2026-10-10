@@ -3,6 +3,9 @@ const { APP_KEY, SECRET_KEY, APP_DOMAIN, DOMAIN_AREAS } = require('../config/env
 const { Camera } = require('../models');
 const notificationService = require('./notificationService');
 
+// lastSync is rewritten at least this often even when nothing else changed
+const LAST_SYNC_REFRESH_MS = 10 * 60 * 1000;
+
 // In-memory token cache to prevent exceeding EZVIZ Rate Limits
 let cachedToken = {
     accessToken: null,
@@ -40,7 +43,7 @@ async function updateAccessToken() {
             cachedToken.expireTime = response.data?.data?.expireTime;
             cachedToken.areaDomain = response.data?.data?.areaDomain || DOMAIN_AREAS['vi'] || APP_DOMAIN;
 
-            console.log("✅ Updated new EZVIZ Token:", cachedToken.accessToken);
+            console.log("✅ EZVIZ token refreshed");
             return cachedToken.accessToken;
         } else {
             console.error("❌ EZVIZ Token fetch error:", response.data.msg);
@@ -102,10 +105,15 @@ async function syncCameraStatus(deviceSerial) {
                     // console.log("sync CameraStatus:", JSON.stringify(deviceList));
 
                     // Previous status, to detect online/offline transitions for alerts
-                    const previous = await Camera.find({ deviceSerial: { $in: deviceList.map(d => d.deviceSerial) } }).select('deviceSerial status');
+                    const previous = await Camera.find({ deviceSerial: { $in: deviceList.map(d => d.deviceSerial) } })
+                        .select('deviceSerial status deviceName deviceType model deviceVersion defence updateTime isShared picUrl latitude longitude lastSync')
+                        .lean();
+                    const previousBySerial = new Map(previous.map(c => [c.deviceSerial, c]));
                     const previousStatus = new Map(previous.map(c => [c.deviceSerial, Number(c.status)]));
 
-                    const updatePromises = deviceList.map(item => {
+                    // Write only what changed (plus a periodic lastSync), instead of every camera every minute
+                    const operations = [];
+                    for (const item of deviceList) {
                         const updateData = {
                             deviceName: item.deviceName,
                             status: item.status, // 1: Online, 0: Offline
@@ -128,13 +136,17 @@ async function syncCameraStatus(deviceSerial) {
                         if (typeof item.longitude !== 'undefined' && item.longitude) {
                             updateData.longitude = Number(item.longitude);
                         }
-                        return Camera.updateMany(
-                            { deviceSerial: item.deviceSerial },
-                            { $set: updateData }
-                        );
-                    });
-
-                    await Promise.all(updatePromises);
+                        const before = previousBySerial.get(item.deviceSerial);
+                        if (!before) continue;
+                        const changed = Object.fromEntries(Object.entries(updateData)
+                            .filter(([key, value]) => key !== 'lastSync' && String(before[key] ?? '') !== String(value ?? '')));
+                        const syncStale = !before.lastSync || Date.now() - new Date(before.lastSync).getTime() > LAST_SYNC_REFRESH_MS;
+                        if (Object.keys(changed).length === 0 && !syncStale) continue;
+                        operations.push({
+                            updateOne: { filter: { deviceSerial: item.deviceSerial }, update: { $set: { ...changed, lastSync: updateData.lastSync } } }
+                        });
+                    }
+                    if (operations.length) await Camera.bulkWrite(operations, { ordered: false });
 
                     for (const item of deviceList) {
                         const before = previousStatus.get(item.deviceSerial);

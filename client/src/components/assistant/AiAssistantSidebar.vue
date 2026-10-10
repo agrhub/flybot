@@ -251,9 +251,18 @@ const resetChat = async () => {
 };
 
 // Minimal markdown: bold, emphasis, inline code, line breaks (styled via .md-content in <style>)
+// The reply can contain camera names and other user-written text: escape everything first,
+// then apply the small markdown subset on the escaped string
+const escapeHtml = (value) => String(value ?? '')
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#39;');
+
 const renderFormattedText = (raw) => {
   if (!raw) return '';
-  return raw
+  return escapeHtml(raw)
     .replace(/\*\*(.*?)\*\*/g, '<strong class="md-strong">$1</strong>')
     .replace(/\*(.*?)\*/g, '<span class="md-em">$1</span>')
     .replace(/`([^`]+)`/g, '<code class="md-code">$1</code>')

@@ -71,24 +71,38 @@ async function addShare(req, res) {
         }
 
         const recipient = await findUserByEmail(email);
-        camera.sharedWith.push({ userId: recipient?._id || null, email, sharedBy: req.user.id, sharedAt: new Date() });
+        // Access starts only for a confirmed address: anyone can register an unconfirmed account
+        // with someone else's email (it is claimed when the real owner confirms it)
+        const active = !!recipient?.emailVerified;
+        camera.sharedWith.push({ userId: active ? recipient._id : null, email, sharedBy: req.user.id, sharedAt: new Date() });
         await camera.save();
 
         recordAudit(req, {
             action: 'camera.shared',
             target: { type: 'camera', id: camera.deviceSerial, label: camera.deviceName },
-            details: { email, invited: !recipient }
+            details: { email, invited: !active }
         });
 
         const sharer = req.user.name || req.user.email;
         const params = { deviceName: camera.deviceName || camera.deviceSerial };
-        if (recipient) {
+        if (active) {
             await notificationService.notifyUser({
                 userId: recipient._id,
                 type: 'camera_shared',
                 deviceSerial: camera.deviceSerial,
                 params: { ...params, sharer }
             });
+            queueMail(emailTemplates.shareEmail({
+                kind: 'cameraShared',
+                to: recipient.email,
+                user: recipient,
+                language: normalizeLanguage(recipient.language),
+                sharer,
+                params,
+                url: safeUrl('/cameras')
+            }));
+        } else if (recipient) {
+            // Has an account but has not confirmed the address yet
             queueMail(emailTemplates.shareEmail({
                 kind: 'cameraShared',
                 to: recipient.email,
@@ -109,7 +123,7 @@ async function addShare(req, res) {
             }));
         }
 
-        res.json({ success: true, invited: !recipient, shares: sharesOf(camera) });
+        res.json({ success: true, invited: !active, shares: sharesOf(camera) });
     } catch (err) {
         sendServerError(res, err, { context: 'Share camera' });
     }

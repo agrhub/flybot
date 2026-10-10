@@ -34,21 +34,18 @@ test('camera control tools enforce ownership', async () => {
     const capture = await allExecutors.trigger_capture_snapshot({ deviceSerial: 'CAMA', userId: BOB, addAction: noopAction });
     assert.match(capture.error || '', /permission/);
 
-    const update = await allExecutors.update_camera_validate_code({ deviceSerial: 'CAMA', validateCode: 'X', userId: BOB, addAction: noopAction });
-    assert.match(update.error || '', /permission/);
+    // The assistant cannot change verification codes at all (prompt-injection risk)
+    assert.equal(allExecutors.update_camera_validate_code, undefined);
 });
 
 test('tool UI actions go to the per-request collector', async () => {
     const actions = [];
-    await allExecutors.update_camera_validate_code({
-        deviceSerial: 'CAMA',
-        validateCode: 'ABCDEF',
-        userId: ALICE,
-        user: { id: ALICE, role: 'manager' },
+    await allExecutors.navigate_ui({
+        tab: 'analytics',
         addAction: (type, payload) => actions.push({ type, payload })
     });
     assert.equal(actions.length, 1);
-    assert.equal(actions[0].type, 'UPDATE_CODE');
+    assert.equal(actions[0].type, 'NAVIGATE');
 });
 
 test('chat history is keyed per user', () => {

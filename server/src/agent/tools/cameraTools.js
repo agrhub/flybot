@@ -58,6 +58,12 @@ async function executeTriggerCaptureSnapshot({ deviceSerial, userId, user, addAc
             return { error: `You do not have permission to control camera ${deviceSerial} or device not found.` };
         }
 
+        // Same quota as the "Capture now" button, so the assistant cannot be used to bypass it
+        const { captureQuota } = require('../../middlewares/rateLimit');
+        if (!captureQuota.take(`${userId}:${deviceSerial}`)) {
+            return { error: `Camera ${deviceSerial} was captured several times in the last minute. Please wait a moment and try again.` };
+        }
+
         // Same pipeline as the "Capture now" button: capture, store, AI analysis, alerts
         const { captureAndSaveSnapshot } = require('../../cron/captureJob');
         const saved = await captureAndSaveSnapshot(String(deviceSerial));
@@ -82,58 +88,13 @@ async function executeTriggerCaptureSnapshot({ deviceSerial, userId, user, addAc
     }
 }
 
-const updateCameraValidateCodeDeclaration = {
-    name: 'update_camera_validate_code',
-    description: 'Update or change camera verification code (video encryption password).',
-    parameters: {
-        type: 'OBJECT',
-        properties: {
-            deviceSerial: {
-                type: 'STRING',
-                description: 'Camera Serial Number'
-            },
-            validateCode: {
-                type: 'STRING',
-                description: 'New camera verification code'
-            }
-        },
-        required: ['deviceSerial', 'validateCode']
-    }
-};
-
-async function executeUpdateCameraValidateCode({ deviceSerial, validateCode, userId, user, addAction }) {
-    try {
-        if (!deviceSerial || !validateCode) return { error: 'Missing deviceSerial or validateCode' };
-
-        // Verify camera ownership
-        const camera = userId ? await findManageableCamera(user, String(deviceSerial)) : null;
-        if (!camera) {
-            return { error: `You do not have permission to modify camera ${deviceSerial} or device not found.` };
-        }
-
-        camera.validateCode = String(validateCode).trim();
-        await camera.save();
-
-        addAction('UPDATE_CODE', { deviceSerial, validateCode });
-        return {
-            success: true,
-            deviceSerial,
-            message: `Updated verification code for camera ${camera.deviceName} (${deviceSerial}).`
-        };
-    } catch (err) {
-        return { error: err.message };
-    }
-}
-
 module.exports = {
     cameraDeclarations: [
         getCamerasStatusDeclaration,
-        triggerCaptureSnapshotDeclaration,
-        updateCameraValidateCodeDeclaration
+        triggerCaptureSnapshotDeclaration
     ],
     cameraExecutors: {
         get_cameras_status: executeGetCamerasStatus,
-        trigger_capture_snapshot: executeTriggerCaptureSnapshot,
-        update_camera_validate_code: executeUpdateCameraValidateCode
+        trigger_capture_snapshot: executeTriggerCaptureSnapshot
     }
 };

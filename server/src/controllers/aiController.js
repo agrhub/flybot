@@ -19,7 +19,7 @@ async function getAiResults(req, res) {
         const userId = req.user.id;
         const { deviceSerial } = req.query;
         const page = parseInt(req.query.page, 10) || 1;
-        const limit = parseInt(req.query.limit, 10) || 10;
+        const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 10, 1), 100);
         const skip = (page - 1) * limit;
 
         const userCams = await viewableCameras(req.user).select('deviceSerial');
@@ -954,6 +954,8 @@ async function getAiComparison(req, res) {
 }
 
 const agent = require('../agent/agent');
+const MAX_CHAT_MESSAGE = 4000;
+const MAX_UI_CONTEXT = 8000;
 
 /**
  * AI Agent Chatbot with Function Tools, Context Injection, and Action Execution
@@ -964,6 +966,13 @@ async function chatWithAssistant(req, res) {
         const { message, sessionId = 'default-session', uiContext = {} } = req.body;
         if (typeof message !== 'string' || !message.trim()) {
             return res.status(400).json({ success: false, message: "Message cannot be empty." });
+        }
+        // Everything here goes into the model prompt: keep it small
+        if (message.length > MAX_CHAT_MESSAGE) {
+            return res.status(400).json({ success: false, message: `Message is too long (at most ${MAX_CHAT_MESSAGE} characters).` });
+        }
+        if (JSON.stringify(uiContext ?? {}).length > MAX_UI_CONTEXT) {
+            return res.status(400).json({ success: false, message: "Page context is too large." });
         }
 
         const result = await agent.chatWithAgent({

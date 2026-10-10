@@ -3,6 +3,7 @@ const router = express.Router();
 const dashboardController = require('../controllers/dashboardController');
 const { authenticate, requireRole } = require('../middlewares/auth');
 const { requireStringFields } = require('../middlewares/validate');
+const { shareLimiter } = require('../middlewares/rateLimit');
 
 router.use(authenticate, requireStringFields);
 
@@ -14,7 +15,7 @@ router.put('/:id', dashboardController.updateDashboard);
 router.delete('/:id', dashboardController.deleteDashboard);
 router.get('/:id/data', dashboardController.getDashboardData);
 router.post('/:id/public-token', dashboardController.rotatePublicToken);
-router.post('/:id/share', dashboardController.shareDashboard);
+router.post('/:id/share', shareLimiter, dashboardController.shareDashboard);
 router.delete('/:id/share', dashboardController.unshareDashboard);
 
 module.exports = router;

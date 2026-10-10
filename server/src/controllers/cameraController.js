@@ -49,7 +49,8 @@ const sessionKey = (userId, deviceSerial) => `${userId}:${deviceSerial}`;
  */
 async function closePreviousStream(userId, deviceSerial, body) {
     const key = sessionKey(userId, deviceSerial);
-    const urlId = body.urlId || body.id || activeStreamSessions.get(key) || '';
+    // Only the stream id the server handed to this user: a client-supplied id could stop someone else's stream
+    const urlId = activeStreamSessions.get(key) || '';
     activeStreamSessions.delete(key);
     if (!urlId) return null;
     return ezvizService.disableLiveAddress({ deviceSerial, urlId, channelNo: body.channelNo || 1 });
@@ -61,7 +62,7 @@ async function closePreviousStream(userId, deviceSerial, body) {
 async function getUserCameras(req, res) {
     try {
         const page = parseInt(req.query.page) || null;
-        const limit = parseInt(req.query.limit) || null;
+        const limit = Math.min(parseInt(req.query.limit) || 0, 100) || null;
 
         if (page && limit) {
             const skip = (page - 1) * limit;
@@ -95,6 +96,9 @@ async function addCamera(req, res) {
         const { deviceSerial, validateCode, deviceName: customName } = req.body;
         if (!deviceSerial || !validateCode) {
             return res.status(400).json({ success: false, message: "Missing deviceSerial or validateCode." });
+        }
+        if (!/^[A-Za-z0-9]{3,32}$/.test(deviceSerial) || validateCode.length > 32) {
+            return res.status(400).json({ success: false, message: "Invalid serial number or verification code." });
         }
 
         // A device can be registered only once. Re-adding your own camera refreshes its code/name;

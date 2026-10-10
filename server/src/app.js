@@ -6,7 +6,7 @@ const path = require('path');
 const fs = require('fs');
 
 const mongoose = require('mongoose');
-const { PORT, JWT_SECRET, CORS_ORIGINS, TRUST_PROXY, ENABLE_CRON } = require('./config/env');
+const { PORT, JWT_SECRET, CORS_ORIGINS, TRUST_PROXY, ENABLE_CRON, COOKIE_SECURE } = require('./config/env');
 const { connectDB } = require('./config/db');
 const { runStartupMigrations } = require('./services/migrations');
 const routes = require('./routes');
@@ -29,7 +29,20 @@ if (TRUST_PROXY) {
 // Middlewares
 // The client is served same-origin (or via the Vite proxy), so cross-origin access is off unless allowlisted
 app.use(cors({ origin: CORS_ORIGINS.length > 0 ? CORS_ORIGINS : false, credentials: true }));
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '1mb' }));
+
+// Security headers. No full CSP yet: the EZVIZ player, Tailwind CDN, Google Fonts and Maps
+// load from several origins; framing and sniffing are still blocked.
+app.use((req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    res.setHeader('Content-Security-Policy', "frame-ancestors 'self'; base-uri 'self'; object-src 'none'");
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(self), payment=()');
+    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+    if (COOKIE_SECURE) res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    next();
+});
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // API Routes
@@ -63,7 +76,14 @@ if (clientStaticDir) {
 
     // Prevent direct access to backend server artifacts
     app.use((req, res, next) => {
-        if (req.path === '/app.js' || req.path === '/app.js.map') {
+        // Decode first: "/%61pp.js" must not slip past the check
+        let requested = req.path;
+        try {
+            requested = decodeURIComponent(req.path);
+        } catch {
+            return res.status(400).send('Bad Request');
+        }
+        if (/^\/+app\.js(\.map)?$/i.test(requested)) {
             return res.status(404).send('Not Found');
         }
         next();

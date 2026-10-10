@@ -346,18 +346,30 @@ async function shareDashboard(req, res) {
         }
 
         const recipient = await findUserByEmail(email);
-        dashboard.sharedWith.push({ userId: recipient?._id || null, email, sharedAt: new Date() });
+        // Same rule as cameras: only a confirmed address gets access right away
+        const active = !!recipient?.emailVerified;
+        dashboard.sharedWith.push({ userId: active ? recipient._id : null, email, sharedAt: new Date() });
         await dashboard.save();
-        recordAudit(req, { action: 'dashboard.shared', target: dashboardTarget(dashboard), details: { email, invited: !recipient } });
+        recordAudit(req, { action: 'dashboard.shared', target: dashboardTarget(dashboard), details: { email, invited: !active } });
 
         const sharer = req.user.name || req.user.email;
         const params = { dashboardName: dashboard.name };
-        if (recipient) {
+        if (active) {
             await notificationService.notifyUser({
                 userId: recipient._id,
                 type: 'dashboard_shared',
                 params: { ...params, sharer, dashboardId: String(dashboard._id) }
             });
+            queueMail(emailTemplates.shareEmail({
+                kind: 'dashboardShared',
+                to: recipient.email,
+                user: recipient,
+                language: normalizeLanguage(recipient.language),
+                sharer,
+                params,
+                url: safeUrl(`/dashboards/${dashboard._id}`)
+            }));
+        } else if (recipient) {
             queueMail(emailTemplates.shareEmail({
                 kind: 'dashboardShared',
                 to: recipient.email,
@@ -377,7 +389,7 @@ async function shareDashboard(req, res) {
                 url: safeUrl('/auth/login', { mode: 'register', email })
             }));
         }
-        res.json({ success: true, invited: !recipient, shares: sharesOf(dashboard) });
+        res.json({ success: true, invited: !active, shares: sharesOf(dashboard) });
     } catch (err) {
         sendServerError(res, err, { context: 'Share dashboard' });
     }

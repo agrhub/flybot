@@ -3,6 +3,8 @@
  * queries (sharing, roles, dashboards). External services (S3, email, EZVIZ, Telegram) are
  * stubbed. Each test file runs in its own process with its own database.
  */
+// First: no real credentials, no outbound calls
+require('./isolation');
 const { Readable } = require('stream');
 
 process.env.JWT_SECRET = 'test-secret-'.padEnd(48, 'x');
@@ -31,6 +33,8 @@ ezvizService.getDeviceInfo = async (serial) => ({ code: '200', data: { deviceSer
 ezvizService.getLiveAddress = async () => ({ responseData: { code: '200', data: { url: 'https://example.test/live.m3u8', id: 'stream-1' } }, token: 't', areaDomain: 'https://open.example.test' });
 ezvizService.disableLiveAddress = async () => ({ code: '200' });
 ezvizService.syncCameraStatus = async () => {};
+// The device does not answer: captures stop before S3/AI
+ezvizService.captureDevice = async () => ({ code: '20007', msg: 'Device offline (test stub)' });
 
 const { app } = require('../src/app');
 

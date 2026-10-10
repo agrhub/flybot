@@ -54,7 +54,7 @@ async function cleanupOldData() {
         do {
             oldRecords = await Snapshot.find({
                 createdAt: { $lt: cutoffDate }
-            }).limit(1000);
+            }).select('_id s3Key').limit(1000).lean();
 
             if (oldRecords.length === 0) {
                 console.log("✨ No expired data to clean up.");

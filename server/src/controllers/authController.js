@@ -32,7 +32,11 @@ function validatePassword(password) {
     return null;
 }
 
-const readEmail = (body) => (typeof body.email === 'string' ? body.email.trim() : '');
+// Emails are stored lowercase and looked up case-insensitively (older accounts may have capitals)
+const readEmail = (body) => (typeof body.email === 'string' ? body.email.trim().toLowerCase() : '');
+// Compared against when the account does not exist, so both cases take the same time
+const DUMMY_PASSWORD_HASH = bcrypt.hashSync('flybot-no-such-account', 10);
+const findByEmail = (email) => User.findOne({ email }).collation({ locale: 'en', strength: 2 });
 
 function toPublicUser(user) {
     return {
@@ -85,7 +89,7 @@ async function register(req, res) {
     }
 
     try {
-        const existing = await User.findOne({ email });
+        const existing = await findByEmail(email);
         if (existing) {
             return res.status(400).json({ success: false, message: "Email already exists." });
         }
@@ -134,9 +138,9 @@ async function login(req, res) {
     }
 
     try {
-        const user = await User.findOne({ email });
+        const user = await findByEmail(email);
         // Same message for unknown email and wrong password so accounts can't be enumerated
-        const isMatch = user ? await bcrypt.compare(password, user.password) : false;
+        const isMatch = await bcrypt.compare(password, user ? user.password : DUMMY_PASSWORD_HASH) && !!user;
         if (!isMatch) {
             recordAudit(req, {
                 action: 'auth.login_failed',
@@ -315,7 +319,7 @@ async function forgotPassword(req, res) {
 
     setImmediate(async () => {
         try {
-            const user = await User.findOne({ email }).collation({ locale: 'en', strength: 2 });
+            const user = await findByEmail(email);
             if (!user) return;
             const raw = await createToken(user._id, 'password_reset', PASSWORD_RESET_TTL_MINUTES * 60 * 1000);
             queueMail(emailTemplates.passwordResetEmail({

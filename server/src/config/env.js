@@ -91,6 +91,8 @@ const config = {
     // Contact for push services: "mailto:you@example.com" or an https URL
     VAPID_SUBJECT: (process.env.VAPID_SUBJECT || "").trim(),
 
+    // Cameras captured and analyzed at the same time by the capture job
+    CAPTURE_CONCURRENCY: Math.min(Math.max(parseInt(process.env.CAPTURE_CONCURRENCY, 10) || 4, 1), 20),
     // Set ENABLE_CRON=false on every deployment except one, so captures/cleanup don't run twice
     ENABLE_CRON: process.env.ENABLE_CRON !== 'false',
     // Set ALLOW_REGISTRATION=false to close public sign-up

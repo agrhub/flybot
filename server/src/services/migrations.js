@@ -77,6 +77,33 @@ async function mergeDuplicateCameras({ apply = false } = {}) {
 }
 
 /**
+ * Store every email lowercase (new accounts already are). An address that differs only in
+ * case from another account is left alone and reported, since merging accounts needs a person.
+ * Idempotent. Returns { changed, conflicts }.
+ */
+async function lowercaseEmails() {
+    const users = User.collection;
+    const mixed = await users.find({ email: { $regex: '[A-Z]' } }, { projection: { email: 1 } }).toArray();
+    let changed = 0;
+    const conflicts = [];
+    for (const user of mixed) {
+        const lower = user.email.toLowerCase();
+        const clash = await users.findOne({ email: lower, _id: { $ne: user._id } }, { projection: { _id: 1 } });
+        if (clash) {
+            conflicts.push(user.email);
+            continue;
+        }
+        await users.updateOne({ _id: user._id }, { $set: { email: lower } });
+        changed++;
+    }
+    if (changed) console.log(`✉️ Lowercased ${changed} account email(s).`);
+    if (conflicts.length) {
+        console.warn(`⚠️ ${conflicts.length} account(s) share an email with another account except for letter case: ${conflicts.join(', ')}. Merge or delete one of each pair.`);
+    }
+    return { changed, conflicts };
+}
+
+/**
  * One-time data fixes that must run before the server accepts requests.
  */
 async function runStartupMigrations() {
@@ -84,6 +111,11 @@ async function runStartupMigrations() {
         await ensureRoles();
     } catch (err) {
         console.error('❌ Role migration failed:', err);
+    }
+    try {
+        await lowercaseEmails();
+    } catch (err) {
+        console.error('❌ Email normalization failed:', err);
     }
     try {
         const { groups } = await mergeDuplicateCameras({ apply: false });
@@ -98,6 +130,7 @@ async function runStartupMigrations() {
 
 module.exports = {
     ensureRoles,
+    lowercaseEmails,
     mergeDuplicateCameras,
     runStartupMigrations
 };

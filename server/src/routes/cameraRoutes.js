@@ -4,15 +4,8 @@ const cameraController = require('../controllers/cameraController');
 const shareController = require('../controllers/shareController');
 const { authenticate, requireRole } = require('../middlewares/auth');
 const { requireStringFields } = require('../middlewares/validate');
-const { rateLimit } = require('../middlewares/rateLimit');
-
-// Manual captures hit the camera and the AI API: at most 3 per camera per user per minute
-const captureLimiter = rateLimit({
-    windowMs: 60 * 1000,
-    max: 3,
-    includeIp: false,
-    keyFn: (req) => `${req.user?.id}:${req.body?.deviceSerial}`
-});
+// Manual captures share their quota with the AI assistant's capture tool
+const { captureLimiter, shareLimiter } = require('../middlewares/rateLimit');
 
 // Apply authentication to all camera routes
 router.use(authenticate);
@@ -30,7 +23,7 @@ router.delete('/user/delete-camera', cameraController.deleteCamera);
 router.post('/user/update-camera-code', cameraController.updateCameraCode);
 router.get('/user/cameras/health', cameraController.getCamerasHealth);
 router.get('/user/camera/shares', shareController.listShares);
-router.post('/user/camera/share', shareController.addShare);
+router.post('/user/camera/share', shareLimiter, shareController.addShare);
 router.delete('/user/camera/share', shareController.removeShare);
 router.post('/user/camera/capture', captureLimiter, cameraController.captureNow);
 

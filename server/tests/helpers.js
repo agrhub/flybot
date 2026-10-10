@@ -3,6 +3,8 @@
  * so tests never touch the real database, bucket, mail server, EZVIZ or AI APIs (and no cron jobs start).
  * Models are backed by a small in-memory store implementing only the queries the app uses.
  */
+// First: no real credentials, no outbound calls
+require('./isolation');
 const { Readable } = require('stream');
 
 // Must be set before config/env is loaded; dotenv never overrides existing variables
