@@ -85,7 +85,8 @@ function query(resultFn) {
         limit: () => q,
         skip: () => q,
         populate: () => q,
-        collation: () => q
+        collation: () => q,
+        lean: () => q
     };
     return q;
 }
@@ -140,6 +141,9 @@ models.Camera.updateMany = async (filter, update) => {
 
 // Snapshot
 models.Snapshot.find = () => query(() => []);
+
+// SystemSetting: nothing saved, so the environment defaults apply
+models.SystemSetting.findOne = () => query(() => null);
 
 // AuthToken
 models.AuthToken.deleteMany = async ({ userId, type }) => {

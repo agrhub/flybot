@@ -1,5 +1,6 @@
 const { Camera, Snapshot } = require('../models');
-const { S3_BUCKET, RETENTION_CYCLE, AI_PROVIDER, VERTEX_MODEL, TELEGRAM_BOT_USERNAME } = require('../config/env');
+const { S3_BUCKET, AI_PROVIDER, VERTEX_MODEL, TELEGRAM_BOT_USERNAME } = require('../config/env');
+const { getSettings } = require('../services/settingsService');
 const telegramService = require('../services/telegramService');
 const { sendServerError } = require('../utils/http');
 const { viewableCameras } = require('../utils/ownership');
@@ -34,7 +35,7 @@ async function getSystemInfo(req, res) {
             info: {
                 storage: {
                     bucket: S3_BUCKET,
-                    retentionMonths: RETENTION_CYCLE
+                    retentionMonths: (await getSettings()).retentionMonths
                 },
                 ai: {
                     provider,

@@ -1,7 +1,7 @@
 const { PutObjectCommand, DeleteObjectsCommand, GetObjectCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 const { s3Client } = require('../config/s3');
-const { S3_BUCKET, RETENTION_CYCLE } = require('../config/env');
+const { S3_BUCKET } = require('../config/env');
 const { Snapshot } = require('../models');
 
 async function getSignedDownloadUrl(objectKey) {
@@ -40,13 +40,14 @@ async function getS3Object(key) {
 }
 
 /**
- * Remove data older than RETENTION_CYCLE from S3 and Database
+ * Remove data older than the retention period (admin setting) from S3 and Database
  */
 async function cleanupOldData() {
     console.log(`[${new Date().toISOString()}] 🧹 Starting periodic cleanup process...`);
 
     const cutoffDate = new Date();
-    cutoffDate.setMonth(cutoffDate.getMonth() - RETENTION_CYCLE);
+    const { retentionMonths } = await require('./settingsService').getSettings();
+    cutoffDate.setMonth(cutoffDate.getMonth() - retentionMonths);
 
     try {
         let oldRecords = [];

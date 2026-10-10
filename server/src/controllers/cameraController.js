@@ -146,12 +146,14 @@ async function addCamera(req, res) {
             deviceName = deviceInfo.data.deviceName;
         }
 
+        const { defaultAlertThreshold } = await require('../services/settingsService').getSettings();
         const newCamera = new Camera({
             userId,
             deviceSerial,
             validateCode: validateCode.trim(),
             deviceName: deviceName.trim(),
-            status
+            status,
+            alertThreshold: defaultAlertThreshold
         });
 
         await newCamera.save();

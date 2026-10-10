@@ -148,9 +148,112 @@ async function deleteUser(req, res) {
     }
 }
 
+/**
+ * GET /api/admin/cameras?q=&page=&limit=: every camera with its owner and share count
+ */
+async function listCameras(req, res) {
+    try {
+        const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+        const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 20, 1), MAX_PAGE_SIZE);
+        const filter = {};
+        if (typeof req.query.q === 'string' && req.query.q.trim()) {
+            const pattern = new RegExp(escapeRegex(req.query.q.trim().slice(0, 100)), 'i');
+            // Match serial/name, or the owner's email
+            const owners = await User.find({ email: pattern }).select('_id');
+            filter.$or = [{ deviceSerial: pattern }, { deviceName: pattern }, { userId: { $in: owners.map(o => o._id) } }];
+        }
+        const [total, cameras] = await Promise.all([
+            Camera.countDocuments(filter),
+            Camera.find(filter).populate('userId', 'email name role').sort({ addedAt: -1 }).skip((page - 1) * limit).limit(limit)
+        ]);
+        res.json({
+            success: true,
+            total,
+            page,
+            limit,
+            cameras: cameras.map(c => ({
+                deviceSerial: c.deviceSerial,
+                deviceName: c.deviceName,
+                status: c.status,
+                addedAt: c.addedAt,
+                lastCaptureAt: c.lastCaptureAt,
+                owner: c.userId && c.userId.email
+                    ? { id: String(c.userId._id), email: c.userId.email, name: c.userId.name || '', role: roleOf(c.userId) }
+                    : null,
+                sharedCount: (c.sharedWith || []).length
+            }))
+        });
+    } catch (err) {
+        sendServerError(res, err, { context: 'Admin list cameras' });
+    }
+}
+
+/**
+ * PUT /api/admin/cameras/:deviceSerial/owner  { email, keepPreviousOwnerAccess = true }
+ * The new owner must be a manager or admin (owners manage their cameras).
+ */
+async function transferCamera(req, res) {
+    try {
+        const { deviceSerial } = req.params;
+        const email = typeof req.body.email === 'string' ? req.body.email.trim() : '';
+        const keepAccess = req.body.keepPreviousOwnerAccess !== false;
+
+        const camera = await Camera.findOne({ deviceSerial });
+        if (!camera) return res.status(404).json({ success: false, message: "Camera not found." });
+        const newOwner = email ? await User.findOne({ email }).collation({ locale: 'en', strength: 2 }) : null;
+        if (!newOwner) return res.status(404).json({ success: false, code: 'USER_NOT_FOUND', message: "No account with this email." });
+        if (!['admin', 'manager'].includes(roleOf(newOwner))) {
+            return res.status(400).json({ success: false, code: 'NOT_MANAGER', message: "The new owner must be a manager or an admin." });
+        }
+        if (String(camera.userId) === String(newOwner._id)) {
+            return res.status(400).json({ success: false, message: "This account already owns the camera." });
+        }
+
+        const previousOwner = camera.userId ? await User.findById(camera.userId).select('email') : null;
+        // The new owner no longer needs a share entry
+        camera.sharedWith = camera.sharedWith.filter(sh => String(sh.userId) !== String(newOwner._id) && sh.email !== newOwner.email.toLowerCase());
+        if (keepAccess && previousOwner && !camera.sharedWith.some(sh => String(sh.userId) === String(previousOwner._id))) {
+            camera.sharedWith.push({ userId: previousOwner._id, email: previousOwner.email.toLowerCase(), sharedBy: req.user.id, sharedAt: new Date() });
+        }
+        camera.userId = newOwner._id;
+        await camera.save();
+
+        res.json({ success: true, owner: { id: String(newOwner._id), email: newOwner.email }, sharedCount: camera.sharedWith.length });
+    } catch (err) {
+        sendServerError(res, err, { context: 'Admin transfer camera' });
+    }
+}
+
+/**
+ * GET/PUT /api/admin/settings: system-wide settings
+ */
+async function getSystemSettings(req, res) {
+    try {
+        const { getSettings } = require('../services/settingsService');
+        res.json({ success: true, settings: await getSettings() });
+    } catch (err) {
+        sendServerError(res, err, { context: 'Admin get settings' });
+    }
+}
+
+async function updateSystemSettings(req, res) {
+    try {
+        const { updateSettings } = require('../services/settingsService');
+        const result = await updateSettings(req.body, req.user.id);
+        if (result.error) return res.status(400).json({ success: false, message: result.error });
+        res.json({ success: true, settings: result.settings });
+    } catch (err) {
+        sendServerError(res, err, { context: 'Admin update settings' });
+    }
+}
+
 module.exports = {
     listUsers,
     updateUser,
     deleteUser,
+    listCameras,
+    transferCamera,
+    getSystemSettings,
+    updateSystemSettings,
     toAdminUser
 };

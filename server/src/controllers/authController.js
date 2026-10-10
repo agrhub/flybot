@@ -6,7 +6,6 @@ const { roleOf } = require('../constants/roles');
 // Lazy: shareController pulls in notification/mail services
 const claimPendingShares = (user) => require('./shareController').claimPendingShares(user)
     .catch(err => console.error('⚠️ Claiming shared items failed:', err.message));
-const { ALLOW_REGISTRATION } = require('../config/env');
 const { signToken, setAuthCookie, clearAuthCookie, createSession, readToken, resolveToken } = require('../middlewares/auth');
 const { sendServerError } = require('../utils/http');
 const { normalizeLanguage, SUPPORTED_LANGUAGES } = require('../utils/i18n');
@@ -68,7 +67,9 @@ async function sendVerificationEmail(user) {
  * User Registration
  */
 async function register(req, res) {
-    if (!ALLOW_REGISTRATION) {
+    // Admins control self sign-up in Settings > System (env ALLOW_REGISTRATION is the default)
+    const { getSettings } = require('../services/settingsService');
+    if (!(await getSettings()).allowRegistration) {
         return res.status(403).json({ success: false, message: "Registration is disabled." });
     }
 
@@ -163,6 +164,18 @@ async function login(req, res) {
 async function refreshSession(req, res) {
     setAuthCookie(res, req.authToken);
     res.json({ success: true });
+}
+
+/**
+ * GET /api/auth/config: public settings the sign-in page needs
+ */
+async function getAuthConfig(req, res) {
+    try {
+        const { getSettings } = require('../services/settingsService');
+        res.json({ success: true, allowRegistration: (await getSettings()).allowRegistration });
+    } catch (err) {
+        sendServerError(res, err, { context: 'Auth config' });
+    }
 }
 
 /**
@@ -459,6 +472,7 @@ module.exports = {
     register,
     login,
     refreshSession,
+    getAuthConfig,
     getMe,
     logout,
     listSessions,

@@ -23,6 +23,7 @@ router.post('/reset-password', tokenLimiter, authController.resetPassword);
 router.post('/verify-email', tokenLimiter, authController.verifyEmail);
 router.post('/resend-verification', authenticate, resendVerificationLimiter, authController.resendVerification);
 router.post('/session', authenticate, authController.refreshSession);
+router.get('/config', authController.getAuthConfig);
 router.get('/me', authenticate, authController.getMe);
 router.get('/sessions', authenticate, authController.listSessions);
 router.post('/sessions/revoke-others', authenticate, authController.revokeOtherSessions);
