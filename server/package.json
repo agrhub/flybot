@@ -8,7 +8,7 @@
     "dev": "node --watch src/app.js",
     "copy:client": "node scripts/copy-client.js",
     "build": "esbuild src/app.js --bundle --platform=node --packages=external --outfile=dist/app.js && node scripts/copy-client.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test"
   },
   "keywords": [],
   "author": "",
