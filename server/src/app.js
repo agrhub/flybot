@@ -29,6 +29,8 @@ if (TRUST_PROXY) {
 // Middlewares
 // The client is served same-origin (or via the Vite proxy), so cross-origin access is off unless allowlisted
 app.use(cors({ origin: CORS_ORIGINS.length > 0 ? CORS_ORIGINS : false, credentials: true }));
+// Messages in the app's language (X-Language); first, so error handlers are covered too
+app.use(require('./middlewares/localizeMessages').localizeMessages);
 app.use(express.json({ limit: '1mb' }));
 
 // Security headers. No full CSP yet: the EZVIZ player, Tailwind CDN, Google Fonts and Maps

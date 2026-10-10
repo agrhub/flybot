@@ -1,4 +1,5 @@
 import axios from 'axios';
+import i18n from '@/i18n';
 
 const API_URL = '/api'; // Using the proxy
 
@@ -14,6 +15,8 @@ apiClient.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  // Server messages come back in the app's language
+  config.headers['X-Language'] = i18n.global.locale.value;
   return config;
 });
 
