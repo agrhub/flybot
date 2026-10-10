@@ -4,7 +4,8 @@ const { isAdmin, roleOf } = require('../constants/roles');
 /**
  * Camera access rules (one place for every controller, job and agent tool):
  *  - view:   the owner, people it is shared with, and admins
- *  - manage: admins, and the owner when they are a manager (role "user" never manages)
+ *  - manage: admins, and managers who own it or are owner/manager of its organization
+ *            (role "user" never manages)
  * `user` is req.user ({ id, role }) or a User document.
  */
 const idOf = (user) => String(user?.id ?? user?._id ?? '');
@@ -37,7 +38,11 @@ function findViewableCamera(user, deviceSerial) {
 function canManageCamera(user, camera) {
     if (!camera) return false;
     if (isAdmin(user)) return true;
-    return roleOf(user) === 'manager' && String(camera.userId) === idOf(user);
+    if (roleOf(user) !== 'manager') return false;
+    const id = idOf(user);
+    if (String(camera.userId) === id) return true;
+    // Organization owners and managers (share entries kept by services/orgService.js)
+    return (camera.sharedWith || []).some(sh => sh.viaOrg && String(sh.userId) === id && ['owner', 'manager'].includes(sh.orgRole));
 }
 
 async function findManageableCamera(user, deviceSerial) {

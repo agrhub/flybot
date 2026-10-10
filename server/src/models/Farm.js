@@ -15,7 +15,9 @@ const farmSchema = new mongoose.Schema({
     ownerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     name: { type: String, required: true, trim: true },
     description: { type: String, default: '' },
-    sharedWith: { type: [farmShareSchema], default: [] }
+    sharedWith: { type: [farmShareSchema], default: [] },
+    // Members of the organization see the farm; its owners/managers edit it
+    orgId: { type: mongoose.Schema.Types.ObjectId, ref: 'Organization', default: null, index: true }
 }, { timestamps: true });
 
 farmSchema.index({ 'sharedWith.userId': 1 });

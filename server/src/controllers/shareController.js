@@ -21,7 +21,9 @@ function sharesOf(camera) {
         status: sh.userId ? 'active' : 'pending',
         sharedAt: sh.sharedAt,
         // Access through the camera's farm (managed on the farm page)
-        viaFarm: sh.viaFarm ? String(sh.viaFarm) : null
+        viaFarm: sh.viaFarm ? String(sh.viaFarm) : null,
+    // Access through the camera's organization (managed on the organization page)
+    viaOrg: sh.viaOrg ? String(sh.viaOrg) : null
     }));
 }
 
@@ -140,8 +142,11 @@ async function removeShare(req, res) {
         const camera = await findManageableCamera(req.user, req.body.deviceSerial);
         if (!camera) return res.status(404).json({ success: false, message: "Camera not found or you cannot manage it." });
         const before = camera.sharedWith.length;
-        camera.sharedWith = camera.sharedWith.filter(sh => sh.email !== email || sh.viaFarm);
+        camera.sharedWith = camera.sharedWith.filter(sh => sh.email !== email || sh.viaFarm || sh.viaOrg);
         if (camera.sharedWith.length === before) {
+            if (camera.sharedWith.some(sh => sh.email === email && sh.viaOrg)) {
+                return res.status(409).json({ success: false, code: 'VIA_ORG', message: "This person sees the camera through its organization. Remove them from the organization instead." });
+            }
             if (camera.sharedWith.some(sh => sh.email === email)) {
                 return res.status(409).json({ success: false, code: 'VIA_FARM', message: "This person sees the camera through its farm. Remove them from the farm instead." });
             }
@@ -166,6 +171,7 @@ async function claimPendingShares(user) {
     const { claimPendingFarmShares } = require('./farmController');
     await claimPendingDashboardShares(user);
     await claimPendingFarmShares(user);
+    await require('../services/orgService').claimPendingMembers(user);
     const result = await Camera.updateMany(
         { sharedWith: { $elemMatch: { email, userId: null } } },
         { $set: { 'sharedWith.$[invite].userId': user._id } },

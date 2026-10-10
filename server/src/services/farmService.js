@@ -14,33 +14,38 @@ const { thresholdOf, riskLevel, worstRisk } = require('../constants/risk');
 const idOf = (user) => String(user?.id ?? user?._id ?? '');
 const ownerIdOf = (farm) => String(farm.ownerId?._id ?? farm.ownerId);
 
+// orgId -> role, put on req.user by orgService.attachOrgRoles
+const orgRoleIn = (user, farm) => (farm.orgId && user?.orgRoles?.get(String(farm.orgId))) || null;
+
 function farmViewFilter(user) {
     if (isAdmin(user)) return {};
     const id = idOf(user);
     if (!id) return { _id: null };
-    return { $or: [{ ownerId: id }, { 'sharedWith.userId': id }] };
+    const orgIds = [...(user.orgRoles?.keys() || [])];
+    return { $or: [{ ownerId: id }, { 'sharedWith.userId': id }, ...(orgIds.length ? [{ orgId: { $in: orgIds } }] : [])] };
 }
 
 function canViewFarm(user, farm) {
     if (!farm) return false;
     if (isAdmin(user)) return true;
     const id = idOf(user);
-    return ownerIdOf(farm) === id || (farm.sharedWith || []).some(sh => sh.userId && String(sh.userId) === id);
+    return ownerIdOf(farm) === id || !!orgRoleIn(user, farm) || (farm.sharedWith || []).some(sh => sh.userId && String(sh.userId) === id);
 }
 
 function canEditFarm(user, farm) {
     if (!farm) return false;
     if (isAdmin(user)) return true;
-    return canAddCameras(user) && ownerIdOf(farm) === idOf(user);
+    return canAddCameras(user) && (ownerIdOf(farm) === idOf(user) || ['owner', 'manager'].includes(orgRoleIn(user, farm)));
 }
 
 /**
- * Cameras that may go into this farm's plots: the farm owner's own cameras
- * (an admin-owned farm may hold any camera).
+ * Cameras that may go into this farm's plots: the farm owner's own cameras and the cameras of
+ * the farm's organization (an admin-owned farm may hold any camera).
  */
 async function assignableFilter(farm) {
     const owner = await User.findById(ownerIdOf(farm)).select('role');
-    return roleOf(owner) === 'admin' ? {} : { userId: ownerIdOf(farm) };
+    if (roleOf(owner) === 'admin') return {};
+    return farm.orgId ? { $or: [{ userId: ownerIdOf(farm) }, { orgId: farm.orgId }] } : { userId: ownerIdOf(farm) };
 }
 
 /**

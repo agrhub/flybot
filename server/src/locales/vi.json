@@ -105,6 +105,16 @@
       "blurry": "bị mờ (lệch nét hoặc camera bị xê dịch)",
       "low_contrast": "bị mờ đục (ống kính bẩn, đọng hơi nước hoặc bụi)",
       "card_full": "tấm bẫy gần đầy, cần thay tấm mới"
+    },
+    "orgShared": {
+      "subject": "{sharer} đã thêm bạn vào {orgName}",
+      "body": "{sharer} đã thêm bạn vào tổ chức {orgName} trên FlyBot. Bạn có thể xem các camera và vườn của tổ chức.",
+      "button": "Mở FlyBot"
+    },
+    "orgInvite": {
+      "subject": "{sharer} mời bạn dùng FlyBot",
+      "body": "{sharer} đã thêm {email} vào tổ chức {orgName} trên FlyBot. Hãy tạo tài khoản bằng địa chỉ email này và xác nhận email để được truy cập.",
+      "button": "Tạo tài khoản"
     }
   },
   "telegram": {

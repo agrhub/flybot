@@ -140,7 +140,8 @@ async function createFarm(req, res) {
         if ((await Farm.countDocuments({ ownerId: req.user.id })) >= MAX_FARMS_PER_OWNER) {
             return res.status(400).json({ success: false, message: `You can have at most ${MAX_FARMS_PER_OWNER} farms.` });
         }
-        const farm = await Farm.create({ ownerId: req.user.id, name, description: text(req.body.description, 500) });
+        const orgId = await require('../services/orgService').defaultOrgFor(req.user);
+        const farm = await Farm.create({ ownerId: req.user.id, name, description: text(req.body.description, 500), orgId });
         recordAudit(req, { action: 'farm.created', target: farmTarget(farm) });
         res.status(201).json({ success: true, farm: { id: String(farm._id), name: farm.name, description: farm.description } });
     } catch (err) {

@@ -31,7 +31,14 @@ const AUDIT_ACTIONS = [
     'farm.created',
     'farm.deleted',
     'farm.shared',
-    'farm.unshared'
+    'farm.unshared',
+    'org.created',
+    'org.updated',
+    'org.deleted',
+    'org.member_added',
+    'org.member_updated',
+    'org.member_removed',
+    'org.cameras_changed'
 ];
 const CATEGORIES = [...new Set(AUDIT_ACTIONS.map(a => a.split('.')[0]))];
 

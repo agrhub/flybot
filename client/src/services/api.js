@@ -250,6 +250,31 @@ export default {
   deleteMaintenance(id) {
     return apiClient.delete(`/user/camera/maintenance/${id}`);
   },
+  // Organizations
+  listOrgs() {
+    return apiClient.get('/orgs');
+  },
+  createOrg(data) {
+    return apiClient.post('/orgs', data);
+  },
+  updateOrg(id, data) {
+    return apiClient.put(`/orgs/${id}`, data);
+  },
+  deleteOrg(id) {
+    return apiClient.delete(`/orgs/${id}`);
+  },
+  addOrgMember(id, data) {
+    return apiClient.post(`/orgs/${id}/members`, data);
+  },
+  updateOrgMember(id, data) {
+    return apiClient.put(`/orgs/${id}/members`, data);
+  },
+  removeOrgMember(id, data) {
+    return apiClient.delete(`/orgs/${id}/members`, { data });
+  },
+  setOrgCameras(id, data) {
+    return apiClient.put(`/orgs/${id}/cameras`, data);
+  },
   // Farms and plots
   listFarms() {
     return apiClient.get('/farms');

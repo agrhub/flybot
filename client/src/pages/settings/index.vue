@@ -40,6 +40,10 @@
               <el-icon><VideoCamera /></el-icon>
               <span>{{ t('settings.camerasTab') }}</span>
             </el-menu-item>
+            <el-menu-item index="organizations">
+              <el-icon><OfficeBuilding /></el-icon>
+              <span>{{ t('orgs.tab') }}</span>
+            </el-menu-item>
             <el-menu-item index="notifications">
               <el-icon><Bell /></el-icon>
               <span>{{ t('settings.notificationsTab') }}</span>
@@ -319,6 +323,10 @@
         </div>
 
         <!-- 4. Notifications -->
+        <div v-else-if="activeTab === 'organizations'" class="max-w-4xl">
+          <OrganizationsPanel />
+        </div>
+
         <div v-else-if="activeTab === 'notifications'" class="max-w-3xl">
           <PageHeader :title="t('settings.notificationsTab')" :subtitle="t('settings.notificationsSub')" />
 
@@ -674,6 +682,7 @@ import { useBreakpoints } from '@/composables/useBreakpoints';
 import { useLanguage } from '@/composables/useLanguage';
 import PageHeader from '@/components/common/PageHeader.vue';
 import CameraShareDialog from '@/components/cameras/CameraShareDialog.vue';
+import OrganizationsPanel from '@/components/settings/OrganizationsPanel.vue';
 import AdminUsersPanel from '@/components/admin/AdminUsersPanel.vue';
 import AdminCamerasPanel from '@/components/admin/AdminCamerasPanel.vue';
 import SystemSettingsPanel from '@/components/admin/SystemSettingsPanel.vue';
@@ -700,6 +709,7 @@ import {
   ChatDotRound,
   Share,
   UserFilled,
+  OfficeBuilding,
   Camera,
   Tools,
   Tickets
@@ -722,6 +732,7 @@ const mobileSections = computed(() => [
   ] },
   { label: t('settings.system'), items: [
     { value: 'cameras', label: t('settings.camerasTab') },
+    { value: 'organizations', label: t('orgs.tab') },
     { value: 'notifications', label: t('settings.notificationsTab') },
     { value: 'preferences', label: t('settings.preferencesTab') },
     { value: 'storage', label: t('settings.storageTab') }

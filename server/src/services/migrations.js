@@ -113,6 +113,11 @@ async function runStartupMigrations() {
         console.error('❌ Role migration failed:', err);
     }
     try {
+        await require('./orgService').migrateToOrganizations();
+    } catch (err) {
+        console.error('❌ Organization migration failed:', err);
+    }
+    try {
         await lowercaseEmails();
     } catch (err) {
         console.error('❌ Email normalization failed:', err);

@@ -18,7 +18,7 @@ function toClientCamera(camera, user) {
     const obj = camera.toObject ? camera.toObject() : { ...camera };
     const owner = obj.userId && typeof obj.userId === 'object' && obj.userId.email ? obj.userId : null;
     const ownerId = String(owner?._id ?? obj.userId ?? '');
-    const canManage = canManageCamera(user, { userId: ownerId });
+    const canManage = canManageCamera(user, { ...obj, userId: ownerId });
     obj.userId = ownerId;
     obj.owner = owner ? { id: ownerId, email: owner.email, name: owner.name || owner.email.split('@')[0] } : null;
     const isOwner = ownerId === String(user.id);
@@ -33,7 +33,9 @@ function toClientCamera(camera, user) {
             userId: sh.userId ? String(sh.userId) : null,
             status: sh.userId ? 'active' : 'pending',
             sharedAt: sh.sharedAt,
-            viaFarm: sh.viaFarm ? String(sh.viaFarm) : null
+            viaFarm: sh.viaFarm ? String(sh.viaFarm) : null,
+        // Access through the camera's organization (managed on the organization page)
+        viaOrg: sh.viaOrg ? String(sh.viaOrg) : null
         }));
     } else {
         delete obj.sharedWith;
@@ -168,6 +170,8 @@ async function addCamera(req, res) {
         });
 
         await newCamera.save();
+        // Into the owner's organization, so its members see it
+        await require('../services/orgService').adoptCamera(req.user, newCamera);
         recordAudit(req, { action: 'camera.added', target: cameraTarget(newCamera) });
         res.json({ success: true, message: "Camera added successfully.", camera: toClientCamera(newCamera, req.user) });
 

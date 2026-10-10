@@ -13,6 +13,7 @@ const MaintenanceEvent = require('./MaintenanceEvent');
 const Treatment = require('./Treatment');
 const Farm = require('./Farm');
 const Plot = require('./Plot');
+const Organization = require('./Organization');
 
 module.exports = {
     User,
@@ -29,5 +30,6 @@ module.exports = {
     MaintenanceEvent,
     Treatment,
     Farm,
-    Plot
+    Plot,
+    Organization
 };

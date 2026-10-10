@@ -883,6 +883,10 @@
       "image_quality": {
         "title": "Ảnh có vấn đề",
         "desc": "{deviceName}: {issueText}. Số đếm từ các ảnh này có thể sai."
+      },
+      "org_joined": {
+        "title": "Được thêm vào tổ chức",
+        "desc": "{sharer} đã thêm bạn vào {orgName}."
       }
     }
   },
@@ -1149,7 +1153,8 @@
       "dashboard": "Bảng tùy chỉnh",
       "settings": "Cài đặt hệ thống",
       "treatment": "Xử lý dịch hại",
-      "farm": "Vườn"
+      "farm": "Vườn",
+      "org": "Tổ chức"
     },
     "actions": {
       "auth": {
@@ -1196,6 +1201,15 @@
         "deleted": "Xoá vườn",
         "shared": "Chia sẻ vườn",
         "unshared": "Gỡ quyền xem vườn"
+      },
+      "org": {
+        "created": "Tạo tổ chức",
+        "updated": "Đổi tên tổ chức",
+        "deleted": "Xoá tổ chức",
+        "member_added": "Thêm thành viên",
+        "member_updated": "Đổi vai trò thành viên",
+        "member_removed": "Gỡ thành viên",
+        "cameras_changed": "Chuyển camera"
       }
     },
     "reasons": {
@@ -1435,5 +1449,39 @@
     "dayTip": "{day}: {dd} độ-ngày ({min}–{max} °C)",
     "past": "14 ngày qua",
     "forecast": "Dự báo"
+  },
+  "orgs": {
+    "tab": "Tổ chức",
+    "title": "Tổ chức",
+    "subtitle": "Doanh nghiệp hoặc nhóm làm vườn của bạn: thành viên xem được mọi camera và vườn của tổ chức. Chủ sở hữu và quản lý được quyền quản lý chúng.",
+    "create": "Tạo tổ chức",
+    "empty": "Bạn chưa thuộc tổ chức nào.",
+    "summary": "{members} thành viên · {cameras} camera · {farms} vườn",
+    "actions": "Thao tác với tổ chức",
+    "rename": "Đổi tên",
+    "delete": "Xoá tổ chức",
+    "deleteConfirm": "Xoá \"{name}\"? Camera và vườn vẫn thuộc về chủ của chúng; thành viên mất quyền truy cập có được qua tổ chức.",
+    "namePrompt": "Tên tổ chức",
+    "nameRequired": "Vui lòng nhập tên",
+    "members": "Thành viên",
+    "emailPlaceholder": "Địa chỉ email",
+    "addMember": "Thêm",
+    "added": "Đã thêm thành viên.",
+    "invited": "Đã gửi lời mời. Người này có quyền truy cập khi tạo tài khoản và xác nhận email này.",
+    "pending": "Đã mời, chưa có tài khoản",
+    "remove": "Gỡ",
+    "removeConfirm": "Gỡ {email} khỏi tổ chức?",
+    "leave": "Rời tổ chức",
+    "leaveConfirm": "Rời \"{name}\"? Bạn sẽ mất quyền xem camera và vườn của tổ chức.",
+    "cameras": "Camera",
+    "noCameras": "Chưa có camera.",
+    "pickCameras": "Camera bạn quản lý",
+    "addCameras": "Thêm vào tổ chức",
+    "camerasHint": "Mỗi camera chỉ thuộc một tổ chức. Camera và vườn mới được đưa vào tổ chức đầu tiên bạn sở hữu.",
+    "roles": {
+      "owner": "Chủ sở hữu",
+      "manager": "Quản lý",
+      "member": "Thành viên"
+    }
   }
 }

@@ -17,6 +17,7 @@ const TEXT_KEYS = {
     pest_surge: 'email.alerts.pest_surge',
     image_quality: 'email.alerts.image_quality',
     farm_shared: 'email.farmShared',
+    org_joined: 'email.orgShared',
     camera_shared: 'email.cameraShared',
     dashboard_shared: 'email.dashboardShared'
 };
@@ -30,7 +31,8 @@ const TARGET_PATH = {
     plot_threshold: '/farms',
     pest_surge: '/analytics',
     image_quality: '/cameras',
-    camera_shared: '/cameras'
+    camera_shared: '/cameras',
+    org_joined: '/settings?tab=organizations'
 };
 const URGENT_TYPES = new Set(['pest_threshold', 'camera_offline']);
 

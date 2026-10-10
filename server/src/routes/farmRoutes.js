@@ -5,7 +5,8 @@ const { authenticate, requireRole } = require('../middlewares/auth');
 const { requireStringFields } = require('../middlewares/validate');
 const { shareLimiter } = require('../middlewares/rateLimit');
 
-router.use(authenticate, requireStringFields);
+// Organization roles: members see (and owners/managers edit) the organization's farms
+router.use(authenticate, requireStringFields, require('../services/orgService').attachOrgRoles);
 
 router.get('/', farmController.listFarms);
 router.get('/map', farmController.mapPlots);

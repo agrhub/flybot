@@ -883,6 +883,10 @@
       "image_quality": {
         "title": "Photo problem",
         "desc": "{deviceName}: {issueText}. Counts from these photos may be wrong."
+      },
+      "org_joined": {
+        "title": "Added to an organization",
+        "desc": "{sharer} added you to {orgName}."
       }
     }
   },
@@ -1149,7 +1153,8 @@
       "dashboard": "Dashboards",
       "settings": "System settings",
       "treatment": "Treatments",
-      "farm": "Farms"
+      "farm": "Farms",
+      "org": "Organization"
     },
     "actions": {
       "auth": {
@@ -1196,6 +1201,15 @@
         "deleted": "Farm deleted",
         "shared": "Farm shared",
         "unshared": "Farm access removed"
+      },
+      "org": {
+        "created": "Create organization",
+        "updated": "Rename organization",
+        "deleted": "Delete organization",
+        "member_added": "Add member",
+        "member_updated": "Change member role",
+        "member_removed": "Remove member",
+        "cameras_changed": "Move cameras"
       }
     },
     "reasons": {
@@ -1435,5 +1449,39 @@
     "dayTip": "{day}: {dd} degree-days ({min}–{max} °C)",
     "past": "Last 14 days",
     "forecast": "Forecast"
+  },
+  "orgs": {
+    "tab": "Organizations",
+    "title": "Organizations",
+    "subtitle": "Your farm business or team: members see all of its cameras and farms. Owners and managers manage them.",
+    "create": "New organization",
+    "empty": "You are not in any organization yet.",
+    "summary": "{members} members · {cameras} cameras · {farms} farms",
+    "actions": "Organization actions",
+    "rename": "Rename",
+    "delete": "Delete organization",
+    "deleteConfirm": "Delete \"{name}\"? Cameras and farms stay with their owners; members lose the access they had through it.",
+    "namePrompt": "Organization name",
+    "nameRequired": "Please enter a name",
+    "members": "Members",
+    "emailPlaceholder": "Email address",
+    "addMember": "Add",
+    "added": "Member added.",
+    "invited": "Invitation sent. They get access once they create an account and confirm this email.",
+    "pending": "Invited, no account yet",
+    "remove": "Remove",
+    "removeConfirm": "Remove {email} from the organization?",
+    "leave": "Leave",
+    "leaveConfirm": "Leave \"{name}\"? You lose access to its cameras and farms.",
+    "cameras": "Cameras",
+    "noCameras": "No cameras yet.",
+    "pickCameras": "Cameras you manage",
+    "addCameras": "Add to organization",
+    "camerasHint": "A camera belongs to one organization at a time. New cameras and farms go into the first organization you own.",
+    "roles": {
+      "owner": "Owner",
+      "manager": "Manager",
+      "member": "Member"
+    }
   }
 }

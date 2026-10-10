@@ -27,7 +27,8 @@ const COOLDOWN_MINUTES = {
     pest_surge: 24 * 60,
     weekly_report: 0,
     // A bad photo is reminded once a day while it lasts
-    image_quality: 24 * 60
+    image_quality: 24 * 60,
+    org_joined: 0
 };
 
 const SEVERITY = {
@@ -43,13 +44,14 @@ const SEVERITY = {
     farm_shared: 'info',
     pest_surge: 'warning',
     weekly_report: 'info',
-    image_quality: 'warning'
+    image_quality: 'warning',
+    org_joined: 'info'
 };
 
 // "Back online" is good news: in-app only
 const EMAIL_TYPES = new Set(['pest_threshold', 'camera_offline', 'ai_failure', 'card_due', 'plot_threshold', 'pest_surge', 'image_quality']);
 // Phone/browser push: the alerts, plus something new shared with you
-const PUSH_TYPES = new Set([...EMAIL_TYPES, 'camera_shared', 'dashboard_shared', 'farm_shared']);
+const PUSH_TYPES = new Set([...EMAIL_TYPES, 'camera_shared', 'dashboard_shared', 'farm_shared', 'org_joined']);
 
 // Consecutive failed AI analyses before alerting
 const AI_FAILURE_THRESHOLD = 3;

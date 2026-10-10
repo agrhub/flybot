@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { User, Camera, Session, Notification, AuthToken, Dashboard, AuditLog, PushSubscription, Farm, Plot } = require('../models');
+const { User, Camera, Session, Notification, AuthToken, Dashboard, AuditLog, PushSubscription, Farm, Plot, Organization } = require('../models');
 const { ROLES, roleOf } = require('../constants/roles');
 const { sendServerError } = require('../utils/http');
 const { recordAudit, AUDIT_ACTIONS, CATEGORIES } = require('../services/auditService');
@@ -154,6 +154,7 @@ async function deleteUser(req, res) {
             Dashboard.updateMany({ 'sharedWith.userId': target._id }, { $pull: { sharedWith: { userId: target._id } } }),
             Dashboard.deleteMany({ ownerId: target._id }),
             Farm.updateMany({ 'sharedWith.userId': target._id }, { $pull: { sharedWith: { userId: target._id } } }),
+            Organization.updateMany({ 'members.userId': target._id }, { $pull: { members: { userId: target._id } } }),
             Session.deleteMany({ userId: target._id }),
             Notification.deleteMany({ userId: target._id }),
             AuthToken.deleteMany({ userId: target._id }),
@@ -166,6 +167,16 @@ async function deleteUser(req, res) {
             await Camera.updateMany({ 'sharedWith.viaFarm': { $in: farmIds } }, { $pull: { sharedWith: { viaFarm: { $in: farmIds } } } });
             await Plot.deleteMany({ farmId: { $in: farmIds } });
             await Farm.deleteMany({ _id: { $in: farmIds } });
+        }
+        // Organizations they were in: empty ones go, ownerless ones get a new owner
+        await Organization.deleteMany({ members: { $size: 0 } });
+        for (const org of await Organization.find({ 'members.role': { $ne: 'owner' } })) {
+            const next = org.members.find(m => m.role === 'manager' && m.userId) || org.members.find(m => m.userId);
+            if (next) {
+                next.role = 'owner';
+                await org.save();
+                await require('../services/orgService').syncOrgShares(org);
+            }
         }
         await User.deleteOne({ _id: target._id });
         recordAudit(req, { action: 'user.deleted', target: { type: 'user', id: String(target._id), label: target.email }, details: { role: roleOf(target) } });

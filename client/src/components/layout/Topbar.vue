@@ -185,6 +185,10 @@ const openNotification = (n) => {
     router.push(`/dashboards/${n.params.dashboardId}`);
     return;
   }
+  if (n.type === 'org_joined') {
+    router.push({ path: '/settings', query: { tab: 'organizations' } });
+    return;
+  }
   const section = TARGET_SECTION[n.type];
   if (section) emit('navigate', section);
 };
