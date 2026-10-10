@@ -5,7 +5,7 @@ const aiService = require('../services/aiService');
 const s3Service = require('../services/s3Service');
 const { sendServerError } = require('../utils/http');
 const { userOwnsCamera } = require('../utils/ownership');
-const { FRUIT_FLY, NON_PEST_LABELS, normalizeSpeciesExpr } = require('../constants/species');
+const { FRUIT_FLY, NON_PEST_LABELS, normalizeSpeciesExpr, pestCountExpr } = require('../constants/species');
 const { thresholdOf, riskLevel, worstRisk } = require('../constants/risk');
 const { countPests } = require('../services/notificationService');
 const forecastService = require('../services/forecastService');
@@ -554,18 +554,7 @@ const TIMEZONE = 'Asia/Ho_Chi_Minh';
 const HISTORY_DAYS = 14;
 const FORECAST_DAYS = 7;
 
-// Sum of pest counts in a snapshot summary, excluding non-pest detections
-const PEST_COUNT_EXPR = {
-    $reduce: {
-        input: { $objectToArray: { $ifNull: ['$aiResults.summary', {}] } },
-        initialValue: 0,
-        in: {
-            $add: ['$$value', {
-                $cond: [{ $in: [{ $toLower: '$$this.k' }, NON_PEST_LABELS] }, 0, { $ifNull: ['$$this.v', 0] }]
-            }]
-        }
-    }
-};
+const PEST_COUNT_EXPR = pestCountExpr();
 
 const dayKey = (date) => new Intl.DateTimeFormat('en-CA', { timeZone: TIMEZONE }).format(date); // YYYY-MM-DD
 const dayLabel = (date) => new Intl.DateTimeFormat('en-GB', { timeZone: TIMEZONE, day: '2-digit', month: '2-digit' }).format(date); // DD/MM
@@ -730,6 +719,120 @@ async function getAiDiagnosis(req, res) {
     }
 }
 
+const COMPARISON_PERIODS = [7, 14, 30];
+
+const percentChange = (current, previous) =>
+    (previous > 0 ? Math.round(((current - previous) / previous) * 1000) / 10 : null);
+
+/**
+ * GET /api/ai/comparison?days=7|14|30
+ * This period vs the one before it (totals, average per scan, peak), overall and per camera.
+ */
+async function getAiComparison(req, res) {
+    try {
+        const days = Number(req.query.days) || 7;
+        if (!COMPARISON_PERIODS.includes(days)) {
+            return res.status(400).json({ success: false, message: `days must be one of ${COMPARISON_PERIODS.join(', ')}.` });
+        }
+        const userId = req.user.id;
+        const userCameras = await Camera.find({ userId });
+        const bySerial = new Map();
+        userCameras.forEach(c => { if (!bySerial.has(c.deviceSerial)) bySerial.set(c.deviceSerial, c); });
+        const cameras = [...bySerial.values()];
+
+        const now = new Date();
+        const currentStart = new Date(now.getTime() - days * 86400000);
+        const previousStart = new Date(now.getTime() - 2 * days * 86400000);
+
+        const emptyPeriod = (start, end) => ({ start, end, totalInsects: 0, scans: 0, avgPerScan: 0, peakCount: 0 });
+        if (cameras.length === 0) {
+            return res.json({
+                success: true,
+                comparison: {
+                    days,
+                    current: emptyPeriod(currentStart, now),
+                    previous: emptyPeriod(previousStart, currentStart),
+                    change: { totalInsects: null, avgPerScan: null, peakCount: null },
+                    cameras: []
+                }
+            });
+        }
+
+        const rows = await Snapshot.aggregate([
+            {
+                $match: {
+                    deviceSerial: { $in: cameras.map(c => c.deviceSerial) },
+                    aiProcessed: true,
+                    createdAt: { $gte: previousStart, $lte: now }
+                }
+            },
+            {
+                $project: {
+                    deviceSerial: 1,
+                    isCurrent: { $gte: ['$createdAt', currentStart] },
+                    count: pestCountExpr()
+                }
+            },
+            {
+                $group: {
+                    _id: { serial: '$deviceSerial', isCurrent: '$isCurrent' },
+                    total: { $sum: '$count' },
+                    scans: { $sum: 1 },
+                    peak: { $max: '$count' }
+                }
+            }
+        ]);
+
+        const summarize = (list) => {
+            const totalInsects = list.reduce((s, r) => s + r.total, 0);
+            const scans = list.reduce((s, r) => s + r.scans, 0);
+            return {
+                totalInsects,
+                scans,
+                avgPerScan: scans > 0 ? Math.round((totalInsects / scans) * 10) / 10 : 0,
+                peakCount: list.reduce((m, r) => Math.max(m, r.peak || 0), 0)
+            };
+        };
+        const currentRows = rows.filter(r => r._id.isCurrent);
+        const previousRows = rows.filter(r => !r._id.isCurrent);
+        const current = { start: currentStart, end: now, ...summarize(currentRows) };
+        const previous = { start: previousStart, end: currentStart, ...summarize(previousRows) };
+
+        const cameraRows = cameras.map(cam => {
+            const cur = summarize(currentRows.filter(r => r._id.serial === cam.deviceSerial));
+            const prev = summarize(previousRows.filter(r => r._id.serial === cam.deviceSerial));
+            return {
+                deviceSerial: cam.deviceSerial,
+                deviceName: cam.deviceName || cam.deviceSerial,
+                alertThreshold: thresholdOf(cam),
+                ...cur,
+                // Risk of the period's peak against this camera's threshold
+                riskLevel: riskLevel(cur.peakCount, thresholdOf(cam)),
+                previousTotal: prev.totalInsects,
+                changePct: percentChange(cur.totalInsects, prev.totalInsects)
+            };
+        }).sort((a, b) => b.totalInsects - a.totalInsects);
+
+        res.json({
+            success: true,
+            comparison: {
+                days,
+                current,
+                previous,
+                // null when the previous period had nothing to compare against
+                change: {
+                    totalInsects: percentChange(current.totalInsects, previous.totalInsects),
+                    avgPerScan: percentChange(current.avgPerScan, previous.avgPerScan),
+                    peakCount: percentChange(current.peakCount, previous.peakCount)
+                },
+                cameras: cameraRows
+            }
+        });
+    } catch (err) {
+        sendServerError(res, err, { context: 'AI comparison' });
+    }
+}
+
 const agent = require('../agent/agent');
 
 /**
@@ -780,6 +883,7 @@ module.exports = {
     getAiStatistics,
     getAiOverview,
     getAiDiagnosis,
+    getAiComparison,
     chatWithAssistant,
     clearChatSession
 };

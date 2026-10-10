@@ -29,7 +29,25 @@ function normalizeSpeciesExpr(fieldPath) {
     };
 }
 
+/**
+ * MongoDB aggregation expression: total pest count of a snapshot summary, ignoring non-pest labels.
+ */
+function pestCountExpr(summaryPath = '$aiResults.summary') {
+    return {
+        $reduce: {
+            input: { $objectToArray: { $ifNull: [summaryPath, {}] } },
+            initialValue: 0,
+            in: {
+                $add: ['$$value', {
+                    $cond: [{ $in: [{ $toLower: '$$this.k' }, NON_PEST_LABELS] }, 0, { $ifNull: ['$$this.v', 0] }]
+                }]
+            }
+        }
+    };
+}
+
 module.exports = {
+    pestCountExpr,
     FRUIT_FLY,
     FRUIT_FLY_ALIASES,
     NON_PEST_LABELS,

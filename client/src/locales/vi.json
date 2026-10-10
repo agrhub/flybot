@@ -432,7 +432,21 @@
       "pdfFailed": "Lỗi xuất PDF: {error}",
       "excelFailed": "Lỗi xuất file Excel: {error}"
     },
-    "selectCamera": "Chọn camera"
+    "selectCamera": "Chọn camera",
+    "compare": {
+      "title": "So sánh theo kỳ",
+      "subtitle": "{days} ngày gần nhất so với {days} ngày trước đó, tất cả camera",
+      "days": "{days} ngày",
+      "totalInsects": "Tổng số côn trùng",
+      "avgPerScan": "Trung bình mỗi lần quét",
+      "peak": "Số đếm cao nhất",
+      "vsPrevious": "{change} so với kỳ trước",
+      "noPrevious": "Kỳ trước không có dữ liệu",
+      "ranking": "Xếp hạng camera theo số côn trùng",
+      "camera": "Camera",
+      "scans": "Lần quét",
+      "change": "Thay đổi"
+    }
   },
   "settings": {
     "title": "Cài Đặt Hệ Thống",

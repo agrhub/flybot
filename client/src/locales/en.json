@@ -432,7 +432,21 @@
       "pdfFailed": "PDF export failed: {error}",
       "excelFailed": "Excel export failed: {error}"
     },
-    "selectCamera": "Select camera"
+    "selectCamera": "Select camera",
+    "compare": {
+      "title": "Period comparison",
+      "subtitle": "Last {days} days vs the {days} days before, all cameras",
+      "days": "{days} days",
+      "totalInsects": "Insects counted",
+      "avgPerScan": "Average per scan",
+      "peak": "Highest count",
+      "vsPrevious": "{change} vs previous period",
+      "noPrevious": "No data in the previous period",
+      "ranking": "Cameras ranked by insects counted",
+      "camera": "Camera",
+      "scans": "Scans",
+      "change": "Change"
+    }
   },
   "settings": {
     "title": "System Settings",

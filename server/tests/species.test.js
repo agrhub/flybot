@@ -21,3 +21,10 @@ test('aggregation expression maps every alias to the canonical key', () => {
     });
     assert.ok(FRUIT_FLY_ALIASES.includes(FRUIT_FLY));
 });
+
+test('pest count expression references MongoDB $$ variables correctly', () => {
+    const { pestCountExpr } = require('../src/constants/species');
+    const json = JSON.stringify(pestCountExpr());
+    assert.ok(json.includes('"$$value"') && json.includes('"$$this.k"') && json.includes('"$$this.v"'));
+    assert.ok(!/"\$value"|"\$this\./.test(json));
+});

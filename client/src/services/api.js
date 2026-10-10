@@ -152,6 +152,10 @@ export default {
     if (endDate) params.append('endDate', endDate);
     return apiClient.get(`/ai/statistics?${params.toString()}`);
   },
+  // This period vs the previous one, overall and per camera (days: 7 | 14 | 30)
+  getComparison(days = 7) {
+    return apiClient.get('/ai/comparison', { params: { days } });
+  },
   getAiOverview() {
     return apiClient.get('/ai/overview');
   },

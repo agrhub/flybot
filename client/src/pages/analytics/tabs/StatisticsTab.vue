@@ -89,6 +89,9 @@
         </div>
       </el-card>
     </div>
+
+    <!-- This period vs the previous one, per camera -->
+    <ComparisonCard />
   </div>
 </template>
 
@@ -100,6 +103,7 @@ import { ElNotification } from 'element-plus'
 import { useI18n } from 'vue-i18n'
 import { Aim, Bottom, DataLine, Minus, PieChart, Top, TrendCharts } from '@element-plus/icons-vue'
 import StatCard from '@/components/common/StatCard.vue'
+import ComparisonCard from '@/components/analytics/ComparisonCard.vue'
 import { FRUIT_FLY, normalizeSpecies, speciesName, speciesShare } from '@/utils/species'
 
 const { t } = useI18n()

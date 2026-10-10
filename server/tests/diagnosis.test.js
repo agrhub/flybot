@@ -131,3 +131,34 @@ test('high risk triggers the full plan', async () => {
     assert.equal(diagnosis.riskScore, 100);
     assert.deepEqual(diagnosis.recommendations.map(r => r.key).sort(), ['fieldSanitation', 'fruitBagging', 'pheromoneLure', 'proteinBait']);
 });
+
+// ---------- Comparison endpoint ----------
+
+test('comparison: period totals, % change and per-camera ranking', async () => {
+    store.cameras.push({ userId: ALICE, deviceSerial: 'CAMB', deviceName: 'Lot B', alertThreshold: 10 });
+    models.Snapshot.aggregate = async () => [
+        { _id: { serial: 'CAMA', isCurrent: true }, total: 60, scans: 20, peak: 9 },
+        { _id: { serial: 'CAMA', isCurrent: false }, total: 40, scans: 20, peak: 6 },
+        { _id: { serial: 'CAMB', isCurrent: true }, total: 90, scans: 10, peak: 14 }
+    ];
+    const res = await app.request('/api/ai/comparison?days=7', { headers: bearer(ALICE) });
+    assert.equal(res.status, 200);
+    const { comparison } = await res.json();
+
+    assert.equal(comparison.current.totalInsects, 150);
+    assert.equal(comparison.previous.totalInsects, 40);
+    assert.equal(comparison.change.totalInsects, 275);
+    assert.equal(comparison.current.avgPerScan, 5);
+    assert.equal(comparison.current.peakCount, 14);
+
+    assert.deepEqual(comparison.cameras.map(c => c.deviceSerial), ['CAMB', 'CAMA'], 'sorted by total');
+    const lotB = comparison.cameras[0];
+    assert.equal(lotB.riskLevel, 'high', 'peak 14 vs its threshold 10');
+    assert.equal(lotB.changePct, null, 'nothing in the previous period to compare with');
+    assert.equal(comparison.cameras[1].changePct, 50);
+});
+
+test('comparison validates the period', async () => {
+    const res = await app.request('/api/ai/comparison?days=9', { headers: bearer(ALICE) });
+    assert.equal(res.status, 400);
+});
