@@ -100,6 +100,9 @@ const config = {
     APP_KEY: (process.env.APP_KEY || "").trim(),
     SECRET_KEY: (process.env.SECRET_KEY || "").trim(),
     APP_DOMAIN: process.env.EZVIZ_DOMAIN || 'https://ivnopen.ezvizlife.com',
+    // "true": the browser player gets a per-user EZVIZ sub-account token limited to the cameras
+    // that user may view, instead of the app account token (services/ezvizRamService.js)
+    EZVIZ_RAM_TOKENS: process.env.EZVIZ_RAM_TOKENS || 'false',
     DOMAIN_AREAS: {
         "us": "https://iusopen.ezvizlife.com",
         "sa": "https://isaopen.ezvizlife.com",

@@ -2,6 +2,7 @@ const { Camera, Snapshot } = require('../models');
 const { CAPTURE_INTERVALS } = require('../services/captureSchedule');
 const { countPests } = require('../services/notificationService');
 const ezvizService = require('../services/ezvizService');
+const ezvizRamService = require('../services/ezvizRamService');
 const { sendServerError } = require('../utils/http');
 const { recordAudit } = require('../services/auditService');
 const { latestSnapshotTimeByCamera } = require('../services/snapshotQueries');
@@ -404,7 +405,8 @@ async function getLiveStream(req, res) {
                 activeStreamSessions.set(sessionKey(userId, deviceSerial), responseData.data.id);
             }
 
-            responseData.data.accessToken = token;
+            responseData.data.accessToken = await playerToken(req, token);
+            if (!responseData.data.accessToken) return res.status(503).json(PLAYER_UNAVAILABLE);
             responseData.data.areaDomain = areaDomain;
             responseData.data.isEncrypt = isEncrypted;
             responseData.data.validateCode = isEncrypted ? code : '';
@@ -423,6 +425,21 @@ async function getLiveStream(req, res) {
     } catch (error) {
         console.log(error);
         sendServerError(res, error, { format: 'ezviz' });
+    }
+}
+
+const PLAYER_UNAVAILABLE = { code: "503", msg: "Video is temporarily unavailable. Please try again later." };
+
+/**
+ * The EZVIZ token for this viewer's player: a sub-account token limited to their cameras when
+ * EZVIZ_RAM_TOKENS is on (null if that fails; never the app token instead).
+ */
+async function playerToken(req, appToken) {
+    try {
+        return await ezvizRamService.playerTokenFor(req.user, appToken);
+    } catch (err) {
+        console.error('❌ EZVIZ sub-account token failed:', err.message);
+        return null;
     }
 }
 
@@ -479,7 +496,8 @@ async function getPlaybackStream(req, res) {
             if (responseData.data?.id) {
                 activeStreamSessions.set(sessionKey(userId, deviceSerial), responseData.data.id);
             }
-            responseData.data.accessToken = token;
+            responseData.data.accessToken = await playerToken(req, token);
+            if (!responseData.data.accessToken) return res.status(503).json(PLAYER_UNAVAILABLE);
             responseData.data.areaDomain = areaDomain;
             responseData.data.validateCode = camera.validateCode;
         }

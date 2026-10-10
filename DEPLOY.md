@@ -187,7 +187,13 @@ Cloud Run gives you HTTPS automatically; the VM does not. Either put a Google Cl
 - After upgrading: the old single-field index `deviceSerial_1` on `snapshots` is no longer used (replaced by `{deviceSerial, createdAt}`). It can be dropped to save space and write time: `db.snapshots.dropIndex("deviceSerial_1")`.
 
 ## Known risks (accepted for now)
-- **EZVIZ account token reaches viewers.** Live view and playback (`POST /api/live`, `/api/playback`) return the EZVIZ access token of the app account, because the EZUIKit player needs one. Anyone who can watch any camera can read it in the browser and call the EZVIZ Open API directly, with access to **every** device in the account (list, live, settings, delete). Only give FlyBot accounts to people you trust with the whole EZVIZ account. The fix is per-user EZVIZ sub-account (RAM) tokens limited to the cameras each person may watch; it needs testing against the real EZVIZ account.
+- **EZVIZ account token reaches viewers unless `EZVIZ_RAM_TOKENS=true`.** The EZUIKit player in the browser needs an EZVIZ access token. By default, live view and playback (`POST /api/live`, `/api/playback`) hand out the app account's token. Anyone who can watch any camera can read it and call the EZVIZ Open API directly, with access to **every** device in the account (list, live, settings, delete).
+  With `EZVIZ_RAM_TOKENS=true`, each non-admin user gets an EZVIZ sub-account (RAM) whose policy allows only view, live and playback of the cameras they may see, and the browser gets that sub-account's token. The policy is updated before each token is handed out and by an hourly job, so removed access ends within an hour. If the sub-account calls fail, video is refused rather than falling back to the app token.
+  This was built from the EZVIZ Open API documentation and **has not been tried against a real EZVIZ account**. To turn it on:
+  1. Set the variable and redeploy.
+  2. Open a camera's live view as a non-admin user. If it plays, the sub-account was created.
+  3. In the browser's network tab, copy the `accessToken` from the `/api/live` answer. Check it can only see that user's cameras, for example with `POST /api/lapp/device/list` on the EZVIZ API.
+  4. If video fails, the server log shows `EZVIZ sub-account token failed` with the EZVIZ error code.
 - **Viewers can see a camera's verification code.** Encrypted streams are decrypted in the browser, so the live/playback response includes the code. Change the code on the device if you remove someone's access to an encrypted camera.
 - **Rate limits are per instance.** Login, chat, share and capture limits live in memory. `cloudbuild.yaml` pins Cloud Run to one instance (`--max-instances=1`); raising it multiplies every limit unless they move to a shared store.
 - **Snapshot bucket must be private.** Images are served through `/api/s3` with access checks; a public bucket or public `S3_PUBLIC_URL` would bypass them, since object keys are predictable.

@@ -180,6 +180,8 @@ async function deleteUser(req, res) {
                 await require('../services/orgService').syncOrgShares(org);
             }
         }
+        await require('../services/ezvizRamService').deleteAccount(target)
+            .catch(err => console.warn('⚠️ EZVIZ sub-account not deleted:', err.message));
         await User.deleteOne({ _id: target._id });
         recordAudit(req, { action: 'user.deleted', target: { type: 'user', id: String(target._id), label: target.email }, details: { role: roleOf(target) } });
         res.json({ success: true });

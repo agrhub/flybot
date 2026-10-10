@@ -30,6 +30,12 @@ const userSchema = new mongoose.Schema({
         // Cameras this person does not want any notification from
         mutedCameras: { type: [String], default: [] }
     },
+    // EZVIZ sub-account for the browser player (services/ezvizRamService.js)
+    ezvizRam: {
+        accountId: { type: String, default: undefined },
+        policyHash: { type: String, default: undefined },
+        syncedAt: { type: Date, default: undefined }
+    },
     // Linked Telegram chat for alerts (set by the bot after the user presses Start)
     telegram: {
         chatId: { type: String, default: undefined },
