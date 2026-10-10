@@ -13,6 +13,7 @@ const { latestProcessedByCamera } = require('../services/snapshotQueries');
 const dailyStats = require('../services/dailyStats');
 const { cardDueAt } = require('../services/maintenanceService');
 const weatherService = require('../services/weatherService');
+const degreeDayService = require('../services/degreeDayService');
 
 /**
  * Get AI detection history with pagination (filter by specific camera or all cameras)
@@ -674,7 +675,14 @@ async function getAiDiagnosis(req, res) {
 
         // 3. Weather at the peak trap (or any trap with GPS)
         const located = [peak.cam, ...cameras].find(c => Number.isFinite(c.latitude) && Number.isFinite(c.longitude));
-        const weather = located ? await weatherService.getCurrentWeather(located.latitude, located.longitude) : null;
+        const [weather, degreeDays] = await Promise.all([
+            located ? weatherService.getCurrentWeather(located.latitude, located.longitude) : null,
+            // Next adult wave from accumulated heat; optional, never fails the diagnosis
+            degreeDayService.forCameras([peak.cam, ...cameras.filter(c => c !== peak.cam)]).catch(err => {
+                console.warn('⚠️ Degree-day model failed:', err.message);
+                return null;
+            })
+        ]);
         const factor = weatherService.weatherFactor(weather);
 
         res.json({
@@ -693,6 +701,7 @@ async function getAiDiagnosis(req, res) {
                 dominantPest: species[0]?._id || null,
                 weather,
                 weatherFactor: factor,
+                degreeDays,
                 forecast: {
                     trajectory: trend.trajectory,
                     confidence: trend.confidence, // 'low' | 'medium' | 'high'

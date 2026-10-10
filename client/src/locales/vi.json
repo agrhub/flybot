@@ -1380,5 +1380,23 @@
       "title": "Camera tôi theo dõi",
       "desc": "Tắt một camera để không nhận bất kỳ thông báo nào của nó (không ảnh hưởng người khác)."
     }
+  },
+  "degreeDays": {
+    "title": "Đợt ruồi trưởng thành tiếp theo",
+    "modelNote": "Mô hình độ-ngày cho ruồi đục quả phương Đông: ruồi chỉ phát triển nhờ phần nhiệt trên {base} °C, mỗi thế hệ (trứng đến trưởng thành) cần khoảng {dd} độ-ngày. Tính từ ngày bắt nhiều nhất trong 30 ngày qua. Đây là ước tính để lên kế hoạch, không phải ngày chính xác.",
+    "unavailable": "Cần vị trí GPS của camera và dữ liệu thời tiết. Thêm vị trí trong phần cài đặt camera.",
+    "waveIn": "Khoảng {days} ngày nữa | Khoảng {days} ngày nữa",
+    "waveNow": "Dự kiến ngay bây giờ",
+    "generation": "Thế hệ {n}",
+    "estimated": "Ngoài dự báo 16 ngày",
+    "noPeak": "Không có đợt bắt lớn nào trong 30 ngày qua nên chưa thể dự báo đợt tiếp theo.",
+    "progress": "{acc} / {total} độ-ngày",
+    "fromPeak": "tính từ đỉnh ngày {day} ({count} con)",
+    "pace": "Với nhiệt độ tuần tới, mỗi thế hệ mất khoảng {days} ngày ({dd} độ-ngày mỗi ngày).",
+    "tooCold": "Tuần này quá lạnh, ruồi gần như không phát triển.",
+    "chartLabel": "Độ-ngày theo ngày",
+    "dayTip": "{day}: {dd} độ-ngày ({min}–{max} °C)",
+    "past": "14 ngày qua",
+    "forecast": "Dự báo"
   }
 }

@@ -1380,5 +1380,23 @@
       "title": "Cameras I follow",
       "desc": "Turn a camera off to stop all of its notifications for you (other people are not affected)."
     }
+  },
+  "degreeDays": {
+    "title": "Next wave of adult flies",
+    "modelNote": "Degree-day model for the oriental fruit fly: development counts only the warmth above {base} °C, and one generation (egg to adult) needs about {dd} degree-days. Counted from the biggest catch of the last 30 days. A planning estimate, not an exact date.",
+    "unavailable": "Needs the GPS location of a camera and weather data. Add a location in Camera settings.",
+    "waveIn": "In about {days} day | In about {days} days",
+    "waveNow": "Expected now",
+    "generation": "Generation {n}",
+    "estimated": "Beyond the 16-day forecast",
+    "noPeak": "No big catch in the last 30 days, so there is no wave to time.",
+    "progress": "{acc} / {total} degree-days",
+    "fromPeak": "from the peak on {day} ({count} insects)",
+    "pace": "At the coming week's temperatures one generation takes about {days} days ({dd} degree-days a day).",
+    "tooCold": "Too cold this week for flies to develop.",
+    "chartLabel": "Degree-days per day",
+    "dayTip": "{day}: {dd} degree-days ({min}–{max} °C)",
+    "past": "Last 14 days",
+    "forecast": "Forecast"
   }
 }

@@ -257,6 +257,9 @@
           </div>
         </div>
 
+        <!-- Next adult wave from accumulated heat (degree-days) -->
+        <DegreeDayPanel :model="diagnosisResult.degreeDays" />
+
         <!-- Prescriptive recommendations -->
         <div>
           <h4 class="subsection-title mb-3">{{ t('dashboard.recommendationsTitle') }}</h4>
@@ -377,6 +380,7 @@ import {
 } from '@element-plus/icons-vue';
 import PageHeader from '@/components/common/PageHeader.vue';
 import StatCard from '@/components/common/StatCard.vue';
+import DegreeDayPanel from '@/components/dashboard/DegreeDayPanel.vue';
 import { speciesShare } from '@/utils/species';
 
 const router = useRouter();
