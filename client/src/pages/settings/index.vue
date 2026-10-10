@@ -48,6 +48,10 @@
               <el-icon><Bell /></el-icon>
               <span>{{ t('settings.notificationsTab') }}</span>
             </el-menu-item>
+            <el-menu-item v-if="canManageCameras" index="integrations">
+              <el-icon><Connection /></el-icon>
+              <span>{{ t('integrations.tab') }}</span>
+            </el-menu-item>
             <el-menu-item index="preferences">
               <el-icon><Brush /></el-icon>
               <span>{{ t('settings.preferencesTab') }}</span>
@@ -325,6 +329,10 @@
         <!-- 4. Notifications -->
         <div v-else-if="activeTab === 'organizations'" class="max-w-4xl">
           <OrganizationsPanel />
+        </div>
+
+        <div v-else-if="activeTab === 'integrations' && canManageCameras" class="max-w-3xl">
+          <IntegrationsPanel />
         </div>
 
         <div v-else-if="activeTab === 'notifications'" class="max-w-3xl">
@@ -683,6 +691,7 @@ import { useLanguage } from '@/composables/useLanguage';
 import PageHeader from '@/components/common/PageHeader.vue';
 import CameraShareDialog from '@/components/cameras/CameraShareDialog.vue';
 import OrganizationsPanel from '@/components/settings/OrganizationsPanel.vue';
+import IntegrationsPanel from '@/components/settings/IntegrationsPanel.vue';
 import AdminUsersPanel from '@/components/admin/AdminUsersPanel.vue';
 import AdminCamerasPanel from '@/components/admin/AdminCamerasPanel.vue';
 import SystemSettingsPanel from '@/components/admin/SystemSettingsPanel.vue';
@@ -710,6 +719,7 @@ import {
   Share,
   UserFilled,
   OfficeBuilding,
+  Connection,
   Camera,
   Tools,
   Tickets
@@ -734,6 +744,7 @@ const mobileSections = computed(() => [
     { value: 'cameras', label: t('settings.camerasTab') },
     { value: 'organizations', label: t('orgs.tab') },
     { value: 'notifications', label: t('settings.notificationsTab') },
+    ...(canManageCameras.value ? [{ value: 'integrations', label: t('integrations.tab') }] : []),
     { value: 'preferences', label: t('settings.preferencesTab') },
     { value: 'storage', label: t('settings.storageTab') }
   ] },

@@ -1154,7 +1154,8 @@
       "settings": "System settings",
       "treatment": "Treatments",
       "farm": "Farms",
-      "org": "Organization"
+      "org": "Organization",
+      "integration": "API & webhooks"
     },
     "actions": {
       "auth": {
@@ -1210,6 +1211,12 @@
         "member_updated": "Change member role",
         "member_removed": "Remove member",
         "cameras_changed": "Move cameras"
+      },
+      "integration": {
+        "key_created": "Create API key",
+        "key_revoked": "Revoke API key",
+        "webhook_created": "Add webhook",
+        "webhook_deleted": "Delete webhook"
       }
     },
     "reasons": {
@@ -1482,6 +1489,46 @@
       "owner": "Owner",
       "manager": "Manager",
       "member": "Member"
+    }
+  },
+  "integrations": {
+    "tab": "API & Webhooks",
+    "title": "API & Webhooks",
+    "subtitle": "Connect FlyBot to your own systems: read data with an API key, and receive alerts as they happen with a webhook. Full guide: API.md in the FlyBot repository.",
+    "never": "never",
+    "showOnce": "Copy it now: it will not be shown again.",
+    "copy": "Copy",
+    "copied": "Copied.",
+    "done": "Done",
+    "keys": {
+      "title": "API keys",
+      "desc": "Read-only access to the cameras, counts and alerts you can see, at /api/v1. Keep keys secret; revoke one you no longer use.",
+      "create": "Create key",
+      "empty": "No API keys.",
+      "namePrompt": "What is this key for? (for example \"ERP sync\")",
+      "nameRequired": "Please enter a name",
+      "created": "Your new API key",
+      "example": "Try it:",
+      "lastUsed": "last used: {time}",
+      "revoke": "Revoke",
+      "revokeConfirm": "Revoke the key \"{name}\"? Anything using it stops working right away."
+    },
+    "hooks": {
+      "title": "Webhooks",
+      "desc": "FlyBot sends a signed HTTPS POST to your address for each alert you choose.",
+      "events": "Events",
+      "create": "Add webhook",
+      "empty": "No webhooks.",
+      "created": "Signing secret of the new webhook",
+      "test": "Test",
+      "testOk": "Delivered (HTTP {status}).",
+      "testFailed": "Not delivered: {error}",
+      "delete": "Delete webhook",
+      "deleteConfirm": "Delete the webhook to {url}?",
+      "off": "Off",
+      "lastDelivery": "Last delivery {time}",
+      "noDelivery": "Nothing sent yet.",
+      "docs": "Check the X-FlyBot-Signature header with your secret before trusting a request. After 15 failures in a row a webhook is switched off."
     }
   }
 }

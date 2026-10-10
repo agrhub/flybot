@@ -160,6 +160,8 @@ models.AuditLog.create = async (data) => data;
 
 // SystemSetting: nothing saved, so the environment defaults apply
 models.SystemSetting.findOne = () => query(() => null);
+// No webhooks in the stub store
+models.Webhook.find = () => query(() => []);
 
 // AuthToken
 models.AuthToken.deleteMany = async ({ userId, type }) => {

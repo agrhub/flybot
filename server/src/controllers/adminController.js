@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { User, Camera, Session, Notification, AuthToken, Dashboard, AuditLog, PushSubscription, Farm, Plot, Organization } = require('../models');
+const { User, Camera, Session, Notification, AuthToken, Dashboard, AuditLog, PushSubscription, Farm, Plot, Organization, ApiKey, Webhook } = require('../models');
 const { ROLES, roleOf } = require('../constants/roles');
 const { sendServerError } = require('../utils/http');
 const { recordAudit, AUDIT_ACTIONS, CATEGORIES } = require('../services/auditService');
@@ -158,7 +158,9 @@ async function deleteUser(req, res) {
             Session.deleteMany({ userId: target._id }),
             Notification.deleteMany({ userId: target._id }),
             AuthToken.deleteMany({ userId: target._id }),
-            PushSubscription.deleteMany({ userId: target._id })
+            PushSubscription.deleteMany({ userId: target._id }),
+            ApiKey.deleteMany({ userId: target._id }),
+            Webhook.deleteMany({ userId: target._id })
         ]);
         // Their farms go too (they own no cameras any more, so the plots are empty)
         const ownedFarms = await Farm.find({ ownerId: target._id }).select('_id').lean();

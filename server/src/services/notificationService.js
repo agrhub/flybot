@@ -99,6 +99,8 @@ async function notifyUser({ userId, type, deviceSerial = '', params = {} }) {
     });
 
     sseHub.sendToUser(userId, 'notification', toClient(notification));
+    // The user's webhooks (in the background; delivery has its own retries)
+    require('./webhookService').dispatch(userId, notification).catch(err => console.warn('⚠️ Webhook dispatch failed:', err.message));
 
     const needsUser = EMAIL_TYPES.has(type) || (PUSH_TYPES.has(type) && pushService.isEnabled());
     const user = needsUser ? await User.findById(userId) : null;

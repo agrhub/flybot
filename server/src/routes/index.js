@@ -15,6 +15,8 @@ const pushRoutes = require('./pushRoutes');
 const treatmentRoutes = require('./treatmentRoutes');
 const farmRoutes = require('./farmRoutes');
 const orgRoutes = require('./orgRoutes');
+const integrationRoutes = require('./integrationRoutes');
+const publicApiRoutes = require('./publicApiRoutes');
 
 // S3 image stream route must be mounted before generic /api route
 router.use('/api/s3', s3Routes);
@@ -29,6 +31,8 @@ router.use('/api/push', pushRoutes);
 router.use('/api/treatments', treatmentRoutes);
 router.use('/api/farms', farmRoutes);
 router.use('/api/orgs', orgRoutes);
+router.use('/api/integrations', integrationRoutes);
+router.use('/api/v1', publicApiRoutes);
 // Public (no sign-in) read-only views
 router.use('/api/public', publicRoutes);
 router.use('/api', cameraRoutes);

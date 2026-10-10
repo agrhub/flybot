@@ -250,6 +250,31 @@ export default {
   deleteMaintenance(id) {
     return apiClient.delete(`/user/camera/maintenance/${id}`);
   },
+  // API keys and webhooks
+  listApiKeys() {
+    return apiClient.get('/integrations/keys');
+  },
+  createApiKey(data) {
+    return apiClient.post('/integrations/keys', data);
+  },
+  revokeApiKey(id) {
+    return apiClient.delete(`/integrations/keys/${id}`);
+  },
+  listWebhooks() {
+    return apiClient.get('/integrations/webhooks');
+  },
+  createWebhook(data) {
+    return apiClient.post('/integrations/webhooks', data);
+  },
+  updateWebhook(id, data) {
+    return apiClient.put(`/integrations/webhooks/${id}`, data);
+  },
+  deleteWebhook(id) {
+    return apiClient.delete(`/integrations/webhooks/${id}`);
+  },
+  testWebhook(id) {
+    return apiClient.post(`/integrations/webhooks/${id}/test`);
+  },
   // Organizations
   listOrgs() {
     return apiClient.get('/orgs');

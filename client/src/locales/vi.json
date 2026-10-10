@@ -1154,7 +1154,8 @@
       "settings": "Cài đặt hệ thống",
       "treatment": "Xử lý dịch hại",
       "farm": "Vườn",
-      "org": "Tổ chức"
+      "org": "Tổ chức",
+      "integration": "API & webhook"
     },
     "actions": {
       "auth": {
@@ -1210,6 +1211,12 @@
         "member_updated": "Đổi vai trò thành viên",
         "member_removed": "Gỡ thành viên",
         "cameras_changed": "Chuyển camera"
+      },
+      "integration": {
+        "key_created": "Tạo API key",
+        "key_revoked": "Thu hồi API key",
+        "webhook_created": "Thêm webhook",
+        "webhook_deleted": "Xoá webhook"
       }
     },
     "reasons": {
@@ -1482,6 +1489,46 @@
       "owner": "Chủ sở hữu",
       "manager": "Quản lý",
       "member": "Thành viên"
+    }
+  },
+  "integrations": {
+    "tab": "API & Webhook",
+    "title": "API & Webhook",
+    "subtitle": "Kết nối FlyBot với hệ thống của bạn: đọc dữ liệu bằng API key, và nhận cảnh báo ngay khi xảy ra qua webhook. Hướng dẫn đầy đủ: API.md trong mã nguồn FlyBot.",
+    "never": "chưa dùng",
+    "showOnce": "Hãy sao chép ngay: sẽ không hiện lại lần nữa.",
+    "copy": "Sao chép",
+    "copied": "Đã sao chép.",
+    "done": "Xong",
+    "keys": {
+      "title": "API key",
+      "desc": "Quyền chỉ đọc các camera, số đếm và cảnh báo mà bạn xem được, tại /api/v1. Giữ bí mật key; thu hồi key không còn dùng.",
+      "create": "Tạo key",
+      "empty": "Chưa có API key.",
+      "namePrompt": "Key này dùng cho việc gì? (ví dụ \"Đồng bộ ERP\")",
+      "nameRequired": "Vui lòng nhập tên",
+      "created": "API key mới của bạn",
+      "example": "Thử ngay:",
+      "lastUsed": "lần dùng gần nhất: {time}",
+      "revoke": "Thu hồi",
+      "revokeConfirm": "Thu hồi key \"{name}\"? Mọi thứ đang dùng key này sẽ ngừng hoạt động ngay."
+    },
+    "hooks": {
+      "title": "Webhook",
+      "desc": "FlyBot gửi một yêu cầu HTTPS POST có chữ ký tới địa chỉ của bạn cho mỗi cảnh báo bạn chọn.",
+      "events": "Sự kiện",
+      "create": "Thêm webhook",
+      "empty": "Chưa có webhook.",
+      "created": "Khóa ký (secret) của webhook mới",
+      "test": "Thử",
+      "testOk": "Gửi thành công (HTTP {status}).",
+      "testFailed": "Gửi không được: {error}",
+      "delete": "Xoá webhook",
+      "deleteConfirm": "Xoá webhook tới {url}?",
+      "off": "Đang tắt",
+      "lastDelivery": "Lần gửi gần nhất {time}",
+      "noDelivery": "Chưa gửi lần nào.",
+      "docs": "Hãy kiểm tra header X-FlyBot-Signature bằng secret trước khi tin một yêu cầu. Sau 15 lần gửi lỗi liên tiếp, webhook sẽ tự tắt."
     }
   }
 }

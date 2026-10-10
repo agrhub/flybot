@@ -14,6 +14,8 @@ const Treatment = require('./Treatment');
 const Farm = require('./Farm');
 const Plot = require('./Plot');
 const Organization = require('./Organization');
+const ApiKey = require('./ApiKey');
+const Webhook = require('./Webhook');
 
 module.exports = {
     User,
@@ -31,5 +33,7 @@ module.exports = {
     Treatment,
     Farm,
     Plot,
-    Organization
+    Organization,
+    ApiKey,
+    Webhook
 };

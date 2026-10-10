@@ -38,7 +38,11 @@ const AUDIT_ACTIONS = [
     'org.member_added',
     'org.member_updated',
     'org.member_removed',
-    'org.cameras_changed'
+    'org.cameras_changed',
+    'integration.key_created',
+    'integration.key_revoked',
+    'integration.webhook_created',
+    'integration.webhook_deleted'
 ];
 const CATEGORIES = [...new Set(AUDIT_ACTIONS.map(a => a.split('.')[0]))];
 
