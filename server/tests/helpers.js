@@ -74,6 +74,7 @@ function resetStore() {
     store.authTokens = [];
     store.notifications = [];
     store.sessions = [];
+    store.dailyStats = [];
     sentMails.length = 0;
 }
 resetStore();
@@ -143,6 +144,9 @@ models.Camera.updateMany = async (filter, update) => {
 
 // Snapshot
 models.Snapshot.find = () => query(() => []);
+
+// DailyStat: rows set by the test in store.dailyStats
+models.DailyStat.find = () => query(() => store.dailyStats || []);
 
 // AuditLog: entries are not stored in the stub store
 models.AuditLog.create = async (data) => data;

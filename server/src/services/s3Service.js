@@ -50,6 +50,10 @@ async function cleanupOldData() {
     cutoffDate.setMonth(cutoffDate.getMonth() - retentionMonths);
 
     try {
+        const { DailyStat } = require('../models');
+        const { dayKeyOf } = require('./dailyStats');
+        await DailyStat.deleteMany({ day: { $lt: dayKeyOf(cutoffDate) } });
+
         let oldRecords = [];
         do {
             oldRecords = await Snapshot.find({

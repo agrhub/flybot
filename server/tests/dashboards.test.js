@@ -1,6 +1,7 @@
 const { test, before, after, beforeEach } = require('node:test');
 const assert = require('node:assert/strict');
 const { models, sentMails, startDb, stopDb, clearDb, request, createUser, createCamera, json } = require('./dbHelpers');
+const dailyStats = require('../src/services/dailyStats');
 
 before(startDb);
 after(stopDb);
@@ -8,9 +9,10 @@ beforeEach(clearDb);
 
 const HOUR = 60 * 60 * 1000;
 
-function snapshot(deviceSerial, summary, hoursAgo = 1) {
+// Stored as the AI pipeline does: snapshot first, then that day's rollup
+async function snapshot(deviceSerial, summary, hoursAgo = 1) {
     const createdAt = new Date(Date.now() - hoursAgo * HOUR);
-    return models.Snapshot.create({
+    const doc = await models.Snapshot.create({
         deviceSerial,
         imageUrl: 'x',
         s3Key: `snapshots/${deviceSerial}/${deviceSerial}_${createdAt.getTime()}.jpg`,
@@ -18,6 +20,8 @@ function snapshot(deviceSerial, summary, hoursAgo = 1) {
         aiProcessed: true,
         aiResults: { detected: true, summary }
     });
+    await dailyStats.refreshForSnapshot(doc);
+    return doc;
 }
 
 const ALL_WIDGETS = [

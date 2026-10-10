@@ -1,5 +1,6 @@
 const { Snapshot } = require('../../models');
 const { viewableCameras } = require('../../utils/ownership');
+const dailyStats = require('../../services/dailyStats');
 
 const getInsectStatisticsDeclaration = {
     name: 'get_insect_statistics',
@@ -53,6 +54,14 @@ async function executeGetInsectStatistics({ deviceSerial, mode = 'day', userId, 
             matchQuery.deviceSerial = { $in: allowedSerials };
         } else if (userId) {
             return { mode, deviceSerial: 'all', periodsCount: 0, records: [] };
+        }
+
+        if (mode !== 'hour') {
+            const serials = typeof matchQuery.deviceSerial === 'string' ? [matchQuery.deviceSerial] : matchQuery.deviceSerial.$in;
+            const rollup = await dailyStats.rows(serials, dailyStats.dayKeyOf(startDate));
+            const records = dailyStats.speciesSeries(rollup, mode === 'month' ? 'month' : 'day')
+                .map(p => ({ _id: p._id, insects: p.insects }));
+            return { mode, deviceSerial: deviceSerial || 'all', periodsCount: records.length, records };
         }
 
         const data = await Snapshot.aggregate([
@@ -147,7 +156,7 @@ async function executeGetRecentSnapshots({ deviceSerial, limit = 6, userId, user
 
 const getOverviewMetricsDeclaration = {
     name: 'get_overview_metrics',
-    description: 'Retrieve real-time overview metrics of the FlyBot system: total insects, total snapshots, last 24h count, and top species.',
+    description: 'Retrieve overview metrics of the FlyBot system: total snapshots, last 24h count, and insects and top species over the last 30 days.',
     parameters: {
         type: 'OBJECT',
         properties: {}
@@ -174,13 +183,8 @@ async function executeGetOverviewMetrics({ userId, user }) {
             createdAt: { $gte: last24h }
         });
 
-        const speciesAgg = await Snapshot.aggregate([
-            { $match: baseMatch },
-            { $project: { summaryArray: { $objectToArray: "$aiResults.summary" } } },
-            { $unwind: "$summaryArray" },
-            { $group: { _id: "$summaryArray.k", total: { $sum: "$summaryArray.v" } } },
-            { $sort: { total: -1 } }
-        ]);
+        const rollup = await dailyStats.rows(allowedSerials, dailyStats.startKeyForDays(30));
+        const speciesAgg = dailyStats.speciesTotals(rollup, 'total').map(sp => ({ _id: sp.name, total: sp.value }));
 
         let totalInsects = 0;
         speciesAgg.forEach(s => totalInsects += s.total);
@@ -190,6 +194,7 @@ async function executeGetOverviewMetrics({ userId, user }) {
             last24hCount,
             totalInsects,
             topSpecies: speciesAgg.length > 0 ? speciesAgg[0]._id : 'Unknown',
+            speciesPeriod: 'last 30 days',
             speciesDistribution: speciesAgg.map(s => ({ species: s._id, count: s.total }))
         };
     } catch (err) {

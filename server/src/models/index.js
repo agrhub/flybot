@@ -8,6 +8,7 @@ const SystemSetting = require('./SystemSetting');
 const Dashboard = require('./Dashboard');
 const AuditLog = require('./AuditLog');
 const PushSubscription = require('./PushSubscription');
+const DailyStat = require('./DailyStat');
 
 module.exports = {
     User,
@@ -19,5 +20,6 @@ module.exports = {
     SystemSetting,
     Dashboard,
     AuditLog,
-    PushSubscription
+    PushSubscription,
+    DailyStat
 };

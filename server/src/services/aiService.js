@@ -1,6 +1,7 @@
 const axios = require('axios');
 const { GoogleGenAI } = require('@google/genai');
 const { Snapshot } = require('../models');
+const dailyStats = require('./dailyStats');
 const { FRUIT_FLY, isFruitFly } = require('../constants/species');
 const {
     VERTEX_PROJECT_ID,
@@ -136,7 +137,7 @@ MANDATORY COORDINATE RULES:
                     };
                 });
 
-                await Snapshot.findByIdAndUpdate(snapshotId, {
+                const vertexSnap = await Snapshot.findByIdAndUpdate(snapshotId, {
                     aiProcessed: true,
                     aiProvider: 'vertex',
                     aiResults: {
@@ -146,6 +147,7 @@ MANDATORY COORDINATE RULES:
                         raw_description: aiData.description
                     }
                 });
+                await dailyStats.refreshForSnapshot(vertexSnap);
                 console.log(`🤖 Vertex AI (${VERTEX_MODEL}) processed snapshot ${snapshotId}: ${aiData.detected ? 'Found ' + formattedInsects.length + ' objects' : 'No insects detected'} (image: ${imgWidth}x${imgHeight})`);
                 return;
             }
@@ -208,7 +210,7 @@ async function analyzeInsectsRoboflow(base64Image, snapshotId, imageUrl = null) 
                 const summary = { [FRUIT_FLY]: count };
                 const desc = `Roboflow detected ${count} insect(s).`;
 
-                await Snapshot.findByIdAndUpdate(snapshotId, {
+                const roboflowSnap = await Snapshot.findByIdAndUpdate(snapshotId, {
                     aiProcessed: true,
                     aiProvider: 'roboflow',
                     aiResults: {
@@ -219,6 +221,7 @@ async function analyzeInsectsRoboflow(base64Image, snapshotId, imageUrl = null) 
                     }
                 });
 
+                await dailyStats.refreshForSnapshot(roboflowSnap);
                 console.log(`🤖 Roboflow Workflow processed snapshot ${snapshotId}: ${count > 0 ? 'Found ' + count + ' objects' : 'No insects detected'}`);
                 return;
             }

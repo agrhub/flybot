@@ -5,11 +5,12 @@ const aiService = require('../services/aiService');
 const s3Service = require('../services/s3Service');
 const { sendServerError } = require('../utils/http');
 const { viewableCameras, canManageSerial } = require('../utils/ownership');
-const { FRUIT_FLY, NON_PEST_LABELS, normalizeSpeciesExpr, pestCountExpr, isFruitFly } = require('../constants/species');
+const { FRUIT_FLY, NON_PEST_LABELS, normalizeSpeciesExpr, isFruitFly } = require('../constants/species');
 const { thresholdOf, riskLevel, worstRisk } = require('../constants/risk');
 const { countPests } = require('../services/notificationService');
 const forecastService = require('../services/forecastService');
 const { latestProcessedByCamera } = require('../services/snapshotQueries');
+const dailyStats = require('../services/dailyStats');
 const weatherService = require('../services/weatherService');
 
 /**
@@ -155,6 +156,21 @@ async function computePeriodStats(matchFilter) {
 }
 
 /**
+ * Min/Max/Avg per scan and scan count from daily rollup rows (same shape as computePeriodStats)
+ */
+function rollupPeriodStats(rows) {
+    const scans = rows.reduce((sum, r) => sum + r.scans, 0);
+    if (!scans) return { min: 0, max: 0, avg: 0, totalScans: 0 };
+    const total = rows.reduce((sum, r) => sum + r.total, 0);
+    return {
+        min: rows.reduce((min, r) => Math.min(min, r.min), Infinity),
+        max: rows.reduce((max, r) => Math.max(max, r.peak), 0),
+        avg: Math.round((total / scans) * 10) / 10,
+        totalScans: scans
+    };
+}
+
+/**
  * Insect statistics grouped by time interval (hour, day, month) or custom date range
  */
 async function getAiStatistics(req, res) {
@@ -246,6 +262,18 @@ async function getAiStatistics(req, res) {
             matchQuery.deviceSerial = deviceSerial;
         } else {
             matchQuery.deviceSerial = { $in: allowedSerials };
+        }
+
+        // Daily and monthly charts come from the daily rollup; hourly (at most 7 days) from snapshots
+        if (mode !== 'hour') {
+            const serials = typeof matchQuery.deviceSerial === 'string' ? [matchQuery.deviceSerial] : matchQuery.deviceSerial.$in;
+            const rollup = await dailyStats.rows(serials, dailyStats.dayKeyOf(startDate), endDate ? dailyStats.dayKeyOf(endDate) : null);
+            return res.json({
+                success: true,
+                mode: mode || 'day',
+                deviceSerial: deviceSerial || 'all',
+                data: dailyStats.speciesSeries(rollup, mode === 'month' ? 'month' : 'day')
+            });
         }
 
         const data = await Snapshot.aggregate([
@@ -454,14 +482,15 @@ async function getAiOverview(req, res) {
         // 2. Real historical stats (Min, Max, Avg, totalScans) for Day (24h), Week (7d), Month (30d)
         const now = Date.now();
         const last24h = new Date(now - 24 * 60 * 60 * 1000);
-        const last7d = new Date(now - 7 * 24 * 60 * 60 * 1000);
-        const last30d = new Date(now - 30 * 24 * 60 * 60 * 1000);
 
-        const [statsDay, statsWeek, statsMonth] = await Promise.all([
+        // Last 24 h from snapshots (rolling window); 7 and 30 days from the daily rollup
+        const [statsDay, rollup30] = await Promise.all([
             computePeriodStats({ ...matchQuery, createdAt: { $gte: last24h } }),
-            computePeriodStats({ ...matchQuery, createdAt: { $gte: last7d } }),
-            computePeriodStats({ ...matchQuery, createdAt: { $gte: last30d } })
+            dailyStats.rows(cameraSerials, dailyStats.startKeyForDays(30))
         ]);
+        const rollup7 = rollup30.filter(r => r.day >= dailyStats.startKeyForDays(7));
+        const statsWeek = rollupPeriodStats(rollup7);
+        const statsMonth = rollupPeriodStats(rollup30);
 
         // 3. Total processed snapshots & 24h count
         const totalSnapshots = await Snapshot.countDocuments(matchQuery);
@@ -470,28 +499,8 @@ async function getAiOverview(req, res) {
             createdAt: { $gte: last24h }
         });
 
-        // 4. Species breakdown (last 30 days: an all-time scan grows with retention)
-        const speciesAgg = await Snapshot.aggregate([
-            { $match: { ...matchQuery, createdAt: { $gte: last30d } } },
-            {
-                $project: {
-                    summaryArray: { $objectToArray: "$aiResults.summary" }
-                }
-            },
-            { $unwind: "$summaryArray" },
-            {
-                $addFields: {
-                    normalizedName: normalizeSpeciesExpr("$summaryArray.k")
-                }
-            },
-            {
-                $group: {
-                    _id: "$normalizedName",
-                    total: { $sum: "$summaryArray.v" }
-                }
-            },
-            { $sort: { total: -1 } }
-        ]);
+        // 4. Species breakdown over the last 30 days
+        const speciesAgg = dailyStats.speciesTotals(rollup30, 'total').map(sp => ({ _id: sp.name, total: sp.value }));
 
         let allTimeSum = 0;
         const speciesSummary = {};
@@ -504,29 +513,13 @@ async function getAiOverview(req, res) {
             ? `${speciesAgg[0]._id} (${Math.round((speciesAgg[0].total / (allTimeSum || 1)) * 100)}%)`
             : '--';
 
-        // 5. Past 7-day trend
-        const trendAgg = await Snapshot.aggregate([
-            {
-                $match: {
-                    ...matchQuery,
-                    createdAt: { $gte: last7d }
-                }
-            },
-            {
-                $project: {
-                    date: { $dateToString: { format: "%d/%m", date: "$createdAt", timezone: "Asia/Ho_Chi_Minh" } },
-                    summaryArray: { $objectToArray: "$aiResults.summary" }
-                }
-            },
-            { $unwind: "$summaryArray" },
-            {
-                $group: {
-                    _id: "$date",
-                    count: { $sum: "$summaryArray.v" }
-                }
-            },
-            { $sort: { _id: 1 } }
-        ]);
+        // 5. Past 7-day trend: insects counted per day (all scans, all cameras)
+        const trendByDay = new Map();
+        for (const r of rollup7) trendByDay.set(r.day, (trendByDay.get(r.day) || 0) + r.total);
+        const trendAgg = [...trendByDay.keys()].sort().map(day => {
+            const [, m, d] = day.split('-');
+            return { _id: `${d}/${m}`, count: trendByDay.get(day) };
+        });
 
         // Overall risk index
         // Worst camera, each judged against its own threshold
@@ -563,7 +556,6 @@ const TIMEZONE = 'Asia/Ho_Chi_Minh';
 const HISTORY_DAYS = 14;
 const FORECAST_DAYS = 7;
 
-const PEST_COUNT_EXPR = pestCountExpr();
 
 const dayKey = (date) => new Intl.DateTimeFormat('en-CA', { timeZone: TIMEZONE }).format(date); // YYYY-MM-DD
 const dayLabel = (date) => new Intl.DateTimeFormat('en-GB', { timeZone: TIMEZONE, day: '2-digit', month: '2-digit' }).format(date); // DD/MM
@@ -654,24 +646,15 @@ async function getAiDiagnosis(req, res) {
         const now = new Date();
         const windowKeys = [];
         for (let i = HISTORY_DAYS - 1; i >= 0; i--) windowKeys.push(dayKey(new Date(now.getTime() - i * 86400000)));
-        const windowStart = new Date(now.getTime() - HISTORY_DAYS * 86400000);
 
-        const [daily, species] = await Promise.all([
-            Snapshot.aggregate([
-                { $match: { deviceSerial: { $in: serials }, aiProcessed: true, createdAt: { $gte: windowStart } } },
-                { $project: { day: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt', timezone: TIMEZONE } }, count: PEST_COUNT_EXPR } },
-                { $group: { _id: '$day', peak: { $max: '$count' } } }
-            ]),
-            Snapshot.aggregate([
-                { $match: { deviceSerial: { $in: serials }, aiProcessed: true, createdAt: { $gte: windowStart } } },
-                { $project: { summaryArray: { $objectToArray: { $ifNull: ['$aiResults.summary', {}] } } } },
-                { $unwind: '$summaryArray' },
-                { $match: { 'summaryArray.k': { $nin: NON_PEST_LABELS } } },
-                { $group: { _id: normalizeSpeciesExpr('$summaryArray.k'), total: { $sum: '$summaryArray.v' } } },
-                { $sort: { total: -1 } },
-                { $limit: 1 }
-            ])
-        ]);
+        // Highest single-trap count per day, and the most counted species, over the window
+        const history = await dailyStats.rows(serials, windowKeys[0]);
+        const peakByDay = new Map();
+        for (const r of history) peakByDay.set(r.day, Math.max(peakByDay.get(r.day) || 0, r.peak));
+        const daily = [...peakByDay.entries()].map(([day, peak]) => ({ _id: day, peak }));
+        const species = dailyStats.speciesTotals(history, 'total')
+            .filter(sp => sp.value > 0)
+            .map(sp => ({ _id: sp.name, total: sp.value }));
 
         const points = daily
             .map(d => ({ dayIndex: windowKeys.indexOf(d._id), value: d.peak || 0 }))
@@ -802,6 +785,7 @@ async function reviewSnapshot(req, res) {
             reviewedAt: new Date()
         });
         await snap.save();
+        await dailyStats.refreshForSnapshot(snap);
 
         res.json({ success: true, snapshot: snap });
     } catch (err) {
@@ -888,30 +872,13 @@ async function getAiComparison(req, res) {
             });
         }
 
-        const rows = await Snapshot.aggregate([
-            {
-                $match: {
-                    deviceSerial: { $in: cameras.map(c => c.deviceSerial) },
-                    aiProcessed: true,
-                    createdAt: { $gte: previousStart, $lte: now }
-                }
-            },
-            {
-                $project: {
-                    deviceSerial: 1,
-                    isCurrent: { $gte: ['$createdAt', currentStart] },
-                    count: pestCountExpr()
-                }
-            },
-            {
-                $group: {
-                    _id: { serial: '$deviceSerial', isCurrent: '$isCurrent' },
-                    total: { $sum: '$count' },
-                    scans: { $sum: 1 },
-                    peak: { $max: '$count' }
-                }
-            }
-        ]);
+        // Whole local days from the rollup: "last 7 days" = today and the 6 days before it
+        const currentKey = dailyStats.startKeyForDays(days);
+        const rollup = await dailyStats.rows(cameras.map(c => c.deviceSerial), dailyStats.startKeyForDays(2 * days));
+        const rows = [];
+        for (const r of rollup) {
+            rows.push({ _id: { serial: r.deviceSerial, isCurrent: r.day >= currentKey }, total: r.total, scans: r.scans, peak: r.peak });
+        }
 
         const summarize = (list) => {
             const totalInsects = list.reduce((s, r) => s + r.total, 0);

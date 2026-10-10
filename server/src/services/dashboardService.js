@@ -1,11 +1,10 @@
-const { Camera, Snapshot, User } = require('../models');
+const { Camera, User } = require('../models');
 const { isAdmin, roleOf, canBuildDashboards } = require('../constants/roles');
 const { viewFilter } = require('../utils/ownership');
-const { pestCountExpr, normalizeSpeciesExpr, NON_PEST_LABELS } = require('../constants/species');
 const { thresholdOf, riskLevel } = require('../constants/risk');
-const { TIMEZONE } = require('./captureSchedule');
 const { latestProcessedByCamera } = require('./snapshotQueries');
 const { countPests } = require('./notificationService');
+const dailyStats = require('./dailyStats');
 
 /**
  * Dashboard access rules:
@@ -75,25 +74,9 @@ async function effectiveSerials(dashboard, viewer) {
 
 // --- Widget data -----------------------------------------------------------
 
-const DAY_MS = 24 * 60 * 60 * 1000;
-const dayKey = (date) => new Intl.DateTimeFormat('en-CA', { timeZone: TIMEZONE }).format(date); // YYYY-MM-DD
-const sinceDays = (days) => new Date(Date.now() - days * DAY_MS);
-
-const matchScans = (serials, days) => ({
-    $match: { deviceSerial: { $in: serials }, aiProcessed: true, createdAt: { $gte: sinceDays(days) } }
-});
-
-// Sticky traps accumulate insects: per camera per day keep the peak scan, then add cameras up
-const dailyPeakStages = [
-    {
-        $project: {
-            deviceSerial: 1,
-            day: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt', timezone: TIMEZONE } },
-            count: pestCountExpr()
-        }
-    },
-    { $group: { _id: { day: '$day', camera: '$deviceSerial' }, peak: { $max: '$count' }, scans: { $sum: 1 } } }
-];
+// Widgets read the daily rollup (services/dailyStats.js): "last N days" = N local days, today included.
+// Sticky traps accumulate insects, so a camera's day counts with its peak scan; cameras add up.
+const daysRows = (serials, days) => dailyStats.rows(serials, dailyStats.startKeyForDays(days));
 
 // Latest processed snapshot per camera, with its pest count (one DISTINCT_SCAN query)
 async function latestPerCamera(serials) {
@@ -103,7 +86,7 @@ async function latestPerCamera(serials) {
 }
 
 async function kpiData(cameras, serials, days, latest) {
-    const rows = await Snapshot.aggregate([matchScans(serials, days), ...dailyPeakStages]);
+    const rows = await daysRows(serials, days);
     const alertCameras = cameras.filter(c => (latest.get(c.deviceSerial)?.count || 0) >= thresholdOf(c)).length;
     return {
         cameras: cameras.length,
@@ -116,49 +99,36 @@ async function kpiData(cameras, serials, days, latest) {
 }
 
 async function trendData(serials, days) {
-    const rows = await Snapshot.aggregate([
-        matchScans(serials, days),
-        ...dailyPeakStages,
-        { $group: { _id: '$_id.day', value: { $sum: '$peak' } } }
-    ]);
-    const byDay = new Map(rows.map(r => [r._id, r.value]));
+    const rows = await daysRows(serials, days);
+    const byDay = new Map();
+    for (const r of rows) byDay.set(r.day, (byDay.get(r.day) || 0) + r.peak);
     // Every day of the window, so gaps show as zero
     const points = [];
     for (let i = days - 1; i >= 0; i--) {
-        const date = dayKey(new Date(Date.now() - i * DAY_MS));
+        const date = dailyStats.dayKeyOf(Date.now() - i * dailyStats.DAY_MS);
         points.push({ date, value: byDay.get(date) || 0 });
     }
     return { points };
 }
 
 async function speciesData(serials, days) {
-    const rows = await Snapshot.aggregate([
-        matchScans(serials, days),
-        {
-            $project: {
-                deviceSerial: 1,
-                day: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt', timezone: TIMEZONE } },
-                entries: { $objectToArray: { $ifNull: ['$aiResults.summary', {}] } }
-            }
-        },
-        { $unwind: '$entries' },
-        { $addFields: { species: normalizeSpeciesExpr('$entries.k') } },
-        { $match: { species: { $nin: NON_PEST_LABELS } } },
-        { $group: { _id: { day: '$day', camera: '$deviceSerial', species: '$species' }, peak: { $max: { $ifNull: ['$entries.v', 0] } } } },
-        { $group: { _id: '$_id.species', value: { $sum: '$peak' } } },
-        { $match: { value: { $gt: 0 } } },
-        { $sort: { value: -1 } }
-    ]);
-    return { species: rows.map(r => ({ label: r._id, value: r.value })) };
+    const rows = await daysRows(serials, days);
+    return {
+        species: dailyStats.speciesTotals(rows, 'peak')
+            .filter(sp => sp.value > 0)
+            .map(sp => ({ label: sp.name, value: sp.value }))
+    };
 }
 
 async function cameraRankingData(cameras, serials, days, latest) {
-    const rows = await Snapshot.aggregate([
-        matchScans(serials, days),
-        ...dailyPeakStages,
-        { $group: { _id: '$_id.camera', total: { $sum: '$peak' }, peak: { $max: '$peak' } } }
-    ]);
-    const byCamera = new Map(rows.map(r => [r._id, r]));
+    const rows = await daysRows(serials, days);
+    const byCamera = new Map();
+    for (const r of rows) {
+        const entry = byCamera.get(r.deviceSerial) || { total: 0, peak: 0 };
+        entry.total += r.peak;
+        entry.peak = Math.max(entry.peak, r.peak);
+        byCamera.set(r.deviceSerial, entry);
+    }
     const ranking = cameras.map(c => {
         const latestCount = latest.get(c.deviceSerial)?.count || 0;
         return {

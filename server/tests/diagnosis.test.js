@@ -76,7 +76,6 @@ function stubSnapshots({ latestCount, dailyPeaks, topSpecies = 'fruit_fly' }) {
         };
         return q;
     };
-    let call = 0;
     models.Snapshot.aggregate = async (pipeline) => {
         // "Latest processed snapshot per camera" (services/snapshotQueries.js)
         if (pipeline.some(stage => stage.$group?.summary)) {
@@ -84,17 +83,19 @@ function stubSnapshots({ latestCount, dailyPeaks, topSpecies = 'fruit_fly' }) {
             const serials = pipeline[0].$match.deviceSerial.$in;
             return serials.map(serial => ({ _id: serial, createdAt: new Date(), summary: { fruit_fly: latestCount, person: 3 } }));
         }
-        call++;
-        if (call % 2 === 1) {
-            // Daily peaks: last N days ending today
-            const fmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
-            return dailyPeaks.map((peak, i) => ({
-                _id: fmt.format(new Date(Date.now() - (dailyPeaks.length - 1 - i) * 86400000)),
-                peak
-            }));
-        }
-        return topSpecies ? [{ _id: topSpecies, total: 42 }] : [];
+        return [];
     };
+    // Daily rollup: last N days ending today
+    const fmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
+    store.dailyStats = dailyPeaks.map((peak, i) => ({
+        deviceSerial: 'CAMA',
+        day: fmt.format(new Date(Date.now() - (dailyPeaks.length - 1 - i) * 86400000)),
+        scans: 3,
+        total: peak,
+        peak,
+        min: 0,
+        species: topSpecies ? [{ name: topSpecies, peak, total: 42 }] : []
+    }));
 }
 
 test('diagnosis uses the camera threshold, real counts and no placeholder numbers', async () => {
@@ -142,10 +143,14 @@ test('high risk triggers the full plan', async () => {
 
 test('comparison: period totals, % change and per-camera ranking', async () => {
     store.cameras.push({ userId: ALICE, deviceSerial: 'CAMB', deviceName: 'Lot B', alertThreshold: 10 });
-    models.Snapshot.aggregate = async () => [
-        { _id: { serial: 'CAMA', isCurrent: true }, total: 60, scans: 20, peak: 9 },
-        { _id: { serial: 'CAMA', isCurrent: false }, total: 40, scans: 20, peak: 6 },
-        { _id: { serial: 'CAMB', isCurrent: true }, total: 90, scans: 10, peak: 14 }
+    // Daily rollup: today is in the current week, 9 days ago in the previous one
+    const fmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
+    const today = fmt.format(new Date());
+    const lastWeek = fmt.format(new Date(Date.now() - 9 * 86400000));
+    store.dailyStats = [
+        { deviceSerial: 'CAMA', day: today, total: 60, scans: 20, peak: 9, min: 0, species: [] },
+        { deviceSerial: 'CAMA', day: lastWeek, total: 40, scans: 20, peak: 6, min: 0, species: [] },
+        { deviceSerial: 'CAMB', day: today, total: 90, scans: 10, peak: 14, min: 0, species: [] }
     ];
     const res = await app.request('/api/ai/comparison?days=7', { headers: bearer(ALICE) });
     assert.equal(res.status, 200);

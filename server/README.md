@@ -48,6 +48,12 @@ node scripts/merge_duplicate_cameras.js          # preview
 node scripts/merge_duplicate_cameras.js --apply  # merge and build the index
 ```
 
+## Daily statistics
+Charts over days, weeks and months (Statistics, dashboards, comparison, diagnosis, the assistant) read a per-camera daily summary (`DailyStat`) instead of every snapshot. It is updated whenever a scan is analyzed or a result is corrected, and built from the existing history in the background the first time the server starts with background jobs on. Hourly charts (up to 7 days) still read snapshots. To rebuild it by hand (for example after restoring snapshots from a backup):
+```bash
+node scripts/rebuild_daily_stats.js
+```
+
 ## Activity log
 Sign-ins (including failed ones), password changes, account changes, camera and dashboard sharing, ownership transfers and system settings changes are recorded with the actor, IP and time. Admins see them in Settings → Activity log and can export CSV. Entries expire after 12 months (MongoDB TTL index). Verification codes and passwords are never recorded.
 

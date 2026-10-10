@@ -161,6 +161,8 @@ async function startServer() {
 
         // 4. Start periodic cron jobs
         startCronJobs();
+        // First start after the daily statistics were added: build them from history
+        require('./services/dailyStats').backfillIfEmpty();
 
         // 5. Telegram bot (one consumer per bot, so only on the background-jobs instance)
         telegramService.startPolling();
