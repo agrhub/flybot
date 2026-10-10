@@ -88,10 +88,15 @@ app.use((err, req, res, next) => {
 });
 
 // Process safeguards
+// After an uncaught exception the process state is undefined, so log and exit;
+// run under a process manager (pm2, systemd, Docker restart policy) to restart it.
 process.on('uncaughtException', (err) => {
-    console.error('⚠️ Uncaught Exception:', err.message);
+    console.error('❌ Uncaught Exception, shutting down:', err);
+    process.exit(1);
 });
 
+// Rejections are logged but not fatal: background jobs (status sync, capture) fire-and-forget
+// and a single failed EZVIZ/S3 call should not take the whole server down.
 process.on('unhandledRejection', (reason) => {
     console.error('⚠️ Unhandled Rejection:', reason);
 });
