@@ -1,468 +1,324 @@
 <template>
-  <div class="space-y-7 w-full max-w-7xl mx-auto pb-12 select-none">
-    <!-- Welcome Hero Banner -->
-    <section class="bg-[var(--el-card-bg-color)] border border-[var(--el-border-color)] text-[var(--el-text-color-primary)] rounded-[28px] p-7 md:p-8 relative overflow-hidden shadow-soft">
-      <div class="absolute -right-12 -top-12 w-64 h-64 bg-[var(--primary-green)]/10 blur-[60px] rounded-full pointer-events-none"></div>
-      <div class="relative flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div>
-          <div class="flex items-center gap-2 mb-2">
-            <span class="text-[var(--el-text-color-secondary)] text-xs font-semibold uppercase tracking-wider">
-              {{ t('dashboard.welcome') }} 👋, {{ userName }}
-            </span>
-            <span class="w-1.5 h-1.5 rounded-full bg-[var(--primary-green)] ring-2 ring-[var(--primary-green)]/30"></span>
-          </div>
-          <h2 class="text-xl md:text-2xl lg:text-3xl font-light tracking-tight text-[var(--el-text-color-primary)]">
-            {{ t('dashboard.title') }}
-          </h2>
-        </div>
+  <div class="w-full max-w-7xl mx-auto pb-12 select-none space-y-6">
+    <!-- Page header -->
+    <PageHeader
+      :title="t('dashboard.title')"
+      :subtitle="`${t('dashboard.welcome')}, ${userName}`"
+    />
 
-        <div class="flex flex-wrap items-center gap-6">
-          <div class="text-left md:text-right">
-            <div class="text-2xl md:text-3xl font-extrabold tracking-tight text-[var(--el-text-color-primary)]">
-              {{ onlineCount }}<span class="text-sm font-normal text-[var(--el-text-color-secondary)]">/{{ cameras.length }}</span>
-            </div>
-            <p class="text-[var(--primary-green)] text-xs font-bold mt-0.5">{{ t('dashboard.activeCameras') }}</p>
-          </div>
+    <!-- Key metrics -->
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <!-- Realtime hotspot (peak camera) -->
+      <StatCard
+        :label="t('dashboard.hotspotPeak')"
+        :value="overviewData.peakRealtimeInsects"
+        :unit="t('dashboard.individualsUnit')"
+        :description="overviewData.peakCamera?.deviceName || '--'"
+        :icon="Lightning"
+        type="warning"
+      />
 
-          <div class="h-10 w-[1px] bg-[var(--el-border-color)] hidden sm:block"></div>
+      <!-- Realtime insect total across the orchard -->
+      <StatCard
+        :label="t('dashboard.realtimeTotal')"
+        :value="overviewData.totalRealtimeInsects"
+        :unit="t('dashboard.fruitFlyUnit')"
+        :description="t('dashboard.avgPerTrap', { count: (overviewData.totalRealtimeInsects / (cameras.length || 1)).toFixed(1) })"
+        :icon="DataAnalysis"
+        type="success"
+      />
 
-          <div class="text-left md:text-right">
-            <div class="text-2xl md:text-3xl font-extrabold tracking-tight text-amber-400">
-              {{ overviewData.peakRealtimeInsects }}
-            </div>
-            <p class="text-[var(--el-text-color-secondary)] text-xs font-medium mt-0.5">
-              {{ t('dashboard.hotspotPeak') }}
-            </p>
-          </div>
+      <!-- Cameras online -->
+      <StatCard
+        :label="t('dashboard.activeCameras')"
+        :value="`${onlineCount}/${cameras.length}`"
+        :description="`${cameras.length > 0 ? Math.round((onlineCount / cameras.length) * 100) : 0}% ${t('dashboard.onlinePct')}`"
+        :icon="VideoCamera"
+        type="primary"
+      />
 
-          <div class="h-10 w-[1px] bg-[var(--el-border-color)] hidden sm:block"></div>
-
-          <div class="text-left md:text-right">
-            <div class="text-2xl md:text-3xl font-extrabold tracking-tight text-emerald-400">
-              {{ overviewData.totalRealtimeInsects }}
-            </div>
-            <p class="text-[var(--el-text-color-secondary)] text-xs font-medium mt-0.5">
-              {{ t('dashboard.realtimeTotal') }}
-            </p>
-          </div>
-        </div>
-      </div>
+      <!-- AI outbreak risk index -->
+      <StatCard
+        :label="t('dashboard.riskIndex')"
+        :description="t('dashboard.aiCopilotAgentBadge')"
+        :icon="Warning"
+        :type="riskTagType"
+      >
+        <template #value>
+          <el-tag :type="riskTagType" effect="light" round>{{ riskLabel }}</el-tag>
+        </template>
+      </StatCard>
     </section>
 
-    <!-- Key Metrics Cards (Row 1) -->
-    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-      <!-- Card 1: Realtime hotspot (peak camera) -->
-      <div class="bg-[var(--el-card-bg-color)] border border-[var(--el-border-color)] rounded-3xl p-6 shadow-soft hover:shadow-md transition-all">
-        <div class="flex items-center justify-between mb-4">
-          <span class="text-[var(--el-text-color-secondary)] text-xs font-bold uppercase tracking-wider">
-            {{ t('dashboard.hotspotPeak') }}
-          </span>
-          <div class="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
+    <!-- Realtime density per camera & historical min/max/avg -->
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <!-- Realtime density per camera -->
+      <el-card shadow="never" class="lg:col-span-2">
+        <template #header>
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="min-w-0">
+              <h3 class="section-title">{{ t('dashboard.realtimeByCamera') }}</h3>
+              <p class="section-desc">{{ t('dashboard.realtimeByCameraDesc') }}</p>
+            </div>
+            <el-tag type="danger" effect="plain" round size="small">
+              {{ t('dashboard.alertThreshold') }}
+            </el-tag>
           </div>
-        </div>
-        <div class="text-3xl font-extrabold tracking-tight text-amber-400">
-          {{ overviewData.peakRealtimeInsects }} <span class="text-xs font-normal text-slate-400">{{ t('dashboard.individualsUnit') }}</span>
-        </div>
-        <div class="mt-3 flex items-center gap-1.5 text-xs text-amber-400 font-semibold truncate">
-          <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-          <span class="truncate">{{ overviewData.peakCamera?.deviceName || '--' }}</span>
-        </div>
-      </div>
+        </template>
 
-      <!-- Card 2: Realtime insect total across the orchard -->
-      <div class="bg-[var(--el-card-bg-color)] border border-[var(--el-border-color)] rounded-3xl p-6 shadow-soft hover:shadow-md transition-all">
-        <div class="flex items-center justify-between mb-4">
-          <span class="text-[var(--el-text-color-secondary)] text-xs font-bold uppercase tracking-wider">
-            {{ t('dashboard.realtimeTotal') }}
-          </span>
-          <div class="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
-          </div>
-        </div>
-        <div class="text-3xl font-extrabold tracking-tight text-[var(--el-text-color-primary)]">
-          {{ overviewData.totalRealtimeInsects }} <span class="text-xs font-normal text-slate-400">{{ t('dashboard.fruitFlyUnit') }}</span>
-        </div>
-        <div class="mt-3 flex items-center gap-1.5 text-xs text-[var(--primary-green)] font-semibold">
-          <span>{{ t('dashboard.avgPerTrap', { count: (overviewData.totalRealtimeInsects / (cameras.length || 1)).toFixed(1) }) }}</span>
-        </div>
-      </div>
-
-      <!-- Card 3: Cameras online -->
-      <div class="bg-[var(--el-card-bg-color)] border border-[var(--el-border-color)] rounded-3xl p-6 shadow-soft hover:shadow-md transition-all">
-        <div class="flex items-center justify-between mb-4">
-          <span class="text-[var(--el-text-color-secondary)] text-xs font-bold uppercase tracking-wider">
-            {{ t('dashboard.activeCameras') }}
-          </span>
-          <div class="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-            </svg>
-          </div>
-        </div>
-        <div class="text-3xl font-extrabold tracking-tight text-[var(--el-text-color-primary)]">
-          {{ onlineCount }}/{{ cameras.length }}
-        </div>
-        <div class="mt-3 flex items-center gap-1.5 text-xs text-blue-400 font-semibold">
-          <span class="w-2 h-2 rounded-full bg-blue-400"></span>
-          <span>{{ cameras.length > 0 ? Math.round((onlineCount / cameras.length) * 100) : 0 }}% {{ t('dashboard.onlinePct') }}</span>
-        </div>
-      </div>
-
-      <!-- Card 4: AI outbreak risk index -->
-      <div class="bg-[var(--el-card-bg-color)] border border-[var(--el-border-color)] rounded-3xl p-6 shadow-soft hover:shadow-md transition-all">
-        <div class="flex items-center justify-between mb-4">
-          <span class="text-[var(--el-text-color-secondary)] text-xs font-bold uppercase tracking-wider">
-            {{ t('dashboard.riskIndex') }}
-          </span>
-          <div class="w-8 h-8 rounded-xl bg-red-500/10 text-red-400 flex items-center justify-center">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-          </div>
-        </div>
-        <div class="text-2xl font-extrabold tracking-tight" :class="riskColorClass">
-          {{ riskLabel }}
-        </div>
-        <div class="mt-3 flex items-center gap-1.5 text-xs text-slate-400 font-semibold">
-          <span>AI Gemini Copilot</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- Realtime Column Chart & Historical Min/Max/Avg (Row 2) -->
-    <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <!-- Left (2 cols): Realtime Column Bar Chart per Camera -->
-      <div class="lg:col-span-2 bg-[var(--el-card-bg-color)] border border-[var(--el-border-color)] rounded-3xl p-6 md:p-7 shadow-soft">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-          <div>
-            <h3 class="font-bold text-base text-[var(--el-text-color-primary)]">
-              {{ t('dashboard.realtimeByCamera') }}
-            </h3>
-            <p class="text-xs text-[var(--el-text-color-secondary)] mt-0.5">
-              {{ t('dashboard.realtimeByCameraDesc') }}
-            </p>
-          </div>
-          <div class="flex items-center gap-2 text-xs text-slate-400">
-            <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
-            <span>{{ t('dashboard.alertThreshold') }}</span>
-          </div>
-        </div>
-
-        <!-- Column Chart Bars Visualizer -->
-        <div class="space-y-4 pt-2">
+        <div class="space-y-3">
           <div
             v-for="cam in (overviewData.cameraRealtimeList || [])"
             :key="cam.deviceSerial"
-            @click="emit('select-camera', cam)"
-            class="group p-3.5 rounded-2xl bg-[var(--el-bg-color)] hover:bg-[var(--el-bg-color)]/80 border border-[var(--el-border-color)] transition-all cursor-pointer"
+            @click="selectCameraAndGoToLive(cam)"
+            class="density-item"
           >
-            <div class="flex items-center justify-between text-xs mb-2">
-              <div class="flex items-center gap-2 font-bold text-[var(--el-text-color-primary)]">
-                <span class="w-2 h-2 rounded-full" :class="cam.status ? 'bg-emerald-400' : 'bg-slate-400'"></span>
-                <span class="group-hover:text-[var(--primary-green)] transition-colors">{{ cam.deviceName || cam.deviceSerial }}</span>
-                <span class="text-[10px] text-slate-400 font-mono">({{ cam.deviceSerial }})</span>
+            <div class="flex items-center justify-between gap-3 mb-2">
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="status-dot" :class="cam.status ? 'is-online' : 'is-idle'"></span>
+                <span class="item-name truncate">{{ cam.deviceName || cam.deviceSerial }}</span>
+                <span class="meta-text font-mono truncate">({{ cam.deviceSerial }})</span>
               </div>
-              <div class="font-extrabold text-sm" :class="cam.currentCount >= 16 ? 'text-red-400' : (cam.currentCount >= 5 ? 'text-amber-400' : 'text-emerald-400')">
-                {{ cam.currentCount }} <span class="text-xs font-normal text-slate-400">{{ t('dashboard.insectsShort') }}</span>
+              <div class="shrink-0">
+                <span class="item-count" :class="`is-${densityLevel(cam.currentCount)}`">{{ cam.currentCount }}</span>
+                <span class="meta-text ml-1">{{ t('dashboard.insectsShort') }}</span>
               </div>
             </div>
 
-            <!-- Progress bar representing density -->
-            <div class="h-3 w-full bg-slate-800/40 rounded-full overflow-hidden p-0.5">
-              <div
-                class="h-full rounded-full transition-all duration-700"
-                :class="cam.currentCount >= 16 ? 'bg-gradient-to-r from-amber-500 to-red-500' : (cam.currentCount >= 5 ? 'bg-amber-400' : 'bg-emerald-400')"
-                :style="{ width: `${Math.min(100, Math.max(8, (cam.currentCount / 40) * 100))}%` }"
-              ></div>
-            </div>
+            <el-progress
+              :percentage="Math.min(100, Math.max(8, (cam.currentCount / 40) * 100))"
+              :color="`var(--el-color-${densityLevel(cam.currentCount)})`"
+              :stroke-width="8"
+              :show-text="false"
+            />
 
-            <div class="flex items-center justify-between text-[10px] text-slate-400 mt-1.5">
-              <span>{{ cam.locationAddress || 'Orchard Field' }}</span>
-              <span class="font-semibold" :class="cam.currentCount >= 16 ? 'text-red-400' : (cam.currentCount >= 5 ? 'text-amber-400' : 'text-emerald-400')">
+            <div class="flex items-center justify-between gap-3 mt-2">
+              <span class="meta-text truncate">{{ cam.locationAddress || t('map.noAddress') }}</span>
+              <el-tag :type="densityLevel(cam.currentCount)" effect="light" round size="small">
                 {{ cam.currentCount >= 16 ? t('dashboard.pestHotspot') : (cam.currentCount >= 5 ? t('dashboard.moderateLevel') : t('dashboard.wellControlled')) }}
-              </span>
+              </el-tag>
             </div>
           </div>
 
-          <div v-if="!overviewData.cameraRealtimeList?.length" class="py-12 text-center text-xs text-slate-400 italic">
-            {{ t('dashboard.noRealtimeData') }}
-          </div>
+          <el-empty
+            v-if="!overviewData.cameraRealtimeList?.length"
+            :description="t('dashboard.noRealtimeData')"
+            :image-size="80"
+          />
         </div>
-      </div>
+      </el-card>
 
-      <!-- Right (1 col): Min / Max / Avg Statistics Widget -->
-      <div class="bg-[var(--el-card-bg-color)] border border-[var(--el-border-color)] rounded-3xl p-6 md:p-7 shadow-soft flex flex-col justify-between">
-        <div>
-          <div class="flex items-center justify-between mb-4">
-            <div>
-              <h3 class="font-bold text-base text-[var(--el-text-color-primary)]">
-                {{ t('dashboard.minMaxAvgTitle') }}
-              </h3>
-              <p class="text-[11px] text-[var(--el-text-color-secondary)] mt-0.5">
-                {{ t('dashboard.minMaxAvgDesc') }}
-              </p>
-            </div>
+      <!-- Min / Max / Avg statistics -->
+      <el-card shadow="never" body-class="flex flex-col h-full">
+        <template #header>
+          <h3 class="section-title">{{ t('dashboard.minMaxAvgTitle') }}</h3>
+          <p class="section-desc">{{ t('dashboard.minMaxAvgDesc') }}</p>
+        </template>
+
+        <el-radio-group v-model="selectedPeriod" size="small" class="period-switch mb-4">
+          <el-radio-button v-for="p in periodOptions" :key="p.key" :value="p.key">
+            {{ p.label }}
+          </el-radio-button>
+        </el-radio-group>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="mini-stat">
+            <span class="meta-text">{{ t('dashboard.statMin') }}</span>
+            <div class="mini-stat__value is-success">{{ currentPeriodStats.min }}</div>
+            <span class="meta-text">{{ t('dashboard.individualsPerScan') }}</span>
           </div>
 
-          <!-- Period Toggle Tabs -->
-          <div class="grid grid-cols-3 bg-[var(--el-bg-color)] p-1 rounded-2xl border border-[var(--el-border-color)] mb-6 text-center">
-            <button
-              v-for="p in periodOptions"
-              :key="p.key"
-              @click="selectedPeriod = p.key"
-              class="py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
-              :class="selectedPeriod === p.key
-                ? 'bg-[var(--el-card-bg-color)] text-[var(--primary-green)] shadow-sm'
-                : 'text-[var(--el-text-color-secondary)] hover:text-[var(--el-text-color-primary)]'"
-            >
-              {{ p.label }}
-            </button>
+          <div class="mini-stat">
+            <span class="meta-text">{{ t('dashboard.statMax') }}</span>
+            <div class="mini-stat__value is-danger">{{ currentPeriodStats.max }}</div>
+            <span class="meta-text">{{ t('dashboard.peakRecorded') }}</span>
           </div>
 
-          <!-- Stats Grid -->
-          <div class="grid grid-cols-2 gap-4">
-            <!-- Min Tile -->
-            <div class="bg-[var(--el-bg-color)] p-4 rounded-2xl border border-[var(--el-border-color)]">
-              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                {{ t('dashboard.statMin') }}
-              </span>
-              <div class="text-2xl font-black text-emerald-400 mt-1">
-                {{ currentPeriodStats.min }}
-              </div>
-              <span class="text-[10px] text-slate-400">{{ t('dashboard.individualsPerScan') }}</span>
-            </div>
+          <div class="mini-stat">
+            <span class="meta-text">{{ t('dashboard.statAvg') }}</span>
+            <div class="mini-stat__value is-primary">{{ currentPeriodStats.avg }}</div>
+            <span class="meta-text">{{ t('dashboard.cycleAverage') }}</span>
+          </div>
 
-            <!-- Max Tile -->
-            <div class="bg-[var(--el-bg-color)] p-4 rounded-2xl border border-[var(--el-border-color)]">
-              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                {{ t('dashboard.statMax') }}
-              </span>
-              <div class="text-2xl font-black text-red-400 mt-1">
-                {{ currentPeriodStats.max }}
-              </div>
-              <span class="text-[10px] text-slate-400">{{ t('dashboard.peakRecorded') }}</span>
-            </div>
-
-            <!-- Avg Tile -->
-            <div class="bg-[var(--el-bg-color)] p-4 rounded-2xl border border-[var(--el-border-color)]">
-              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                {{ t('dashboard.statAvg') }}
-              </span>
-              <div class="text-2xl font-black text-blue-400 mt-1">
-                {{ currentPeriodStats.avg }}
-              </div>
-              <span class="text-[10px] text-slate-400">{{ t('dashboard.cycleAverage') }}</span>
-            </div>
-
-            <!-- Scans Tile -->
-            <div class="bg-[var(--el-bg-color)] p-4 rounded-2xl border border-[var(--el-border-color)]">
-              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                {{ t('dashboard.statScans') }}
-              </span>
-              <div class="text-2xl font-black text-[var(--el-text-color-primary)] mt-1">
-                {{ currentPeriodStats.totalScans }}
-              </div>
-              <span class="text-[10px] text-slate-400">{{ t('dashboard.aiProcessedRuns') }}</span>
-            </div>
+          <div class="mini-stat">
+            <span class="meta-text">{{ t('dashboard.statScans') }}</span>
+            <div class="mini-stat__value">{{ currentPeriodStats.totalScans }}</div>
+            <span class="meta-text">{{ t('dashboard.aiProcessedRuns') }}</span>
           </div>
         </div>
 
-        <div class="mt-6 pt-4 border-t border-[var(--el-border-color)]/60 text-[11px] text-slate-400 flex items-center justify-between">
-          <span>{{ t('dashboard.dominantSpeciesLabel') }}</span>
-          <span class="font-bold text-[var(--primary-green)] truncate">{{ formatSpeciesDisplay(overviewData.topSpecies) }}</span>
+        <el-divider class="!my-4" />
+
+        <div class="flex items-center justify-between gap-3">
+          <span class="meta-text">{{ t('dashboard.dominantSpeciesLabel') }}</span>
+          <span class="species-value truncate">{{ formatSpeciesDisplay(overviewData.topSpecies) }}</span>
         </div>
-      </div>
+      </el-card>
     </section>
 
-    <!-- AI Agricultural Copilot: Deep Diagnosis & IPM Recommendations (Row 3, Requirement #5) -->
-    <section class="bg-gradient-to-br from-[var(--el-card-bg-color)] via-[var(--el-card-bg-color)] to-emerald-950/20 border border-[var(--el-border-color)] rounded-[32px] p-6 md:p-8 shadow-soft relative overflow-hidden">
-      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-[var(--el-border-color)]">
-        <div>
-          <div class="flex items-center gap-2 mb-1.5">
-            <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[11px] font-extrabold uppercase border border-emerald-500/20 flex items-center gap-1.5">
-              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
-              {{ t('dashboard.aiCopilotAgentBadge') }}
-            </span>
+    <!-- AI agricultural copilot: deep diagnosis & IPM recommendations -->
+    <el-card shadow="never">
+      <template #header>
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div class="min-w-0">
+            <el-tag type="success" effect="light" round size="small" class="mb-2">
+              <span class="inline-flex items-center gap-1">
+                <el-icon><MagicStick /></el-icon>
+                {{ t('dashboard.aiCopilotAgentBadge') }}
+              </span>
+            </el-tag>
+            <h3 class="section-title">{{ t('dashboard.aiAgentTitle') }}</h3>
+            <p class="section-desc">{{ t('dashboard.aiAgentSubtitle') }}</p>
           </div>
-          <h3 class="font-extrabold text-lg text-[var(--el-text-color-primary)]">
-            {{ t('dashboard.aiAgentTitle') }}
-          </h3>
-          <p class="text-xs text-[var(--el-text-color-secondary)] mt-0.5">
-            {{ t('dashboard.aiAgentSubtitle') }}
-          </p>
+
+          <el-button
+            type="primary"
+            :icon="Cpu"
+            :loading="loadingDiagnosis"
+            :disabled="loadingDiagnosis || cameras.length === 0"
+            @click="runDeepDiagnosis"
+          >
+            {{ loadingDiagnosis ? t('dashboard.runningDiagnosis') : t('dashboard.runDiagnosis') }}
+          </el-button>
         </div>
+      </template>
 
-        <button
-          @click="runDeepDiagnosis"
-          :disabled="loadingDiagnosis || cameras.length === 0"
-          class="flex items-center gap-2 px-4 py-2.5 bg-[var(--primary-green)] hover:bg-emerald-400 text-slate-950 rounded-2xl text-xs font-bold transition-all shadow-md shadow-emerald-500/20 cursor-pointer disabled:opacity-60"
-        >
-          <svg v-if="!loadingDiagnosis" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-          </svg>
-          <div v-else class="w-4 h-4 border-2 border-slate-900 border-t-transparent rounded-full animate-spin"></div>
-          <span>{{ loadingDiagnosis ? t('dashboard.runningDiagnosis') : t('dashboard.runDiagnosis') }}</span>
-        </button>
-      </div>
+      <!-- No cameras: friendly empty prompt instead of fake plans -->
+      <el-empty
+        v-if="cameras.length === 0"
+        :description="t('dashboard.noCamerasCopilotPrompt')"
+        :image-size="80"
+      />
 
-      <!-- If 0 cameras added, display friendly empty prompt instead of fake plans -->
-      <div v-if="cameras.length === 0" class="py-12 text-center text-xs text-slate-400 italic">
-        {{ t('dashboard.noCamerasCopilotPrompt') }}
-      </div>
-
-      <!-- Diagnosis Content Grid -->
-      <div v-else-if="diagnosisResult" class="mt-6 space-y-6">
-        <!-- 7-Day Forecast Trajectory Chart -->
-        <div class="bg-[var(--el-bg-color)]/70 p-5 rounded-2xl border border-[var(--el-border-color)]">
-          <div class="flex items-center justify-between mb-4">
-            <h4 class="font-bold text-xs text-[var(--el-text-color-primary)] flex items-center gap-2">
-              <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-              </svg>
+      <!-- Diagnosis content -->
+      <div v-else-if="diagnosisResult" class="space-y-6">
+        <!-- 7-day forecast trajectory chart -->
+        <div class="panel-inset">
+          <div class="flex items-center justify-between gap-3 mb-2">
+            <h4 class="subsection-title flex items-center gap-2">
+              <el-icon class="is-primary"><TrendCharts /></el-icon>
               <span>{{ t('dashboard.trajectoryTitle') }}</span>
             </h4>
-            <span class="text-[11px] font-semibold text-slate-400">
+            <span class="meta-text">
               {{ t('dashboard.modelConfidence') }} {{ diagnosisResult.forecast?.confidence || '95.8%' }}
             </span>
           </div>
 
-          <!-- Forecast Bars -->
+          <!-- Forecast bars (data visualization) -->
           <div class="grid grid-cols-7 gap-2 h-28 items-end pt-4 pb-1">
             <div
               v-for="(day, i) in (diagnosisResult.forecast?.days || [])"
               :key="i"
-              class="flex flex-col items-center gap-1.5 h-full justify-end group"
+              class="flex flex-col items-center gap-1.5 h-full justify-end"
             >
-              <span class="text-[10px] font-bold text-slate-400 group-hover:text-white transition-colors">
-                {{ day.projectedCount }}
-              </span>
+              <span class="meta-text font-semibold">{{ day.projectedCount }}</span>
               <div
-                class="w-full rounded-t-lg transition-all"
-                :class="day.projectedCount >= 20 ? 'bg-red-500/80' : (day.projectedCount >= 6 ? 'bg-amber-400/80' : 'bg-emerald-400/80')"
-                :style="{ height: `${Math.min(100, Math.max(15, (day.projectedCount / 40) * 100))}%` }"
+                class="forecast-bar w-full"
+                :style="{
+                  height: `${Math.min(100, Math.max(15, (day.projectedCount / 40) * 100))}%`,
+                  backgroundColor: `var(--el-color-${forecastLevel(day.projectedCount)})`
+                }"
               ></div>
-              <span class="text-[10px] font-mono text-slate-400">{{ day.date }}</span>
+              <span class="meta-text font-mono">{{ day.date }}</span>
             </div>
           </div>
         </div>
 
-        <!-- 4 Prescriptive Recommendations Grid -->
+        <!-- Prescriptive recommendations -->
         <div>
-          <h4 class="font-bold text-xs uppercase tracking-wider text-[var(--el-text-color-secondary)] mb-3">
-            {{ t('dashboard.recommendationsTitle') }}
-          </h4>
+          <h4 class="subsection-title mb-3">{{ t('dashboard.recommendationsTitle') }}</h4>
 
-          <div v-if="!diagnosisResult.recommendations?.length" class="py-6 text-center text-xs text-emerald-400 italic bg-[var(--el-bg-color)]/40 rounded-2xl border border-[var(--el-border-color)]">
-            {{ t('dashboard.systemSafePrompt') }}
-          </div>
+          <el-alert
+            v-if="!diagnosisResult.recommendations?.length"
+            type="success"
+            :title="t('dashboard.systemSafePrompt')"
+            :closable="false"
+            show-icon
+          />
 
           <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div
+            <el-card
               v-for="rec in (diagnosisResult.recommendations || [])"
               :key="rec.id"
-              class="bg-[var(--el-bg-color)]/60 hover:bg-[var(--el-bg-color)] p-4 rounded-2xl border border-[var(--el-border-color)] transition-all flex flex-col justify-between"
+              shadow="never"
+              body-class="flex flex-col justify-between h-full"
             >
               <div>
-                <div class="flex items-center justify-between mb-2">
-                  <span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full" :class="rec.urgency === 'urgent' ? 'bg-red-500/15 text-red-400 border border-red-500/30' : 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'">
+                <div class="flex items-center justify-between gap-2 mb-2">
+                  <el-tag :type="urgencyTagType(rec.urgency)" effect="light" round size="small">
                     {{ getUrgencyLabel(rec) }}
-                  </span>
-                  <span class="text-[10px] font-mono text-slate-400">{{ getMethodLabel(rec) }}</span>
+                  </el-tag>
+                  <span class="meta-text">{{ getMethodLabel(rec) }}</span>
                 </div>
-                <h5 class="font-bold text-xs text-[var(--el-text-color-primary)] mb-1">
-                  {{ getTitleLabel(rec) }}
-                </h5>
-                <p class="text-[11px] text-[var(--el-text-color-secondary)] leading-relaxed">
-                  {{ getDescLabel(rec) }}
-                </p>
+                <h5 class="rec-title">{{ getTitleLabel(rec) }}</h5>
+                <p class="rec-desc">{{ getDescLabel(rec) }}</p>
               </div>
-              <div class="mt-3 pt-2 border-t border-[var(--el-border-color)]/40 text-[10px] text-slate-400 flex items-center justify-between">
-                <span>{{ t('dashboard.appliedZone') }}</span>
-                <span class="font-semibold text-slate-300 truncate">{{ getTargetZoneLabel(rec) }}</span>
+              <div class="rec-footer">
+                <span class="meta-text">{{ t('dashboard.appliedZone') }}</span>
+                <span class="rec-zone truncate">{{ getTargetZoneLabel(rec) }}</span>
               </div>
-            </div>
+            </el-card>
           </div>
         </div>
       </div>
-    </section>
+    </el-card>
 
-    <!-- Camera Surveillance Roster (Row 4) -->
-    <section class="bg-[var(--el-card-bg-color)] border border-[var(--el-border-color)] rounded-3xl p-7 shadow-soft">
-      <div class="flex items-center justify-between mb-6">
-        <div>
-          <h3 class="font-extrabold text-base text-[var(--el-text-color-primary)]">
-            {{ t('dashboard.cameraRoster') }}
-          </h3>
-          <p class="text-xs text-[var(--el-text-color-secondary)] mt-0.5">
-            {{ t('dashboard.cameraRosterSubtitle') }}
-          </p>
+    <!-- Camera surveillance roster -->
+    <el-card shadow="never">
+      <template #header>
+        <div class="flex items-center justify-between gap-3">
+          <div class="min-w-0">
+            <h3 class="section-title">{{ t('dashboard.cameraRoster') }}</h3>
+            <p class="section-desc">{{ t('dashboard.cameraRosterSubtitle') }}</p>
+          </div>
+
+          <el-button type="primary" link @click="router.push('/cameras')">
+            {{ t('dashboard.viewAll') }}
+            <el-icon class="el-icon--right"><ArrowRight /></el-icon>
+          </el-button>
         </div>
+      </template>
 
-        <button
-          @click="router.push('/cameras')"
-          class="text-xs font-bold text-[var(--primary-green)] hover:underline flex items-center gap-1 cursor-pointer"
-        >
-          <span>{{ t('dashboard.viewAll') }}</span>
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
-      </div>
-
-      <div v-if="cameras.length === 0" class="py-12 text-center text-xs text-slate-400 italic">
-        {{ t('dashboard.noCamerasPrompt') }}
-      </div>
+      <el-empty
+        v-if="cameras.length === 0"
+        :description="t('dashboard.noCamerasPrompt')"
+        :image-size="80"
+      />
 
       <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div
+        <el-card
           v-for="cam in cameras"
           :key="cam.deviceSerial"
+          shadow="hover"
+          class="roster-card cursor-pointer"
           @click="selectCameraAndGoToLive(cam)"
-          class="p-5 rounded-2xl border border-[var(--el-border-color)] bg-[var(--el-bg-color)] hover:border-[var(--primary-green)]/60 hover:shadow-md transition-all cursor-pointer group"
         >
-          <div class="flex items-start justify-between">
-            <div class="truncate">
-              <div class="flex items-center gap-2">
-                <span
-                  class="w-2.5 h-2.5 rounded-full shrink-0"
-                  :class="cam.status === 1 ? 'bg-emerald-400 ring-2 ring-emerald-500/20' : 'bg-red-400'"
-                ></span>
-                <h4 class="font-bold text-sm text-[var(--el-text-color-primary)] truncate group-hover:text-[var(--primary-green)] transition-colors">
-                  {{ cam.deviceName || 'Camera' }}
-                </h4>
+          <div class="flex items-start justify-between gap-2">
+            <div class="min-w-0">
+              <div class="flex items-center gap-2 min-w-0">
+                <el-icon class="shrink-0" :class="cam.status === 1 ? 'is-success' : 'is-danger'"><VideoCamera /></el-icon>
+                <h4 class="item-name truncate">{{ cam.deviceName || cam.deviceSerial }}</h4>
               </div>
-              <p class="text-[11px] font-mono text-[var(--el-text-color-secondary)] mt-1 truncate">
-                SN: {{ cam.deviceSerial }}
-              </p>
+              <p class="meta-text font-mono mt-1 truncate">{{ cam.deviceSerial }}</p>
             </div>
 
-            <span
-              class="text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0"
-              :class="cam.status === 1
-                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                : 'bg-red-500/10 text-red-400 border-red-500/20'"
-            >
+            <el-tag :type="cam.status === 1 ? 'success' : 'danger'" effect="light" round size="small" class="shrink-0">
               {{ cam.status === 1 ? t('common.online') : t('common.offline') }}
-            </span>
+            </el-tag>
           </div>
 
-          <div class="mt-4 pt-3 border-t border-[var(--el-border-color)]/60 flex items-center justify-between text-[11px] text-[var(--el-text-color-secondary)]">
-            <span class="truncate max-w-[150px]">{{ cam.locationAddress || 'Orchard Field' }}</span>
-            <span class="text-[var(--primary-green)] font-semibold flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+          <el-divider class="!my-3" />
+
+          <div class="flex items-center justify-between gap-2">
+            <span class="meta-text truncate">{{ cam.locationAddress || t('map.noAddress') }}</span>
+            <span class="watch-link shrink-0">
               {{ t('dashboard.watchStream') }}
-              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-              </svg>
+              <el-icon><Right /></el-icon>
             </span>
           </div>
-        </div>
+        </el-card>
       </div>
-    </section>
+    </el-card>
   </div>
 </template>
 
@@ -473,6 +329,19 @@ import { useI18n } from 'vue-i18n';
 import { useCameras } from '@/composables/useCameras';
 import api from '@/services/api';
 import { ElNotification } from 'element-plus';
+import {
+  Lightning,
+  DataAnalysis,
+  VideoCamera,
+  Warning,
+  MagicStick,
+  Cpu,
+  TrendCharts,
+  ArrowRight,
+  Right
+} from '@element-plus/icons-vue';
+import PageHeader from '@/components/common/PageHeader.vue';
+import StatCard from '@/components/common/StatCard.vue';
 import { speciesShare } from '@/utils/species';
 
 const router = useRouter();
@@ -488,6 +357,20 @@ const getMethodLabel = (rec) => recText(rec, 'method');
 const getTitleLabel = (rec) => recText(rec, 'title');
 const getDescLabel = (rec) => recText(rec, 'desc');
 const getTargetZoneLabel = (rec) => recText(rec, 'zone');
+
+// Element Plus tag type per recommendation urgency
+const urgencyTagType = (urgency) => {
+  if (urgency === 'urgent') return 'danger';
+  if (urgency === 'important') return 'warning';
+  if (urgency === 'recommended') return 'primary';
+  return 'info';
+};
+
+// Status type for realtime density per camera (same thresholds as the labels)
+const densityLevel = (count) => (count >= 16 ? 'danger' : (count >= 5 ? 'warning' : 'success'));
+
+// Status type for projected forecast counts
+const forecastLevel = (count) => (count >= 20 ? 'danger' : (count >= 6 ? 'warning' : 'success'));
 
 const user = computed(() => {
   try {
@@ -540,11 +423,11 @@ const riskLabel = computed(() => {
   return t('dashboard.outbreakRiskLow');
 });
 
-const riskColorClass = computed(() => {
+const riskTagType = computed(() => {
   const risk = overviewData.value.overallRisk;
-  if (risk === 'high') return 'text-red-400';
-  if (risk === 'moderate') return 'text-amber-400';
-  return 'text-emerald-400';
+  if (risk === 'high') return 'danger';
+  if (risk === 'moderate') return 'warning';
+  return 'success';
 });
 
 // AI Copilot Diagnosis state
@@ -594,3 +477,146 @@ onMounted(async () => {
   await runDeepDiagnosis();
 });
 </script>
+
+<style scoped>
+.section-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+.section-desc {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+.subsection-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+.meta-text {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+.item-name {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+.item-count {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+/* Clickable density row per camera */
+.density-item {
+  padding: 12px 14px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: var(--el-border-radius-base);
+  background-color: var(--el-fill-color-blank);
+  cursor: pointer;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+.density-item:hover {
+  border-color: var(--el-color-primary);
+  background-color: var(--el-fill-color-light);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.status-dot.is-online { background-color: var(--el-color-success); }
+.status-dot.is-idle { background-color: var(--el-color-info); }
+
+.period-switch {
+  display: flex;
+  width: 100%;
+}
+.period-switch :deep(.el-radio-button) {
+  flex: 1;
+}
+.period-switch :deep(.el-radio-button__inner) {
+  width: 100%;
+}
+
+.mini-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  border-radius: var(--el-border-radius-base);
+  background-color: var(--el-fill-color-light);
+}
+.mini-stat__value {
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--el-text-color-primary);
+}
+
+.species-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--el-color-primary);
+}
+
+.panel-inset {
+  padding: 16px;
+  border-radius: var(--el-border-radius-base);
+  background-color: var(--el-fill-color-light);
+}
+.forecast-bar {
+  border-radius: 4px 4px 0 0;
+  opacity: 0.85;
+}
+
+.rec-title {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+.rec-desc {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--el-text-color-regular);
+}
+.rec-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px solid var(--el-border-color-lighter);
+}
+.rec-zone {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--el-text-color-regular);
+}
+
+.roster-card:hover .item-name {
+  color: var(--el-color-primary);
+}
+.watch-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--el-color-primary);
+}
+
+.is-primary { color: var(--el-color-primary); }
+.is-success { color: var(--el-color-success); }
+.is-warning { color: var(--el-color-warning); }
+.is-danger { color: var(--el-color-danger); }
+</style>

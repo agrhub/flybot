@@ -1,301 +1,210 @@
 <template>
-  <div class="space-y-6 w-full max-w-7xl mx-auto pb-12 select-none">
-    <!-- Top Header Banner -->
-    <div class="bg-[var(--el-card-bg-color)] border border-[var(--el-border-color)] rounded-3xl p-5 shadow-soft flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-      <div>
-        <div class="flex items-center gap-2 mb-1">
-          <span class="w-2 h-2 rounded-full bg-[var(--primary-green)] animate-pulse"></span>
-          <h3 class="font-bold text-base text-[var(--el-text-color-primary)]">
-            {{ t('dashboard.mapViewTitle') }}
-          </h3>
-        </div>
-        <p class="text-xs text-[var(--el-text-color-secondary)]">
-          {{ t('dashboard.mapViewSubtitle') }}
-        </p>
-      </div>
+  <div class="w-full max-w-7xl mx-auto pb-12 select-none">
+    <PageHeader :title="t('dashboard.mapViewTitle')" :subtitle="t('dashboard.mapViewSubtitle')">
+      <template #actions>
+        <!-- Outbreak legend -->
+        <el-tag type="success" effect="light" round size="small">{{ t('map.safe') }}</el-tag>
+        <el-tag type="warning" effect="light" round size="small">{{ t('map.moderate') }}</el-tag>
+        <el-tag type="danger" effect="light" round size="small">{{ t('map.alert') }}</el-tag>
+      </template>
+    </PageHeader>
 
-      <div class="flex items-center gap-3">
-        <!-- Outbreak Legend Badges -->
-        <div class="flex items-center gap-2 bg-[var(--el-bg-color)] px-3 py-1.5 rounded-2xl border border-[var(--el-border-color)] text-xs">
-          <span class="flex items-center gap-1 font-semibold text-emerald-400">
-            <span class="w-2 h-2 rounded-full bg-emerald-400"></span> {{ t('map.safe') }}
-          </span>
-          <span class="text-slate-500">|</span>
-          <span class="flex items-center gap-1 font-semibold text-amber-400">
-            <span class="w-2 h-2 rounded-full bg-amber-400"></span> {{ t('map.moderate') }}
-          </span>
-          <span class="text-slate-500">|</span>
-          <span class="flex items-center gap-1 font-semibold text-red-400">
-            <span class="w-2 h-2 rounded-full bg-red-400"></span> {{ t('map.alert') }}
-          </span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Main Map & Side Camera Roster Layout -->
+    <!-- Main map & side trap roster layout -->
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-      <!-- Left / Center: Interactive Leaflet Map Container -->
-      <div class="lg:col-span-3 bg-[var(--el-card-bg-color)] border border-[var(--el-border-color)] rounded-[28px] overflow-hidden shadow-soft relative h-[620px] flex flex-col">
-        <div ref="mapContainerRef" class="w-full h-full z-0 bg-[var(--el-bg-color)]"></div>
+      <!-- Interactive Leaflet map -->
+      <el-card shadow="never" class="map-card lg:col-span-3">
+        <div class="relative w-full h-full">
+          <div ref="mapContainerRef" class="w-full h-full z-0"></div>
 
-        <!-- Google Maps Style Layer Switcher & Hint Overlay (Bottom-Left) -->
-        <div class="absolute bottom-4 left-4 z-[400] flex items-center gap-3">
-          <button
-            @click="toggleBaseLayer"
-            type="button"
-            class="group relative w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden border-2 border-white/90 shadow-2xl hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer focus:outline-none shrink-0"
-            :title="activeLayerType === 'street' ? (t('map.layerEarth')) : (t('map.layerStreet'))"
+          <!-- Layer switcher & drag hint overlay (bottom-left) -->
+          <div class="absolute bottom-4 left-4 z-[400] flex items-center gap-3">
+            <el-button-group>
+              <el-button
+                size="small"
+                :type="activeLayerType === 'street' ? 'primary' : 'default'"
+                :icon="MapLocation"
+                :title="t('map.layerStreet')"
+                @click="activeLayerType !== 'street' && toggleBaseLayer()"
+              >
+                {{ t('map.streetShort') }}
+              </el-button>
+              <el-button
+                size="small"
+                :type="activeLayerType === 'earth' ? 'primary' : 'default'"
+                :icon="Picture"
+                :title="t('map.layerEarth')"
+                @click="activeLayerType !== 'earth' && toggleBaseLayer()"
+              >
+                {{ t('map.satelliteShort') }}
+              </el-button>
+            </el-button-group>
+
+            <div class="map-hint hidden sm:flex items-center gap-2 pointer-events-none">
+              <el-icon><Rank /></el-icon>
+              <span>{{ t('map.dragHint') }}</span>
+            </div>
+          </div>
+        </div>
+      </el-card>
+
+      <!-- Trap roster & quick editor -->
+      <el-card shadow="never" class="roster-card">
+        <template #header>
+          <div class="roster-card__title">{{ t('map.trapList') }}</div>
+          <div class="roster-card__meta">{{ t('map.monitoringDevices', { count: enrichedCameras.length }) }}</div>
+        </template>
+
+        <!-- Search by name, serial or address -->
+        <div class="mb-3">
+          <el-input
+            v-model="searchQuery"
+            :placeholder="t('map.searchPlaceholder')"
+            :prefix-icon="Search"
+            clearable
+            @keydown.enter="handleSearchEnter"
+            @clear="clearSearch"
+          />
+          <div v-if="searchQuery" class="flex items-center justify-between mt-1 px-1 roster-card__meta">
+            <span>{{ t('map.searchResults', { count: filteredCameras.length }) }}</span>
+            <el-button link type="primary" size="small" :icon="Aim" @click="handleSearchEnter">
+              {{ t('map.focusMatching') }}
+            </el-button>
+          </div>
+        </div>
+
+        <!-- Scrollable trap list -->
+        <div class="flex-1 min-h-0 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+          <el-empty
+            v-if="filteredCameras.length === 0"
+            :description="t('map.noTrapsFound')"
+            :image-size="80"
           >
-            <!-- Thumbnail Image -->
-            <img
-              :src="activeLayerType === 'street' ? satelliteThumbUrl : streetThumbUrl"
-              :alt="activeLayerType === 'street' ? 'Satellite' : 'Street'"
-              class="w-full h-full object-cover group-hover:brightness-110 transition-all duration-200"
-            />
+            <el-button v-if="searchQuery" link type="primary" @click="clearSearch">
+              {{ t('map.clearSearch') }}
+            </el-button>
+          </el-empty>
 
-            <!-- Bottom Label Overlay with Google Layers Icon -->
-            <div class="absolute inset-x-0 bottom-0 py-0.5 px-1 bg-black/75 backdrop-blur-[2px] flex items-center justify-center gap-1 text-[10px] font-bold text-white tracking-tight leading-tight">
-              <svg class="w-2.5 h-2.5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M11.99 18.54l-7.37-5.73L3 14.07l9 7 9-7-1.63-1.27-7.38 5.74zM12 16l7.36-5.73L21 9.07l-9-7-9 7 1.64 1.2L12 16zm0-11.47L17.74 9 12 13.47 6.26 9 12 4.53z" />
-              </svg>
-              <span class="truncate">{{ activeLayerType === 'street' ? (t('map.satelliteShort')) : (t('map.streetShort')) }}</span>
-            </div>
-          </button>
+          <div
+            v-for="cam in filteredCameras"
+            :key="cam.deviceSerial"
+            @click="focusCamera(cam)"
+            class="trap-item"
+            :class="{ 'is-active': selectedCam?.deviceSerial === cam.deviceSerial }"
+          >
+            <div class="flex items-start gap-3">
+              <!-- Thumbnail -->
+              <div class="trap-item__thumb">
+                <img
+                  v-if="cam.thumbnailUrl || cam.picUrl"
+                  :src="api.getImageUrl(cam.thumbnailUrl || cam.picUrl)"
+                  :alt="cam.deviceName"
+                  class="w-full h-full object-cover"
+                  @error="(e) => e.target.style.display = 'none'"
+                />
+                <el-icon v-else :size="18"><VideoCamera /></el-icon>
+              </div>
 
-          <!-- Floating Hint Overlay -->
-          <div class="hidden sm:flex bg-slate-900/85 backdrop-blur-md text-white text-[11px] px-3.5 py-2 rounded-xl border border-white/10 items-center gap-2 pointer-events-none shadow-lg">
-            <span class="w-2 h-2 rounded-full bg-[var(--primary-green)] animate-ping"></span>
-            <span>{{ t('map.dragHint') }}</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Right: Camera Traps Location List & Quick Editor -->
-      <div class="space-y-4">
-        <div class="bg-[var(--el-card-bg-color)] border border-[var(--el-border-color)] rounded-[28px] p-5 shadow-soft flex flex-col h-[620px]">
-          <div class="flex items-center justify-between pb-3 mb-3 border-b border-[var(--el-border-color)]">
-            <div>
-              <h4 class="font-bold text-sm text-[var(--el-text-color-primary)]">{{ t('map.trapList') }}</h4>
-              <p class="text-[11px] text-[var(--el-text-color-secondary)]">{{ t('map.monitoringDevices', { count: enrichedCameras.length }) }}</p>
-            </div>
-          </div>
-
-          <!-- Search Camera by Name or Serial -->
-          <div class="mb-3">
-            <div class="relative flex items-center">
-              <svg class="w-4 h-4 text-slate-400 absolute left-3 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <input
-                v-model="searchQuery"
-                type="text"
-                :placeholder="t('map.searchPlaceholder')"
-                @keydown.enter="handleSearchEnter"
-                class="w-full bg-[var(--el-bg-color)] text-[var(--el-text-color-primary)] placeholder-slate-500 text-xs pl-9 pr-8 py-2 rounded-xl border border-[var(--el-border-color)] focus:border-[var(--primary-green)] focus:outline-none transition-colors"
-              />
-              <button
-                v-if="searchQuery"
-                @click="clearSearch"
-                class="absolute right-2.5 text-slate-400 hover:text-slate-200 text-xs p-0.5 rounded-full cursor-pointer"
-                :title="t('map.clearSearch')"
-              >
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <div v-if="searchQuery" class="flex items-center justify-between mt-1 px-1 text-[10px] text-slate-400">
-              <span>{{ t('map.searchResults', { count: filteredCameras.length }) }}</span>
-              <button @click="handleSearchEnter" class="text-[var(--primary-green)] hover:underline font-semibold cursor-pointer">
-                {{ t('map.focusMatching') }}
-              </button>
-            </div>
-          </div>
-
-          <!-- Scrollable Camera List -->
-          <div class="flex-1 overflow-y-auto space-y-3 pr-1 custom-scrollbar">
-            <!-- No search results empty state -->
-            <div
-              v-if="filteredCameras.length === 0"
-              class="py-12 text-center text-xs text-slate-400 space-y-2"
-            >
-              <svg class="w-8 h-8 mx-auto text-slate-600 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <p>{{ t('map.noTrapsFound') }}</p>
-              <button
-                v-if="searchQuery"
-                @click="clearSearch"
-                class="text-[var(--primary-green)] text-[11px] font-semibold hover:underline cursor-pointer"
-              >
-                {{ t('map.clearSearch') }}
-              </button>
-            </div>
-
-            <div
-              v-for="cam in filteredCameras"
-              :key="cam.deviceSerial"
-              @click="focusCamera(cam)"
-              class="p-3.5 rounded-2xl border transition-all cursor-pointer relative group"
-              :class="selectedCam?.deviceSerial === cam.deviceSerial
-                ? 'bg-[var(--el-bg-color)] border-[var(--primary-green)] shadow-md'
-                : 'bg-[var(--el-bg-color)]/60 border-[var(--el-border-color)] hover:border-slate-400'"
-            >
-              <div class="flex items-start gap-3">
-                <!-- Thumbnail -->
-                <div class="w-11 h-11 rounded-xl overflow-hidden shrink-0 border border-[var(--el-border-color)] bg-slate-900/60 flex items-center justify-center relative">
-                  <img
-                    v-if="cam.thumbnailUrl || cam.picUrl"
-                    :src="api.getImageUrl(cam.thumbnailUrl || cam.picUrl)"
-                    :alt="cam.deviceName"
-                    class="w-full h-full object-cover"
-                    @error="(e) => e.target.style.display = 'none'"
-                  />
-                  <svg v-else class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                  </svg>
-                  <span
-                    class="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full border border-[var(--el-card-bg-color)] z-10"
-                    :class="cam.status ? 'bg-emerald-400' : 'bg-slate-400'"
-                  ></span>
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center justify-between gap-1">
+                  <div class="trap-item__name truncate">{{ cam.deviceName || cam.deviceSerial }}</div>
+                  <!-- Insect density tag -->
+                  <el-tag :type="getDensityTagType(cam.currentCount)" effect="light" round size="small" class="shrink-0">
+                    {{ cam.currentCount }} {{ t('map.fruitFlyShort') }}
+                  </el-tag>
                 </div>
-
-                <div class="min-w-0 flex-1">
-                  <div class="flex items-center justify-between gap-1">
-                    <h5 class="text-xs font-bold text-[var(--el-text-color-primary)] truncate">{{ cam.deviceName || cam.deviceSerial }}</h5>
-                    <!-- Insect Badge -->
-                    <span
-                      class="text-[11px] font-extrabold px-2 py-0.5 rounded-full shrink-0 flex items-center gap-1 shadow-sm"
-                      :class="getDensityBadgeClass(cam.currentCount)"
-                    >
-                      <span>{{ cam.currentCount }}</span>
-                      <span class="text-[9px] font-normal">{{ t('map.fruitFlyShort') }}</span>
-                    </span>
-                  </div>
-                  <p class="text-[10px] text-[var(--el-text-color-secondary)] font-mono mt-0.5 truncate">{{ cam.deviceSerial }}</p>
+                <div class="flex items-center gap-1 mt-0.5 min-w-0">
+                  <span class="trap-item__mono truncate">{{ cam.deviceSerial }}</span>
+                  <el-tag v-if="!cam.status" type="info" effect="light" round size="small" class="shrink-0">
+                    {{ t('common.offline') }}
+                  </el-tag>
                 </div>
               </div>
+            </div>
 
-              <!-- Address snippet -->
-              <div class="mt-2 text-[11px] text-[var(--el-text-color-secondary)] line-clamp-1 flex items-center gap-1">
-                <svg class="w-3 h-3 text-[var(--primary-green)] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                </svg>
-                <span class="truncate">{{ cam.locationAddress || t('map.noAddress') }}</span>
-              </div>
+            <!-- Address snippet -->
+            <div class="trap-item__meta mt-2 flex items-center gap-1 min-w-0">
+              <el-icon class="shrink-0"><Location /></el-icon>
+              <span class="truncate">{{ cam.locationAddress || t('map.noAddress') }}</span>
+            </div>
 
-              <!-- Coordinates snippet -->
-              <div class="mt-1 flex items-center justify-between text-[10px] text-slate-400 font-mono">
-                <span>{{ cam.latitude?.toFixed(4) }}, {{ cam.longitude?.toFixed(4) }}</span>
-                <button
-                  @click.stop="openEditModal(cam)"
-                  class="text-[var(--primary-green)] hover:underline font-sans font-bold flex items-center gap-1"
-                >
-                  <span>{{ t('map.edit') }}</span>
-                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                  </svg>
-                </button>
-              </div>
+            <!-- Coordinates & edit -->
+            <div class="mt-1 flex items-center justify-between">
+              <span class="trap-item__mono">{{ cam.latitude?.toFixed(4) }}, {{ cam.longitude?.toFixed(4) }}</span>
+              <el-button link type="primary" size="small" :icon="Edit" @click.stop="openEditModal(cam)">
+                {{ t('map.edit') }}
+              </el-button>
             </div>
           </div>
         </div>
-      </div>
+      </el-card>
     </div>
 
-    <!-- Edit Camera Location & Orchard Address Dialog -->
+    <!-- Edit trap location & orchard details dialog -->
     <el-dialog
       v-model="editDialogVisible"
       :title="t('map.editModalTitle')"
       width="480px"
       append-to-body
-      class="rounded-3xl"
     >
-      <div v-if="editingCam" class="space-y-4 pt-1">
-        <div class="bg-[var(--el-bg-color)] p-4 rounded-2xl border border-[var(--el-border-color)] text-xs text-[var(--el-text-color-secondary)] leading-relaxed flex items-start gap-3">
-          <svg class="w-5 h-5 text-[var(--primary-green)] shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <p>
-            {{ t('map.editModalHint') }}
-          </p>
-        </div>
+      <el-form v-if="editingCam" label-position="top" @submit.prevent>
+        <el-alert
+          type="info"
+          :title="t('map.editModalHint')"
+          :closable="false"
+          show-icon
+          class="mb-4"
+        />
 
-        <div>
-          <label class="block text-xs font-bold text-[var(--el-text-color-secondary)] mb-1">{{ t('map.trapNameAndSerial') }}</label>
-          <div class="text-sm font-bold text-[var(--el-text-color-primary)]">
-            {{ editingCam.deviceName }} ({{ editingCam.deviceSerial }})
-          </div>
-        </div>
+        <el-form-item :label="t('map.trapNameAndSerial')">
+          <span class="font-semibold">{{ editingCam.deviceName }} ({{ editingCam.deviceSerial }})</span>
+        </el-form-item>
 
-        <div>
-          <label class="block text-xs font-bold text-[var(--el-text-color-secondary)] mb-1.5">{{ t('map.orchardAddress') }}</label>
+        <el-form-item :label="t('map.orchardAddress')">
           <el-input
             v-model="editForm.locationAddress"
             :placeholder="t('map.orchardAddressPlaceholder')"
-            size="large"
             clearable
           />
-        </div>
+        </el-form-item>
 
         <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs font-bold text-[var(--el-text-color-secondary)] mb-1.5">{{ t('map.latitude') }}</label>
-            <el-input
-              v-model.number="editForm.latitude"
-              type="number"
-              step="0.0001"
+          <el-form-item :label="t('map.latitude')">
+            <el-input-number
+              v-model="editForm.latitude"
+              :step="0.0001"
+              :controls="false"
               placeholder="11.1345"
-              size="large"
+              class="!w-full"
             />
-          </div>
-          <div>
-            <label class="block text-xs font-bold text-[var(--el-text-color-secondary)] mb-1.5">{{ t('map.longitude') }}</label>
-            <el-input
-              v-model.number="editForm.longitude"
-              type="number"
-              step="0.0001"
+          </el-form-item>
+          <el-form-item :label="t('map.longitude')">
+            <el-input-number
+              v-model="editForm.longitude"
+              :step="0.0001"
+              :controls="false"
               placeholder="106.5052"
-              size="large"
+              class="!w-full"
             />
-          </div>
+          </el-form-item>
         </div>
 
         <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs font-bold text-[var(--el-text-color-secondary)] mb-1.5">{{ t('map.trapType') }}</label>
-            <el-input
-              v-model="editForm.trapType"
-              :placeholder="t('map.trapTypePlaceholder')"
-              size="large"
-            />
-          </div>
-          <div>
-            <label class="block text-xs font-bold text-[var(--el-text-color-secondary)] mb-1.5">{{ t('map.cropType') }}</label>
-            <el-input
-              v-model="editForm.cropType"
-              :placeholder="t('map.cropTypePlaceholder')"
-              size="large"
-            />
-          </div>
+          <el-form-item :label="t('map.trapType')">
+            <el-input v-model="editForm.trapType" :placeholder="t('map.trapTypePlaceholder')" />
+          </el-form-item>
+          <el-form-item :label="t('map.cropType')">
+            <el-input v-model="editForm.cropType" :placeholder="t('map.cropTypePlaceholder')" />
+          </el-form-item>
         </div>
-      </div>
+      </el-form>
 
       <template #footer>
-        <div class="flex justify-end gap-2.5 pt-2">
-          <el-button @click="editDialogVisible = false" size="large" class="!rounded-2xl">
-            {{ t('common.cancel') }}
-          </el-button>
-          <el-button
-            type="primary"
-            @click="handleSaveLocation"
-            :loading="savingLocation"
-            size="large"
-            class="!rounded-2xl !bg-[var(--primary-green)] !border-none !text-slate-950 font-bold"
-          >
-            {{ t('common.save') }}
-          </el-button>
-        </div>
+        <el-button @click="editDialogVisible = false">
+          {{ t('common.cancel') }}
+        </el-button>
+        <el-button type="primary" :loading="savingLocation" @click="handleSaveLocation">
+          {{ t('common.save') }}
+        </el-button>
       </template>
     </el-dialog>
   </div>
@@ -308,6 +217,8 @@ import { useTheme } from '@/utils/theme';
 import { useCameras } from '@/composables/useCameras';
 import api from '@/services/api';
 import { ElNotification } from 'element-plus';
+import { Search, MapLocation, Picture, Rank, Aim, VideoCamera, Location, Edit } from '@element-plus/icons-vue';
+import PageHeader from '@/components/common/PageHeader.vue';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import EZUIKit from 'ezuikit-js';
@@ -423,10 +334,10 @@ const clearSearch = () => {
   resetMapView();
 };
 
-const getDensityBadgeClass = (count) => {
-  if (count >= 16) return 'bg-red-500/15 text-red-400 border border-red-500/30';
-  if (count >= 5) return 'bg-amber-500/15 text-amber-400 border border-amber-500/30';
-  return 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30';
+const getDensityTagType = (count) => {
+  if (count >= 16) return 'danger';
+  if (count >= 5) return 'warning';
+  return 'success';
 };
 
 const getPinColor = (count) => {
@@ -438,19 +349,19 @@ const getPinColor = (count) => {
 const createCustomIcon = (cam) => {
   const color = getPinColor(cam.currentCount);
   const isHigh = cam.currentCount >= 16;
-  const pulseHtml = isHigh ? `<div class="absolute -inset-2 rounded-full animate-ping opacity-40" style="background-color: ${color}"></div>` : '';
+  // Risk color is data visualization, so it stays an explicit color
+  const pulseHtml = isHigh ? `<div class="map-marker__pulse" style="background-color: ${color}"></div>` : '';
 
   const html = `
-    <div class="relative flex flex-col items-center cursor-pointer select-none group" style="transform: translate(-50%, -100%);">
+    <div class="map-marker" style="transform: translate(-50%, -100%);">
       ${pulseHtml}
-      <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full shadow-xl border border-white/20 text-white font-extrabold text-[11px]" style="background-color: ${color}">
-        <svg class="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+      <div class="map-marker__pin" style="background-color: ${color}">
+        <svg width="14" height="14" fill="currentColor" viewBox="0 0 20 20">
           <path d="M10 2a6 6 0 00-6 6c0 4.418 6 10 6 10s6-5.582 6-10a6 6 0 00-6-6zm0 8a2 2 0 110-4 2 2 0 010 4z"/>
         </svg>
-        <!--<span>${cam.currentCount}</span>-->
       </div>
-      <div class="w-2.5 h-2.5 rotate-45 -mt-1 shadow-md" style="background-color: ${color}"></div>
-      <div class="bg-slate-900/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-md mt-1 border border-white/10 shadow-lg whitespace-nowrap">
+      <div class="map-marker__tip" style="background-color: ${color}"></div>
+      <div class="map-marker__label">
         ${cam.deviceName || cam.deviceSerial} <span style="color: ${color}">(${cam.currentCount})</span>
       </div>
     </div>
@@ -475,8 +386,6 @@ const getEarthTileUrl = () => {
 };
 
 const activeLayerType = ref('street');
-const satelliteThumbUrl = `https://mt1.google.com/vt/lyrs=y&x=26&y=15&z=5&key=${GOOGLE_MAP_KEY}`;
-const streetThumbUrl = `https://mt1.google.com/vt/lyrs=m&x=26&y=15&z=5&key=${GOOGLE_MAP_KEY}`;
 
 const toggleBaseLayer = () => {
   if (!map || !streetLayer || !earthLayer) return;
@@ -616,8 +525,7 @@ const stopPopupPlayer = () => {
     if (loading) loading.style.display = 'none';
     if (btn) {
       btn.innerHTML = `▶ ${t('dashboard.watchStream')}`;
-      btn.style.background = '#10b981';
-      btn.style.color = '#022c22';
+      btn.dataset.state = 'idle';
     }
 
     activePopupSerial = null;
@@ -657,8 +565,7 @@ const playPopupStream = async (cam) => {
   if (overlay) overlay.style.display = 'none';
   if (btn) {
     btn.innerHTML = `<span class="popup-spinner-sm"></span> ${t('cameras.connectingStream')}`;
-    btn.style.background = '#e2e8f0';
-    btn.style.color = '#475569';
+    btn.dataset.state = 'loading';
   }
 
   try {
@@ -723,8 +630,7 @@ const playPopupStream = async (cam) => {
 
     if (btn) {
       btn.innerHTML = `⏹ ${t('cameras.stopStream')}`;
-      btn.style.background = '#ef4444';
-      btn.style.color = '#ffffff';
+      btn.dataset.state = 'playing';
     }
   } catch (err) {
     console.error('Failed to start popup stream:', err);
@@ -789,51 +695,45 @@ const renderMarkers = () => {
     // Thumbnail & In-place Video Player Container
     const thumbUrl = (cam.thumbnailUrl || cam.picUrl) ? api.getImageUrl(cam.thumbnailUrl || cam.picUrl) : '';
     const thumbImgHtml = thumbUrl
-      ? `<img id="popup-thumb-${cam.deviceSerial}" src="${thumbUrl}" style="width: 100%; height: 100%; object-fit: cover; display: block;" onerror="this.style.display='none'" />`
-      : `<div id="popup-thumb-${cam.deviceSerial}" style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #0f172a; color: #64748b; font-size: 11px;">Camera Preview</div>`;
+      ? `<img id="popup-thumb-${cam.deviceSerial}" class="map-popup__thumb" src="${thumbUrl}" style="display: block;" onerror="this.style.display='none'" />`
+      : `<div id="popup-thumb-${cam.deviceSerial}" class="map-popup__placeholder" style="display: flex;">📷</div>`;
 
+    // Popup is a raw HTML string rendered by Leaflet; styled via the .map-popup classes below.
+    // Inline display values are kept because the stream logic toggles them directly.
     const popupContent = `
-      <div style="font-family: inherit; width: 270px; padding: 4px;">
-        <!-- Video / Thumbnail Area (In-place Player) -->
-        <div id="popup-media-box-${cam.deviceSerial}" style="width: 100%; height: 155px; border-radius: 10px; overflow: hidden; margin-bottom: 8px; background: #020617; position: relative; cursor: pointer;">
+      <div class="map-popup">
+        <!-- Video / thumbnail area (in-place player) -->
+        <div id="popup-media-box-${cam.deviceSerial}" class="map-popup__media">
           ${thumbImgHtml}
-          <div id="popup-player-${cam.deviceSerial}" style="width: 100%; height: 100%; display: none; position: absolute; inset: 0;"></div>
-          <div id="popup-play-overlay-${cam.deviceSerial}" style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.25); transition: opacity 0.2s;">
-            <div style="width: 38px; height: 38px; border-radius: 50%; background: rgba(16, 185, 129, 0.9); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.4);">
-              <svg style="width: 18px; height: 18px; color: #022c22; margin-left: 2px;" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M6.3 2.841A1.5 1.5 0 004 4.11v11.78a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"/>
-              </svg>
-            </div>
+          <div id="popup-player-${cam.deviceSerial}" class="map-popup__layer" style="display: none;"></div>
+          <div id="popup-play-overlay-${cam.deviceSerial}" class="map-popup__layer map-popup__overlay" style="display: flex;">
+            <div class="map-popup__play">▶</div>
           </div>
-          <div id="popup-loading-${cam.deviceSerial}" style="display: none; position: absolute; inset: 0; background: rgba(2,6,23,0.8); backdrop-filter: blur(2px); align-items: center; justify-content: center; flex-direction: column; gap: 6px; color: #34d399; font-size: 11px; font-weight: 700;">
+          <div id="popup-loading-${cam.deviceSerial}" class="map-popup__layer map-popup__loading" style="display: none;">
             <div class="popup-spinner"></div>
             <span>${t('cameras.connectingStream')}</span>
           </div>
         </div>
 
-        <!-- Header Info -->
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px;">
-          <div style="font-weight: 800; font-size: 13px; color: var(--el-text-color-primary, #f1f5f9); max-width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-            ${cam.deviceName || cam.deviceSerial}
-          </div>
-          <span style="font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 9999px; ${cam.status ? 'background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3);' : 'background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3);'}">
+        <!-- Header info -->
+        <div class="map-popup__header">
+          <div class="map-popup__title">${cam.deviceName || cam.deviceSerial}</div>
+          <span class="map-popup__status ${cam.status ? 'is-online' : 'is-offline'}">
             ${cam.status ? (t('common.online')) : (t('common.offline'))}
           </span>
         </div>
 
-        <div style="font-size: 11px; color: var(--el-text-color-secondary, #94a3b8); margin-bottom: 6px; font-family: monospace;">
-          SN: ${cam.deviceSerial}
-        </div>
+        <div class="map-popup__serial">SN: ${cam.deviceSerial}</div>
 
-        <!-- Density & Orchard Info -->
+        <!-- Density & orchard info -->
         <div class="popup-info-box">
-          <div><b>${t('dashboard.realtimeByCamera')}:</b> <span style="color: ${getPinColor(cam.currentCount)}; font-weight: 800;">${cam.currentCount} ${t('dashboard.insectsShort')}</span></div>
+          <div><b>${t('dashboard.realtimeByCamera')}:</b> <span style="color: ${getPinColor(cam.currentCount)}; font-weight: 600;">${cam.currentCount} ${t('dashboard.insectsShort')}</span></div>
           <div><b>${t('map.cropType')}:</b> ${cam.cropType}</div>
-          <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><b>${t('map.orchardAddress')}:</b> ${cam.locationAddress || t('map.noAddress')}</div>
+          <div class="map-popup__ellipsis"><b>${t('map.orchardAddress')}:</b> ${cam.locationAddress || t('map.noAddress')}</div>
         </div>
 
-        <!-- In-place Live View Button -->
-        <button id="view-stream-${cam.deviceSerial}" style="width: 100%; background: #10b981; color: #022c22; font-weight: 700; font-size: 11px; padding: 7px 10px; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; transition: all 0.2s;">
+        <!-- In-place live view button -->
+        <button id="view-stream-${cam.deviceSerial}" class="map-popup__btn" data-state="idle">
           ▶ ${t('dashboard.watchStream')}
         </button>
       </div>
@@ -979,24 +879,301 @@ onUnmounted(() => {
 });
 </script>
 
+<style scoped>
+.map-card {
+  height: 620px;
+  overflow: hidden;
+}
+.map-card :deep(.el-card__body) {
+  height: 100%;
+  padding: 0;
+}
+
+.map-hint {
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: var(--el-border-radius-base);
+  background: var(--el-bg-color-overlay);
+  color: var(--el-text-color-regular);
+  border: 1px solid var(--el-border-color-light);
+  box-shadow: var(--el-box-shadow-light);
+}
+
+.roster-card {
+  height: 620px;
+  display: flex;
+  flex-direction: column;
+}
+.roster-card :deep(.el-card__body) {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.roster-card__title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+.roster-card__meta {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.trap-item {
+  padding: 12px;
+  border-radius: var(--el-border-radius-base);
+  border: 1px solid var(--el-border-color-light);
+  background: var(--el-bg-color);
+  cursor: pointer;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+.trap-item:hover {
+  border-color: var(--el-border-color-darker);
+}
+.trap-item.is-active {
+  border-color: var(--el-color-primary);
+  background: var(--el-color-primary-light-9);
+}
+.trap-item__thumb {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: var(--el-border-radius-base);
+  border: 1px solid var(--el-border-color-light);
+  background: var(--el-fill-color-light);
+  color: var(--el-text-color-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.trap-item__name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+.trap-item__meta {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+.trap-item__mono {
+  font-size: 12px;
+  font-family: var(--el-font-family-mono, ui-monospace, monospace);
+  color: var(--el-text-color-secondary);
+}
+</style>
+
 <style>
+/* Global styles for HTML that Leaflet renders outside Vue (markers, popups, controls) */
 .custom-leaflet-marker {
   background: transparent;
   border: none;
 }
+
+/* Marker */
+.map-marker {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+}
+.map-marker__pulse {
+  position: absolute;
+  inset: -8px;
+  border-radius: 9999px;
+  opacity: 0.4;
+  animation: map-marker-ping 1s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+.map-marker__pin {
+  display: flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  color: var(--el-color-white);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: var(--el-box-shadow-light);
+}
+.map-marker__tip {
+  width: 10px;
+  height: 10px;
+  margin-top: -4px;
+  transform: rotate(45deg);
+}
+.map-marker__label {
+  margin-top: 4px;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  border-radius: 6px;
+  background: var(--el-bg-color-overlay);
+  color: var(--el-text-color-primary);
+  border: 1px solid var(--el-border-color-light);
+  box-shadow: var(--el-box-shadow-light);
+}
+@keyframes map-marker-ping {
+  75%, 100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+/* Popup content */
+.map-popup {
+  width: 270px;
+  padding: 4px;
+  font-family: inherit;
+}
+.map-popup__media {
+  position: relative;
+  width: 100%;
+  height: 155px;
+  margin-bottom: 8px;
+  overflow: hidden;
+  border-radius: var(--el-border-radius-base);
+  background: var(--el-color-black); /* video letterbox */
+  cursor: pointer;
+}
+.map-popup__thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.map-popup__placeholder {
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  background: var(--el-fill-color-dark);
+}
+.map-popup__layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.map-popup__overlay {
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.25);
+}
+.map-popup__play {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-left: 2px;
+  font-size: 16px;
+  color: var(--el-color-white);
+  background: var(--el-color-primary);
+}
+.map-popup__loading {
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--el-color-white);
+  background: rgba(0, 0, 0, 0.7);
+}
+.map-popup__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+.map-popup__title {
+  max-width: 180px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.map-popup__status {
+  flex-shrink: 0;
+  font-size: 12px;
+  padding: 0 8px;
+  line-height: 20px;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+}
+.map-popup__status.is-online {
+  color: var(--el-color-success);
+  background: var(--el-color-success-light-9);
+  border-color: var(--el-color-success-light-8);
+}
+.map-popup__status.is-offline {
+  color: var(--el-color-danger);
+  background: var(--el-color-danger-light-9);
+  border-color: var(--el-color-danger-light-8);
+}
+.map-popup__serial {
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-family: var(--el-font-family-mono, ui-monospace, monospace);
+  color: var(--el-text-color-secondary);
+}
+.map-popup__ellipsis {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.map-popup__btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 7px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid transparent;
+  border-radius: var(--el-border-radius-base);
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+}
+.map-popup__btn[data-state="idle"] {
+  color: var(--el-color-white);
+  background: var(--el-color-primary);
+}
+.map-popup__btn[data-state="idle"]:hover {
+  background: var(--el-color-primary-light-3);
+}
+.map-popup__btn[data-state="loading"] {
+  color: var(--el-text-color-regular);
+  background: var(--el-fill-color);
+  border-color: var(--el-border-color);
+}
+.map-popup__btn[data-state="playing"] {
+  color: var(--el-color-white);
+  background: var(--el-color-danger);
+}
+.map-popup__btn[data-state="playing"]:hover {
+  background: var(--el-color-danger-light-3);
+}
+
 .popup-spinner {
   width: 22px;
   height: 22px;
-  border: 2.5px solid rgba(16, 185, 129, 0.3);
-  border-top-color: #10b981;
+  border: 2.5px solid var(--el-color-primary-light-7);
+  border-top-color: var(--el-color-primary);
   border-radius: 50%;
   animation: popup-spin 0.8s linear infinite;
 }
 .popup-spinner-sm {
   width: 12px;
   height: 12px;
-  border: 2px solid rgba(71, 85, 105, 0.3);
-  border-top-color: #475569;
+  border: 2px solid var(--el-border-color);
+  border-top-color: var(--el-text-color-regular);
   border-radius: 50%;
   display: inline-block;
   vertical-align: middle;
@@ -1007,149 +1184,98 @@ onUnmounted(() => {
   to { transform: rotate(360deg); }
 }
 
-/* Custom Leaflet Controls - Premium Dark/Light UI */
-.leaflet-container {
-  background-color: var(--el-bg-color, #0b0f19) !important;
+.popup-info-box {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 8px;
+  padding: 8px 10px;
+  font-size: 12px;
+  border-radius: var(--el-border-radius-base);
+  background: var(--el-fill-color-light);
+  border: 1px solid var(--el-border-color-lighter);
+  color: var(--el-text-color-regular);
+}
+.popup-info-box b {
+  font-weight: 600;
+  color: var(--el-text-color-primary);
 }
 
-/* Dark Mode Google Maps Styling */
+/* Leaflet chrome, themed */
+.leaflet-container {
+  background-color: var(--el-bg-color) !important;
+}
+
+/* Dark mode street tiles */
 .dark .leaflet-google-street-tiles {
   filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
 }
 
 .leaflet-bar {
-  border: 1px solid var(--el-border-color, rgba(255, 255, 255, 0.15)) !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25) !important;
-  border-radius: 12px !important;
+  border: 1px solid var(--el-border-color) !important;
+  box-shadow: var(--el-box-shadow-light) !important;
+  border-radius: var(--el-border-radius-base) !important;
   overflow: hidden;
-  background: var(--el-card-bg-color, #182030) !important;
+  background: var(--el-bg-color-overlay) !important;
 }
-
 .leaflet-bar a {
-  background-color: var(--el-card-bg-color, #182030) !important;
-  color: var(--el-text-color-primary, #e2e8f0) !important;
-  border-bottom: 1px solid var(--el-border-color, rgba(255, 255, 255, 0.1)) !important;
+  background-color: var(--el-bg-color-overlay) !important;
+  color: var(--el-text-color-regular) !important;
+  border-bottom: 1px solid var(--el-border-color-lighter) !important;
   width: 34px !important;
   height: 34px !important;
   line-height: 34px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  transition: all 0.2s ease !important;
+  transition: background-color 0.2s, color 0.2s !important;
 }
-
 .leaflet-bar a:last-child {
   border-bottom: none !important;
 }
-
 .leaflet-bar a:hover {
-  background-color: var(--el-bg-color, #0f172a) !important;
-  color: var(--primary-green, #10b981) !important;
+  background-color: var(--el-fill-color-light) !important;
+  color: var(--el-color-primary) !important;
 }
-
 .custom-leaflet-action-bar a .action-icon {
   width: 17px;
   height: 17px;
   stroke: currentColor;
 }
 
-/* Layer Switcher Control */
-.leaflet-control-layers {
-  background: var(--el-card-bg-color, #182030) !important;
-  color: var(--el-text-color-primary, #e2e8f0) !important;
-  border: 1px solid var(--el-border-color, rgba(255, 255, 255, 0.15)) !important;
-  border-radius: 14px !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25) !important;
-  padding: 8px 12px !important;
-  font-family: inherit !important;
-  font-size: 12px !important;
-  font-weight: 600 !important;
-  backdrop-filter: blur(8px);
-}
-
-.leaflet-control-layers-base label {
-  display: flex !important;
-  align-items: center !important;
-  gap: 8px !important;
-  margin-bottom: 6px !important;
-  cursor: pointer !important;
-  padding: 4px 6px !important;
-  border-radius: 8px !important;
-  transition: background 0.15s ease !important;
-}
-
-.leaflet-control-layers-base label:last-child {
-  margin-bottom: 0 !important;
-}
-
-.leaflet-control-layers-base label:hover {
-  background: rgba(255, 255, 255, 0.08) !important;
-}
-
-.leaflet-control-layers-base input[type="radio"] {
-  accent-color: #10b981;
-  cursor: pointer;
-  margin: 0 !important;
-}
-
-/* Leaflet Popup - Theme Adapted */
+/* Popup shell */
 .leaflet-popup-content-wrapper {
-  background: var(--el-card-bg-color, #182030) !important;
-  color: var(--el-text-color-primary, #f1f5f9) !important;
-  border: 1px solid var(--el-border-color, rgba(255, 255, 255, 0.15)) !important;
-  border-radius: 18px !important;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45) !important;
+  background: var(--el-bg-color-overlay) !important;
+  color: var(--el-text-color-primary) !important;
+  border: 1px solid var(--el-border-color-light) !important;
+  border-radius: 12px !important;
+  box-shadow: var(--el-box-shadow) !important;
   padding: 2px !important;
-  backdrop-filter: blur(12px);
 }
-
 .leaflet-popup-tip {
-  background: var(--el-card-bg-color, #182030) !important;
-  border: 1px solid var(--el-border-color, rgba(255, 255, 255, 0.15)) !important;
+  background: var(--el-bg-color-overlay) !important;
+  border: 1px solid var(--el-border-color-light) !important;
   box-shadow: none !important;
 }
-
 .leaflet-popup-close-button {
-  color: var(--el-text-color-secondary, #94a3b8) !important;
+  color: var(--el-text-color-secondary) !important;
   padding: 8px 8px 0 0 !important;
   font-size: 16px !important;
-  transition: all 0.2s ease !important;
 }
-
 .leaflet-popup-close-button:hover {
-  color: var(--primary-green, #10b981) !important;
+  color: var(--el-color-primary) !important;
 }
 
-.popup-info-box {
-  background: var(--el-bg-color, rgba(15, 23, 42, 0.75));
-  border: 1px solid var(--el-border-color, rgba(255, 255, 255, 0.1));
-  color: var(--el-text-color-regular, #cbd5e1);
-  padding: 8px 10px;
-  border-radius: 10px;
-  font-size: 11px;
-  margin-bottom: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.popup-info-box b {
-  color: var(--el-text-color-primary, #f1f5f9);
-}
-
-/* Attribution Control */
+/* Attribution */
 .leaflet-control-attribution {
-  background: var(--el-bg-color, rgba(15, 23, 42, 0.8)) !important;
-  color: var(--el-text-color-secondary, #94a3b8) !important;
-  border: 1px solid var(--el-border-color, rgba(255, 255, 255, 0.1)) !important;
-  border-radius: 6px !important;
-  font-size: 10px !important;
+  background: var(--el-bg-color-overlay) !important;
+  color: var(--el-text-color-secondary) !important;
+  border-radius: 4px !important;
+  font-size: 11px !important;
   padding: 2px 6px !important;
   margin: 6px !important;
-  backdrop-filter: blur(6px);
 }
-
 .leaflet-control-attribution a {
-  color: var(--primary-green, #10b981) !important;
+  color: var(--el-color-primary) !important;
 }
 </style>

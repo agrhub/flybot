@@ -2,48 +2,58 @@
   <div class="w-full max-w-5xl mt-5 mb-5 select-none">
     <div class="w-full grid grid-cols-1 md:grid-cols-3 gap-6">
       <!-- Search Form -->
-      <div class="md:col-span-1 bg-[var(--el-card-bg-color)] p-5 rounded-2xl shadow-soft border border-[var(--el-border-color)]">
-        <h3 class="font-bold mb-3 flex items-center text-[var(--el-text-color-primary)]">
-          <svg class="w-4 h-4 mr-2 text-[var(--primary-green)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2-2v12a2 2 0 002 2z"></path></svg>
-          {{ t('cameras.playbackTitle') }}
-        </h3>
-        <div class="space-y-3">
-          <el-date-picker v-model="searchDate" type="date" :placeholder="t('cameras.selectDate')" class="!w-full" size="large" />
-          <el-button @click="searchRecords" :loading="loading" type="primary" class="w-full !rounded-xl !font-bold" size="large">
+      <el-card shadow="never" class="md:col-span-1">
+        <template #header>
+          <span class="playback__title flex items-center gap-2">
+            <el-icon class="playback__title-icon"><Calendar /></el-icon>
+            {{ t('cameras.playbackTitle') }}
+          </span>
+        </template>
+        <div class="flex flex-col gap-3">
+          <el-date-picker v-model="searchDate" type="date" :placeholder="t('cameras.selectDate')" class="!w-full" />
+          <el-button @click="searchRecords" :loading="loading" type="primary" :icon="Search" class="w-full">
             {{ t('cameras.queryDAS') }}
           </el-button>
-          <el-button @click="backToLive" class="w-full !rounded-xl !ml-0" size="large">
+          <el-button @click="backToLive" :icon="VideoCamera" class="w-full !ml-0">
             {{ t('cameras.backToLive') }}
           </el-button>
         </div>
-      </div>
+      </el-card>
 
       <!-- Record List -->
-      <div class="md:col-span-2 bg-[var(--el-card-bg-color)] p-5 rounded-2xl shadow-soft border border-[var(--el-border-color)] flex flex-col h-[300px]">
-        <h3 class="font-bold mb-3 text-[var(--el-text-color-primary)] flex justify-between">
-          <span>{{ t('cameras.sdRecords') }}</span>
-          <span class="text-xs font-normal text-[var(--el-text-color-secondary)]">{{ records.length }} {{ t('cameras.clipsUnit') }}</span>
-        </h3>
-        <div class="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
-          <div v-if="!loading && records.length === 0" class="flex flex-col items-center justify-center h-full text-slate-500 opacity-60 text-center">
-            <svg class="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path></svg>
-            <p class="text-[11px]">{{ t('cameras.queryDAS') }}</p>
+      <el-card shadow="never" class="md:col-span-2">
+        <template #header>
+          <div class="flex items-center justify-between gap-2">
+            <span class="playback__title">{{ t('cameras.sdRecords') }}</span>
+            <span class="playback__meta">{{ records.length }} {{ t('cameras.clipsUnit') }}</span>
           </div>
-          <div v-for="(clip, index) in records" :key="index" @click="playPlayback(clip)" class="flex justify-between items-center p-3 bg-[var(--el-bg-color)] border border-[var(--el-border-color)] rounded-xl hover:border-[var(--primary-green)]/60 cursor-pointer border-l-4 border-l-[var(--primary-green)] text-[11px] shadow-sm transition">
-            <div class="flex flex-col">
-              <div class="flex items-center space-x-2">
-                <span class="font-bold text-[var(--el-text-color-primary)] text-[12px]">{{ t('cameras.clipNumber') }} #{{ index + 1 }}</span>
-                <span class="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 rounded text-[9px] font-bold">{{ clip.type || 'LOCAL' }}</span>
-                <span v-if="getDuration(clip)" class="text-[10px] text-[var(--el-text-color-secondary)] font-mono">({{ getDuration(clip) }})</span>
+        </template>
+        <el-scrollbar height="220px" v-loading="loading">
+          <el-empty
+            v-if="!loading && records.length === 0"
+            :image-size="64"
+            :description="t('cameras.queryDAS')"
+          />
+          <div class="flex flex-col gap-2 pr-2">
+            <div
+              v-for="(clip, index) in records"
+              :key="index"
+              @click="playPlayback(clip)"
+              class="playback__clip flex justify-between items-center gap-3 px-3 py-2.5 cursor-pointer"
+            >
+              <div class="flex flex-col min-w-0">
+                <div class="flex items-center gap-2">
+                  <span class="playback__clip-title">{{ t('cameras.clipNumber') }} #{{ index + 1 }}</span>
+                  <el-tag type="success" effect="light" size="small">{{ clip.type || 'LOCAL' }}</el-tag>
+                  <span v-if="getDuration(clip)" class="playback__meta font-mono">({{ getDuration(clip) }})</span>
+                </div>
+                <span class="playback__meta font-mono mt-0.5">{{ formatISOToTime(clip.startTime || clip.beginTime) }} - {{ formatISOToTime(clip.endTime || clip.stopTime) }}</span>
               </div>
-              <span class="text-[var(--el-text-color-secondary)] mt-0.5 font-mono">{{ formatISOToTime(clip.startTime || clip.beginTime) }} - {{ formatISOToTime(clip.endTime || clip.stopTime) }}</span>
-            </div>
-            <div class="bg-[var(--primary-green)] p-1.5 rounded-full text-slate-950 shadow-sm">
-              <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"></path></svg>
+              <el-button type="primary" circle size="small" :icon="VideoPlay" @click.stop="playPlayback(clip)" />
             </div>
           </div>
-        </div>
-      </div>
+        </el-scrollbar>
+      </el-card>
     </div>
   </div>
 </template>
@@ -53,6 +63,7 @@ import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import api from '@/services/api'
 import { ElNotification } from 'element-plus'
+import { Calendar, Search, VideoCamera, VideoPlay } from '@element-plus/icons-vue'
 
 const props = defineProps({
   camera: Object,
@@ -144,3 +155,34 @@ const getDuration = (clip) => {
   return `${m}m${s > 0 ? s + 's' : ''}`
 }
 </script>
+
+<style scoped>
+.playback__title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+.playback__title-icon {
+  color: var(--el-color-primary);
+}
+.playback__meta {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+.playback__clip {
+  border: 1px solid var(--el-border-color);
+  border-left: 3px solid var(--el-color-primary);
+  border-radius: 8px;
+  background: var(--el-bg-color);
+  transition: border-color 0.2s, background-color 0.2s;
+}
+.playback__clip:hover {
+  border-color: var(--el-color-primary);
+  background: var(--el-fill-color-light);
+}
+.playback__clip-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+</style>

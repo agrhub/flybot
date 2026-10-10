@@ -1,34 +1,31 @@
 <template>
-  <div class="bg-[var(--el-card-bg-color)] p-8 sm:p-10 rounded-[32px] shadow-2xl w-full border border-[var(--el-border-color)] relative z-10 backdrop-blur-md text-center">
-    <router-link to="/" class="inline-block group cursor-pointer">
-      <img
-        src="/logo.png"
-        alt="FlyBot Logo"
-        class="inline-block w-16 h-16 rounded-3xl object-contain mb-5 shadow-xl shadow-emerald-500/25 ring-2 ring-emerald-500/20 group-hover:scale-105 transition-transform"
-      />
+  <el-card shadow="never" class="auth-card w-full text-center">
+    <router-link to="/" class="inline-block">
+      <img src="/logo.png" alt="FlyBot Logo" class="inline-block w-16 h-16 rounded-2xl object-contain mb-2" />
     </router-link>
 
-    <div v-if="status === 'pending'" class="flex flex-col items-center gap-3 text-sm text-[var(--el-text-color-secondary)]">
-      <div class="w-6 h-6 border-2 border-[var(--primary-green)] border-t-transparent rounded-full animate-spin"></div>
-      {{ t('auth.verifyingEmail') }}
-    </div>
+    <div
+      v-if="status === 'pending'"
+      v-loading="true"
+      :element-loading-text="t('auth.verifyingEmail')"
+      element-loading-background="transparent"
+      class="pending-box"
+    ></div>
 
-    <div v-else-if="status === 'success'" class="text-sm leading-relaxed text-emerald-500 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-4">
-      {{ t('auth.emailVerified') }}
-    </div>
-
-    <div v-else class="text-sm leading-relaxed text-red-400 bg-red-500/10 border border-red-500/30 rounded-2xl p-4">
-      {{ t('auth.verifyInvalid') }}
-    </div>
-
-    <router-link
-      v-if="status !== 'pending'"
-      :to="signedIn ? '/dashboard' : '/auth/login'"
-      class="mt-6 w-full h-12 rounded-2xl bg-[var(--primary-green)] hover:bg-emerald-400 text-slate-950 font-black text-sm flex items-center justify-center shadow-lg shadow-emerald-500/20 transition-all"
+    <el-result
+      v-else
+      :icon="status === 'success' ? 'success' : 'error'"
+      :sub-title="status === 'success' ? t('auth.emailVerified') : t('auth.verifyInvalid')"
     >
-      {{ signedIn ? t('auth.goToDashboard') : t('auth.backToLogin') }}
-    </router-link>
-  </div>
+      <template #extra>
+        <router-link :to="signedIn ? '/dashboard' : '/auth/login'" custom v-slot="{ navigate }">
+          <el-button type="primary" size="large" class="w-full" @click="navigate">
+            {{ signedIn ? t('auth.goToDashboard') : t('auth.backToLogin') }}
+          </el-button>
+        </router-link>
+      </template>
+    </el-result>
+  </el-card>
 </template>
 
 <script setup>
@@ -66,3 +63,21 @@ onMounted(async () => {
   }
 });
 </script>
+
+<style scoped>
+.auth-card {
+  border-radius: 16px;
+}
+
+.auth-card :deep(.el-card__body) {
+  padding: 32px;
+}
+
+.auth-card :deep(.el-result__extra) {
+  width: 100%;
+}
+
+.pending-box {
+  min-height: 120px;
+}
+</style>

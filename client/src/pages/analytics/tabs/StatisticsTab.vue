@@ -1,90 +1,93 @@
 <template>
-  <div class="space-y-8 w-full max-w-6xl pb-10">
-    <!-- Summary Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-      <div class="bg-[var(--el-card-bg-color)] p-6 rounded-[24px] border border-[var(--el-border-color)] shadow-soft transition-transform hover:-translate-y-0.5">
-        <p class="text-[11px] font-bold text-[var(--el-text-color-secondary)] uppercase tracking-widest mb-1">
-          {{ isSingleCamera ? t('analytics.realtimeDensityTrap') : t('analytics.realtimeHotspotMax') }}
-        </p>
-        <h4 class="text-3xl font-black text-amber-400">
-          {{ realtimeInsectCount }} <span class="text-xs font-normal text-slate-400">{{ t('analytics.insectsUnit') }}</span>
-        </h4>
-        <p class="text-xs text-[var(--el-text-color-secondary)] mt-2">
-          {{ isSingleCamera ? (props.camera?.deviceName || props.camera?.deviceSerial) : t('analytics.peakAcrossTraps') }}
-        </p>
-      </div>
+  <div class="flex flex-col gap-4 w-full pb-10">
+    <!-- Summary cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+      <StatCard
+        :label="isSingleCamera ? t('analytics.realtimeDensityTrap') : t('analytics.realtimeHotspotMax')"
+        :value="realtimeInsectCount"
+        :unit="t('analytics.insectsUnit')"
+        :description="isSingleCamera ? (props.camera?.deviceName || props.camera?.deviceSerial) : t('analytics.peakAcrossTraps')"
+        :icon="Aim"
+        type="warning"
+      />
 
-      <div class="bg-[var(--el-card-bg-color)] p-6 rounded-[24px] border border-[var(--el-border-color)] shadow-soft transition-transform hover:-translate-y-0.5">
-        <p class="text-[11px] font-bold text-[var(--el-text-color-secondary)] uppercase tracking-widest mb-1">{{ t('analytics.topSpeciesCard') }}</p>
-        <h4 class="text-xl font-bold text-[var(--el-text-color-primary)] truncate">{{ formatSpeciesDisplay(topSpecies) }}</h4>
-        <p class="text-xs text-[var(--el-text-color-secondary)] mt-2">{{ t('analytics.topSpeciesDesc') }}</p>
-      </div>
+      <StatCard
+        :label="t('analytics.topSpeciesCard')"
+        :value="formatSpeciesDisplay(topSpecies)"
+        :description="t('analytics.topSpeciesDesc')"
+        :icon="PieChart"
+        type="primary"
+      />
 
-      <div class="bg-[var(--el-card-bg-color)] p-6 rounded-[24px] border border-[var(--el-border-color)] shadow-soft transition-transform hover:-translate-y-0.5">
-        <p class="text-[11px] font-bold text-[var(--el-text-color-secondary)] uppercase tracking-widest mb-1">{{ t('analytics.scanCountCard') }}</p>
-        <h4 class="text-3xl font-bold text-[var(--el-text-color-primary)]">{{ scanCount.toLocaleString() }}</h4>
-        <p class="text-xs text-[var(--el-text-color-secondary)] mt-2">{{ t('analytics.dataPointsUnit') }}</p>
-      </div>
+      <StatCard
+        :label="t('analytics.scanCountCard')"
+        :value="scanCount.toLocaleString()"
+        :description="t('analytics.dataPointsUnit')"
+        :icon="DataLine"
+      />
 
-      <div class="bg-[var(--el-card-bg-color)] p-6 rounded-[24px] border border-[var(--el-border-color)] shadow-soft transition-transform hover:-translate-y-0.5">
-        <p class="text-[11px] font-bold text-[var(--el-text-color-secondary)] uppercase tracking-widest mb-1">{{ t('analytics.forecastCard') }}</p>
-        <div class="flex items-center gap-2">
-          <h4 class="text-xl font-bold text-[var(--el-text-color-primary)]">{{ forecastText }}</h4>
-          <span v-html="forecastIcon"></span>
-        </div>
-        <p class="text-xs text-[var(--el-text-color-secondary)] mt-2">{{ t('analytics.forecastTrend') }}</p>
-      </div>
+      <StatCard
+        :label="t('analytics.forecastCard')"
+        :description="t('analytics.forecastTrend')"
+        :icon="TrendCharts"
+        :type="forecastType"
+      >
+        <template #value>
+          <span class="inline-flex items-center gap-2">
+            <span>{{ forecastText }}</span>
+            <el-icon v-if="forecastIconComponent" :size="20">
+              <component :is="forecastIconComponent" />
+            </el-icon>
+          </span>
+        </template>
+      </StatCard>
     </div>
 
-    <!-- Charts Row -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <!-- Main Line Chart -->
-      <div class="lg:col-span-2 bg-[var(--el-card-bg-color)] p-7 rounded-[28px] border border-[var(--el-border-color)] shadow-soft relative">
-        <div class="flex items-center justify-between mb-6">
-          <h3 class="font-bold text-[var(--el-text-color-primary)]">{{ t('analytics.densityChart') }}</h3>
-          <div class="flex bg-[var(--el-bg-color)] p-1 rounded-xl border border-[var(--el-border-color)]">
-            <button
-              v-for="item in modes"
-              :key="item.value"
-              @click="setMode(item.value)"
-              :class="currentMode === item.value ? 'bg-[var(--primary-green)] text-slate-950 font-bold shadow-sm' : 'text-[var(--el-text-color-secondary)] hover:text-[var(--el-text-color-primary)]'"
-              class="px-3.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer"
-            >
-              {{ item.label }}
-            </button>
+    <!-- Charts row -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <!-- Main line chart -->
+      <el-card shadow="never" class="lg:col-span-2">
+        <template #header>
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <span class="section-title">{{ t('analytics.densityChart') }}</span>
+            <el-segmented
+              :model-value="currentMode"
+              :options="modes"
+              size="small"
+              @change="setMode"
+            />
           </div>
-        </div>
+        </template>
 
-        <div class="h-[400px] relative">
+        <div
+          v-loading="loading"
+          :element-loading-text="t('analytics.loadingData')"
+          class="h-[400px] relative"
+        >
           <canvas v-show="statsData.length > 0" ref="lineChartRef"></canvas>
           <div
-            v-if="loading"
-            class="absolute inset-0 bg-[var(--el-card-bg-color)]/80 backdrop-blur-sm flex items-center justify-center rounded-[28px] z-10"
-          >
-            <div class="flex flex-col items-center">
-              <div class="w-8 h-8 border-2 border-[var(--primary-green)] border-t-transparent rounded-full animate-spin"></div>
-              <p class="text-xs text-[var(--el-text-color-secondary)] mt-2">{{ t('analytics.loadingData') }}</p>
-            </div>
-          </div>
-          <div
             v-show="!loading && statsData.length === 0"
-            class="h-full flex items-center justify-center text-slate-500 text-sm italic"
+            class="h-full flex items-center justify-center"
           >
-            {{ t('analytics.noStatsData') }}
+            <el-empty :description="t('analytics.noStatsData')" :image-size="80" />
           </div>
         </div>
-      </div>
+      </el-card>
 
-      <!-- Species Ratio Pie Chart -->
-      <div class="bg-[var(--el-card-bg-color)] p-7 rounded-[28px] border border-[var(--el-border-color)] shadow-soft flex flex-col">
-        <h3 class="font-bold text-[var(--el-text-color-primary)] mb-6 text-center">{{ t('analytics.speciesRatio') }}</h3>
+      <!-- Species ratio doughnut chart -->
+      <el-card shadow="never">
+        <template #header>
+          <span class="section-title">{{ t('analytics.speciesRatio') }}</span>
+        </template>
         <div class="h-[320px] flex items-center justify-center relative">
           <canvas v-show="speciesList.length > 0" ref="pieChartRef"></canvas>
-          <div v-show="speciesList.length === 0" class="text-slate-500 text-sm italic">
-            {{ t('analytics.noRatioData') }}
-          </div>
+          <el-empty
+            v-show="speciesList.length === 0"
+            :description="t('analytics.noRatioData')"
+            :image-size="80"
+          />
         </div>
-      </div>
+      </el-card>
     </div>
   </div>
 </template>
@@ -95,6 +98,8 @@ import Chart from 'chart.js/auto'
 import api from '@/services/api'
 import { ElNotification } from 'element-plus'
 import { useI18n } from 'vue-i18n'
+import { Aim, Bottom, DataLine, Minus, PieChart, Top, TrendCharts } from '@element-plus/icons-vue'
+import StatCard from '@/components/common/StatCard.vue'
 import { FRUIT_FLY, normalizeSpecies, speciesName, speciesShare } from '@/utils/species'
 
 const { t } = useI18n()
@@ -134,7 +139,20 @@ const forecastText = computed(() => {
   if (forecastStatus.value === 'down') return t('analytics.forecastDown')
   return t('analytics.forecastStable')
 })
+// Forecast icon key: 'up' | 'down' | 'stable' | '' (no icon when there is not enough data)
 const forecastIcon = ref('')
+const forecastIconComponent = computed(() => {
+  if (forecastIcon.value === 'up') return Top
+  if (forecastIcon.value === 'down') return Bottom
+  if (forecastIcon.value === 'stable') return Minus
+  return null
+})
+// Rising insect counts are bad (danger), falling are good (success)
+const forecastType = computed(() => {
+  if (forecastIcon.value === 'up') return 'danger'
+  if (forecastIcon.value === 'down') return 'success'
+  return 'default'
+})
 const speciesList = ref([])
 
 const isSingleCamera = computed(() => {
@@ -225,13 +243,13 @@ const processStats = (data) => {
     const prev = (data[data.length - 2].insects || []).reduce((a, b) => a + (b.value || 0), 0)
     if (last > prev * 1.1) {
       forecastStatus.value = 'up'
-      forecastIcon.value = '<svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>'
+      forecastIcon.value = 'up'
     } else if (last < prev * 0.9) {
       forecastStatus.value = 'down'
-      forecastIcon.value = '<svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path></svg>'
+      forecastIcon.value = 'down'
     } else {
       forecastStatus.value = 'stable'
-      forecastIcon.value = '<svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14"></path></svg>'
+      forecastIcon.value = 'stable'
     }
   } else {
     forecastStatus.value = 'stable'
@@ -304,7 +322,8 @@ const renderCharts = (data) => {
           y: {
             beginAtZero: true,
             ticks: { precision: 0, stepSize: 1 },
-            grid: { color: 'rgba(255, 255, 255, 0.05)' }
+            // Theme border color, read at render time so it suits light and dark mode
+            grid: { color: getComputedStyle(document.documentElement).getPropertyValue('--el-border-color').trim() || 'rgba(128, 128, 128, 0.15)' }
           },
           x: { grid: { display: false } }
         }
@@ -399,3 +418,11 @@ onUnmounted(() => {
   if (pieChartInstance) pieChartInstance.destroy()
 })
 </script>
+
+<style scoped>
+.section-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+</style>

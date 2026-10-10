@@ -1,6 +1,6 @@
 <template>
   <el-config-provider :locale="elLocale">
-    <div class="min-h-screen w-full bg-[var(--el-bg-color-page)] text-[var(--el-text-color-primary)] font-sans antialiased selection:bg-[#3ecf8e] selection:text-[#002112]">
+    <div class="min-h-screen w-full bg-[var(--el-bg-color-page)] text-[var(--el-text-color-primary)] font-sans antialiased selection:bg-[var(--el-color-primary-light-7)] selection:text-[var(--el-text-color-primary)]">
       <RouterView />
     </div>
   </el-config-provider>

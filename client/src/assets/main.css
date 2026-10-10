@@ -195,49 +195,32 @@ body {
   box-shadow: 0 0 16px rgba(62, 207, 142, 0.25);
 }
 
-/* Table styling */
-.dark table thead th {
-  background-color: #1a1c1b !important;
-  color: #868c88 !important;
-  border-color: #282a29 !important;
+/* ==========================================================================
+   Element Plus brand adjustments
+   Dark mode comes from element-plus/theme-chalk/dark/css-vars.css (see main.js);
+   only brand-specific tweaks live here.
+   ========================================================================== */
+
+/* The brand green is light, so primary buttons use dark text for contrast */
+.el-button--primary {
+  --el-button-text-color: #06281a;
+  --el-button-hover-text-color: #06281a;
+  --el-button-active-text-color: #06281a;
+  --el-button-disabled-text-color: #06281a;
 }
-.dark table tbody tr {
-  border-color: #282a29 !important;
+.el-button--primary.is-plain,
+.el-button--primary.is-text,
+.el-button--primary.is-link {
+  --el-button-text-color: var(--el-color-primary);
 }
-.dark table tbody tr:hover {
-  background-color: rgba(62, 207, 142, 0.05) !important;
+.el-button--primary.is-plain:hover,
+.el-button--primary.is-plain:focus-visible {
+  --el-button-hover-text-color: #06281a;
 }
 
-/* Element Plus Custom Overrides for Dark Mode */
-.dark .el-input__wrapper {
-  background-color: #161817 !important;
-  box-shadow: 0 0 0 1px #282a29 inset !important;
-}
-.dark .el-input__inner {
-  color: #f0f2f1 !important;
-}
-.dark .el-dialog {
-  background-color: #1a1c1b !important;
-  border: 1px solid #282a29 !important;
-}
-.dark .el-dialog__title {
-  color: #f0f2f1 !important;
-}
-.dark .el-popover.el-popper {
-  background: #1e2020 !important;
-  border-color: #282a29 !important;
-  color: #f0f2f1 !important;
-}
-.dark .el-dropdown-menu {
-  background-color: #1e2020 !important;
-  border-color: #282a29 !important;
-}
-.dark .el-dropdown-menu__item {
-  color: #b4b9b6 !important;
-}
-.dark .el-dropdown-menu__item:hover {
-  background-color: #282a29 !important;
-  color: #f0f2f1 !important;
+/* Cards: flat, rounded, using theme colors */
+.el-card {
+  --el-card-border-radius: 16px;
 }
 
 /* ==========================================================================

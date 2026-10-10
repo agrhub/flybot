@@ -1,14 +1,11 @@
 <template>
-  <div class="group relative flex flex-col bg-gradient-to-b from-slate-900/90 via-slate-950/95 to-black/95 rounded-[28px] border border-white/10 hover:border-emerald-500/50 shadow-xl shadow-black/60 hover:shadow-2xl hover:shadow-emerald-500/10 transition-all duration-300 overflow-hidden select-none">
-    <!-- Top Ambient Accent Line -->
-    <div class="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-emerald-500/40 group-hover:via-emerald-400 to-transparent transition-all duration-500"></div>
-
+  <el-card shadow="never" class="grid-cam group select-none" body-class="grid-cam__body">
     <!-- 1. Card Header -->
-    <div class="p-4 flex items-center justify-between border-b border-white/5 bg-white/[0.02]">
+    <div class="grid-cam__header p-4 flex items-center justify-between gap-3">
       <!-- Left: Camera Icon + Title + SN -->
       <div class="flex items-center gap-3 min-w-0">
         <!-- Lens Icon Container -->
-        <div class="relative w-10 h-10 rounded-2xl bg-slate-800/80 border border-white/10 flex items-center justify-center shrink-0 group-hover:border-emerald-500/40 group-hover:bg-emerald-500/10 transition-all overflow-hidden">
+        <div class="grid-cam__thumb relative w-10 h-10 shrink-0 flex items-center justify-center">
           <img
             v-if="cameraThumbnail"
             :src="cameraThumbnail"
@@ -16,48 +13,39 @@
             class="w-full h-full object-cover"
             @error="thumbError = true"
           />
-          <svg v-else class="w-5 h-5 text-slate-300 group-hover:text-emerald-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-          </svg>
-          <!-- Live Glow Dot -->
+          <el-icon v-else :size="20"><VideoCamera /></el-icon>
+          <!-- Status Dot -->
           <span
-            class="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full border-2 border-slate-900 z-10"
-            :class="camera.status === 1 ? (isPlaying && !hasError ? 'bg-emerald-400 animate-pulse ring-2 ring-emerald-500/30' : 'bg-emerald-500') : 'bg-red-500'"
+            class="grid-cam__dot"
+            :class="camera.status === 1 ? (isPlaying && !hasError ? 'is-live' : 'is-online') : 'is-offline'"
           ></span>
         </div>
 
         <div class="min-w-0">
-          <div class="flex items-center gap-1.5">
-            <h4 class="font-bold text-sm text-white tracking-tight truncate group-hover:text-emerald-300 transition-colors">
+          <div class="flex items-center gap-1.5 min-w-0">
+            <h4 class="grid-cam__title truncate">
               {{ camera.deviceName || 'Camera' }}
             </h4>
             <!-- Encrypted badge -->
-            <span
-              v-if="camera.isEncrypt === 1"
-              class="text-[10px] text-amber-400 px-1.5 py-0.2 rounded bg-amber-400/10 border border-amber-400/20 shrink-0 flex items-center gap-0.5"
-              :title="t('cameras.encrypted')"
-            >
-              <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
-            </span>
+            <el-tooltip v-if="camera.isEncrypt === 1" :content="t('cameras.encrypted')" placement="top">
+              <el-tag type="warning" effect="light" round size="small" class="shrink-0">
+                <el-icon><Lock /></el-icon>
+              </el-tag>
+            </el-tooltip>
           </div>
 
           <!-- Serial Number with Quick Copy -->
           <div class="flex items-center gap-1 mt-0.5">
-            <span class="text-[10px] font-mono text-slate-400 tracking-wider">SN: {{ camera.deviceSerial }}</span>
-            <button
-              @click.stop="copySerialNumber"
-              class="p-0.5 text-slate-500 hover:text-emerald-400 transition-colors cursor-pointer"
-              :title="copiedSn ? 'Copied!' : 'Copy Serial Number'"
-            >
-              <svg v-if="copiedSn" class="w-3 h-3 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
-              </svg>
-              <svg v-else class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-              </svg>
-            </button>
+            <span class="grid-cam__meta font-mono">SN: {{ camera.deviceSerial }}</span>
+            <el-tooltip :content="copiedSn ? t('cameras.copied') : t('cameras.copySerial')" placement="top">
+              <el-button
+                link
+                size="small"
+                :type="copiedSn ? 'success' : 'info'"
+                :icon="copiedSn ? Check : DocumentCopy"
+                @click.stop="copySerialNumber"
+              />
+            </el-tooltip>
           </div>
         </div>
       </div>
@@ -65,38 +53,45 @@
       <!-- Right: Status Badges -->
       <div class="flex items-center gap-1.5 shrink-0">
         <!-- HD Stream Quality Tag -->
-        <span class="text-[9px] font-black px-2 py-0.5 rounded-lg bg-white/5 text-slate-300 border border-white/10 tracking-wider">
-          HD
-        </span>
+        <el-tag type="info" effect="plain" size="small">HD</el-tag>
 
         <!-- Live Status Pill -->
-        <span
+        <el-tag
           v-if="isPlaying && !loading && !hasError"
-          class="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5 shadow-sm shadow-emerald-500/20"
+          type="success"
+          effect="light"
+          round
+          size="small"
         >
-          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
-          LIVE
-        </span>
-        <span
+          <span class="inline-flex items-center gap-1">
+            <span class="grid-cam__pulse"></span>
+            {{ t('cameras.live') }}
+          </span>
+        </el-tag>
+        <el-tag
           v-else-if="loading"
-          class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30 flex items-center gap-1"
+          type="warning"
+          effect="light"
+          round
+          size="small"
         >
-          <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-spin"></span>
-          CONNECTING
-        </span>
-        <span
+          {{ t('cameras.waitingConnection') }}
+        </el-tag>
+        <el-tag
           v-else
-          class="text-[10px] font-bold px-2 py-0.5 rounded-full border"
-          :class="camera.status === 1 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'"
+          :type="camera.status === 1 ? 'success' : 'danger'"
+          effect="light"
+          round
+          size="small"
         >
           {{ camera.status === 1 ? t('common.online') : t('common.offline') }}
-        </span>
+        </el-tag>
       </div>
     </div>
 
     <!-- 2. Video Viewport Area -->
     <div class="px-3 py-2">
-      <div class="aspect-video bg-black rounded-2xl relative flex items-center justify-center overflow-hidden border border-white/5 shadow-inner">
+      <div class="aspect-video bg-black rounded-lg relative flex items-center justify-center overflow-hidden">
         <!-- Thumbnail Placeholder when not streaming live or on stream error -->
         <img
           v-if="cameraThumbnail && (!isPlaying || hasError)"
@@ -119,8 +114,8 @@
           v-if="isPlaying && !hasError && !loading"
           class="absolute top-2.5 left-2.5 z-10 flex items-center gap-2 pointer-events-none"
         >
-          <div class="px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-md border border-white/10 flex items-center gap-1.5 text-[10px] text-emerald-300 font-mono font-medium">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          <div class="grid-cam__hud px-2 py-0.5 flex items-center gap-1.5 font-mono">
+            <span class="grid-cam__pulse"></span>
             <span>1080P • 25fps</span>
           </div>
         </div>
@@ -128,106 +123,92 @@
         <!-- Floating Top-Right Controls on Hover -->
         <div
           v-if="isPlaying && !hasError"
-          class="absolute top-2.5 right-2.5 z-10 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-200"
+          class="absolute top-2.5 right-2.5 z-10 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
         >
           <!-- Enter/Update Code Button (if encrypted) -->
-          <button
-            v-if="camera.isEncrypt === 1"
-            @click.stop="openCodeModal"
-            class="w-7 h-7 rounded-lg bg-black/70 hover:bg-amber-500/20 text-amber-400 hover:text-amber-300 border border-amber-500/30 flex items-center justify-center backdrop-blur-md shadow cursor-pointer transition-all active:scale-95"
-            :title="t('cameras.changeCode')"
-          >
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-            </svg>
-          </button>
+          <el-tooltip v-if="camera.isEncrypt === 1" :content="t('cameras.changeCode')" placement="bottom">
+            <el-button
+              circle
+              size="small"
+              type="warning"
+              :icon="Key"
+              @click.stop="openCodeModal"
+            />
+          </el-tooltip>
 
           <!-- Refresh Stream Button -->
-          <button
-            @click.stop="startLiveStream"
-            class="w-7 h-7 rounded-lg bg-black/70 hover:bg-white/20 text-slate-300 hover:text-white border border-white/15 flex items-center justify-center backdrop-blur-md shadow cursor-pointer transition-all active:scale-95"
-            :title="t('common.refresh')"
-          >
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-          </button>
+          <el-tooltip :content="t('common.refresh')" placement="bottom">
+            <el-button
+              circle
+              size="small"
+              :icon="Refresh"
+              class="!ml-0"
+              @click.stop="startLiveStream"
+            />
+          </el-tooltip>
 
           <!-- Full View Launcher -->
-          <button
-            @click.stop="emit('expand', camera)"
-            class="w-7 h-7 rounded-lg bg-[var(--primary-green)] text-slate-950 flex items-center justify-center shadow shadow-emerald-500/30 cursor-pointer hover:bg-emerald-300 transition-all active:scale-95"
-            :title="t('cameras.viewDetails')"
-          >
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-            </svg>
-          </button>
+          <el-tooltip :content="t('cameras.viewDetails')" placement="bottom">
+            <el-button
+              circle
+              size="small"
+              type="primary"
+              :icon="FullScreen"
+              class="!ml-0"
+              @click.stop="emit('expand', camera)"
+            />
+          </el-tooltip>
         </div>
 
         <!-- Live Loading Spinner -->
-        <div v-if="loading" class="absolute inset-0 bg-black/80 flex flex-col items-center justify-center text-xs text-emerald-400 font-bold gap-2.5 z-20 pointer-events-none">
-          <div class="w-8 h-8 border-3 border-emerald-500/20 border-t-emerald-400 rounded-full animate-spin"></div>
-          <span class="tracking-wide">{{ t('cameras.connectingStream') }}</span>
+        <div v-if="loading" class="grid-cam__scrim absolute inset-0 flex flex-col items-center justify-center gap-2.5 z-20 pointer-events-none">
+          <el-icon :size="28" class="is-loading"><Loading /></el-icon>
+          <span class="text-xs">{{ t('cameras.connectingStream') }}</span>
         </div>
 
         <!-- Error / Decryption / Offline Overlay -->
-        <div v-if="hasError && !loading" class="absolute inset-0 bg-slate-950/90 flex flex-col items-center justify-center p-5 text-center z-20">
-          <div class="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 mb-2.5">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-          </div>
-          <p class="text-xs text-slate-300 font-semibold max-w-xs leading-relaxed">
+        <div v-if="hasError && !loading" class="grid-cam__scrim grid-cam__scrim--strong absolute inset-0 flex flex-col items-center justify-center p-5 text-center z-20">
+          <el-icon :size="28" class="grid-cam__warn-icon mb-2"><WarningFilled /></el-icon>
+          <p class="text-xs font-medium max-w-xs leading-relaxed">
             {{ errorMessage || t('cameras.streamError') }}
           </p>
 
           <div class="flex items-center gap-2 mt-3">
-            <button
+            <el-button
               v-if="camera.isEncrypt === 1"
+              type="warning"
+              size="small"
+              :icon="Key"
               @click.stop="openCodeModal"
-              class="px-3.5 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-sm active:scale-95"
             >
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-              </svg>
-              <span>{{ t('cameras.enterCode') }}</span>
-            </button>
+              {{ t('cameras.enterCode') }}
+            </el-button>
 
-            <button
+            <el-button
+              size="small"
+              :icon="Refresh"
+              class="!ml-0"
               @click.stop="startLiveStream"
-              class="px-3.5 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-sm active:scale-95"
             >
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-              <span>{{ t('common.refresh') }}</span>
-            </button>
+              {{ t('common.refresh') }}
+            </el-button>
           </div>
         </div>
       </div>
     </div>
 
     <!-- 3. Card Footer -->
-    <div class="px-4 py-3 bg-white/[0.02] border-t border-white/5 flex items-center justify-between text-xs">
+    <div class="grid-cam__footer px-4 py-2.5 flex items-center justify-between gap-2">
       <!-- Device Model / Type Badge -->
-      <div class="flex items-center gap-2 truncate max-w-[190px]">
-        <span class="w-1.5 h-1.5 rounded-full bg-slate-500 shrink-0"></span>
-        <span class="text-[11px] font-mono text-slate-400 truncate" :title="camera.model || camera.deviceType">
-          {{ formatModel(camera.model || camera.deviceType) }}
-        </span>
-      </div>
+      <span class="grid-cam__meta font-mono truncate min-w-0" :title="camera.model || camera.deviceType">
+        {{ formatModel(camera.model || camera.deviceType) }}
+      </span>
 
       <!-- Action: View Details Button -->
-      <button
-        @click="emit('expand', camera)"
-        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-xs font-bold transition-all cursor-pointer active:scale-95 group/btn"
-      >
-        <span>{{ t('cameras.viewDetails') }}</span>
-        <svg class="w-3.5 h-3.5 group-hover/btn:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
-        </svg>
-      </button>
+      <el-button type="primary" link @click="emit('expand', camera)">
+        {{ t('cameras.viewDetails') }}
+        <el-icon class="el-icon--right"><ArrowRight /></el-icon>
+      </el-button>
     </div>
 
     <!-- 4. Quick Verification Code Dialog Modal -->
@@ -236,40 +217,36 @@
       :title="t('cameras.codeDialogTitle')"
       width="420px"
       append-to-body
-      class="rounded-3xl"
     >
-      <div class="space-y-4">
-        <div class="bg-blue-500/10 border border-blue-500/20 p-3.5 rounded-2xl text-xs text-blue-300 leading-relaxed flex items-start gap-2.5">
-          <svg class="w-4 h-4 text-blue-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <p>{{ t('cameras.codeDialogDefault') }}</p>
-        </div>
+      <el-alert
+        type="info"
+        :closable="false"
+        show-icon
+        :title="t('cameras.codeDialogDefault')"
+        class="mb-4"
+      />
 
-        <div>
-          <label class="block text-xs font-bold text-slate-400 mb-1.5">
-            {{ camera.deviceName }} ({{ camera.deviceSerial }})
-          </label>
+      <el-form label-position="top" @submit.prevent>
+        <el-form-item :label="`${camera.deviceName} (${camera.deviceSerial})`">
           <el-input
             v-model="inputCode"
-            placeholder="VD: Gravity01, RDKHAL..."
+            :placeholder="t('cameras.codeDialogInputPlaceholder')"
+            :prefix-icon="Lock"
             size="large"
             clearable
             @keyup.enter="handleSaveCode"
           />
-        </div>
-      </div>
+        </el-form-item>
+      </el-form>
 
       <template #footer>
-        <div class="flex justify-end gap-2 pt-2">
-          <el-button @click="codeDialogVisible = false">{{ t('common.cancel') }}</el-button>
-          <el-button type="primary" :loading="savingCode" @click="handleSaveCode">
-            {{ t('cameras.codeDialogSaveAndPlay') }}
-          </el-button>
-        </div>
+        <el-button @click="codeDialogVisible = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" :loading="savingCode" @click="handleSaveCode">
+          {{ t('cameras.codeDialogSaveAndPlay') }}
+        </el-button>
       </template>
     </el-dialog>
-  </div>
+  </el-card>
 </template>
 
 <script setup>
@@ -278,6 +255,18 @@ import EZUIKit from 'ezuikit-js';
 import api from '@/services/api';
 import { useI18n } from 'vue-i18n';
 import { ElNotification } from 'element-plus';
+import {
+  VideoCamera,
+  Lock,
+  Key,
+  Check,
+  DocumentCopy,
+  Refresh,
+  FullScreen,
+  Loading,
+  WarningFilled,
+  ArrowRight
+} from '@element-plus/icons-vue';
 
 const props = defineProps({
   camera: {
@@ -541,3 +530,92 @@ defineExpose({
   isPlaying
 });
 </script>
+
+<style scoped>
+.grid-cam {
+  display: flex;
+  flex-direction: column;
+  transition: border-color 0.2s;
+}
+.grid-cam:hover {
+  border-color: var(--el-color-primary);
+}
+.grid-cam :deep(.grid-cam__body) {
+  padding: 0;
+}
+.grid-cam__header {
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+.grid-cam__footer {
+  border-top: 1px solid var(--el-border-color-lighter);
+}
+.grid-cam__thumb {
+  border-radius: 10px;
+  overflow: visible;
+  background: var(--el-fill-color-light);
+  border: 1px solid var(--el-border-color);
+  color: var(--el-text-color-secondary);
+}
+.grid-cam__thumb img {
+  border-radius: 9px;
+}
+.grid-cam__dot {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--el-bg-color);
+  z-index: 1;
+}
+.grid-cam__dot.is-online {
+  background: var(--el-color-success);
+}
+.grid-cam__dot.is-live {
+  background: var(--el-color-success);
+  animation: grid-cam-pulse 1.6s ease-in-out infinite;
+}
+.grid-cam__dot.is-offline {
+  background: var(--el-color-danger);
+}
+.grid-cam__title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+.grid-cam__meta {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+.grid-cam__pulse {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--el-color-success);
+  animation: grid-cam-pulse 1.6s ease-in-out infinite;
+}
+/* Overlays sit on top of video, so they use a dark scrim with light text in both themes */
+.grid-cam__hud {
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 12px;
+}
+.grid-cam__scrim {
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+}
+.grid-cam__scrim--strong {
+  background: rgba(0, 0, 0, 0.85);
+}
+.grid-cam__warn-icon {
+  color: var(--el-color-warning);
+}
+@keyframes grid-cam-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+</style>

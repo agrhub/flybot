@@ -1,175 +1,122 @@
 <template>
-  <div class="bg-[var(--el-card-bg-color)] p-8 sm:p-10 rounded-[32px] shadow-2xl w-full border border-[var(--el-border-color)] relative z-10 backdrop-blur-md">
+  <el-card shadow="never" class="auth-card w-full">
     <!-- Brand Logo Header -->
-    <div class="text-center mb-8">
-      <router-link to="/" class="inline-block group cursor-pointer">
-        <img
-          src="/logo.png"
-          alt="FlyBot Logo"
-          class="inline-block w-20 h-20 rounded-3xl object-contain mb-3 shadow-xl shadow-emerald-500/25 ring-2 ring-emerald-500/20 group-hover:scale-105 transition-transform"
-        />
-        <h1 class="text-3xl font-black tracking-tight text-[var(--el-text-color-primary)]">
-          FlyBot<span class="text-[var(--primary-green)]">.</span>
-        </h1>
+    <div class="text-center mb-6">
+      <router-link to="/" class="inline-block">
+        <img src="/logo.png" alt="FlyBot Logo" class="inline-block w-16 h-16 rounded-2xl object-contain mb-3" />
+        <h1 class="auth-brand">{{ t('common.brandName') }}</h1>
       </router-link>
-      <p class="text-xs font-semibold text-[var(--el-text-color-secondary)] uppercase tracking-widest mt-1">
-        {{ t('auth.tagline') }}
-      </p>
+      <p class="auth-tagline mt-1">{{ t('auth.tagline') }}</p>
     </div>
 
     <!-- Login Form -->
     <div v-if="formType === 'login'">
-      <form @submit.prevent="handleLogin" class="space-y-4">
-        <div>
-          <label class="block text-xs font-bold text-[var(--el-text-color-secondary)] mb-1.5">{{ t('auth.accountEmail') }}</label>
+      <el-form label-position="top" size="large" @submit.prevent="handleLogin">
+        <el-form-item :label="t('auth.accountEmail')">
           <el-input
             v-model="loginForm.email"
             type="email"
             placeholder="admin@smarttrap.com"
-            size="large"
           />
-        </div>
+        </el-form-item>
 
-        <div>
-          <label class="block text-xs font-bold text-[var(--el-text-color-secondary)] mb-1.5">{{ t('auth.password') }}</label>
+        <el-form-item :label="t('auth.password')" class="password-item">
           <el-input
             v-model="loginForm.password"
             type="password"
             placeholder="••••••••"
-            size="large"
             show-password
             @keyup.enter="handleLogin"
           />
-          <div class="text-right mt-1.5">
-            <button
-              type="button"
-              @click="toggleAuth('forgot')"
-              class="text-[11px] text-[var(--el-text-color-secondary)] hover:text-[var(--primary-green)] font-semibold cursor-pointer"
-            >
-              {{ t('auth.forgotPassword') }}
-            </button>
-          </div>
+        </el-form-item>
+        <div class="text-right mb-4">
+          <el-button link type="primary" size="small" @click="toggleAuth('forgot')">
+            {{ t('auth.forgotPassword') }}
+          </el-button>
         </div>
 
-        <div class="pt-2">
-          <button
-            type="button"
-            @click="handleLogin"
-            :disabled="loading"
-            class="w-full h-12 rounded-2xl bg-[var(--primary-green)] hover:bg-emerald-400 disabled:opacity-50 text-slate-950 font-black text-sm flex items-center justify-center shadow-lg shadow-emerald-500/20 transition-all cursor-pointer active:scale-[0.98]"
-          >
-            <span v-if="!loading">{{ t('auth.loginBtn') }}</span>
-            <div v-else class="w-5 h-5 border-2 border-slate-950 border-t-transparent rounded-full animate-spin"></div>
-          </button>
-        </div>
-      </form>
+        <el-button type="primary" class="w-full" :loading="loading" @click="handleLogin">
+          {{ t('auth.loginBtn') }}
+        </el-button>
+      </el-form>
 
-      <p class="text-center text-xs text-[var(--el-text-color-secondary)] mt-6">
+      <p class="auth-footer text-center mt-6">
         {{ t('auth.noAccount') }}
-        <button
-          type="button"
-          @click="toggleAuth('register')"
-          class="text-[var(--primary-green)] font-bold hover:underline cursor-pointer ml-1"
-        >
+        <el-button link type="primary" class="ml-1" @click="toggleAuth('register')">
           {{ t('auth.registerNow') }}
-        </button>
+        </el-button>
       </p>
     </div>
 
     <!-- Forgot Password Form -->
     <div v-if="formType === 'forgot'">
-      <h2 class="text-base font-bold text-[var(--el-text-color-primary)] mb-1">{{ t('auth.forgotTitle') }}</h2>
+      <h2 class="auth-title mb-2">{{ t('auth.forgotTitle') }}</h2>
 
-      <div v-if="resetLinkSent" class="text-xs leading-relaxed text-emerald-500 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-4 mt-3">
-        {{ t('auth.resetLinkSent') }}
-      </div>
+      <el-alert
+        v-if="resetLinkSent"
+        type="success"
+        :closable="false"
+        show-icon
+        :title="t('auth.resetLinkSent')"
+        class="mt-3"
+      />
 
-      <form v-else @submit.prevent="handleForgot" class="space-y-4">
-        <p class="text-xs text-[var(--el-text-color-secondary)] leading-relaxed">{{ t('auth.forgotDesc') }}</p>
-        <div>
-          <label class="block text-xs font-bold text-[var(--el-text-color-secondary)] mb-1.5">{{ t('auth.accountEmail') }}</label>
+      <el-form v-else label-position="top" size="large" @submit.prevent="handleForgot">
+        <p class="auth-desc mb-4">{{ t('auth.forgotDesc') }}</p>
+        <el-form-item :label="t('auth.accountEmail')">
           <el-input
             v-model="forgotForm.email"
             type="email"
             placeholder="admin@smarttrap.com"
-            size="large"
             @keyup.enter="handleForgot"
           />
-        </div>
-        <div class="pt-2">
-          <button
-            type="button"
-            @click="handleForgot"
-            :disabled="loading"
-            class="w-full h-12 rounded-2xl bg-[var(--primary-green)] hover:bg-emerald-400 disabled:opacity-50 text-slate-950 font-black text-sm flex items-center justify-center shadow-lg shadow-emerald-500/20 transition-all cursor-pointer active:scale-[0.98]"
-          >
-            <span v-if="!loading">{{ t('auth.sendResetLink') }}</span>
-            <div v-else class="w-5 h-5 border-2 border-slate-950 border-t-transparent rounded-full animate-spin"></div>
-          </button>
-        </div>
-      </form>
+        </el-form-item>
+        <el-button type="primary" class="w-full" :loading="loading" @click="handleForgot">
+          {{ t('auth.sendResetLink') }}
+        </el-button>
+      </el-form>
 
-      <p class="text-center text-xs text-[var(--el-text-color-secondary)] mt-6">
-        <button
-          type="button"
-          @click="toggleAuth('login')"
-          class="text-[var(--primary-green)] font-bold hover:underline cursor-pointer"
-        >
+      <p class="auth-footer text-center mt-6">
+        <el-button link type="primary" @click="toggleAuth('login')">
           {{ t('auth.backToLogin') }}
-        </button>
+        </el-button>
       </p>
     </div>
 
     <!-- Register Form -->
     <div v-if="formType === 'register'">
-      <form @submit.prevent="handleRegister" class="space-y-4">
-        <div>
-          <label class="block text-xs font-bold text-[var(--el-text-color-secondary)] mb-1.5">{{ t('auth.newEmail') }}</label>
+      <el-form label-position="top" size="large" @submit.prevent="handleRegister">
+        <el-form-item :label="t('auth.newEmail')">
           <el-input
             v-model="registerForm.email"
             type="email"
             placeholder="creator@smarttrap.com"
-            size="large"
           />
-        </div>
+        </el-form-item>
 
-        <div>
-          <label class="block text-xs font-bold text-[var(--el-text-color-secondary)] mb-1.5">{{ t('auth.passwordHint') }}</label>
+        <el-form-item :label="t('auth.passwordHint')">
           <el-input
             v-model="registerForm.password"
             type="password"
             placeholder="••••••••"
-            size="large"
             show-password
             @keyup.enter="handleRegister"
           />
-        </div>
+        </el-form-item>
 
-        <div class="pt-2">
-          <button
-            type="button"
-            @click="handleRegister"
-            :disabled="loading"
-            class="w-full h-12 rounded-2xl bg-[var(--primary-green)] hover:bg-emerald-400 disabled:opacity-50 text-slate-950 font-black text-sm flex items-center justify-center shadow-lg shadow-emerald-500/20 transition-all cursor-pointer active:scale-[0.98]"
-          >
-            <span v-if="!loading">{{ t('auth.registerBtn') }}</span>
-            <div v-else class="w-5 h-5 border-2 border-slate-950 border-t-transparent rounded-full animate-spin"></div>
-          </button>
-        </div>
-      </form>
+        <el-button type="primary" class="w-full" :loading="loading" @click="handleRegister">
+          {{ t('auth.registerBtn') }}
+        </el-button>
+      </el-form>
 
-      <p class="text-center text-xs text-[var(--el-text-color-secondary)] mt-6">
+      <p class="auth-footer text-center mt-6">
         {{ t('auth.hasAccount') }}
-        <button
-          type="button"
-          @click="toggleAuth('login')"
-          class="text-[var(--primary-green)] font-bold hover:underline cursor-pointer ml-1"
-        >
+        <el-button link type="primary" class="ml-1" @click="toggleAuth('login')">
           {{ t('auth.backToLogin') }}
-        </button>
+        </el-button>
       </p>
     </div>
-  </div>
+  </el-card>
 </template>
 
 <script setup>
@@ -281,3 +228,37 @@ const handleRegister = async () => {
   }
 };
 </script>
+
+<style scoped>
+.auth-card {
+  border-radius: 16px;
+}
+
+.auth-card :deep(.el-card__body) {
+  padding: 32px;
+}
+
+.password-item {
+  margin-bottom: 8px;
+}
+
+.auth-brand {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--el-text-color-primary);
+}
+
+.auth-tagline,
+.auth-desc,
+.auth-footer {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--el-text-color-secondary);
+}
+
+.auth-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+</style>

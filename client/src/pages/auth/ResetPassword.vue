@@ -1,66 +1,46 @@
 <template>
-  <div class="bg-[var(--el-card-bg-color)] p-8 sm:p-10 rounded-[32px] shadow-2xl w-full border border-[var(--el-border-color)] relative z-10 backdrop-blur-md">
-    <div class="text-center mb-8">
-      <router-link to="/" class="inline-block group cursor-pointer">
-        <img
-          src="/logo.png"
-          alt="FlyBot Logo"
-          class="inline-block w-16 h-16 rounded-3xl object-contain mb-3 shadow-xl shadow-emerald-500/25 ring-2 ring-emerald-500/20 group-hover:scale-105 transition-transform"
-        />
+  <el-card shadow="never" class="auth-card w-full">
+    <div class="text-center mb-6">
+      <router-link to="/" class="inline-block">
+        <img src="/logo.png" alt="FlyBot Logo" class="inline-block w-16 h-16 rounded-2xl object-contain mb-3" />
       </router-link>
-      <h1 class="text-xl font-black tracking-tight text-[var(--el-text-color-primary)]">
-        {{ t('auth.newPasswordTitle') }}
-      </h1>
+      <h1 class="auth-title">{{ t('auth.newPasswordTitle') }}</h1>
     </div>
 
     <!-- Invalid / expired link -->
     <div v-if="invalid || !resetToken" class="space-y-5">
-      <div class="text-xs leading-relaxed text-red-400 bg-red-500/10 border border-red-500/30 rounded-2xl p-4">
-        {{ t('auth.resetInvalid') }}
-      </div>
-      <router-link
-        :to="{ path: '/auth/login', query: { mode: 'forgot' } }"
-        class="w-full h-12 rounded-2xl bg-[var(--primary-green)] hover:bg-emerald-400 text-slate-950 font-black text-sm flex items-center justify-center shadow-lg shadow-emerald-500/20 transition-all"
-      >
-        {{ t('auth.requestNewLink') }}
+      <el-alert type="error" :closable="false" show-icon :title="t('auth.resetInvalid')" />
+      <router-link :to="{ path: '/auth/login', query: { mode: 'forgot' } }" custom v-slot="{ navigate }">
+        <el-button type="primary" size="large" class="w-full" @click="navigate">
+          {{ t('auth.requestNewLink') }}
+        </el-button>
       </router-link>
     </div>
 
-    <form v-else @submit.prevent="handleReset" class="space-y-4">
-      <div>
-        <label class="block text-xs font-bold text-[var(--el-text-color-secondary)] mb-1.5">{{ t('auth.newPassword') }}</label>
-        <el-input v-model="form.password" type="password" show-password size="large" :placeholder="t('auth.passwordHint')" autocomplete="new-password" />
-      </div>
-      <div>
-        <label class="block text-xs font-bold text-[var(--el-text-color-secondary)] mb-1.5">{{ t('auth.confirmPassword') }}</label>
+    <el-form v-else label-position="top" size="large" @submit.prevent="handleReset">
+      <el-form-item :label="t('auth.newPassword')">
+        <el-input v-model="form.password" type="password" show-password :placeholder="t('auth.passwordHint')" autocomplete="new-password" />
+      </el-form-item>
+      <el-form-item :label="t('auth.confirmPassword')">
         <el-input
           v-model="form.confirm"
           type="password"
           show-password
-          size="large"
           autocomplete="new-password"
           @keyup.enter="handleReset"
         />
-      </div>
-      <div class="pt-2">
-        <button
-          type="button"
-          @click="handleReset"
-          :disabled="loading"
-          class="w-full h-12 rounded-2xl bg-[var(--primary-green)] hover:bg-emerald-400 disabled:opacity-50 text-slate-950 font-black text-sm flex items-center justify-center shadow-lg shadow-emerald-500/20 transition-all cursor-pointer active:scale-[0.98]"
-        >
-          <span v-if="!loading">{{ t('auth.resetBtn') }}</span>
-          <div v-else class="w-5 h-5 border-2 border-slate-950 border-t-transparent rounded-full animate-spin"></div>
-        </button>
-      </div>
-    </form>
+      </el-form-item>
+      <el-button type="primary" class="w-full" :loading="loading" @click="handleReset">
+        {{ t('auth.resetBtn') }}
+      </el-button>
+    </el-form>
 
-    <p class="text-center text-xs text-[var(--el-text-color-secondary)] mt-6">
-      <router-link to="/auth/login" class="text-[var(--primary-green)] font-bold hover:underline">
-        {{ t('auth.backToLogin') }}
+    <p class="text-center mt-6">
+      <router-link to="/auth/login" custom v-slot="{ navigate }">
+        <el-button link type="primary" @click="navigate">{{ t('auth.backToLogin') }}</el-button>
       </router-link>
     </p>
-  </div>
+  </el-card>
 </template>
 
 <script setup>
@@ -114,3 +94,19 @@ const handleReset = async () => {
   }
 };
 </script>
+
+<style scoped>
+.auth-card {
+  border-radius: 16px;
+}
+
+.auth-card :deep(.el-card__body) {
+  padding: 32px;
+}
+
+.auth-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+</style>

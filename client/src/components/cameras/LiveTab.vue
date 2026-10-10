@@ -1,106 +1,86 @@
 <template>
-  <div class="space-y-6 w-full max-w-6xl pb-10">
+  <div class="flex flex-col gap-6 w-full max-w-6xl pb-10">
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
       <!-- Video Player (2 Cols) -->
-      <div class="lg:col-span-2 bg-black rounded-[2rem] overflow-hidden aspect-video shadow-2xl relative group flex items-center justify-center border-2 border-[var(--el-border-color)]">
+      <div class="live-tab__viewport lg:col-span-2 bg-black rounded-lg overflow-hidden aspect-video relative group flex items-center justify-center">
         <div id="hls-video" ref="hlsContainer" class="w-full h-full object-contain hidden"></div>
         <video ref="hlsVideo" controls autoplay playsinline class="w-full h-full object-contain hidden"></video>
         <div id="ezopen-video" ref="ezopenVideo" class="w-full h-full object-contain hidden"></div>
-        <div v-if="!camera || isPlaceholderVisible" class="absolute inset-0 flex flex-col items-center justify-center text-slate-400 bg-slate-950/90 p-6 text-center">
-          <div class="bg-slate-900/80 p-5 rounded-3xl mb-3 text-slate-400 border border-slate-800">
-            <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-            </svg>
-          </div>
+        <div v-if="!camera || isPlaceholderVisible" class="live-tab__scrim absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
+          <el-icon :size="48" class="live-tab__scrim-icon mb-3"><VideoCamera /></el-icon>
           <p class="text-sm font-medium max-w-md">{{ placeholderText }}</p>
           <el-button
             v-if="camera"
             @click="openValidateCodeDialog"
             type="primary"
             size="small"
-            class="mt-4 rounded-full shadow-lg"
+            :icon="Key"
+            class="mt-4"
           >
-            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
-            </svg>
             {{ camera.validateCode ? t('cameras.changeCode') : t('cameras.enterCode') }}
           </el-button>
         </div>
       </div>
 
       <!-- Quick Info Side Cards (1 Col) -->
-      <div class="space-y-6">
-        <div class="bg-[var(--el-card-bg-color)] rounded-[24px] p-6 border border-[var(--el-border-color)] shadow-soft">
-          <h3 class="font-bold text-[var(--el-text-color-primary)] mb-4 text-xs uppercase tracking-wider text-[var(--el-text-color-secondary)]">{{ t('cameras.quickInfo') }}</h3>
-          <div class="space-y-4">
-            <div class="flex justify-between items-center">
-              <span class="text-xs text-[var(--el-text-color-secondary)]">{{ t('cameras.status') }}</span>
-              <span class="text-sm font-bold" :class="camera?.status === 1 ? 'text-emerald-400' : 'text-slate-400'">
-                {{ camera?.status === 1 ? t('common.online') : t('common.offline') }}
-              </span>
-            </div>
-            <div class="flex justify-between items-center">
-              <span class="text-xs text-[var(--el-text-color-secondary)]">{{ t('cameras.cloudService') }}</span>
-              <span class="text-sm font-bold text-emerald-400">{{ t('cameras.cloudConnected') }}</span>
-            </div>
-            <div class="flex justify-between items-center">
-              <span class="text-xs text-[var(--el-text-color-secondary)]">{{ t('cameras.currentStream') }}</span>
-              <div class="flex items-center gap-1.5">
-                <span class="text-[10px] font-black px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">HD</span>
-                <span class="text-xs font-bold text-[var(--primary-green)]">{{ currentStreamType }}</span>
-              </div>
-            </div>
-            <div class="flex justify-between items-center pt-2 border-t border-[var(--el-border-color)]/60">
-              <span class="text-xs text-[var(--el-text-color-secondary)]">{{ t('cameras.validateCode') }}</span>
-              <div class="flex items-center space-x-1.5">
-                <span class="text-xs font-mono font-bold bg-[var(--el-bg-color)] px-2 py-0.5 rounded text-[var(--el-text-color-primary)] tracking-wider border border-[var(--el-border-color)]">
-                  {{ camera?.validateCode || '--' }}
-                </span>
+      <el-card shadow="never">
+        <template #header>
+          <span class="live-tab__card-title">{{ t('cameras.quickInfo') }}</span>
+        </template>
+        <el-descriptions :column="1" size="small">
+          <el-descriptions-item :label="t('cameras.status')">
+            <el-tag :type="camera?.status === 1 ? 'success' : 'info'" effect="light" round size="small">
+              {{ camera?.status === 1 ? t('common.online') : t('common.offline') }}
+            </el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('cameras.cloudService')">
+            <el-tag type="success" effect="light" round size="small">{{ t('cameras.cloudConnected') }}</el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('cameras.currentStream')">
+            <span class="inline-flex items-center gap-1.5">
+              <el-tag type="success" effect="plain" size="small">HD</el-tag>
+              <span class="live-tab__value">{{ currentStreamType }}</span>
+            </span>
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('cameras.validateCode')">
+            <span class="inline-flex items-center gap-1.5">
+              <el-tag type="info" effect="plain" size="small" class="font-mono">
+                {{ camera?.validateCode || '--' }}
+              </el-tag>
+              <el-tooltip v-if="camera" :content="t('cameras.updateCode')" placement="top">
                 <el-button
-                  v-if="camera"
                   @click="openValidateCodeDialog"
                   size="small"
                   text
                   circle
                   type="primary"
-                  :title="t('cameras.updateCode')"
-                >
-                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                  </svg>
-                </el-button>
-              </div>
-            </div>
-            <div class="flex justify-between items-center">
-              <span class="text-xs text-[var(--el-text-color-secondary)]">{{ t('cameras.encrypted') }}</span>
-              <span
-                class="text-xs font-bold"
-                :class="camera?.isEncrypt === 1 ? 'text-amber-400' : 'text-emerald-400'"
-              >
-                {{ camera?.isEncrypt === 1 ? t('cameras.encryptOn') : t('cameras.encryptOff') }}
-              </span>
-            </div>
-            <div v-if="camera?.model || camera?.deviceType" class="flex justify-between items-center">
-              <span class="text-xs text-[var(--el-text-color-secondary)]">Model</span>
-              <span class="text-xs font-medium text-[var(--el-text-color-primary)] truncate max-w-[160px]" :title="camera?.model || camera?.deviceType">
-                {{ camera?.model || camera?.deviceType }}
-              </span>
-            </div>
-            <div v-if="camera?.deviceVersion" class="flex justify-between items-center">
-              <span class="text-xs text-[var(--el-text-color-secondary)]">Firmware</span>
-              <span class="text-xs font-mono text-[var(--el-text-color-secondary)] truncate max-w-[160px]" :title="camera?.deviceVersion">
-                {{ camera?.deviceVersion }}
-              </span>
-            </div>
-            <div v-if="typeof camera?.defence !== 'undefined'" class="flex justify-between items-center">
-              <span class="text-xs text-[var(--el-text-color-secondary)]">{{ t('cameras.defence') }}</span>
-              <span class="text-xs font-bold" :class="camera?.defence === 1 ? 'text-amber-400' : 'text-slate-500'">
-                {{ camera?.defence === 1 ? t('cameras.on') : t('cameras.off') }}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
+                  :icon="EditPen"
+                />
+              </el-tooltip>
+            </span>
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('cameras.encrypted')">
+            <el-tag :type="camera?.isEncrypt === 1 ? 'warning' : 'success'" effect="light" round size="small">
+              {{ camera?.isEncrypt === 1 ? t('cameras.encryptOn') : t('cameras.encryptOff') }}
+            </el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item v-if="camera?.model || camera?.deviceType" :label="t('cameras.model')">
+            <span class="live-tab__value truncate inline-block max-w-[160px] align-bottom" :title="camera?.model || camera?.deviceType">
+              {{ camera?.model || camera?.deviceType }}
+            </span>
+          </el-descriptions-item>
+          <el-descriptions-item v-if="camera?.deviceVersion" :label="t('cameras.firmware')">
+            <span class="live-tab__meta font-mono truncate inline-block max-w-[160px] align-bottom" :title="camera?.deviceVersion">
+              {{ camera?.deviceVersion }}
+            </span>
+          </el-descriptions-item>
+          <el-descriptions-item v-if="typeof camera?.defence !== 'undefined'" :label="t('cameras.defence')">
+            <el-tag :type="camera?.defence === 1 ? 'warning' : 'info'" effect="light" round size="small">
+              {{ camera?.defence === 1 ? t('cameras.on') : t('cameras.off') }}
+            </el-tag>
+          </el-descriptions-item>
+        </el-descriptions>
+      </el-card>
     </div>
 
     <!-- Playback Controls Section -->
@@ -118,45 +98,35 @@
       :title="t('cameras.codeDialogTitle')"
       width="440px"
       append-to-body
-      class="rounded-3xl"
     >
-      <div class="space-y-4">
-        <div class="bg-blue-50 dark:bg-blue-950/40 p-4 rounded-2xl text-blue-700 dark:text-blue-300 text-xs leading-relaxed flex items-start space-x-3">
-          <svg class="w-5 h-5 flex-shrink-0 text-blue-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <div>
-            <p class="font-bold mb-1">{{ t('cameras.codeDialogDesc') }}</p>
-            <p>{{ t('cameras.codeDialogDefault') }}</p>
-          </div>
-        </div>
+      <el-alert
+        type="info"
+        :closable="false"
+        show-icon
+        :title="t('cameras.codeDialogDesc')"
+        :description="t('cameras.codeDialogDefault')"
+        class="mb-4"
+      />
 
-        <div>
-          <label class="block text-xs font-bold text-slate-600 dark:text-zinc-400 mb-1.5">{{ t('cameras.codeDialogDeviceLabel') }}: {{ camera?.deviceName }} ({{ camera?.deviceSerial }})</label>
+      <el-form label-position="top" @submit.prevent>
+        <el-form-item :label="`${t('cameras.codeDialogDeviceLabel')}: ${camera?.deviceName} (${camera?.deviceSerial})`">
           <el-input
             v-model="inputValidateCode"
             :placeholder="t('cameras.codeDialogInputPlaceholder')"
+            :prefix-icon="Lock"
             maxlength="32"
             size="large"
             clearable
             @keyup.enter="handleSaveValidateCode"
-          >
-            <template #prefix>
-              <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
-            </template>
-          </el-input>
-        </div>
-      </div>
+          />
+        </el-form-item>
+      </el-form>
 
       <template #footer>
-        <div class="flex justify-end space-x-2 pt-2">
-          <el-button @click="validateCodeDialogVisible = false">{{ t('common.cancel') }}</el-button>
-          <el-button type="primary" :loading="updatingCode" @click="handleSaveValidateCode">
-            {{ t('cameras.codeDialogSaveAndPlay') }}
-          </el-button>
-        </div>
+        <el-button @click="validateCodeDialogVisible = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" :loading="updatingCode" @click="handleSaveValidateCode">
+          {{ t('cameras.codeDialogSaveAndPlay') }}
+        </el-button>
       </template>
     </el-dialog>
   </div>
@@ -171,6 +141,7 @@ import EZUIKit from 'ezuikit-js'
 import api from '@/services/api'
 import PlaybackControls from './PlaybackControls.vue'
 import { ElNotification } from 'element-plus'
+import { VideoCamera, Key, Lock, EditPen } from '@element-plus/icons-vue'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
@@ -626,3 +597,31 @@ onUnmounted(() => {
   resetPlayer()
 })
 </script>
+
+<style scoped>
+.live-tab__viewport {
+  border: 1px solid var(--el-border-color);
+}
+/* Placeholder sits on top of the black video area, so it uses a dark scrim with light text in both themes */
+.live-tab__scrim {
+  background: rgba(0, 0, 0, 0.85);
+  color: rgba(255, 255, 255, 0.8);
+}
+.live-tab__scrim-icon {
+  color: rgba(255, 255, 255, 0.55);
+}
+.live-tab__card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+.live-tab__value {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--el-text-color-primary);
+}
+.live-tab__meta {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+</style>

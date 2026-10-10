@@ -176,7 +176,7 @@
     "aiCopilotAgentBadge": "AI Agricultural Copilot Agent",
     "modelConfidence": "Độ tin cậy mô hình:",
     "appliedZone": "Vùng áp dụng:",
-    "noCamerasPrompt": "Chưa có camera nào được kết nối. Nhấn '+ Thêm Camera' để bắt đầu giám sát.",
+    "noCamerasPrompt": "Chưa có camera nào được kết nối. Nhấn 'Thêm camera' để bắt đầu giám sát.",
     "noCamerasCopilotPrompt": "Chưa có camera nào được thêm vào hệ thống. Vui lòng thêm camera để kích hoạt tính năng AI chẩn đoán & cảnh báo dịch hại.",
     "systemSafePrompt": "Mật độ côn trùng đang ở mức an toàn. Chưa cần can thiệp biện pháp xử lý thuốc hoặc bả dẫn dụ.",
     "diagnosisDone": "Đã hoàn tất phân tích chẩn đoán chuyên sâu và dự báo dịch hại 7 ngày!",
@@ -222,7 +222,7 @@
     "subtitle": "Xem trực tiếp luồng video, lưới đa camera và điều khiển phát lại thẻ nhớ",
     "singleView": "Chế độ Đơn (Single)",
     "gridView": "Lưới Đa Camera (Grid)",
-    "addCameraBtn": "+ Thêm Camera",
+    "addCameraBtn": "Thêm camera",
     "newCameraModal": "Thêm Camera Mới",
     "serialNumber": "Serial Number (SN)",
     "validateCode": "Mã xác thực (Verification Code)",
@@ -279,7 +279,12 @@
     "codeDialogDeviceLabel": "Thiết bị",
     "codeDialogInputPlaceholder": "Nhập mã xác thực (VD: QOKYZO, Gravity01...)",
     "codeDialogSaveAndPlay": "Lưu & Xem ngay",
-    "connectPrompt": "Nhập Serial Number (in dưới đáy camera EZVIZ) và Verification Code để kết nối thiết bị với hệ thống giám sát."
+    "connectPrompt": "Nhập Serial Number (in dưới đáy camera EZVIZ) và Verification Code để kết nối thiết bị với hệ thống giám sát.",
+    "copySerial": "Sao chép số serial",
+    "copied": "Đã sao chép",
+    "live": "Trực tiếp",
+    "model": "Mẫu thiết bị",
+    "firmware": "Phiên bản firmware"
   },
   "analytics": {
     "title": "Báo Cáo & Lịch Sử Nhận Dạng AI",
@@ -369,9 +374,9 @@
   "settings": {
     "title": "Cài Đặt Hệ Thống",
     "desc": "Quản lý tài khoản, mật khẩu, ngôn ngữ, giao diện và cấu hình dịch vụ",
-    "account": "TÀI KHOẢN",
-    "system": "HỆ THỐNG",
-    "legal": "CHÍNH SÁCH",
+    "account": "Tài khoản",
+    "system": "Hệ thống",
+    "legal": "Chính sách",
     "profileTab": "Thông tin cá nhân",
     "passwordTab": "Đổi mật khẩu",
     "preferencesTab": "Giao diện & Ngôn ngữ",
@@ -436,7 +441,8 @@
     "prefsSaved": "Đã lưu cài đặt thông báo",
     "passwordFieldsRequired": "Vui lòng nhập đầy đủ các trường mật khẩu.",
     "passwordChanged": "Đã đổi mật khẩu. Các thiết bị khác đã bị đăng xuất.",
-    "saveFailed": "Không lưu được. Vui lòng thử lại."
+    "saveFailed": "Không lưu được. Vui lòng thử lại.",
+    "storageBucket": "Bucket S3 (MinIO)"
   },
   "assistant": {
     "title": "Smart Trap Copilot",
@@ -449,7 +455,8 @@
     "inputPlaceholder": "Hỏi trợ lý AI về camera, sâu bệnh, nông nghiệp...",
     "send": "Gửi",
     "thinking": "Trợ lý AI đang phân tích dữ liệu...",
-    "reset": "Làm mới cuộc trò chuyện"
+    "reset": "Làm mới cuộc trò chuyện",
+    "toolExecutions": "Công cụ đã thực thi ({count})"
   },
   "home": {
     "tagline": "STUDIO BẪY THÔNG MINH & THỊ GIÁC AI",

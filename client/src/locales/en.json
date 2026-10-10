@@ -176,7 +176,7 @@
     "aiCopilotAgentBadge": "AI Agricultural Copilot Agent",
     "modelConfidence": "Model confidence:",
     "appliedZone": "Applied zone:",
-    "noCamerasPrompt": "No cameras connected yet. Click '+ Add Camera' to start monitoring.",
+    "noCamerasPrompt": "No cameras connected yet. Click 'Add Camera' to start monitoring.",
     "noCamerasCopilotPrompt": "No cameras added yet. Please add a camera to activate AI agronomic diagnosis and pest forecasting.",
     "systemSafePrompt": "Pest density is safe. No chemical or bait intervention required at this time.",
     "diagnosisDone": "Deep diagnosis and 7-day pest forecast completed.",
@@ -222,7 +222,7 @@
     "subtitle": "Stream real-time video, multi-camera grid and control SD card playback",
     "singleView": "Single Player",
     "gridView": "Multi-Camera Grid",
-    "addCameraBtn": "+ Add Camera",
+    "addCameraBtn": "Add Camera",
     "newCameraModal": "Add New Camera",
     "serialNumber": "Serial Number (SN)",
     "validateCode": "Verification Code",
@@ -279,7 +279,12 @@
     "codeDialogInputPlaceholder": "Enter verification code (e.g. QOKYZO, Gravity01...)",
     "codeDialogSaveAndPlay": "Save & Play Stream",
     "connectPrompt": "Enter Serial Number (found on camera base) and Verification Code to connect device to surveillance system.",
-    "selectCamera": "Select camera"
+    "selectCamera": "Select camera",
+    "copySerial": "Copy serial number",
+    "copied": "Copied",
+    "live": "Live",
+    "model": "Model",
+    "firmware": "Firmware"
   },
   "analytics": {
     "title": "AI Analytics & Detection History",
@@ -369,9 +374,9 @@
   "settings": {
     "title": "System Settings",
     "desc": "Manage your account credentials, themes, languages, and AI integration services",
-    "account": "ACCOUNT",
-    "system": "SYSTEM",
-    "legal": "LEGAL",
+    "account": "Account",
+    "system": "System",
+    "legal": "Legal",
     "profileTab": "Profile Information",
     "passwordTab": "Change Password",
     "preferencesTab": "Theme & Language",
@@ -436,7 +441,8 @@
     "prefsSaved": "Notification settings saved",
     "passwordFieldsRequired": "Please fill in all password fields.",
     "passwordChanged": "Password changed. Other devices have been signed out.",
-    "saveFailed": "Could not save. Please try again."
+    "saveFailed": "Could not save. Please try again.",
+    "storageBucket": "S3 bucket (MinIO)"
   },
   "assistant": {
     "title": "Smart Trap Copilot",
@@ -449,7 +455,8 @@
     "inputPlaceholder": "Ask AI Copilot about cameras, insects, traps...",
     "send": "Send",
     "thinking": "AI Copilot is analyzing...",
-    "reset": "Reset conversation"
+    "reset": "Reset conversation",
+    "toolExecutions": "Tool executions ({count})"
   },
   "home": {
     "tagline": "SMART TRAP & VISION AI STUDIO",

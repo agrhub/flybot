@@ -1,141 +1,112 @@
 <template>
-  <div class="space-y-6 w-full max-w-6xl pb-10">
-    <div class="bg-[var(--el-card-bg-color)] rounded-[24px] border border-[var(--el-border-color)] shadow-soft overflow-hidden flex flex-col">
-      <!-- Header -->
-      <div class="p-6 border-b border-[var(--el-border-color)]/60 flex items-center justify-between">
-        <div>
-          <h3 class="font-bold text-[var(--el-text-color-primary)] text-lg">{{ t('analytics.tabHistory') }}</h3>
-          <p class="text-xs text-[var(--el-text-color-secondary)]">{{ t('analytics.subtitle') }}</p>
+  <div class="w-full pb-10">
+    <el-card shadow="never">
+      <template #header>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="min-w-0">
+            <div class="section-title">{{ t('analytics.tabHistory') }}</div>
+            <div class="section-subtitle">{{ t('analytics.subtitle') }}</div>
+          </div>
+
+          <el-button
+            :icon="Document"
+            :loading="exporting"
+            :disabled="records.length === 0"
+            @click="exportToPDF"
+          >
+            {{ exporting ? t('common.exporting') : t('analytics.exportPdf') }}
+          </el-button>
         </div>
+      </template>
 
-        <button
-          @click="exportToPDF"
-          :disabled="exporting || records.length === 0"
-          class="flex items-center gap-2 px-5 py-2.5 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-xl text-xs font-bold transition-all border border-red-500/30 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm cursor-pointer"
-        >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-          </svg>
-          <span>{{ exporting ? (t('common.exporting') || 'Exporting PDF...') : t('analytics.exportPdf') }}</span>
-        </button>
-      </div>
+      <el-table
+        v-loading="loading"
+        :element-loading-text="t('common.loading')"
+        :data="records"
+        row-key="_id"
+        class="history-table w-full"
+        @row-click="openModal"
+      >
+        <template #empty>
+          <el-empty :description="t('analytics.noData')" :image-size="80" />
+        </template>
 
-      <!-- Table Wrapper -->
-      <div class="table-container custom-scrollbar min-h-[300px]">
-        <table class="w-full text-left border-collapse">
-          <thead>
-            <tr class="text-[10px] font-bold text-[var(--el-text-color-secondary)] uppercase tracking-widest bg-[var(--el-bg-color)] border-b border-[var(--el-border-color)]">
-              <th class="px-6 py-4">{{ t('analytics.time') }}</th>
-              <th class="px-6 py-4">{{ t('analytics.image') }}</th>
-              <th class="px-6 py-4">{{ t('analytics.totalCount') }}</th>
-              <th class="px-6 py-4">{{ t('analytics.speciesBreakdown') }}</th>
-              <th class="px-6 py-4">{{ t('analytics.aiRemarks') }}</th>
-            </tr>
-          </thead>
-          <tbody class="text-sm text-[var(--el-text-color-regular)] divide-y divide-[var(--el-border-color)]">
-            <tr v-if="loading">
-              <td colspan="5" class="py-16 text-center">
-                <div class="flex flex-col items-center gap-3">
-                  <div class="w-8 h-8 border-4 border-emerald-500/20 border-t-[var(--primary-green)] rounded-full animate-spin"></div>
-                  <span class="text-xs text-[var(--el-text-color-secondary)]">{{ t('common.loading') }}</span>
-                </div>
-              </td>
-            </tr>
+        <el-table-column :label="t('analytics.time')" min-width="170">
+          <template #default="{ row }">
+            <span class="meta-text whitespace-nowrap">{{ formatDate(row.createdAt) }}</span>
+          </template>
+        </el-table-column>
 
-            <tr v-else-if="records.length === 0">
-              <td colspan="5" class="py-20 text-center text-slate-500 italic">
-                {{ t('analytics.noData') }}
-              </td>
-            </tr>
+        <el-table-column :label="t('analytics.image')" width="110">
+          <template #default="{ row }">
+            <el-image
+              :src="api.getImageUrl(row.imageUrl || row.s3Key)"
+              fit="cover"
+              loading="lazy"
+              class="thumb"
+            />
+          </template>
+        </el-table-column>
 
-            <tr
-              v-else
-              v-for="item in records"
-              :key="item._id"
-              @click="openModal(item)"
-              class="hover:bg-[var(--el-bg-color)] transition-colors cursor-pointer group"
-            >
-              <td class="px-6 py-4 text-xs font-semibold text-[var(--el-text-color-secondary)] whitespace-nowrap">
-                {{ formatDate(item.createdAt) }}
-              </td>
-              <td class="px-6 py-4">
-                <div class="w-16 h-10 rounded-lg overflow-hidden bg-black/50 shadow-sm relative border border-[var(--el-border-color)]">
-                  <img
-                    :src="api.getImageUrl(item.imageUrl || item.s3Key)"
-                    alt="Snapshot"
-                    class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                    loading="lazy"
-                  />
-                </div>
-              </td>
-              <td class="px-6 py-4 font-bold text-[var(--el-text-color-primary)]">
-                <span class="px-2.5 py-1 bg-[var(--el-bg-color)] rounded-full text-xs font-black border border-[var(--el-border-color)]">
-                  {{ getTotalCount(item) }}
-                </span>
-              </td>
-              <td class="px-6 py-4">
-                <div class="flex flex-wrap gap-1">
-                  <span
-                    v-for="(count, name) in (item.aiResults?.summary || {})"
-                    :key="name"
-                    class="inline-flex bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded text-[10px] font-bold border border-emerald-500/20"
-                  >
-                    {{ formatSpeciesName(name) }}: {{ count }}
-                  </span>
-                  <span v-if="!hasSummary(item)" class="text-xs text-slate-500 italic">--</span>
-                </div>
-              </td>
-              <td class="px-6 py-4 text-xs text-[var(--el-text-color-secondary)] max-w-xs truncate">
-                {{ item.aiResults?.raw_description || '--' }}
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+        <el-table-column :label="t('analytics.totalCount')" width="110" align="center">
+          <template #default="{ row }">
+            <span class="count-text">{{ getTotalCount(row) }}</span>
+          </template>
+        </el-table-column>
 
-      <!-- Pagination Footer -->
-      <div class="p-6 border-t border-[var(--el-border-color)] bg-[var(--el-bg-color)]/50 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <p class="text-xs text-[var(--el-text-color-secondary)]">
-          {{ t('common.showing') }} <span class="font-bold text-[var(--el-text-color-primary)]">{{ records.length }}</span> {{ t('common.of') }}
-          <span class="font-bold text-[var(--el-text-color-primary)]">{{ totalRecords }}</span> {{ t('dashboard.recordsUnit') || 'records' }}
+        <el-table-column :label="t('analytics.speciesBreakdown')" min-width="200">
+          <template #default="{ row }">
+            <div class="flex flex-wrap gap-1">
+              <el-tag
+                v-for="(count, name) in (row.aiResults?.summary || {})"
+                :key="name"
+                type="success"
+                effect="light"
+                size="small"
+                round
+              >
+                {{ formatSpeciesName(name) }}: {{ count }}
+              </el-tag>
+              <span v-if="!hasSummary(row)" class="meta-text">--</span>
+            </div>
+          </template>
+        </el-table-column>
+
+        <el-table-column :label="t('analytics.aiRemarks')" min-width="240" show-overflow-tooltip>
+          <template #default="{ row }">
+            <span class="meta-text">{{ row.aiResults?.raw_description || '--' }}</span>
+          </template>
+        </el-table-column>
+
+        <el-table-column :label="t('common.actions')" width="90" align="center" fixed="right">
+          <template #default="{ row }">
+            <el-tooltip :content="t('analytics.inspectSnapshot')" placement="top">
+              <el-button :icon="View" circle size="small" @click.stop="openModal(row)" />
+            </el-tooltip>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <!-- Pagination footer -->
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4">
+        <p class="meta-text">
+          {{ t('common.showing') }} <strong>{{ records.length }}</strong> {{ t('common.of') }}
+          <strong>{{ totalRecords }}</strong> {{ t('dashboard.recordsUnit') }}
         </p>
 
-        <div v-if="totalPages > 1" class="flex items-center gap-1">
-          <!-- Prev -->
-          <button
-            @click="goToPage(currentPage - 1)"
-            :disabled="currentPage === 1"
-            class="page-link w-8 h-8 rounded-lg border border-[var(--el-border-color)] text-xs font-bold text-[var(--el-text-color-secondary)] hover:bg-[var(--el-bg-color)] flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-          >
-            &lt;&lt;
-          </button>
-
-          <!-- Page numbers with ellipsis -->
-          <template v-for="p in visiblePages" :key="p">
-            <span v-if="p === '...'" class="px-2 text-slate-500 text-xs">...</span>
-            <button
-              v-else
-              @click="goToPage(p)"
-              :class="currentPage === p ? 'active bg-[var(--primary-green)] text-slate-950 font-bold border-[var(--primary-green)]' : 'bg-[var(--el-card-bg-color)] border-[var(--el-border-color)] text-[var(--el-text-color-secondary)] hover:bg-[var(--el-bg-color)]'"
-              class="page-link w-8 h-8 rounded-lg border text-xs font-bold flex items-center justify-center transition cursor-pointer"
-            >
-              {{ p }}
-            </button>
-          </template>
-
-          <!-- Next -->
-          <button
-            @click="goToPage(currentPage + 1)"
-            :disabled="currentPage === totalPages"
-            class="page-link w-8 h-8 rounded-lg border border-[var(--el-border-color)] text-xs font-bold text-[var(--el-text-color-secondary)] hover:bg-[var(--el-bg-color)] flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-          >
-            &gt;&gt;
-          </button>
-        </div>
+        <el-pagination
+          v-if="totalPages > 1"
+          background
+          layout="prev, pager, next"
+          :current-page="currentPage"
+          :page-size="limit"
+          :total="totalRecords"
+          @current-change="goToPage"
+        />
       </div>
-    </div>
+    </el-card>
 
-    <!-- Image Preview Modal -->
+    <!-- Image preview modal -->
     <DetectionModal
       :visible="modalVisible"
       :item="selectedItem"
@@ -153,6 +124,7 @@ import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { addQuicksandFonts } from '@/utils/pdfFonts'
 import { ElNotification } from 'element-plus'
+import { Document, View } from '@element-plus/icons-vue'
 import { speciesName, formatSummary } from '@/utils/species'
 
 const { t, locale } = useI18n()
@@ -382,3 +354,39 @@ defineExpose({
   fetchHistory
 })
 </script>
+
+<style scoped>
+.section-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+.section-subtitle {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+.meta-text {
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
+}
+.meta-text strong {
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+.count-text {
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+.thumb {
+  width: 64px;
+  height: 40px;
+  border-radius: 6px;
+  border: 1px solid var(--el-border-color);
+  background-color: var(--el-fill-color-light);
+  display: block;
+}
+.history-table :deep(.el-table__row) {
+  cursor: pointer;
+}
+</style>

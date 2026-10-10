@@ -17,19 +17,28 @@
       />
 
       <!-- Email confirmation reminder (alert emails need a confirmed address) -->
-      <div
+      <el-alert
         v-if="user && user.emailVerified === false"
-        class="shrink-0 px-6 lg:px-8 py-2.5 bg-amber-500/10 border-b border-amber-500/30 text-[12px] text-amber-500 flex flex-wrap items-center gap-x-3 gap-y-1"
+        type="warning"
+        :closable="false"
+        show-icon
+        class="verify-banner shrink-0"
       >
-        <span>{{ t('auth.verifyBanner', { email: user.email }) }}</span>
-        <button
-          @click="resendVerification"
-          :disabled="resending"
-          class="font-bold underline cursor-pointer disabled:opacity-50"
-        >
-          {{ t('auth.resendVerification') }}
-        </button>
-      </div>
+        <template #title>
+          <span class="inline-flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span>{{ t('auth.verifyBanner', { email: user.email }) }}</span>
+            <el-button
+              link
+              type="warning"
+              :disabled="resending"
+              :loading="resending"
+              @click="resendVerification"
+            >
+              {{ t('auth.resendVerification') }}
+            </el-button>
+          </span>
+        </template>
+      </el-alert>
 
       <!-- Scrollable Main Content Router View -->
       <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 custom-scrollbar">
@@ -127,5 +136,11 @@ onMounted(() => {
   height: 100vh;
   width: 100vw;
   overflow: hidden;
+}
+
+.verify-banner {
+  border-radius: 0;
+  padding-left: 24px;
+  padding-right: 24px;
 }
 </style>

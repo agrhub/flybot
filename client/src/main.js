@@ -1,9 +1,11 @@
-import './assets/main.css'
-
 import { createApp } from 'vue'
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
+// Official dark-mode variables for every component (applied by html.dark)
+import 'element-plus/theme-chalk/dark/css-vars.css'
 import 'flag-icons/css/flag-icons.min.css'
+// Brand theme last, so it overrides Element Plus defaults
+import './assets/main.css'
 import App from './App.vue'
 import router from './router'
 import i18n from './i18n'

@@ -1,72 +1,61 @@
 <template>
-  <div
-    v-if="visible"
-    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md transition-opacity duration-300"
-    @click.self="closeModal"
+  <el-dialog
+    :model-value="visible"
+    :title="t('analytics.inspectSnapshot')"
+    width="min(1040px, 94vw)"
+    top="4vh"
+    append-to-body
+    class="detection-dialog"
+    :before-close="handleBeforeClose"
   >
-    <div class="bg-[var(--el-card-bg-color)] border border-[var(--el-border-color)] rounded-[2.5rem] w-full max-w-5xl overflow-hidden shadow-2xl relative transition-transform duration-300 max-h-[92vh] flex flex-col">
-      <!-- Close button -->
-      <button
-        @click="closeModal"
-        class="absolute top-5 right-5 z-20 w-10 h-10 bg-[var(--el-card-bg-color)]/80 hover:bg-[var(--el-card-bg-color)] border border-[var(--el-border-color)] rounded-full flex items-center justify-center shadow-lg backdrop-blur-md transition-all text-[var(--el-text-color-regular)] hover:text-[var(--el-text-color-primary)] cursor-pointer"
+    <div class="flex flex-col lg:flex-row gap-5">
+      <!-- Canvas view (snapshot + bounding boxes) -->
+      <div
+        v-loading="imageLoading"
+        class="canvas-wrap lg:w-2/3 flex items-center justify-center relative overflow-hidden p-2"
       >
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-        </svg>
-      </button>
+        <canvas ref="canvasRef" id="detectionCanvas" class="max-w-full max-h-[70vh] object-contain"></canvas>
+      </div>
 
-      <div class="flex flex-col lg:flex-row h-full overflow-hidden">
-        <!-- Canvas view -->
-        <div class="lg:w-2/3 bg-black flex items-center justify-center relative overflow-hidden p-2 min-h-[360px]">
-          <div v-if="imageLoading" class="absolute inset-0 flex items-center justify-center z-10 bg-black/80">
-            <div class="w-10 h-10 border-4 border-[var(--primary-green)] border-t-transparent rounded-full animate-spin"></div>
-          </div>
-          <canvas ref="canvasRef" id="detectionCanvas" class="max-w-full max-h-[80vh] object-contain"></canvas>
-        </div>
+      <!-- Details sidebar -->
+      <div class="lg:w-1/3 min-w-0">
+        <el-descriptions :column="1" direction="vertical" border>
+          <el-descriptions-item :label="t('analytics.detectionTime')">
+            <span class="time-text">{{ formattedTime }}</span>
+          </el-descriptions-item>
 
-        <!-- Details Sidebar -->
-        <div class="lg:w-1/3 p-6 lg:p-8 overflow-y-auto custom-scrollbar flex flex-col bg-[var(--el-card-bg-color)]">
-          <div class="mb-4">
-            <p class="text-[10px] font-bold text-[var(--primary-green)] uppercase tracking-widest mb-1">{{ t('analytics.detectionTime') || 'Record Time' }}</p>
-            <h4 class="text-base font-bold text-[var(--el-text-color-primary)] tracking-tight">{{ formattedTime }}</h4>
-          </div>
-
-          <div class="mb-5">
-            <p class="text-[10px] font-bold text-[var(--primary-green)] uppercase tracking-widest mb-2">{{ t('analytics.targetStats') || 'Object Statistics' }}</p>
+          <el-descriptions-item :label="t('analytics.targetStats')">
             <div class="h-44 w-full flex items-center justify-center mb-3 relative">
               <canvas ref="pieChartRef"></canvas>
-              <div v-if="!hasInsects" class="absolute text-xs italic text-[var(--el-text-color-secondary)]">{{ t('analytics.noInsects') || 'No insects detected' }}</div>
+              <span v-if="!hasInsects" class="meta-text absolute">{{ t('analytics.noInsects') }}</span>
             </div>
             <div class="flex flex-wrap gap-1.5">
-              <span
+              <el-tag
                 v-for="(count, name) in summaryData"
                 :key="name"
-                class="bg-emerald-500/10 text-emerald-400 px-3 py-1 rounded-full text-xs font-bold border border-emerald-500/20"
+                type="success"
+                effect="light"
+                size="small"
+                round
               >
                 {{ name }}: {{ count }}
-              </span>
+              </el-tag>
             </div>
-          </div>
+          </el-descriptions-item>
 
-          <div class="flex-1">
-            <p class="text-[10px] font-bold text-[var(--primary-green)] uppercase tracking-widest mb-1.5">{{ t('analytics.detailedDescription') || 'Detailed Description' }}</p>
-            <div class="bg-[var(--el-bg-color)] p-4 rounded-2xl italic text-xs leading-relaxed text-[var(--el-text-color-secondary)] border border-[var(--el-border-color)]">
-              {{ item?.aiResults?.raw_description || t('analytics.noDetailedDesc') || 'No detailed description.' }}
-            </div>
-          </div>
-
-          <div class="mt-6 pt-4 border-t border-[var(--el-border-color)]/60">
-            <button
-              @click="closeModal"
-              class="w-full py-3 bg-[var(--el-bg-color)] hover:bg-[var(--el-card-bg-color)] text-[var(--el-text-color-primary)] border border-[var(--el-border-color)] font-bold rounded-2xl transition text-sm cursor-pointer"
-            >
-              {{ t('analytics.closeWindow') || 'Close Window' }}
-            </button>
-          </div>
-        </div>
+          <el-descriptions-item :label="t('analytics.detailedDescription')">
+            <p class="desc-text">
+              {{ item?.aiResults?.raw_description || t('analytics.noDetailedDesc') }}
+            </p>
+          </el-descriptions-item>
+        </el-descriptions>
       </div>
     </div>
-  </div>
+
+    <template #footer>
+      <el-button @click="closeModal">{{ t('analytics.closeWindow') }}</el-button>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup>
@@ -81,7 +70,7 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['close'])
-const { t, currentLang } = useI18n()
+const { t, locale } = useI18n()
 
 const canvasRef = ref(null)
 const pieChartRef = ref(null)
@@ -90,7 +79,7 @@ let chartInstance = null
 
 const formattedTime = computed(() => {
   if (!props.item?.createdAt) return '--'
-  return new Date(props.item.createdAt).toLocaleString(currentLang.value === 'vi' ? 'vi-VN' : 'en-US')
+  return new Date(props.item.createdAt).toLocaleString(locale.value === 'vi' ? 'vi-VN' : 'en-US')
 })
 
 const summaryData = computed(() => {
@@ -103,6 +92,11 @@ const hasInsects = computed(() => {
 
 const closeModal = () => {
   emit('close')
+}
+
+// User-initiated close (X button, overlay click, Esc): the parent owns visibility via the 'close' event
+const handleBeforeClose = () => {
+  closeModal()
 }
 
 const drawDetection = () => {
@@ -231,3 +225,27 @@ onUnmounted(() => {
   if (chartInstance) chartInstance.destroy()
 })
 </script>
+
+<style scoped>
+.canvas-wrap {
+  min-height: 360px;
+  border-radius: 8px;
+  background-color: var(--el-fill-color-darker);
+}
+.time-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+.meta-text {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+.desc-text {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--el-text-color-regular);
+  white-space: pre-line;
+}
+</style>

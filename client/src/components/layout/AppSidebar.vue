@@ -1,152 +1,93 @@
 <template>
   <aside
-    class="bg-[var(--el-bg-color)] border-r border-[var(--el-border-color)] flex flex-col relative z-20 shrink-0 h-screen justify-between transition-all duration-300 ease-in-out select-none"
-    :class="isCollapsed ? 'w-[76px]' : 'w-[260px] lg:w-[280px]'"
+    class="app-sidebar flex flex-col relative z-20 shrink-0 h-screen justify-between transition-all duration-300 ease-in-out select-none"
+    :class="isCollapsed ? 'w-16' : 'w-[240px] lg:w-[256px]'"
   >
-    <div>
-      <!-- Logo & Studio Tag & Collapse Toggle -->
-      <div class="pt-7 pb-6" :class="isCollapsed ? 'px-3 flex flex-col items-center' : 'px-6'">
-        <!-- Top Tag & Collapse Button (Expanded) -->
-        <div v-if="!isCollapsed" class="flex items-center justify-between mb-3">
-          <div class="flex items-center gap-2">
-            <span class="text-[10px] font-bold tracking-[0.25em] uppercase text-[var(--el-text-color-secondary)]">
-              {{ t('common.studioTag') }}
-            </span>
-            <span class="w-1.5 h-1.5 rounded-full bg-[var(--primary-green)] ring-4 ring-[var(--primary-green)]/20"></span>
+    <div class="min-h-0 flex flex-col">
+      <!-- Logo & collapse toggle -->
+      <div class="pt-5 pb-4" :class="isCollapsed ? 'px-2 flex flex-col items-center gap-3' : 'px-5'">
+        <template v-if="!isCollapsed">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-3 min-w-0">
+              <img src="/logo.png" alt="FlyBot Logo" class="w-9 h-9 rounded-lg object-contain shrink-0" />
+              <div class="min-w-0">
+                <div class="sidebar-brand truncate">{{ t('common.brandName') }}</div>
+                <div class="sidebar-tag truncate">{{ t('common.studioTag') }}</div>
+              </div>
+            </div>
+            <el-tooltip :content="t('common.collapse')" placement="right" :show-after="100">
+              <el-button text circle :icon="Fold" @click="toggleCollapse" />
+            </el-tooltip>
           </div>
+        </template>
 
-          <!-- Collapse toggle button -->
-          <button
-            @click="toggleCollapse"
-            class="w-8 h-8 rounded-lg bg-[var(--el-card-bg-color)] border border-[var(--el-border-color)] flex items-center justify-center text-[var(--el-text-color-secondary)] hover:text-[var(--primary-green)] transition-all cursor-pointer shadow-sm"
-            :title="t('common.collapse')"
-          >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" />
-            </svg>
-          </button>
-        </div>
-
-        <!-- Expanded Brand Name -->
-        <div v-if="!isCollapsed" class="flex items-center gap-3">
+        <!-- Collapsed header -->
+        <template v-else>
+          <el-tooltip :content="t('common.expand')" placement="right" :show-after="100">
+            <el-button text circle :icon="Expand" @click="toggleCollapse" />
+          </el-tooltip>
           <img
             src="/logo.png"
             alt="FlyBot Logo"
-            class="w-9 h-9 rounded-xl object-contain shadow-md shadow-emerald-500/20"
-          />
-          <div>
-            <h1 class="text-2xl font-black tracking-tight text-[var(--el-text-color-primary)]">
-              {{ t('common.brandName') }}<span class="text-[var(--primary-green)]">.</span>
-            </h1>
-          </div>
-        </div>
-
-        <!-- Collapsed Header -->
-        <div v-else class="flex flex-col items-center gap-4">
-          <button
-            @click="toggleCollapse"
-            class="w-9 h-9 rounded-xl bg-[var(--el-card-bg-color)] border border-[var(--el-border-color)] flex items-center justify-center text-[var(--el-text-color-secondary)] hover:text-[var(--primary-green)] transition-all cursor-pointer shadow-sm"
-            :title="t('common.expand')"
-          >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
-          <img
-            src="/logo.png"
-            alt="FlyBot Logo"
-            class="w-10 h-10 rounded-2xl object-contain shadow-md shadow-emerald-500/20"
+            class="w-9 h-9 rounded-lg object-contain"
             :title="t('common.brandName')"
           />
-        </div>
+        </template>
       </div>
 
       <!-- Navigation items -->
-      <nav :class="isCollapsed ? 'px-2 space-y-2' : 'px-4 space-y-1.5'">
-        <template v-for="item in navItems" :key="item.id">
-          <!-- Collapsed Mode with Tooltip -->
-          <el-tooltip
-            v-if="isCollapsed"
-            :content="item.label"
-            placement="right"
-            :show-after="100"
-          >
-            <button
-              @click="handleSelect(item.id)"
-              class="flex items-center justify-center w-12 h-12 mx-auto rounded-2xl transition-all relative font-medium cursor-pointer"
-              :class="activeSection === item.id
-                ? 'bg-[var(--el-card-bg-color)] shadow-sm border border-[var(--el-border-color)] text-[var(--primary-green)]'
-                : 'text-[var(--el-text-color-secondary)] hover:bg-[var(--el-card-bg-color)]/60 hover:text-[var(--el-text-color-primary)]'"
-            >
-              <span
-                v-if="activeSection === item.id"
-                class="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-[var(--primary-green)] rounded-r-full"
-              ></span>
-              <component :is="item.icon" class="w-5 h-5" />
-            </button>
-          </el-tooltip>
-
-          <!-- Expanded Mode -->
-          <button
-            v-else
-            @click="handleSelect(item.id)"
-            class="w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl transition-all relative font-semibold text-sm cursor-pointer text-left"
-            :class="activeSection === item.id
-              ? 'bg-[var(--el-card-bg-color)] shadow-sm border border-[var(--el-border-color)] text-[var(--el-text-color-primary)]'
-              : 'text-[var(--el-text-color-secondary)] hover:bg-[var(--el-card-bg-color)]/60 hover:text-[var(--el-text-color-primary)]'"
-          >
-            <span
-              v-if="activeSection === item.id"
-              class="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-[var(--primary-green)] rounded-r-full"
-            ></span>
-            <component
-              :is="item.icon"
-              class="w-5 h-5 shrink-0"
-              :class="activeSection === item.id ? 'text-[var(--primary-green)]' : 'text-[var(--el-text-color-secondary)]'"
-            />
-            <span class="truncate">{{ item.label }}</span>
-          </button>
-        </template>
-      </nav>
+      <el-menu
+        class="sidebar-menu"
+        :default-active="activeSection"
+        :collapse="isCollapsed"
+        :collapse-transition="false"
+        @select="handleSelect"
+      >
+        <el-menu-item v-for="item in navItems" :key="item.id" :index="item.id">
+          <el-icon><component :is="item.icon" /></el-icon>
+          <template #title>{{ item.label }}</template>
+        </el-menu-item>
+      </el-menu>
     </div>
 
     <!-- Footer: Add Camera Button -->
-    <div :class="isCollapsed ? 'p-3 flex justify-center' : 'p-5'">
-      <!-- Collapsed Add Camera Button -->
+    <div :class="isCollapsed ? 'p-3 flex justify-center' : 'p-4'">
       <el-tooltip
         v-if="isCollapsed"
         :content="t('cameras.addCameraBtn')"
         placement="right"
         :show-after="100"
       >
-        <button
-          @click="emit('open-add-camera')"
-          class="w-12 h-12 rounded-2xl bg-[var(--primary-green)] hover:bg-emerald-400 text-slate-950 flex items-center justify-center shadow-lg shadow-emerald-500/25 transition-transform active:scale-95 cursor-pointer font-bold"
-        >
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
-          </svg>
-        </button>
+        <el-button type="primary" circle :icon="Plus" @click="emit('open-add-camera')" />
       </el-tooltip>
 
-      <!-- Expanded Add Camera Button -->
-      <button
+      <el-button
         v-else
+        type="primary"
+        size="large"
+        class="w-full"
+        :icon="Plus"
         @click="emit('open-add-camera')"
-        class="w-full h-12 rounded-2xl bg-[var(--primary-green)] hover:bg-emerald-400 text-slate-950 font-bold text-sm flex items-center justify-between px-5 shadow-lg shadow-emerald-500/20 transition-all active:scale-[0.98] cursor-pointer"
       >
-        <span>{{ t('cameras.addCameraBtn') }}</span>
-        <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-        </svg>
-      </button>
+        {{ t('cameras.addCameraBtn') }}
+      </el-button>
     </div>
   </aside>
 </template>
 
 <script setup>
-import { ref, computed, h } from 'vue';
+import { ref, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import {
+  Odometer,
+  VideoCamera,
+  DataAnalysis,
+  MapLocation,
+  Setting,
+  Fold,
+  Expand,
+  Plus
+} from '@element-plus/icons-vue';
 
 const props = defineProps({
   activeSection: {
@@ -169,53 +110,60 @@ const handleSelect = (sectionId) => {
   emit('navigate', sectionId);
 };
 
-// SVG Icon Components
-const DashboardIcon = {
-  render() {
-    return h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' }, [
-      h('path', { strokeLinecap: 'round', strokeLinejoin: 'round', strokeWidth: '2', d: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z' })
-    ]);
-  }
-};
-
-const CameraIcon = {
-  render() {
-    return h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' }, [
-      h('path', { strokeLinecap: 'round', strokeLinejoin: 'round', strokeWidth: '2', d: 'M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z' })
-    ]);
-  }
-};
-
-const AnalyticsIcon = {
-  render() {
-    return h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' }, [
-      h('path', { strokeLinecap: 'round', strokeLinejoin: 'round', strokeWidth: '2', d: 'M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4z' })
-    ]);
-  }
-};
-
-const MapIcon = {
-  render() {
-    return h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' }, [
-      h('path', { strokeLinecap: 'round', strokeLinejoin: 'round', strokeWidth: '2', d: 'M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7' })
-    ]);
-  }
-};
-
-const SettingsIcon = {
-  render() {
-    return h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' }, [
-      h('path', { strokeLinecap: 'round', strokeLinejoin: 'round', strokeWidth: '2', d: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z' }),
-      h('path', { strokeLinecap: 'round', strokeLinejoin: 'round', strokeWidth: '2', d: 'M15 12a3 3 0 11-6 0 3 3 0 016 0z' })
-    ]);
-  }
-};
-
 const navItems = computed(() => [
-  { id: 'dashboard', label: t('nav.dashboard'), icon: DashboardIcon },
-  { id: 'cameras', label: t('nav.cameras'), icon: CameraIcon },
-  { id: 'analytics', label: t('nav.analytics'), icon: AnalyticsIcon },
-  { id: 'map', label: t('nav.map'), icon: MapIcon },
-  { id: 'settings', label: t('nav.settings'), icon: SettingsIcon },
+  { id: 'dashboard', label: t('nav.dashboard'), icon: Odometer },
+  { id: 'cameras', label: t('nav.cameras'), icon: VideoCamera },
+  { id: 'analytics', label: t('nav.analytics'), icon: DataAnalysis },
+  { id: 'map', label: t('nav.map'), icon: MapLocation },
+  { id: 'settings', label: t('nav.settings'), icon: Setting },
 ]);
 </script>
+
+<style scoped>
+.app-sidebar {
+  background-color: var(--el-bg-color);
+  border-right: 1px solid var(--el-border-color);
+}
+
+.sidebar-brand {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--el-text-color-primary);
+}
+
+.sidebar-tag {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.sidebar-menu {
+  --el-menu-bg-color: transparent;
+  --el-menu-hover-bg-color: var(--el-fill-color-light);
+  --el-menu-item-height: 44px;
+  border-right: none;
+  padding: 0 8px;
+}
+
+.sidebar-menu.el-menu--collapse {
+  width: 100%;
+  padding: 0 4px;
+}
+
+.sidebar-menu :deep(.el-menu-item) {
+  border-radius: var(--el-border-radius-base);
+  margin-bottom: 4px;
+}
+
+.sidebar-menu.el-menu--collapse :deep(.el-menu-item),
+.sidebar-menu.el-menu--collapse :deep(.el-menu-tooltip__trigger) {
+  padding: 0 !important;
+  width: 100%;
+  justify-content: center;
+}
+
+.sidebar-menu :deep(.el-menu-item.is-active) {
+  background-color: var(--el-color-primary-light-9);
+  font-weight: 600;
+}
+</style>

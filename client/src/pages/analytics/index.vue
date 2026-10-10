@@ -1,145 +1,112 @@
 <template>
-  <div class="space-y-6 w-full max-w-7xl mx-auto pb-12 select-none">
-    <!-- Top Action Bar -->
-    <div class="bg-[var(--el-card-bg-color)] border border-[var(--el-border-color)] rounded-3xl p-5 shadow-soft flex flex-col justify-between gap-4">
-      <div class="flex flex-row gap-4 justify-between items-center w-full">
-        <div>
-          <h3 class="font-bold text-base text-[var(--el-text-color-primary)]">
-            {{ t('analytics.title') }}
-          </h3>
-          <p class="text-xs text-[var(--el-text-color-secondary)] mt-0.5">
-            {{ t('analytics.subtitle') }}
-          </p>
-        </div>
-        <div>
-          <!-- Sub Tab Switcher -->
-          <div class="flex bg-[var(--el-bg-color)] p-1 rounded-2xl border border-[var(--el-border-color)]">
-            <button
-              @click="activeSubTab = 'trends'"
-              class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
-              :class="activeSubTab === 'trends'
-                ? 'bg-[var(--el-card-bg-color)] text-[var(--primary-green)] shadow-sm'
-                : 'text-[var(--el-text-color-secondary)] hover:text-[var(--el-text-color-primary)]'"
-            >
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" />
-              </svg>
-              <span>{{ t('analytics.tabTrends') }}</span>
-            </button>
-
-            <button
-              @click="activeSubTab = 'history'"
-              class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
-              :class="activeSubTab === 'history'
-                ? 'bg-[var(--el-card-bg-color)] text-[var(--primary-green)] shadow-sm'
-                : 'text-[var(--el-text-color-secondary)] hover:text-[var(--el-text-color-primary)]'"
-            >
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-              </svg>
-              <span>{{ t('analytics.tabHistory') }}</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div class="flex flex-wrap items-center gap-3">
-        <!-- Camera Selector Dropdown -->
-        <el-select
-          v-if="cameras.length > 0"
-          :model-value="selectedCamera?.deviceSerial || 'all'"
-          @change="handleCameraChange"
-          :placeholder="t('analytics.selectCamera')"
-          size="default"
-          class="!w-52"
-        >
-          <el-option
-            :label="`🌐 ${t('analytics.allCameras')}`"
-            value="all"
-          />
-          <el-option
-            v-for="cam in cameras"
-            :key="cam.deviceSerial"
-            :label="`${cam.deviceName} (${cam.deviceSerial})`"
-            :value="cam.deviceSerial"
-          />
-        </el-select>
-
-        <!-- Time Range Selector (Requirement #2) -->
-        <el-select
-          v-model="selectedTimeRange"
-          @change="handleTimeRangeChange"
-          size="default"
-          class="!w-40"
-        >
-          <el-option :label="`📅 ${t('analytics.periodToday')}`" value="today" />
-          <el-option :label="`📅 ${t('analytics.period7Days')}`" value="7d" />
-          <el-option :label="`📅 ${t('analytics.period30Days')}`" value="30d" />
-          <el-option :label="`📆 ${t('analytics.periodCustom')}`" value="custom" />
-        </el-select>
-
-        <!-- Custom Date Range Picker (shown if 'custom' selected) -->
-        <el-date-picker
-          v-if="selectedTimeRange === 'custom'"
-          v-model="customDateRange"
-          type="daterange"
-          range-separator="→"
-          :start-placeholder="t('analytics.startDate')"
-          :end-placeholder="t('analytics.endDate')"
-          size="default"
-          format="YYYY-MM-DD"
-          value-format="YYYY-MM-DD"
-          class="!w-64"
-        />
-
-        <!-- Export Excel (XLSX) Button -->
-        <button
-          @click="exportToExcel"
-          :disabled="exportingXlsx"
-          class="flex items-center gap-1.5 px-3 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-xl text-xs font-bold transition-all border border-emerald-500/30 cursor-pointer disabled:opacity-50"
+  <div class="w-full max-w-7xl mx-auto pb-12">
+    <PageHeader :title="t('analytics.title')" :subtitle="t('analytics.subtitle')">
+      <template #actions>
+        <el-button
+          :icon="Download"
+          :loading="exportingXlsx"
           :title="t('analytics.exportXlsx')"
+          @click="exportToExcel"
         >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-          </svg>
-          <span>{{ exportingXlsx ? t('analytics.exporting') : t('analytics.exportExcel') }}</span>
-        </button>
-
-        <!-- Export PDF Button -->
-        <button
-          @click="exportToPdf"
-          :disabled="exportingPdf"
-          class="flex items-center gap-1.5 px-3 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl text-xs font-bold transition-all border border-red-500/30 cursor-pointer disabled:opacity-50"
+          {{ exportingXlsx ? t('analytics.exporting') : t('analytics.exportExcel') }}
+        </el-button>
+        <el-button
+          type="primary"
+          :icon="Document"
+          :loading="exportingPdf"
           :title="t('analytics.exportPdf')"
+          @click="exportToPdf"
         >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          <span>{{ exportingPdf ? t('analytics.exporting') : t('analytics.exportPdf') }}</span>
-        </button>
-      </div>
-    </div>
+          {{ exportingPdf ? t('analytics.exporting') : t('analytics.exportPdf') }}
+        </el-button>
+      </template>
+    </PageHeader>
 
-    <!-- Tab 1: Charts & Trends -->
-    <div v-show="activeSubTab === 'trends'" class="w-full">
-      <StatisticsTab
-        :camera="selectedCamera"
-        :time-range="selectedTimeRange"
-        :start-date="effectiveStartDate"
-        :end-date="effectiveEndDate"
-        :active="activeSubTab === 'trends'"
+    <!-- Filters -->
+    <div class="flex flex-wrap items-center gap-3 mb-4">
+      <!-- Camera selector -->
+      <el-select
+        v-if="cameras.length > 0"
+        :model-value="selectedCamera?.deviceSerial || 'all'"
+        @change="handleCameraChange"
+        :placeholder="t('analytics.selectCamera')"
+        class="!w-60"
+      >
+        <template #prefix>
+          <el-icon><VideoCamera /></el-icon>
+        </template>
+        <el-option :label="t('analytics.allCameras')" value="all" />
+        <el-option
+          v-for="cam in cameras"
+          :key="cam.deviceSerial"
+          :label="`${cam.deviceName} (${cam.deviceSerial})`"
+          :value="cam.deviceSerial"
+        />
+      </el-select>
+
+      <!-- Time range selector -->
+      <el-select
+        v-model="selectedTimeRange"
+        @change="handleTimeRangeChange"
+        class="!w-44"
+      >
+        <template #prefix>
+          <el-icon><Calendar /></el-icon>
+        </template>
+        <el-option :label="t('analytics.periodToday')" value="today" />
+        <el-option :label="t('analytics.period7Days')" value="7d" />
+        <el-option :label="t('analytics.period30Days')" value="30d" />
+        <el-option :label="t('analytics.periodCustom')" value="custom" />
+      </el-select>
+
+      <!-- Custom date range picker (shown if 'custom' selected) -->
+      <el-date-picker
+        v-if="selectedTimeRange === 'custom'"
+        v-model="customDateRange"
+        type="daterange"
+        range-separator="→"
+        :start-placeholder="t('analytics.startDate')"
+        :end-placeholder="t('analytics.endDate')"
+        format="YYYY-MM-DD"
+        value-format="YYYY-MM-DD"
+        class="!w-64"
       />
     </div>
 
-    <!-- Tab 2: Snapshot History & Inspection -->
-    <div v-show="activeSubTab === 'history'" class="w-full">
-      <HistoryTab
-        ref="historyTabRef"
-        :camera="selectedCamera"
-        :start-date="effectiveStartDate"
-        :end-date="effectiveEndDate"
-      />
-    </div>
+    <el-tabs v-model="activeSubTab">
+      <!-- Tab 1: Charts & Trends -->
+      <el-tab-pane name="trends">
+        <template #label>
+          <span class="inline-flex items-center gap-1.5">
+            <el-icon><TrendCharts /></el-icon>
+            <span>{{ t('analytics.tabTrends') }}</span>
+          </span>
+        </template>
+        <StatisticsTab
+          :camera="selectedCamera"
+          :time-range="selectedTimeRange"
+          :start-date="effectiveStartDate"
+          :end-date="effectiveEndDate"
+          :active="activeSubTab === 'trends'"
+        />
+      </el-tab-pane>
+
+      <!-- Tab 2: Snapshot History & Inspection -->
+      <el-tab-pane name="history">
+        <template #label>
+          <span class="inline-flex items-center gap-1.5">
+            <el-icon><List /></el-icon>
+            <span>{{ t('analytics.tabHistory') }}</span>
+          </span>
+        </template>
+        <HistoryTab
+          ref="historyTabRef"
+          :camera="selectedCamera"
+          :start-date="effectiveStartDate"
+          :end-date="effectiveEndDate"
+        />
+      </el-tab-pane>
+    </el-tabs>
   </div>
 </template>
 
@@ -156,6 +123,8 @@ import autoTable from 'jspdf-autotable';
 import { addQuicksandFonts } from '@/utils/pdfFonts';
 import { formatSummary, normalizeSummary } from '@/utils/species';
 import { ElNotification } from 'element-plus';
+import { Calendar, Document, Download, List, TrendCharts, VideoCamera } from '@element-plus/icons-vue';
+import PageHeader from '@/components/common/PageHeader.vue';
 
 const { t, locale } = useI18n();
 const { cameras, selectedCamera, selectCamera } = useCameras();
