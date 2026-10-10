@@ -128,6 +128,11 @@ const config = {
     ROBOFLOW_API_KEY: process.env.ROBOFLOW_API_KEY || "",
     ROBOFLOW_WORKFLOW_URL: process.env.ROBOFLOW_WORKFLOW_URL || "https://serverless.roboflow.com/new-workspace-z1wc7/workflows/fruit-fly-detection-and-count-1790390843624",
     AI_PROVIDER: process.env.AI_PROVIDER || "vertex",
+    // Retraining data: reviewed snapshots are uploaded to this Roboflow project (dataset slug).
+    // Needs a private API key (falls back to ROBOFLOW_API_KEY). Empty = off.
+    ROBOFLOW_UPLOAD_PROJECT: process.env.ROBOFLOW_UPLOAD_PROJECT || "",
+    ROBOFLOW_UPLOAD_API_KEY: process.env.ROBOFLOW_UPLOAD_API_KEY || "",
+    ROBOFLOW_UPLOAD_CLASS: process.env.ROBOFLOW_UPLOAD_CLASS || "fruit_fly",
 
     SAMPLE_IMAGES: [
         "https://transform.roboflow.com/ldhjCjRHNERu6GtOoZyE86FWnFF2/993f0614832b88f7ef3d3523a63320f3/thumb.jpg",

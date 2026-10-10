@@ -89,6 +89,13 @@ export default {
   getAdminSettings() {
     return apiClient.get('/admin/settings');
   },
+  // Roboflow retraining upload (admin)
+  getTrainingSync() {
+    return apiClient.get('/admin/training-sync');
+  },
+  runTrainingSync() {
+    return apiClient.post('/admin/training-sync/run');
+  },
   updateAdminSettings(data) {
     return apiClient.put('/admin/settings', data);
   },

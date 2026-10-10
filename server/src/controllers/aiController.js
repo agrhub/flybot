@@ -796,6 +796,8 @@ async function reviewSnapshot(req, res) {
             reviewedBy: req.user.id,
             reviewedAt: new Date()
         });
+        // Queue the reviewed photo for the retraining dataset
+        require('../services/trainingSync').markPending(snap);
         await snap.save();
         await dailyStats.refreshForSnapshot(snap);
 

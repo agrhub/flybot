@@ -10,7 +10,8 @@ let cachedAt = 0;
 const defaults = () => ({
     allowRegistration: ALLOW_REGISTRATION,
     retentionMonths: RETENTION_CYCLE,
-    defaultAlertThreshold: DEFAULT_ALERT_THRESHOLD
+    defaultAlertThreshold: DEFAULT_ALERT_THRESHOLD,
+    trainingSync: false
 });
 
 /**
@@ -32,7 +33,8 @@ async function getSettings() {
 const SETTING_RULES = {
     allowRegistration: (v) => typeof v === 'boolean',
     retentionMonths: (v) => Number.isInteger(v) && v >= 1 && v <= 60,
-    defaultAlertThreshold: (v) => Number.isInteger(v) && v >= 1 && v <= 10000
+    defaultAlertThreshold: (v) => Number.isInteger(v) && v >= 1 && v <= 10000,
+    trainingSync: (v) => typeof v === 'boolean'
 };
 
 /**

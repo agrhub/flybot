@@ -985,6 +985,21 @@
       "defaultThreshold": "Default alert threshold for new cameras",
       "defaultThresholdDesc": "Owners can change it per camera in Notifications.",
       "updatedAt": "Last changed {time}"
+    },
+    "training": {
+      "title": "Retrain the AI with reviewed photos",
+      "desc": "Every 15 minutes, photos people confirmed or corrected are uploaded to the Roboflow project. Confirmed photos go up with the AI boxes as labels; corrected ones go up tagged with the right count, to be labeled in Roboflow before the next training.",
+      "notConfigured": "Not set up: set ROBOFLOW_UPLOAD_PROJECT (and a private ROBOFLOW_UPLOAD_API_KEY) on the server. See DEPLOY.md.",
+      "project": "Roboflow project: {project}",
+      "counts": {
+        "pending": "Waiting",
+        "uploaded": "Uploaded",
+        "failed": "Failed"
+      },
+      "lastError": "Last error: {error}",
+      "runNow": "Upload now",
+      "schedule": "Also retries failed uploads.",
+      "ran": "Uploaded {uploaded}, failed {failed}."
     }
   },
   "dashboards": {

@@ -28,6 +28,14 @@ const snapshotSchema = new mongoose.Schema({
         issues: { type: [String], default: undefined },
         checkedAt: { type: Date, default: undefined }
     },
+    // Upload of the reviewed photo to the Roboflow training project (services/trainingSync.js)
+    trainingSync: {
+        status: { type: String, enum: ['pending', 'uploaded', 'failed'], default: undefined },
+        imageId: { type: String, default: undefined },
+        attempts: { type: Number, default: undefined },
+        error: { type: String, default: undefined },
+        uploadedAt: { type: Date, default: undefined }
+    },
     // Human review of the AI result. When counts are corrected, aiResults.summary holds the
     // corrected counts (so every statistic uses them) and originalSummary keeps the model output
     // for retraining.
@@ -47,6 +55,8 @@ snapshotSchema.index({ deviceSerial: 1, aiProcessed: 1, createdAt: -1 });
 snapshotSchema.index({ deviceSerial: 1, createdAt: -1 });
 // Review export: only reviewed snapshots have these fields
 snapshotSchema.index({ 'review.status': 1, 'review.reviewedAt': -1 }, { sparse: true });
+// Training upload queue
+snapshotSchema.index({ 'trainingSync.status': 1 }, { sparse: true });
 // Retention cleanup scans by age only
 snapshotSchema.index({ createdAt: 1 });
 

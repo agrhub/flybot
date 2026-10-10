@@ -985,6 +985,21 @@
       "defaultThreshold": "Ngưỡng cảnh báo mặc định cho camera mới",
       "defaultThresholdDesc": "Chủ sở hữu có thể đổi cho từng camera trong mục Thông báo.",
       "updatedAt": "Thay đổi lần cuối {time}"
+    },
+    "training": {
+      "title": "Huấn luyện lại AI bằng ảnh đã duyệt",
+      "desc": "Cứ 15 phút, các ảnh đã được người dùng xác nhận hoặc sửa số đếm sẽ được tải lên project Roboflow. Ảnh xác nhận được tải kèm khung nhận diện của AI làm nhãn; ảnh đã sửa được gắn thẻ số đếm đúng, cần gán nhãn trong Roboflow trước lần huấn luyện tiếp theo.",
+      "notConfigured": "Chưa cấu hình: đặt ROBOFLOW_UPLOAD_PROJECT (và ROBOFLOW_UPLOAD_API_KEY loại private) trên server. Xem DEPLOY.md.",
+      "project": "Project Roboflow: {project}",
+      "counts": {
+        "pending": "Đang chờ",
+        "uploaded": "Đã tải lên",
+        "failed": "Lỗi"
+      },
+      "lastError": "Lỗi gần nhất: {error}",
+      "runNow": "Tải lên ngay",
+      "schedule": "Đồng thời thử lại các ảnh bị lỗi.",
+      "ran": "Đã tải lên {uploaded}, lỗi {failed}."
     }
   },
   "dashboards": {

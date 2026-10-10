@@ -38,6 +38,8 @@
         </div>
       </el-form>
     </el-card>
+
+    <TrainingSyncCard />
   </div>
 </template>
 
@@ -49,6 +51,7 @@ import { Check } from '@element-plus/icons-vue';
 import api from '@/services/api';
 import PageHeader from '@/components/common/PageHeader.vue';
 import { adminErrorText } from './adminErrors';
+import TrainingSyncCard from './TrainingSyncCard.vue';
 
 const { t, locale } = useI18n();
 const loading = ref(false);

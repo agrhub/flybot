@@ -87,6 +87,7 @@ done
 | `flybot-roboflow-api-key` | `ROBOFLOW_API_KEY` |
 | `flybot-smtp-pass` (optional) | `SMTP_PASS`, only needed when sending email |
 | `flybot-telegram-bot-token` (optional) | `TELEGRAM_BOT_TOKEN`, only needed for Telegram alerts |
+| `flybot-roboflow-upload-key` (optional) | `ROBOFLOW_UPLOAD_API_KEY`, only needed for retraining uploads |
 
 To change a secret later, run `gcloud secrets versions add NAME --data-file=-`, then redeploy.
 
@@ -106,6 +107,8 @@ Newer projects may run builds as the Compute Engine default service account inst
 Fill in the `TODO` values in `deploy/cloudrun.env.yaml`. Everything in that file is non-secret.
 
 For email (password reset, email confirmation, alert emails), fill `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER` and `MAIL_FROM`, and store `SMTP_PASS` as the `flybot-smtp-pass` secret. Then add `,SMTP_PASS=flybot-smtp-pass:latest` to `_EXTRA_SECRETS`. The deploy script does all of this from `.env`. `APP_BASE_URL` must be the public URL of the app; the deploy script sets it to the Cloud Run URL when it is empty.
+
+To send reviewed photos to Roboflow for retraining, set `ROBOFLOW_UPLOAD_PROJECT` to the project ID (the dataset slug in the project URL) and `ROBOFLOW_UPLOAD_CLASS` to its class name (default `fruit_fly`). Uploads need the workspace's **private** API key. If `ROBOFLOW_API_KEY` is a publishable key, set `ROBOFLOW_UPLOAD_API_KEY` too: the deploy script stores it as the `flybot-roboflow-upload-key` secret (by hand: add `,ROBOFLOW_UPLOAD_API_KEY=flybot-roboflow-upload-key:latest` to `_EXTRA_SECRETS`). An admin then turns it on under Settings → System.
 
 ### 5. Deploy
 ```bash

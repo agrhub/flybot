@@ -9,6 +9,8 @@ const systemSettingSchema = new mongoose.Schema({
     allowRegistration: { type: Boolean, default: undefined },
     retentionMonths: { type: Number, min: 1, max: 60, default: undefined },
     defaultAlertThreshold: { type: Number, min: 1, max: 10000, default: undefined },
+    // Upload reviewed photos to Roboflow for retraining (services/trainingSync.js)
+    trainingSync: { type: Boolean, default: undefined },
     updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: undefined },
     updatedAt: { type: Date, default: Date.now }
 });

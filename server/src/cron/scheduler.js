@@ -4,6 +4,7 @@ const { syncCameraStatus } = require('../services/ezvizService');
 const { autoCaptureDueCameras } = require('./captureJob');
 const { sendCardReminders } = require('../services/maintenanceService');
 const { sendWeeklyReports } = require('../services/reportService');
+const { syncPending: syncTrainingData } = require('../services/trainingSync');
 const { TIMEZONE } = require('../services/captureSchedule');
 
 /**
@@ -32,6 +33,7 @@ const cleanupJob = exclusive('Retention cleanup', cleanupOldData);
 const statusSyncJob = exclusive('Camera status sync', syncCameraStatus);
 const cardReminderJob = exclusive('Card reminders', sendCardReminders);
 const weeklyReportJob = exclusive('Weekly reports', sendWeeklyReports);
+const trainingSyncJob = exclusive('Training sync', () => syncTrainingData());
 
 /**
  * Start scheduled tasks (Cron Jobs)
@@ -62,6 +64,11 @@ function startCronJobs() {
     cron.schedule('30 7 * * 1', () => {
         weeklyReportJob();
     }, { timezone: TIMEZONE });
+
+    // Reviewed photos to Roboflow (no-op unless configured and turned on)
+    cron.schedule('*/15 * * * *', () => {
+        trainingSyncJob();
+    });
 
     console.log("⏰ Periodic Cron jobs initialized.");
 }

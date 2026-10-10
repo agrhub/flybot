@@ -3,6 +3,7 @@ const { User, Camera, Session, Notification, AuthToken, Dashboard, AuditLog, Pus
 const { ROLES, roleOf } = require('../constants/roles');
 const { sendServerError } = require('../utils/http');
 const { recordAudit, AUDIT_ACTIONS, CATEGORIES } = require('../services/auditService');
+const trainingSync = require('../services/trainingSync');
 
 const MAX_PAGE_SIZE = 100;
 const escapeRegex = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -360,7 +361,34 @@ async function exportAuditLog(req, res) {
     }
 }
 
+/**
+ * GET /api/admin/training-sync: state of the Roboflow retraining upload
+ * POST /api/admin/training-sync/run: upload the next batch now (also retries failed ones)
+ */
+async function getTrainingSync(req, res) {
+    try {
+        res.json({ success: true, sync: await trainingSync.stats() });
+    } catch (err) {
+        sendServerError(res, err, { context: 'Training sync status' });
+    }
+}
+
+async function runTrainingSync(req, res) {
+    try {
+        if (!trainingSync.isConfigured()) {
+            return res.status(400).json({ success: false, message: 'Roboflow upload is not configured (ROBOFLOW_UPLOAD_PROJECT).' });
+        }
+        const retried = await trainingSync.retryFailed();
+        const result = await trainingSync.syncPending({ force: true });
+        res.json({ success: true, retried, result, sync: await trainingSync.stats() });
+    } catch (err) {
+        sendServerError(res, err, { context: 'Training sync run' });
+    }
+}
+
 module.exports = {
+    getTrainingSync,
+    runTrainingSync,
     listAuditLog,
     exportAuditLog,
     listUsers,
