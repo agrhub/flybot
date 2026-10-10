@@ -109,7 +109,8 @@ async function claimPendingMembers(user) {
 
 /**
  * One organization per manager (or admin) who owns cameras or farms and is in none yet,
- * holding their cameras and farms. Idempotent.
+ * holding their cameras and farms. Run once (migrations.runOnce): later, a camera outside any
+ * organization is there on purpose.
  */
 async function migrateToOrganizations() {
     const owners = new Set([
@@ -128,6 +129,8 @@ async function migrateToOrganizations() {
         }
         await Camera.updateMany({ userId: user._id, orgId: null }, { $set: { orgId } });
         await Farm.updateMany({ ownerId: user._id, orgId: null }, { $set: { orgId } });
+        const org = await Organization.findById(orgId);
+        if (org) await syncOrgShares(org);
     }
     if (created) console.log(`🏢 Organizations created for ${created} manager(s).`);
     return created;

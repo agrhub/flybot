@@ -1201,7 +1201,8 @@
         "created": "Tạo vườn",
         "deleted": "Xoá vườn",
         "shared": "Chia sẻ vườn",
-        "unshared": "Gỡ quyền xem vườn"
+        "unshared": "Gỡ quyền xem vườn",
+        "cameras_changed": "Đổi camera của lô"
       },
       "org": {
         "created": "Tạo tổ chức",
@@ -1216,7 +1217,8 @@
         "key_created": "Tạo API key",
         "key_revoked": "Thu hồi API key",
         "webhook_created": "Thêm webhook",
-        "webhook_deleted": "Xoá webhook"
+        "webhook_deleted": "Xoá webhook",
+        "webhook_updated": "Sửa webhook"
       }
     },
     "reasons": {

@@ -45,6 +45,22 @@ function canManageCamera(user, camera) {
     return (camera.sharedWith || []).some(sh => sh.viaOrg && String(sh.userId) === id && ['owner', 'manager'].includes(sh.orgRole));
 }
 
+/**
+ * Actions that hand out or take away the camera itself (delete, share with outsiders, move it
+ * to another organization): the owner (a manager) and admins only. Organization managers run
+ * the camera day to day but cannot give it away.
+ */
+function isCameraOwner(user, camera) {
+    if (!camera) return false;
+    if (isAdmin(user)) return true;
+    return roleOf(user) === 'manager' && String(camera.userId) === idOf(user);
+}
+
+async function findOwnedCamera(user, deviceSerial) {
+    const camera = await Camera.findOne({ deviceSerial });
+    return isCameraOwner(user, camera) ? camera : null;
+}
+
 async function findManageableCamera(user, deviceSerial) {
     const camera = await Camera.findOne({ deviceSerial });
     return canManageCamera(user, camera) ? camera : null;
@@ -61,6 +77,8 @@ module.exports = {
     canViewSerial,
     findViewableCamera,
     canManageCamera,
+    isCameraOwner,
+    findOwnedCamera,
     findManageableCamera,
     canManageSerial
 };

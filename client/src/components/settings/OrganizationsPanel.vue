@@ -59,7 +59,7 @@
             </el-select>
             <el-tag v-else size="small" type="info" effect="plain" round>{{ t(`orgs.roles.${m.role}`) }}</el-tag>
             <el-button
-              v-if="canEditMember(org, m) || m.userId === myId"
+              v-if="canEditMember(org, m) || (m.userId === myId && !isLastOwner(org, m))"
               :icon="m.userId === myId ? SwitchButton : Delete"
               text
               circle
@@ -124,6 +124,7 @@ const manageable = computed(() => new Set(cameras.value.filter(c => c.canManage)
 const addableFor = (org) => cameras.value.filter(c => c.canManage && !org.cameras.some(oc => oc.deviceSerial === c.deviceSerial));
 const isOwnerOf = (org) => org.myRole === 'owner' || isAdmin.value;
 const assignableRoles = (org) => (isOwnerOf(org) ? ['member', 'manager', 'owner'] : ['member']);
+const isLastOwner = (org, m) => m.role === 'owner' && org.members.filter(x => x.role === 'owner').length === 1;
 const canEditMember = (org, m) => m.userId !== myId.value && (isOwnerOf(org) || (org.canManage && m.role === 'member'));
 
 const errorText = (err) => err.response?.data?.message || t('common.error');

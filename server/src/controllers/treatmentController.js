@@ -57,7 +57,7 @@ async function validateInput(body, user, { partial = false } = {}) {
             return { error: `Choose 1 to ${MAX_CAMERAS} cameras.` };
         }
         const unique = [...new Set(serials)];
-        const cameras = await Camera.find({ deviceSerial: { $in: unique } }).select('deviceSerial userId');
+        const cameras = await Camera.find({ deviceSerial: { $in: unique } }).select('deviceSerial userId sharedWith');
         if (cameras.length !== unique.length || cameras.some(c => !canManageCamera(user, c))) {
             return { error: "Some cameras were not found or you cannot manage them.", code: 'CAMERA_NOT_FOUND' };
         }
@@ -136,7 +136,7 @@ async function findVisible(req) {
 }
 
 async function canEdit(user, treatment) {
-    const cameras = await Camera.find({ deviceSerial: { $in: treatment.cameraSerials } }).select('userId');
+    const cameras = await Camera.find({ deviceSerial: { $in: treatment.cameraSerials } }).select('userId sharedWith');
     return cameras.length > 0 && cameras.every(c => canManageCamera(user, c));
 }
 

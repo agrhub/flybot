@@ -303,3 +303,11 @@ body {
 .el-drawer.btt.tabbar-sheet {
   border-radius: 16px 16px 0 0;
 }
+
+/* Phones: notifications span the screen width instead of running off the right edge */
+@media (max-width: 767px) {
+  .el-notification {
+    width: calc(100vw - 32px) !important;
+    right: 16px !important;
+  }
+}

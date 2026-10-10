@@ -104,6 +104,32 @@ async function lowercaseEmails() {
 }
 
 /**
+ * Run a data migration once per database (recorded in the system settings document),
+ * so later restarts never redo it over what people changed since.
+ */
+async function runOnce(name, fn) {
+    const { SystemSetting } = require('../models');
+    const done = await SystemSetting.exists({ key: 'global', migrations: name });
+    if (done) return null;
+    const result = await fn();
+    await SystemSetting.updateOne({ key: 'global' }, { $addToSet: { migrations: name } }, { upsert: true });
+    return result;
+}
+
+/**
+ * Cameras from before card reminders existed have no replacement date, so every one of them
+ * would be "due" on the first morning. Their reminders start off; owners turn them on.
+ */
+async function cardRemindersOffForExisting() {
+    const res = await Camera.collection.updateMany(
+        { cardReminderDays: { $exists: false }, cardReplacedAt: null },
+        { $set: { cardReminderDays: 0 } }
+    );
+    if (res.modifiedCount) console.log(`🪤 Card reminders left off for ${res.modifiedCount} existing camera(s).`);
+    return res.modifiedCount;
+}
+
+/**
  * One-time data fixes that must run before the server accepts requests.
  */
 async function runStartupMigrations() {
@@ -113,7 +139,9 @@ async function runStartupMigrations() {
         console.error('❌ Role migration failed:', err);
     }
     try {
-        await require('./orgService').migrateToOrganizations();
+        // Before anything re-saves cameras (Mongoose would store the default reminder on save)
+        await runOnce('card-reminders-existing-off', cardRemindersOffForExisting);
+        await runOnce('organizations-v1', () => require('./orgService').migrateToOrganizations());
     } catch (err) {
         console.error('❌ Organization migration failed:', err);
     }
@@ -134,6 +162,8 @@ async function runStartupMigrations() {
 }
 
 module.exports = {
+    runOnce,
+    cardRemindersOffForExisting,
     ensureRoles,
     lowercaseEmails,
     mergeDuplicateCameras,

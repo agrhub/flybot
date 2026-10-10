@@ -1,5 +1,6 @@
 const jpeg = require('jpeg-js');
 const { Camera, Snapshot } = require('../models');
+const { TIMEZONE } = require('./captureSchedule');
 
 /**
  * Image quality of each snapshot, so a bad picture is caught before its AI count is trusted.
@@ -26,6 +27,13 @@ const BASELINE_MIN = 5;
 const FULL_COVERAGE = 0.25;
 const FULL_COUNT = 300;
 
+// Photos are decoded on the main thread: skip unusually large ones
+const MAX_JPEG_BYTES = 6 * 1024 * 1024;
+// Only recent photos count for the baseline and the "same problem twice" check
+const RECENT_DAYS = 14;
+// Darkness is only a problem in daylight (cameras without night vision are dark at night)
+const DAYLIGHT_HOURS = [7, 17];
+
 // Most serious first: only the first is alerted on
 const ISSUES = ['dark', 'overexposed', 'blurry', 'low_contrast', 'card_full'];
 
@@ -34,9 +42,10 @@ const ISSUES = ['dark', 'overexposed', 'blurry', 'low_contrast', 'card_full'];
  * Returns { width, height, gray, imageWidth, imageHeight } or null if it cannot be decoded.
  */
 function grayscale(buffer) {
+    if (!buffer || buffer.length > MAX_JPEG_BYTES) return null;
     let image;
     try {
-        image = jpeg.decode(buffer, { useTArray: true, formatAsRGBA: true, maxResolutionInMP: 40, maxMemoryUsageInMB: 512 });
+        image = jpeg.decode(buffer, { useTArray: true, formatAsRGBA: true, maxResolutionInMP: 16, maxMemoryUsageInMB: 160 });
     } catch {
         return null;
     }
@@ -118,7 +127,8 @@ const median = (values) => {
 
 /** The camera's usual sharpness and contrast, from its recent photos without issues. */
 async function baselineFor(deviceSerial) {
-    const recent = await Snapshot.find({ deviceSerial, 'quality.issues': { $size: 0 } })
+    const since = new Date(Date.now() - RECENT_DAYS * 24 * 60 * 60 * 1000);
+    const recent = await Snapshot.find({ deviceSerial, createdAt: { $gte: since }, 'quality.issues': { $size: 0 } })
         .sort({ createdAt: -1 })
         .limit(BASELINE_SIZE)
         .select('quality.sharpness quality.contrast')
@@ -137,10 +147,11 @@ async function baselineFor(deviceSerial) {
  * @param {{ sharpness, contrast } | null} baseline
  * @param {number} count  insects counted by the AI
  */
-function assess(m, baseline, count = 0) {
+function assess(m, baseline, count = 0, { daylight = true } = {}) {
     const issues = new Set();
-    if (m.brightness < DARK_BRIGHTNESS) issues.add('dark');
-    else if (m.brightness > BRIGHT_BRIGHTNESS || m.clipped > CLIPPED_SHARE) issues.add('overexposed');
+    if (m.brightness < DARK_BRIGHTNESS) {
+        if (daylight) issues.add('dark');
+    } else if (m.brightness > BRIGHT_BRIGHTNESS || m.clipped > CLIPPED_SHARE) issues.add('overexposed');
     else if (baseline) {
         // A hazy lens lowers edges and contrast together; blur lowers edges much more than contrast
         const edgeRatio = (q) => (q.contrast > 0 ? q.sharpness / (q.contrast * q.contrast) : 0);
@@ -162,10 +173,16 @@ async function checkSnapshot(snapshot, buffer, { count = 0 } = {}) {
     const metrics = metricsOf(sample);
     metrics.coverage = coverageOf(snapshot.aiResults?.insects, sample.imageWidth, sample.imageHeight);
     const baseline = await baselineFor(snapshot.deviceSerial);
-    const issues = assess(metrics, baseline, count);
+    const hour = Number(new Intl.DateTimeFormat('en-GB', { timeZone: TIMEZONE, hour: '2-digit', hourCycle: 'h23' }).format(snapshot.createdAt || new Date()));
+    const issues = assess(metrics, baseline, count, { daylight: hour >= DAYLIGHT_HOURS[0] && hour < DAYLIGHT_HOURS[1] });
     const quality = { ...metrics, issues, checkedAt: new Date() };
 
-    const previous = await Snapshot.findOne({ deviceSerial: snapshot.deviceSerial, _id: { $ne: snapshot._id }, 'quality.checkedAt': { $exists: true } })
+    const previous = await Snapshot.findOne({
+        deviceSerial: snapshot.deviceSerial,
+        _id: { $ne: snapshot._id },
+        createdAt: { $gte: new Date(Date.now() - RECENT_DAYS * 24 * 60 * 60 * 1000) },
+        'quality.checkedAt': { $exists: true }
+    })
         .sort({ createdAt: -1 })
         .select('quality.issues')
         .lean();

@@ -10,7 +10,7 @@ const addDays = (key, n) => dayKeyOf(new Date(`${key}T12:00:00Z`).getTime() + n 
 /**
  * Insects caught per day by one trap, from the daily rollup.
  * A sticky card only accumulates, so a day's catch is the rise of its peak over the
- * previous day; on a day the card was replaced it is that day's peak. Days without
+ * previous day; on a day the card was replaced it is unknown. Days without
  * data (or right after a gap) are unknown (null), never zero.
  * Returns Map(day -> catch|null) for every day from fromKey to toKey.
  */
@@ -23,8 +23,10 @@ function dailyCatches(rows, cardDays, fromKey, toKey) {
             catches.set(day, null);
             continue;
         }
+        // The card was changed that day: its peak may still be the old card's count, so the
+        // day's catch is unknown (the next day counts from the new card)
         if (cardDays.has(day)) {
-            catches.set(day, peak);
+            catches.set(day, null);
             continue;
         }
         const previous = peakByDay.get(addDays(day, -1));

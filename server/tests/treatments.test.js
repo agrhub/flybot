@@ -10,7 +10,7 @@ beforeEach(clearDb);
 
 const dayAgo = (n) => dayKeyOf(Date.now() - n * DAY_MS);
 
-test('daily catch = rise of the card count; a new card restarts it; gaps are unknown', () => {
+test('daily catch = rise of the card count; a card-change day and gaps are unknown', () => {
     const rows = [
         { day: '2026-03-01', peak: 4 },
         { day: '2026-03-02', peak: 10 },
@@ -22,7 +22,7 @@ test('daily catch = rise of the card count; a new card restarts it; gaps are unk
     assert.deepEqual([...catches.entries()], [
         ['2026-03-01', null],  // no previous day in range
         ['2026-03-02', 6],
-        ['2026-03-03', 3],
+        ['2026-03-03', null],  // card changed: the day's peak may be the old card's
         ['2026-03-04', 2],
         ['2026-03-05', null],
         ['2026-03-06', null]   // previous day unknown

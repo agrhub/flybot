@@ -135,6 +135,7 @@ async function updateWebhook(req, res) {
             if (hook.active) hook.failures = 0;
         }
         await hook.save();
+        recordAudit(req, { action: 'integration.webhook_updated', target: { type: 'webhook', id: String(hook._id), label: hook.url }, details: { events: hook.events, active: hook.active } });
         res.json({ success: true, webhook: hookOut(hook) });
     } catch (err) {
         sendServerError(res, err, { context: 'Update webhook' });

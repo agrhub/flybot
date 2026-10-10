@@ -1201,7 +1201,8 @@
         "created": "Farm created",
         "deleted": "Farm deleted",
         "shared": "Farm shared",
-        "unshared": "Farm access removed"
+        "unshared": "Farm access removed",
+        "cameras_changed": "Change plot cameras"
       },
       "org": {
         "created": "Create organization",
@@ -1216,7 +1217,8 @@
         "key_created": "Create API key",
         "key_revoked": "Revoke API key",
         "webhook_created": "Add webhook",
-        "webhook_deleted": "Delete webhook"
+        "webhook_deleted": "Delete webhook",
+        "webhook_updated": "Change webhook"
       }
     },
     "reasons": {

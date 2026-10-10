@@ -1,5 +1,5 @@
 const { User, Camera } = require('../models');
-const { findManageableCamera } = require('../utils/ownership');
+const { findManageableCamera, findOwnedCamera } = require('../utils/ownership');
 const { sendServerError } = require('../utils/http');
 const { normalizeLanguage } = require('../utils/i18n');
 const { queueMail } = require('../services/mailService');
@@ -60,7 +60,8 @@ async function addShare(req, res) {
         if (!EMAIL_REGEX.test(email) || email.length > 254) {
             return res.status(400).json({ success: false, message: "Please enter a valid email address." });
         }
-        const camera = await findManageableCamera(req.user, req.body.deviceSerial);
+        // Sharing hands the camera to someone else: owner or admin only
+        const camera = await findOwnedCamera(req.user, req.body.deviceSerial);
         if (!camera) return res.status(404).json({ success: false, message: "Camera not found or you cannot manage it." });
 
         const owner = await User.findById(camera.userId).select('email');
@@ -139,7 +140,8 @@ async function addShare(req, res) {
 async function removeShare(req, res) {
     try {
         const email = normalizeEmail(req.body.email);
-        const camera = await findManageableCamera(req.user, req.body.deviceSerial);
+        // Sharing hands the camera to someone else: owner or admin only
+        const camera = await findOwnedCamera(req.user, req.body.deviceSerial);
         if (!camera) return res.status(404).json({ success: false, message: "Camera not found or you cannot manage it." });
         const before = camera.sharedWith.length;
         camera.sharedWith = camera.sharedWith.filter(sh => sh.email !== email || sh.viaFarm || sh.viaOrg);

@@ -9,7 +9,7 @@ const { latestSnapshotTimeByCamera } = require('../services/snapshotQueries');
 const { CARD_REMINDER_DAYS, cardDueAt } = require('../services/maintenanceService');
 
 const cameraTarget = (camera) => ({ type: 'camera', id: camera.deviceSerial, label: camera.deviceName });
-const { viewFilter, viewableCameras, findViewableCamera, findManageableCamera, canManageCamera } = require('../utils/ownership');
+const { viewFilter, viewableCameras, findViewableCamera, findManageableCamera, findOwnedCamera, canManageCamera } = require('../utils/ownership');
 
 /**
  * Camera as returned to a given user: viewers never see the verification code or the
@@ -172,7 +172,8 @@ async function addCamera(req, res) {
 
         await newCamera.save();
         // Into the owner's organization, so its members see it
-        await require('../services/orgService').adoptCamera(req.user, newCamera);
+        await require('../services/orgService').adoptCamera(req.user, newCamera)
+            .catch(err => console.warn('⚠️ Camera not added to an organization:', err.message));
         recordAudit(req, { action: 'camera.added', target: cameraTarget(newCamera) });
         res.json({ success: true, message: "Camera added successfully.", camera: toClientCamera(newCamera, req.user) });
 
@@ -199,7 +200,7 @@ async function deleteCamera(req, res) {
     const { deviceSerial } = req.body;
     if (!deviceSerial) return res.status(400).json({ success: false, message: "Missing deviceSerial." });
     try {
-        const camera = await findManageableCamera(req.user, deviceSerial);
+        const camera = await findOwnedCamera(req.user, deviceSerial);
         const deleted = camera ? await Camera.findOneAndDelete({ _id: camera._id }) : null;
         if (!deleted) {
             return res.status(404).json({ success: false, message: "Device not found or permission denied." });
@@ -364,7 +365,6 @@ async function getLiveStream(req, res) {
             protocol: protocol,
             quality: streamQuality,
         });
-        console.log("result1: ", JSON.stringify(result));
 
         if (result && result.responseData) {
             responseData = result.responseData;
@@ -372,7 +372,6 @@ async function getLiveStream(req, res) {
             areaDomain = result.areaDomain;
         }
 
-        console.log("response live: ", JSON.stringify(responseData));
 
         if (responseData && responseData.code == '60019') {
             await Camera.updateMany({ deviceSerial }, { $set: { isEncrypt: 1 } });

@@ -167,7 +167,7 @@ async function getFarm(req, res) {
         let assignable = [];
         if (canEdit) {
             const filter = await farmService.assignableFilter(farm);
-            const candidates = await Camera.find(filter).select('deviceSerial deviceName userId farmId plotId').lean();
+            const candidates = await Camera.find(filter).select('deviceSerial deviceName userId farmId plotId sharedWith').lean();
             assignable = candidates
                 .filter(c => canManageCamera(req.user, c))
                 .map(c => ({ deviceSerial: c.deviceSerial, deviceName: c.deviceName, farmId: c.farmId ? String(c.farmId) : null, plotId: c.plotId ? String(c.plotId) : null }));
@@ -305,7 +305,7 @@ async function setPlotCameras(req, res) {
         }
         const unique = [...new Set(serials)];
         const filter = await farmService.assignableFilter(farm);
-        const cameras = await Camera.find({ ...filter, deviceSerial: { $in: unique } }).select('deviceSerial userId farmId');
+        const cameras = await Camera.find({ ...filter, deviceSerial: { $in: unique } }).select('deviceSerial userId farmId sharedWith');
         if (cameras.length !== unique.length || cameras.some(c => !canManageCamera(req.user, c))) {
             return res.status(400).json({ success: false, code: 'CAMERA_NOT_FOUND', message: "Only the farm owner's cameras can be added to its plots." });
         }
@@ -319,6 +319,7 @@ async function setPlotCameras(req, res) {
             const other = await Farm.findById(id);
             if (other) await farmService.syncFarmShares(other);
         }
+        recordAudit(req, { action: 'farm.cameras_changed', target: farmTarget(farm), details: { plotId: String(req.params.plotId), cameras: unique } });
         res.json({ success: true, cameraSerials: unique });
     } catch (err) {
         sendServerError(res, err, { context: 'Set plot cameras' });
@@ -335,6 +336,9 @@ async function shareFarm(req, res) {
         }
         const farm = await loadEditable(req, res);
         if (!farm) return;
+        if (!farmService.canShareFarm(req.user, farm)) {
+            return res.status(403).json({ success: false, code: 'FORBIDDEN', message: "Only the farm owner can share it." });
+        }
         if (farm.ownerId?.email?.toLowerCase() === email) {
             return res.status(400).json({ success: false, code: 'SHARE_WITH_OWNER', message: "This person already owns the farm." });
         }
@@ -374,6 +378,9 @@ async function unshareFarm(req, res) {
         const email = normalizeEmail(req.body.email);
         const farm = await loadEditable(req, res);
         if (!farm) return;
+        if (!farmService.canShareFarm(req.user, farm)) {
+            return res.status(403).json({ success: false, code: 'FORBIDDEN', message: "Only the farm owner can share it." });
+        }
         const before = farm.sharedWith.length;
         farm.sharedWith = farm.sharedWith.filter(sh => sh.email !== email);
         if (farm.sharedWith.length === before) return res.status(404).json({ success: false, message: "This farm is not shared with that email." });

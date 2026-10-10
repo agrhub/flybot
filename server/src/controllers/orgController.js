@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const { Organization, Camera, Farm } = require('../models');
 const { ORG_ROLES } = require('../models/Organization');
-const { canManageCamera } = require('../utils/ownership');
+const { isCameraOwner } = require('../utils/ownership');
 const { isAdmin } = require('../constants/roles');
 const { sendServerError } = require('../utils/http');
 const { normalizeLanguage } = require('../utils/i18n');
@@ -233,8 +233,9 @@ async function setCameras(req, res) {
         const org = await loadOrg(req, res, { manage: true });
         if (!org) return;
         const cameras = await Camera.find({ deviceSerial: { $in: [...add, ...remove] } });
-        if (cameras.length !== add.length + remove.length || cameras.some(c => !canManageCamera(req.user, c))) {
-            return res.status(403).json({ success: false, code: 'FORBIDDEN', message: "You can only move cameras you manage." });
+        // Only the camera's owner (or an admin) moves it, so an organization manager cannot take it
+        if (cameras.length !== add.length + remove.length || cameras.some(c => !isCameraOwner(req.user, c))) {
+            return res.status(403).json({ success: false, code: 'FORBIDDEN', message: "You can only move cameras you own." });
         }
         if (cameras.some(c => remove.includes(c.deviceSerial) && String(c.orgId) !== String(org._id))) {
             return res.status(400).json({ success: false, message: "A camera to remove is not in this organization." });

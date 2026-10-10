@@ -32,6 +32,13 @@ function canViewFarm(user, farm) {
     return ownerIdOf(farm) === id || !!orgRoleIn(user, farm) || (farm.sharedWith || []).some(sh => sh.userId && String(sh.userId) === id);
 }
 
+// Sharing a farm with outsiders: its owner and admins (not organization managers)
+function canShareFarm(user, farm) {
+    if (!farm) return false;
+    if (isAdmin(user)) return true;
+    return canAddCameras(user) && ownerIdOf(farm) === idOf(user);
+}
+
 function canEditFarm(user, farm) {
     if (!farm) return false;
     if (isAdmin(user)) return true;
@@ -149,6 +156,7 @@ async function unassignCameras(filter) {
 module.exports = {
     farmViewFilter,
     canViewFarm,
+    canShareFarm,
     canEditFarm,
     assignableFilter,
     syncFarmShares,

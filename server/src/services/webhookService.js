@@ -2,7 +2,7 @@ const crypto = require('crypto');
 const dns = require('dns');
 const net = require('net');
 const axios = require('axios');
-const { Webhook } = require('../models');
+const { Webhook, User } = require('../models');
 
 /**
  * Signed webhook deliveries of a user's alerts.
@@ -31,12 +31,20 @@ function isPrivateIPv4(ip) {
         || (a === 198 && (b === 18 || b === 19));
 }
 
+// IPv6 ranges that are internal, or that embed an IPv4 address (mapped, compatible, NAT64,
+// 6to4, Teredo): refused whole, since a webhook has no reason to use them
+const blockedV6 = new net.BlockList();
+for (const [prefix, bits] of [
+    ['::', 128], ['::1', 128], ['::', 96], ['::ffff:0:0', 96], ['64:ff9b::', 96], ['64:ff9b:1::', 48],
+    ['100::', 64], ['2001::', 32], ['2001:db8::', 32], ['2002::', 16],
+    ['fc00::', 7], ['fe80::', 10], ['fec0::', 10], ['ff00::', 8]
+]) blockedV6.addSubnet(prefix, bits, 'ipv6');
+
 function isPrivateAddress(ip) {
-    if (net.isIPv4(ip)) return isPrivateIPv4(ip);
-    const v6 = ip.toLowerCase();
-    const mapped = v6.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
-    if (mapped) return isPrivateIPv4(mapped[1]);
-    return v6 === '::' || v6 === '::1' || /^f[cd]/.test(v6) || /^fe[89ab]/.test(v6) || /^ff/.test(v6);
+    const address = String(ip).replace(/^\[|\]$/g, '');
+    if (net.isIPv4(address)) return isPrivateIPv4(address);
+    if (!net.isIPv6(address)) return true;
+    return blockedV6.check(address, 'ipv6');
 }
 
 /**
@@ -52,7 +60,8 @@ function urlProblem(value) {
     if (url.protocol !== 'https:') return 'The URL must start with https://';
     if (url.username || url.password) return 'The URL must not contain a user name or password.';
     if (value.length > 500) return 'The URL is too long.';
-    if (net.isIP(url.hostname.replace(/^\[|\]$/g, '')) && isPrivateAddress(url.hostname.replace(/^\[|\]$/g, ''))) {
+    const host = url.hostname.replace(/^\[|\]$/g, '');
+    if (net.isIP(host) && isPrivateAddress(host)) {
         return 'The URL must be a public address.';
     }
     return null;
@@ -90,6 +99,7 @@ function sign(secret, timestamp, body) {
  * POST one event to one webhook. Returns { ok, status, error }.
  */
 async function send(webhook, event, payload) {
+    if (urlProblem(webhook.url)) return { ok: false, status: null, error: 'Address is not public' };
     const body = JSON.stringify(payload);
     const timestamp = Math.floor(Date.now() / 1000);
     try {
@@ -156,6 +166,9 @@ const payloadOf = (notification) => ({
  */
 async function dispatch(userId, notification) {
     const hooks = await Webhook.find({ userId, active: true, events: notification.type });
+    if (!hooks.length) return 0;
+    // Only active managers and admins keep integrations
+    if (!(await User.exists({ _id: userId, disabled: { $ne: true }, role: { $in: ['admin', 'manager'] } }))) return 0;
     await Promise.all(hooks.map(hook => deliver(hook, notification.type, payloadOf(notification))));
     return hooks.length;
 }

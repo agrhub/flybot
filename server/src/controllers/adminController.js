@@ -162,10 +162,23 @@ async function deleteUser(req, res) {
             ApiKey.deleteMany({ userId: target._id }),
             Webhook.deleteMany({ userId: target._id })
         ]);
-        // Their farms go too (they own no cameras any more, so the plots are empty)
-        const ownedFarms = await Farm.find({ ownerId: target._id }).select('_id').lean();
-        if (ownedFarms.length) {
-            const farmIds = ownedFarms.map(f => f._id);
+        // Their farms: an organization's farm goes to another owner of it; the rest are deleted
+        // (their cameras, possibly other people's in the organization, leave the plots first)
+        const ownedFarms = await Farm.find({ ownerId: target._id }).select('_id orgId').lean();
+        const kept = [];
+        for (const farm of ownedFarms.filter(f => f.orgId)) {
+            const org = await Organization.findById(farm.orgId).lean();
+            const heir = org?.members.find(m => m.userId && String(m.userId) !== String(target._id) && m.role === 'owner')
+                || org?.members.find(m => m.userId && String(m.userId) !== String(target._id) && m.role === 'manager');
+            if (heir) {
+                await Farm.updateOne({ _id: farm._id }, { $set: { ownerId: heir.userId } });
+                kept.push(String(farm._id));
+            }
+        }
+        const doomed = ownedFarms.filter(f => !kept.includes(String(f._id)));
+        if (doomed.length) {
+            const farmIds = doomed.map(f => f._id);
+            await require('../services/farmService').unassignCameras({ farmId: { $in: farmIds } });
             await Camera.updateMany({ 'sharedWith.viaFarm': { $in: farmIds } }, { $pull: { sharedWith: { viaFarm: { $in: farmIds } } } });
             await Plot.deleteMany({ farmId: { $in: farmIds } });
             await Farm.deleteMany({ _id: { $in: farmIds } });
@@ -258,7 +271,16 @@ async function transferCamera(req, res) {
             camera.sharedWith.push({ userId: previousOwner._id, email: previousOwner.email.toLowerCase(), sharedBy: req.user.id, sharedAt: new Date() });
         }
         camera.userId = newOwner._id;
+        // Out of the previous owner's organization, into the new owner's
+        const orgService = require('../services/orgService');
+        const previousOrgId = camera.orgId;
+        camera.orgId = await orgService.defaultOrgFor(newOwner);
+        camera.sharedWith = camera.sharedWith.filter(sh => !sh.viaOrg);
         await camera.save();
+        for (const orgId of new Set([previousOrgId, camera.orgId].filter(Boolean).map(String))) {
+            const org = await Organization.findById(orgId);
+            if (org) await orgService.syncOrgShares(org);
+        }
         // The plot belongs to the previous owner's farm
         await require('../services/farmService').unassignCameras({ _id: camera._id });
         recordAudit(req, {
