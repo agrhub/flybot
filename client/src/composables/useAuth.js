@@ -28,6 +28,11 @@ export function useAuth() {
   const userName = computed(() => user.value?.name || user.value?.email?.split('@')[0] || i18n.global.t('common.defaultUserName'));
   const userEmail = computed(() => user.value?.email || '');
   const userInitial = computed(() => (userName.value.charAt(0) || 'A').toUpperCase());
+  // admin: everything; manager: own cameras + dashboards; user: view what is shared with them
+  const role = computed(() => user.value?.role || 'user');
+  const isAdmin = computed(() => role.value === 'admin');
+  const canManageCameras = computed(() => ['admin', 'manager'].includes(role.value));
+  const canBuildDashboards = computed(() => ['admin', 'manager'].includes(role.value));
 
   const setAuth = (userData, userToken = null) => {
     user.value = userData;
@@ -71,6 +76,10 @@ export function useAuth() {
     userName,
     userEmail,
     userInitial,
+    role,
+    isAdmin,
+    canManageCameras,
+    canBuildDashboards,
     setAuth,
     refreshUser,
     logout,

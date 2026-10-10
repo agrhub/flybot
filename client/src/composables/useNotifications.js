@@ -8,6 +8,13 @@ const items = ref([]);
 const unreadCount = ref(0);
 const hasMore = ref(false);
 const loading = ref(false);
+// Callbacks for live notifications (e.g. reload cameras when one is shared with you)
+const listeners = new Set();
+
+function onNotification(callback) {
+  listeners.add(callback);
+  return () => listeners.delete(callback);
+}
 let eventSource = null;
 
 const PAGE_SIZE = 20;
@@ -100,6 +107,7 @@ function connect() {
     unreadCount.value += 1;
     const { title, desc } = format(notification);
     ElNotification({ title, message: desc, type: TOAST_TYPE[notification.severity] || 'info', duration: 6000 });
+    listeners.forEach((callback) => callback(notification));
   });
 }
 
@@ -131,6 +139,7 @@ export function useNotifications() {
     disconnect,
     reset,
     format,
+    onNotification,
     relativeTime
   };
 }

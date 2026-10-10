@@ -142,6 +142,7 @@ const currentSectionTitle = computed(() => {
   const map = {
     dashboard: t('nav.dashboard'),
     cameras: t('nav.cameras'),
+    dashboards: t('nav.dashboards'),
     analytics: t('nav.analytics'),
     map: t('nav.map'),
     settings: t('nav.settings')
@@ -157,7 +158,7 @@ const SEVERITY_COLOR = {
 };
 const dotColor = (n) => (n.read ? 'var(--el-color-info)' : SEVERITY_COLOR[n.severity] || 'var(--el-color-info)');
 // Where a click on each notification type leads
-const TARGET_SECTION = { pest_threshold: 'analytics', camera_offline: 'cameras', camera_online: 'cameras', ai_failure: 'analytics' };
+const TARGET_SECTION = { pest_threshold: 'analytics', camera_offline: 'cameras', camera_online: 'cameras', ai_failure: 'analytics', camera_shared: 'cameras' };
 
 const {
   items, unreadCount, hasMore, loading,
@@ -171,6 +172,10 @@ const notificationItems = computed(() => {
 
 const openNotification = (n) => {
   markRead([n.id]);
+  if (n.type === 'dashboard_shared' && n.params?.dashboardId) {
+    router.push(`/dashboards/${n.params.dashboardId}`);
+    return;
+  }
   const section = TARGET_SECTION[n.type];
   if (section) emit('navigate', section);
 };

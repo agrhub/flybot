@@ -47,6 +47,21 @@
             </el-menu-item>
           </el-menu-item-group>
 
+          <el-menu-item-group v-if="isAdmin" :title="t('admin.group')">
+            <el-menu-item index="adminUsers">
+              <el-icon><UserFilled /></el-icon>
+              <span>{{ t('admin.users.tab') }}</span>
+            </el-menu-item>
+            <el-menu-item index="adminCameras">
+              <el-icon><Camera /></el-icon>
+              <span>{{ t('admin.cameras.tab') }}</span>
+            </el-menu-item>
+            <el-menu-item index="adminSystem">
+              <el-icon><Tools /></el-icon>
+              <span>{{ t('admin.system.tab') }}</span>
+            </el-menu-item>
+          </el-menu-item-group>
+
           <el-menu-item-group :title="t('settings.legal')">
             <el-menu-item index="legal">
               <el-icon><Document /></el-icon>
@@ -127,14 +142,14 @@
         <div v-else-if="activeTab === 'cameras'" class="max-w-5xl">
           <PageHeader :title="t('settings.camerasTitle')" :subtitle="t('settings.camerasSubtitle')">
             <template #actions>
-              <el-button type="primary" :icon="Plus" @click="openAddCameraModal">
+              <el-button v-if="canManageCameras" type="primary" :icon="Plus" @click="openAddCameraModal">
                 {{ t('settings.addCamera') }}
               </el-button>
             </template>
           </PageHeader>
 
           <el-card shadow="never">
-            <el-empty v-if="cameras.length === 0" :description="t('settings.noCameras')" />
+            <el-empty v-if="cameras.length === 0" :description="canManageCameras ? t('settings.noCameras') : t('cameras.noSharedCameras')" />
 
             <template v-else>
               <el-table :data="paginatedCameras" row-key="deviceSerial" style="width: 100%">
@@ -171,6 +186,28 @@
                   </template>
                 </el-table-column>
 
+                <el-table-column :label="t('share.access')" min-width="170">
+                  <template #default="{ row }">
+                    <el-tag v-if="row.access === 'owner' || !row.access" type="success" effect="light" round size="small">
+                      {{ t('share.accessOwner') }}
+                    </el-tag>
+                    <el-tooltip v-else :content="row.owner?.email || ''" placement="top" :disabled="!row.owner?.email">
+                      <el-tag :type="row.access === 'admin' ? 'warning' : 'info'" effect="light" round size="small">
+                        {{ row.access === 'admin' ? t('share.accessAdmin') : t('share.accessShared') }}
+                      </el-tag>
+                    </el-tooltip>
+                    <el-tag
+                      v-if="row.canManage && row.sharedWith?.length"
+                      type="info"
+                      effect="plain"
+                      size="small"
+                      class="ml-1"
+                    >
+                      {{ t('share.sharedCount', { count: row.sharedWith.length }) }}
+                    </el-tag>
+                  </template>
+                </el-table-column>
+
                 <el-table-column :label="t('cameras.validateCode')" min-width="120">
                   <template #default="{ row }">
                     <span class="font-mono">{{ row.validateCode || '--' }}</span>
@@ -193,17 +230,22 @@
                   </template>
                 </el-table-column>
 
-                <el-table-column :label="t('common.actions')" width="260" align="right">
+                <el-table-column :label="t('common.actions')" width="240" align="right">
                   <template #default="{ row }">
                     <el-button link type="primary" :icon="VideoPlay" @click="selectCameraAndGoToLive(row)">
                       {{ t('settings.viewLiveBtn') }}
                     </el-button>
-                    <el-button link :icon="Edit" @click="openEditCameraModal(row)">
-                      {{ t('settings.editCamera') }}
-                    </el-button>
-                    <el-tooltip :content="t('settings.deleteCamera')" placement="top">
-                      <el-button link type="danger" :icon="Delete" @click="handleDeleteCamera(row)" />
-                    </el-tooltip>
+                    <template v-if="row.canManage !== false">
+                      <el-tooltip :content="t('share.button')" placement="top">
+                        <el-button link :icon="Share" @click="openShareDialog(row)" />
+                      </el-tooltip>
+                      <el-tooltip :content="t('settings.editCamera')" placement="top">
+                        <el-button link :icon="Edit" @click="openEditCameraModal(row)" />
+                      </el-tooltip>
+                      <el-tooltip :content="t('settings.deleteCamera')" placement="top">
+                        <el-button link type="danger" :icon="Delete" @click="handleDeleteCamera(row)" />
+                      </el-tooltip>
+                    </template>
                   </template>
                 </el-table-column>
               </el-table>
@@ -333,9 +375,9 @@
               <p class="settings-meta mt-1">{{ t('settings.thresholdsDesc') }}</p>
             </template>
 
-            <el-empty v-if="cameras.length === 0" :description="t('settings.noCameras')" :image-size="80" />
+            <el-empty v-if="manageableCameras.length === 0" :description="t('settings.noCameras')" :image-size="80" />
             <div v-else>
-              <template v-for="(cam, idx) in cameras" :key="cam.deviceSerial">
+              <template v-for="(cam, idx) in manageableCameras" :key="cam.deviceSerial">
                 <el-divider v-if="idx > 0" class="!my-0" />
                 <div class="py-3 flex flex-wrap items-center justify-between gap-3">
                   <div class="min-w-0">
@@ -483,6 +525,16 @@
         </div>
 
         <!-- 7. Legal / terms -->
+        <div v-else-if="activeTab === 'adminUsers' && isAdmin" class="max-w-6xl">
+          <AdminUsersPanel />
+        </div>
+        <div v-else-if="activeTab === 'adminCameras' && isAdmin" class="max-w-6xl">
+          <AdminCamerasPanel />
+        </div>
+        <div v-else-if="activeTab === 'adminSystem' && isAdmin" class="max-w-3xl">
+          <SystemSettingsPanel />
+        </div>
+
         <div v-else-if="activeTab === 'legal'" class="max-w-2xl">
           <PageHeader :title="t('settings.termsTab')" :subtitle="t('settings.termsSub')" />
 
@@ -550,6 +602,7 @@
         </el-button>
       </template>
     </el-dialog>
+    <CameraShareDialog v-model="shareDialogVisible" :camera="shareDialogCamera" @changed="loadCameras" />
   </el-card>
 </template>
 
@@ -564,6 +617,10 @@ import { ElNotification, ElMessageBox } from 'element-plus';
 import { useAuth } from '@/composables/useAuth';
 import { useLanguage } from '@/composables/useLanguage';
 import PageHeader from '@/components/common/PageHeader.vue';
+import CameraShareDialog from '@/components/cameras/CameraShareDialog.vue';
+import AdminUsersPanel from '@/components/admin/AdminUsersPanel.vue';
+import AdminCamerasPanel from '@/components/admin/AdminCamerasPanel.vue';
+import SystemSettingsPanel from '@/components/admin/SystemSettingsPanel.vue';
 import {
   User,
   Lock,
@@ -581,7 +638,11 @@ import {
   Monitor,
   SwitchButton,
   Promotion,
-  ChatDotRound
+  ChatDotRound,
+  Share,
+  UserFilled,
+  Camera,
+  Tools
 } from '@element-plus/icons-vue';
 import { useNotifications } from '@/composables/useNotifications';
 
@@ -589,7 +650,16 @@ const route = useRoute();
 const { t } = useI18n();
 const { isDark, toggleTheme } = useTheme();
 const { cameras, loadCameras, openAddCameraModal, selectCameraAndGoToLive } = useCameras();
-const { user: authUser, setAuth, refreshUser, logout } = useAuth();
+const { user: authUser, setAuth, refreshUser, logout, isAdmin, canManageCameras } = useAuth();
+const manageableCameras = computed(() => cameras.value.filter(c => c.canManage !== false));
+
+// ---------- Camera sharing ----------
+const shareDialogVisible = ref(false);
+const shareDialogCamera = ref(null);
+const openShareDialog = (cam) => {
+  shareDialogCamera.value = cam;
+  shareDialogVisible.value = true;
+};
 // Used by the language picker in the preferences tab
 const { locale, locales: supportedLocales, setAppLocale: setLocale } = useLanguage();
 

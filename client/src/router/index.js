@@ -105,6 +105,16 @@ const router = createRouter({
           component: () => import('@/pages/cameras/index.vue'),
         },
         {
+          path: 'dashboards',
+          name: 'dashboards',
+          component: () => import('@/pages/dashboards/index.vue'),
+        },
+        {
+          path: 'dashboards/:id',
+          name: 'dashboard-view',
+          component: () => import('@/pages/dashboards/View.vue'),
+        },
+        {
           path: 'analytics',
           name: 'analytics',
           component: () => import('@/pages/analytics/index.vue'),
@@ -120,6 +130,13 @@ const router = createRouter({
           component: () => import('@/pages/settings/index.vue'),
         },
       ],
+    },
+
+    // 5. Public dashboard link (read-only, no sign-in)
+    {
+      path: '/d/:token',
+      name: 'public-dashboard',
+      component: () => import('@/pages/public/PublicDashboard.vue'),
     },
 
     // Compatibility redirects for legacy URLs

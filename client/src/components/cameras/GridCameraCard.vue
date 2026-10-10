@@ -126,7 +126,7 @@
           class="absolute top-2.5 right-2.5 z-10 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
         >
           <!-- Enter/Update Code Button (if encrypted) -->
-          <el-tooltip v-if="camera.isEncrypt === 1" :content="t('cameras.changeCode')" placement="bottom">
+          <el-tooltip v-if="camera.isEncrypt === 1 && camera.canManage !== false" :content="t('cameras.changeCode')" placement="bottom">
             <el-button
               circle
               size="small"
@@ -175,7 +175,7 @@
 
           <div class="flex items-center gap-2 mt-3">
             <el-button
-              v-if="camera.isEncrypt === 1"
+              v-if="camera.isEncrypt === 1 && camera.canManage !== false"
               type="warning"
               size="small"
               :icon="Key"

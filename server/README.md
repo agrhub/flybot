@@ -20,7 +20,25 @@ Optional:
 - `COOKIE_SECURE=true` when served over HTTPS.
 - `TRUST_PROXY=1` when running behind a reverse proxy, so rate limits see the real client IP.
 - `CORS_ORIGINS`: comma-separated extra origins allowed to call the API.
-- `ALLOW_REGISTRATION=false` to close public sign-up.
+- `ALLOW_REGISTRATION=false` to close public sign-up. Admins can also change this, the snapshot retention and the default alert threshold in Settings → System settings; saved values override the environment.
+
+## Roles and sharing
+- **admin**: everything: all cameras, all accounts (Settings → Users / All cameras) and system settings. The first account ever created is the admin.
+- **manager**: adds cameras, edits, deletes and shares the cameras they own, builds dashboards.
+- **user** (viewer): sees only cameras and dashboards shared with them.
+
+A device serial can be registered only once. Others get access when the owner shares the camera by email (Settings → Camera management → Share). Sharing with an email that has no account sends an invitation; access starts once that person signs up and confirms the address.
+
+On startup the server assigns roles to accounts created before roles existed: the earliest account becomes admin, accounts that own cameras become managers, the rest viewers.
+
+Databases from before this change may hold the same serial on several accounts. The server logs a warning; merge them (the earliest record keeps ownership, the others are shared with) before the unique index can be built:
+```bash
+node scripts/merge_duplicate_cameras.js          # preview
+node scripts/merge_duplicate_cameras.js --apply  # merge and build the index
+```
+
+## Custom dashboards
+Admins and managers build dashboards (Dashboards in the sidebar) from widgets: key figures, daily trend, species, camera ranking and latest snapshots. A dashboard can be shared by email (read-only) or published with a public link (`/d/<token>`, no sign-in). A public link only shows cameras the owner owns (an admin owner: any camera), and a new link can be created at any time to stop the old one.
 
 ## Email (password reset, email confirmation, alerts)
 - `APP_BASE_URL`: public URL of the web app, used in email links (e.g. `https://flybot.example.com`). Required in production; links are never built from request headers.

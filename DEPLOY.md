@@ -180,3 +180,4 @@ Cloud Run gives you HTTPS automatically; the VM does not. Either put a Google Cl
 - `GET /health` returns `{"status":"ok"}`.
 - Logging in works, and camera snapshot images load. Images need the login cookie, so if they fail on plain HTTP, check that `COOKIE_SECURE` is not `true`.
 - The logs show `⏰ Periodic Cron jobs initialized.` on exactly one deployment.
+- After upgrading an existing database: if the logs warn about duplicate camera serials, run `node scripts/merge_duplicate_cameras.js --apply` once (see `server/README.md`, Roles and sharing).

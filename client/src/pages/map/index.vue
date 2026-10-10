@@ -137,7 +137,7 @@
                 {{ Number(cam.latitude).toFixed(4) }}, {{ Number(cam.longitude).toFixed(4) }}
               </span>
               <el-tag v-else type="warning" effect="light" round size="small">{{ t('map.noLocation') }}</el-tag>
-              <el-button link type="primary" size="small" :icon="Edit" @click.stop="openEditModal(cam)">
+              <el-button v-if="cam.canManage !== false" link type="primary" size="small" :icon="Edit" @click.stop="openEditModal(cam)">
                 {{ cam.hasLocation ? t('map.edit') : t('map.setLocation') }}
               </el-button>
             </div>
@@ -705,7 +705,8 @@ const renderMarkers = () => {
 
     const marker = L.marker([lat, lng], {
       icon: createCustomIcon(cam),
-      draggable: true
+      // Only people who manage the camera can move it
+      draggable: cam.canManage !== false
     });
     clusterGroup.addLayer(marker);
 
@@ -823,7 +824,7 @@ const focusCamera = (cam) => {
   selectedCam.value = cam;
   // No GPS yet: open the location editor instead of jumping to a made-up place
   if (!cam.hasLocation) {
-    openEditModal(cam);
+    if (cam.canManage !== false) openEditModal(cam);
     return;
   }
   if (!map) return;

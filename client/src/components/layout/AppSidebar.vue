@@ -51,7 +51,7 @@
     </div>
 
     <!-- Footer: Add Camera Button -->
-    <div :class="isCollapsed ? 'p-3 flex justify-center' : 'p-4'">
+    <div v-if="canManageCameras" :class="isCollapsed ? 'p-3 flex justify-center' : 'p-4'">
       <el-tooltip
         v-if="isCollapsed"
         :content="t('cameras.addCameraBtn')"
@@ -78,12 +78,14 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useAuth } from '@/composables/useAuth';
 import {
   Odometer,
   VideoCamera,
   DataAnalysis,
   MapLocation,
   Setting,
+  Grid,
   Fold,
   Expand,
   Plus
@@ -99,6 +101,7 @@ const props = defineProps({
 const emit = defineEmits(['navigate', 'open-add-camera']);
 
 const { t } = useI18n();
+const { canManageCameras } = useAuth();
 const isCollapsed = ref(localStorage.getItem('smart_trap_sidebar_collapsed') === 'true');
 
 const toggleCollapse = () => {
@@ -113,6 +116,7 @@ const handleSelect = (sectionId) => {
 const navItems = computed(() => [
   { id: 'dashboard', label: t('nav.dashboard'), icon: Odometer },
   { id: 'cameras', label: t('nav.cameras'), icon: VideoCamera },
+  { id: 'dashboards', label: t('nav.dashboards'), icon: Grid },
   { id: 'analytics', label: t('nav.analytics'), icon: DataAnalysis },
   { id: 'map', label: t('nav.map'), icon: MapLocation },
   { id: 'settings', label: t('nav.settings'), icon: Setting },

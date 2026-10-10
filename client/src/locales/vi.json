@@ -28,7 +28,9 @@
     "prevPage": "Trang trước",
     "nextPage": "Trang kế tiếp",
     "notice": "Thông báo",
-    "defaultUserName": "Người dùng"
+    "defaultUserName": "Người dùng",
+    "confirm": "Xác nhận",
+    "done": "Xong"
   },
   "nav": {
     "home": "Trang chủ",
@@ -53,7 +55,8 @@
     "careers": "Tuyển dụng",
     "blog": "Tin tức",
     "helpCenter": "Trợ giúp",
-    "apiDocs": "Tài liệu API"
+    "apiDocs": "Tài liệu API",
+    "dashboards": "Bảng tùy chỉnh"
   },
   "topbar": {
     "notifications": "Thông báo",
@@ -105,7 +108,8 @@
     "verifyBanner": "Xác nhận email ({email}) để nhận email cảnh báo dịch hại.",
     "resendVerification": "Gửi lại email",
     "verificationSent": "Đã gửi email xác nhận. Hãy kiểm tra hộp thư.",
-    "registerSuccessVerify": "Tài khoản đã sẵn sàng! Chúng tôi đã gửi đường dẫn xác nhận tới email của bạn."
+    "registerSuccessVerify": "Tài khoản đã sẵn sàng! Chúng tôi đã gửi đường dẫn xác nhận tới email của bạn.",
+    "registrationClosed": "Hiện chưa nhận tài khoản mới. Hãy liên hệ quản trị viên để được cấp quyền."
   },
   "dashboard": {
     "welcome": "Chào mừng trở lại",
@@ -347,7 +351,8 @@
     "schedule": {
       "every": "Mỗi {minutes} phút",
       "daytimeOnly": "chỉ ban ngày"
-    }
+    },
+    "noSharedCameras": "Chưa có camera nào được chia sẻ với bạn."
   },
   "analytics": {
     "title": "Báo Cáo & Lịch Sử Nhận Dạng AI",
@@ -815,7 +820,234 @@
       "ai_failure": {
         "title": "Phân tích AI bị lỗi",
         "desc": "{deviceName}: {failures} ảnh gần nhất không phân tích được."
+      },
+      "camera_shared": {
+        "title": "Camera được chia sẻ với bạn",
+        "desc": "{sharer} đã chia sẻ camera {deviceName} với bạn."
+      },
+      "dashboard_shared": {
+        "title": "Bảng được chia sẻ với bạn",
+        "desc": "{sharer} đã chia sẻ bảng {dashboardName} với bạn."
       }
+    }
+  },
+  "roles": {
+    "admin": "Quản trị viên",
+    "manager": "Quản lý",
+    "user": "Người xem"
+  },
+  "share": {
+    "button": "Chia sẻ",
+    "cameraTitle": "Chia sẻ {name}",
+    "cameraDesc": "Người được chia sẻ có thể xem camera và thống kê của nó, nhưng không thể sửa, xóa hay chia sẻ lại. Email chưa có tài khoản sẽ nhận lời mời và được truy cập sau khi đăng ký và xác nhận email.",
+    "emailPlaceholder": "Địa chỉ email",
+    "add": "Chia sẻ",
+    "email": "Email",
+    "status": "Trạng thái",
+    "statusLabel": {
+      "active": "Đang truy cập",
+      "pending": "Đã mời"
+    },
+    "statusHint": {
+      "active": "Người này đã có quyền truy cập.",
+      "pending": "Đang chờ người này đăng ký và xác nhận email."
+    },
+    "empty": "Chưa chia sẻ với ai.",
+    "remove": "Gỡ quyền truy cập",
+    "removeConfirm": "Gỡ quyền truy cập của {email}?",
+    "shared": "Đã chia sẻ với {email}.",
+    "invited": "Đã gửi lời mời tới {email}.",
+    "access": "Quyền",
+    "accessOwner": "Chủ sở hữu",
+    "accessShared": "Được chia sẻ",
+    "accessAdmin": "Quyền quản trị",
+    "sharedCount": "Chia sẻ với {count}",
+    "errors": {
+      "SHARE_WITH_OWNER": "Người này là chủ sở hữu.",
+      "ALREADY_SHARED": "Đã chia sẻ với email này."
+    }
+  },
+  "admin": {
+    "group": "Quản trị",
+    "saved": "Đã lưu.",
+    "errors": {
+      "SELF_CHANGE": "Bạn không thể đổi vai trò, vô hiệu hóa hay xóa tài khoản của chính mình.",
+      "LAST_ADMIN": "Cần ít nhất một quản trị viên đang hoạt động.",
+      "OWNS_CAMERAS": "Người dùng này sở hữu {count} camera. Hãy chuyển chúng sang tài khoản khác trước.",
+      "NOT_MANAGER": "Chủ sở hữu mới phải là quản lý hoặc quản trị viên.",
+      "USER_NOT_FOUND": "Không có tài khoản nào với email này."
+    },
+    "users": {
+      "tab": "Người dùng",
+      "title": "Người dùng",
+      "subtitle": "Vai trò: quản trị viên toàn quyền, quản lý thêm và chia sẻ camera của mình và tạo bảng tùy chỉnh, người xem chỉ thấy những gì được chia sẻ.",
+      "search": "Tìm theo email hoặc tên",
+      "allRoles": "Tất cả vai trò",
+      "account": "Tài khoản",
+      "you": "Bạn",
+      "role": "Vai trò",
+      "cameras": "Camera",
+      "status": "Trạng thái",
+      "active": "Hoạt động",
+      "disabled": "Đã vô hiệu hóa",
+      "unverified": "Chưa xác nhận email",
+      "joined": "Ngày tham gia",
+      "enable": "Kích hoạt",
+      "disable": "Vô hiệu hóa",
+      "delete": "Xóa tài khoản",
+      "roleConfirm": "Đổi vai trò của {email} thành {role}?",
+      "disableConfirm": "Vô hiệu hóa {email}? Người này bị đăng xuất khỏi mọi thiết bị và không thể đăng nhập cho đến khi được kích hoạt lại.",
+      "deleteConfirm": "Xóa tài khoản {email}? Các bảng tùy chỉnh, thông báo và quyền xem camera được chia sẻ của người này sẽ bị xóa. Không thể hoàn tác.",
+      "deleted": "Đã xóa tài khoản."
+    },
+    "cameras": {
+      "tab": "Tất cả camera",
+      "title": "Tất cả camera",
+      "subtitle": "Mọi camera đã đăng ký trên FlyBot cùng chủ sở hữu. Mỗi thiết bị chỉ được đăng ký một lần.",
+      "search": "Tìm theo tên, số serial hoặc email chủ sở hữu",
+      "owner": "Chủ sở hữu",
+      "noOwner": "Không có chủ",
+      "sharedWith": "Chia sẻ với",
+      "transfer": "Chuyển quyền",
+      "transferTitle": "Chuyển quyền sở hữu",
+      "transferDesc": "Chuyển {name} ({serial}) sang tài khoản khác.",
+      "newOwnerEmail": "Email chủ sở hữu mới",
+      "keepAccess": "Giữ quyền xem cho chủ sở hữu hiện tại",
+      "transferHint": "Chủ sở hữu mới phải là quản lý hoặc quản trị viên.",
+      "transferred": "Đã chuyển quyền sở hữu."
+    },
+    "system": {
+      "tab": "Cài đặt hệ thống",
+      "title": "Cài đặt hệ thống",
+      "subtitle": "Các cài đặt áp dụng cho mọi tài khoản.",
+      "allowRegistration": "Cho phép tạo tài khoản mới",
+      "allowRegistrationDesc": "Khi tắt, không ai đăng ký được, kể cả người được mời qua email.",
+      "retentionMonths": "Lưu ảnh chụp trong",
+      "months": "tháng",
+      "retentionDesc": "Ảnh chụp cũ hơn sẽ tự động bị xóa.",
+      "defaultThreshold": "Ngưỡng cảnh báo mặc định cho camera mới",
+      "defaultThresholdDesc": "Chủ sở hữu có thể đổi cho từng camera trong mục Thông báo.",
+      "updatedAt": "Thay đổi lần cuối {time}"
+    }
+  },
+  "dashboards": {
+    "title": "Bảng tùy chỉnh",
+    "subtitle": "Tự thiết kế bảng theo dõi bẫy và chia sẻ qua email hoặc liên kết công khai.",
+    "create": "Tạo bảng mới",
+    "createAndEdit": "Tạo và chỉnh sửa",
+    "empty": "Chưa có bảng nào. Tạo bảng để chọn camera và biểu đồ bạn quan tâm.",
+    "emptyViewer": "Chưa có bảng nào được chia sẻ với bạn.",
+    "noDescription": "Không có mô tả",
+    "counts": "{widgets} khối · {cameras} camera",
+    "sharedBy": "{owner} đã chia sẻ",
+    "ownedBy": "Chủ sở hữu: {owner}",
+    "visibility": {
+      "private": "Riêng tư",
+      "public": "Liên kết công khai"
+    },
+    "name": "Tên",
+    "nameRequired": "Vui lòng nhập tên bảng.",
+    "description": "Mô tả",
+    "cameras": "Camera",
+    "camerasPlaceholder": "Chọn camera",
+    "template": "Bắt đầu từ",
+    "templates": {
+      "overview": "Tổng quan (đủ các khối)",
+      "blank": "Trống"
+    },
+    "backToList": "Tất cả bảng",
+    "edit": "Chỉnh sửa",
+    "editing": "Đang sửa {name}",
+    "delete": "Xóa bảng",
+    "deleteConfirm": "Xóa bảng {name}? Người được chia sẻ sẽ mất quyền xem và liên kết công khai ngừng hoạt động.",
+    "deleted": "Đã xóa bảng.",
+    "saved": "Đã lưu bảng.",
+    "notFound": "Không tìm thấy bảng",
+    "notFoundDesc": "Bảng có thể đã bị xóa hoặc không còn được chia sẻ với bạn.",
+    "updatedAt": "Cập nhật {time}",
+    "addWidget": "Thêm khối",
+    "maxWidgets": "Một bảng có tối đa 20 khối.",
+    "noWidgets": "Bảng này chưa có khối nào.",
+    "noWidgetsEditing": "Thêm khối bằng các nút phía trên.",
+    "sharedCamerasHint": "Camera được người khác chia sẻ với bạn chỉ hiển thị với người cũng có quyền xem chúng, và không dùng được trên liên kết công khai.",
+    "editWidget": "Cài đặt khối",
+    "removeWidget": "Xóa khối",
+    "moveUp": "Lên trên",
+    "moveDown": "Xuống dưới",
+    "widgetType": "Loại",
+    "widgetTitle": "Tiêu đề",
+    "widgetCameras": "Camera",
+    "allDashboardCameras": "Tất cả camera của bảng",
+    "range": "Khoảng thời gian",
+    "lastDays": "{days} ngày qua",
+    "width": "Chiều rộng",
+    "height": "Chiều cao",
+    "widths": {
+      "6": "Một phần tư",
+      "8": "Một phần ba",
+      "12": "Một nửa",
+      "16": "Hai phần ba",
+      "24": "Toàn bộ"
+    },
+    "heights": {
+      "3": "S",
+      "4": "M",
+      "5": "L",
+      "6": "XL",
+      "8": "XXL"
+    },
+    "widgetTypes": {
+      "kpi": "Chỉ số chính",
+      "trend": "Xu hướng theo ngày",
+      "species": "Loài côn trùng",
+      "cameraRanking": "Xếp hạng camera",
+      "latestSnapshot": "Ảnh chụp mới nhất"
+    },
+    "kpi": {
+      "cameras": "Camera",
+      "online": "{count} trực tuyến",
+      "alertCameras": "Vượt ngưỡng",
+      "totalPests": "Côn trùng đếm được",
+      "peak": "Lần quét cao nhất",
+      "scans": "Lần quét"
+    },
+    "ranking": {
+      "total": "Tổng",
+      "peak": "Cao nhất",
+      "latest": "Mới nhất"
+    },
+    "noData": "Lưu bảng để tải dữ liệu.",
+    "noDetections": "Không phát hiện côn trùng trong khoảng thời gian này.",
+    "noCameras": "Khối này chưa có camera.",
+    "noSnapshot": "Chưa có ảnh chụp",
+    "errors": {
+      "PUBLIC_FOREIGN_CAMERA": "Bảng công khai chỉ dùng được camera bạn sở hữu. Hãy bỏ: {cameras}",
+      "CAMERA_NOT_FOUND": "Một số camera không khả dụng: {cameras}",
+      "SHARE_WITH_OWNER": "Người này là chủ sở hữu bảng.",
+      "ALREADY_SHARED": "Đã chia sẻ với email này.",
+      "FORBIDDEN": "Bạn không thể thay đổi bảng này."
+    },
+    "share": {
+      "title": "Chia sẻ {name}",
+      "publicTitle": "Liên kết công khai",
+      "publicDesc": "Bất kỳ ai có liên kết đều xem được bảng này mà không cần đăng nhập. Chỉ hiển thị camera bạn sở hữu.",
+      "publicConfirm": "Bất kỳ ai có liên kết đều xem được bảng này, kể cả ảnh chụp. Tiếp tục?",
+      "publicHint": "Tạo liên kết mới để vô hiệu hóa liên kết cũ.",
+      "copy": "Sao chép",
+      "copied": "Đã sao chép liên kết.",
+      "copyFailed": "Không sao chép được. Hãy chọn và sao chép liên kết thủ công.",
+      "rotate": "Liên kết mới",
+      "rotateConfirm": "Liên kết hiện tại sẽ ngừng hoạt động. Tiếp tục?",
+      "rotated": "Đã tạo liên kết mới.",
+      "peopleTitle": "Người được chia sẻ",
+      "peopleDesc": "Người được thêm có thể xem bảng sau khi đăng nhập. Email chưa có tài khoản sẽ nhận lời mời."
+    },
+    "public": {
+      "badge": "Bảng công khai",
+      "by": "Bởi {owner}",
+      "notFound": "Liên kết không khả dụng",
+      "notFoundDesc": "Bảng có thể đã chuyển sang riêng tư hoặc đã có liên kết mới.",
+      "home": "Đến FlyBot"
     }
   }
 }

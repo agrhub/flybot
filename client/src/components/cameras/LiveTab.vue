@@ -10,7 +10,7 @@
           <el-icon :size="48" class="live-tab__scrim-icon mb-3"><VideoCamera /></el-icon>
           <p class="text-sm font-medium max-w-md">{{ placeholderText }}</p>
           <el-button
-            v-if="camera"
+            v-if="camera && camera.canManage !== false"
             @click="openValidateCodeDialog"
             type="primary"
             size="small"
@@ -28,7 +28,7 @@
           <div class="flex items-center justify-between gap-2">
             <span class="live-tab__card-title">{{ t('cameras.quickInfo') }}</span>
             <el-button
-              v-if="camera"
+              v-if="camera && camera.canManage !== false"
               size="small"
               type="primary"
               plain
@@ -60,7 +60,7 @@
               <el-tag type="info" effect="plain" size="small" class="font-mono">
                 {{ camera?.validateCode || '--' }}
               </el-tag>
-              <el-tooltip v-if="camera" :content="t('cameras.updateCode')" placement="top">
+              <el-tooltip v-if="camera && camera.canManage !== false" :content="t('cameras.updateCode')" placement="top">
                 <el-button
                   @click="openValidateCodeDialog"
                   size="small"

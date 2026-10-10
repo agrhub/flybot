@@ -12,7 +12,7 @@
           />
 
           <!-- Add Camera Button -->
-          <el-button type="primary" :icon="Plus" @click="openAddCameraModal">
+          <el-button v-if="canManageCameras" type="primary" :icon="Plus" @click="openAddCameraModal">
             {{ t('cameras.addCameraBtn') }}
           </el-button>
         </template>
@@ -20,11 +20,11 @@
 
       <!-- Empty State -->
       <el-card v-if="cameras.length === 0" shadow="never">
-        <el-empty :description="t('settings.noCameras')">
+        <el-empty :description="canManageCameras ? t('settings.noCameras') : t('cameras.noSharedCameras')">
           <template #image>
             <el-icon :size="56" class="cameras-empty__icon"><VideoCamera /></el-icon>
           </template>
-          <el-button type="primary" :icon="Plus" @click="openAddCameraModal">
+          <el-button v-if="canManageCameras" type="primary" :icon="Plus" @click="openAddCameraModal">
             {{ t('cameras.addCameraBtn') }}
           </el-button>
         </el-empty>
@@ -154,12 +154,14 @@ import { ref, computed, watch, onUnmounted, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Plus, Back, ArrowLeft, ArrowRight, VideoCamera } from '@element-plus/icons-vue';
 import { useCameras } from '@/composables/useCameras';
+import { useAuth } from '@/composables/useAuth';
 import PageHeader from '@/components/common/PageHeader.vue';
 import LiveTab from '@/components/cameras/LiveTab.vue';
 import GridCameraCard from '@/components/cameras/GridCameraCard.vue';
 
 const { t } = useI18n();
 const { cameras, selectedCamera, selectCamera, openAddCameraModal } = useCameras();
+const { canManageCameras } = useAuth();
 
 // Sub-page state: 'grid' (default: all cameras grid) or 'detail' (single camera sub-page)
 const subPage = ref('grid');

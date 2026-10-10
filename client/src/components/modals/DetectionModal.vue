@@ -56,7 +56,7 @@
                 {{ t('analytics.review.aiOriginal') }}: {{ formatSummary(item.review.originalSummary, t) || '--' }}
               </p>
               <p v-if="item?.review?.note" class="desc-text">{{ item.review.note }}</p>
-              <div v-if="item?.aiProcessed !== false" class="flex flex-wrap gap-2 pt-1">
+              <div v-if="item?.aiProcessed !== false && canReview" class="flex flex-wrap gap-2 pt-1">
                 <el-button
                   v-if="reviewStatus === 'pending'"
                   size="small"
@@ -132,6 +132,7 @@ import { useI18n } from 'vue-i18n'
 import { ElNotification } from 'element-plus'
 import { Check, EditPen, Delete, Plus } from '@element-plus/icons-vue'
 import { FRUIT_FLY, speciesName, normalizeSummary, formatSummary } from '@/utils/species'
+import { useCameras } from '@/composables/useCameras'
 
 const props = defineProps({
   visible: Boolean,
@@ -151,6 +152,12 @@ const correctionRows = ref([])
 const correctionNote = ref('')
 
 const reviewStatus = computed(() => props.item?.review?.status || 'pending')
+// Only people who manage the camera can review its results
+const { cameras } = useCameras()
+const canReview = computed(() => {
+  const cam = cameras.value.find(c => c.deviceSerial === props.item?.deviceSerial)
+  return !cam || cam.canManage !== false
+})
 
 const formatDate = (value) => new Date(value).toLocaleString(locale.value === 'vi' ? 'vi-VN' : 'en-US')
 

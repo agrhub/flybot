@@ -61,7 +61,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { ElNotification } from 'element-plus';
 import api from '@/services/api';
@@ -69,6 +69,7 @@ import { useAuth } from '@/composables/useAuth';
 import { useRouter, useRoute } from 'vue-router';
 import { useTheme } from '@/utils/theme';
 import { useCameras } from '@/composables/useCameras';
+import { useNotifications } from '@/composables/useNotifications';
 
 import AppSidebar from '@/components/layout/AppSidebar.vue';
 import Topbar from '@/components/layout/Topbar.vue';
@@ -102,6 +103,7 @@ const { cameras, selectedCamera, loadCameras, selectCamera, openAddCameraModal }
 const currentSection = computed(() => {
   const path = route.path;
   if (path.startsWith('/cameras')) return 'cameras';
+  if (path.startsWith('/dashboards')) return 'dashboards';
   if (path.startsWith('/analytics')) return 'analytics';
   if (path.startsWith('/map')) return 'map';
   if (path.startsWith('/settings')) return 'settings';
@@ -118,6 +120,12 @@ const handleNavigate = (section) => {
 const handleOpenSettingsTab = (tab) => {
   router.push({ path: '/settings', query: { tab } });
 };
+
+// A camera shared with you shows up without a reload
+const stopListening = useNotifications().onNotification((n) => {
+  if (n.type === 'camera_shared') loadCameras();
+});
+onUnmounted(stopListening);
 
 onMounted(() => {
   const user = localStorage.getItem('user');

@@ -28,7 +28,9 @@
     "prevPage": "Previous page",
     "nextPage": "Next page",
     "notice": "Notice",
-    "defaultUserName": "User"
+    "defaultUserName": "User",
+    "confirm": "Confirm",
+    "done": "Done"
   },
   "nav": {
     "home": "Home",
@@ -53,7 +55,8 @@
     "careers": "Careers",
     "blog": "Blog",
     "helpCenter": "Help Center",
-    "apiDocs": "API Docs"
+    "apiDocs": "API Docs",
+    "dashboards": "Dashboards"
   },
   "topbar": {
     "notifications": "Notifications",
@@ -105,7 +108,8 @@
     "verifyBanner": "Confirm your email ({email}) to receive pest alert emails.",
     "resendVerification": "Resend email",
     "verificationSent": "Confirmation email sent. Check your inbox.",
-    "registerSuccessVerify": "Your account is ready! We sent a confirmation link to your email."
+    "registerSuccessVerify": "Your account is ready! We sent a confirmation link to your email.",
+    "registrationClosed": "New accounts are not being accepted right now. Ask an administrator for access."
   },
   "dashboard": {
     "welcome": "Welcome back",
@@ -347,7 +351,8 @@
     "schedule": {
       "every": "Every {minutes} min",
       "daytimeOnly": "daytime only"
-    }
+    },
+    "noSharedCameras": "No cameras have been shared with you yet."
   },
   "analytics": {
     "title": "AI Analytics & Detection History",
@@ -815,7 +820,234 @@
       "ai_failure": {
         "title": "AI analysis failing",
         "desc": "{deviceName}: the last {failures} snapshots could not be analyzed."
+      },
+      "camera_shared": {
+        "title": "Camera shared with you",
+        "desc": "{sharer} shared the camera {deviceName} with you."
+      },
+      "dashboard_shared": {
+        "title": "Dashboard shared with you",
+        "desc": "{sharer} shared the dashboard {dashboardName} with you."
       }
+    }
+  },
+  "roles": {
+    "admin": "Admin",
+    "manager": "Manager",
+    "user": "Viewer"
+  },
+  "share": {
+    "button": "Share",
+    "cameraTitle": "Share {name}",
+    "cameraDesc": "People you share with can watch the camera and see its statistics. They cannot change, delete or re-share it. Unknown emails get an invitation and gain access once they sign up and confirm their email.",
+    "emailPlaceholder": "Email address",
+    "add": "Share",
+    "email": "Email",
+    "status": "Status",
+    "statusLabel": {
+      "active": "Active",
+      "pending": "Invited"
+    },
+    "statusHint": {
+      "active": "This person has access.",
+      "pending": "Waiting for this person to sign up and confirm their email."
+    },
+    "empty": "Not shared with anyone yet.",
+    "remove": "Remove access",
+    "removeConfirm": "Remove access for {email}?",
+    "shared": "Shared with {email}.",
+    "invited": "Invitation sent to {email}.",
+    "access": "Access",
+    "accessOwner": "Owner",
+    "accessShared": "Shared with you",
+    "accessAdmin": "Admin access",
+    "sharedCount": "Shared with {count}",
+    "errors": {
+      "SHARE_WITH_OWNER": "This person is the owner.",
+      "ALREADY_SHARED": "Already shared with this email."
+    }
+  },
+  "admin": {
+    "group": "Administration",
+    "saved": "Saved.",
+    "errors": {
+      "SELF_CHANGE": "You cannot change your own role, disable or delete your own account.",
+      "LAST_ADMIN": "At least one active admin is required.",
+      "OWNS_CAMERAS": "This user owns {count} camera(s). Transfer them to another account first.",
+      "NOT_MANAGER": "The new owner must be a manager or an admin.",
+      "USER_NOT_FOUND": "No account with this email."
+    },
+    "users": {
+      "tab": "Users",
+      "title": "Users",
+      "subtitle": "Roles: admins control everything, managers add and share their own cameras and build dashboards, viewers only see what is shared with them.",
+      "search": "Search by email or name",
+      "allRoles": "All roles",
+      "account": "Account",
+      "you": "You",
+      "role": "Role",
+      "cameras": "Cameras",
+      "status": "Status",
+      "active": "Active",
+      "disabled": "Disabled",
+      "unverified": "Email not confirmed",
+      "joined": "Joined",
+      "enable": "Enable",
+      "disable": "Disable",
+      "delete": "Delete account",
+      "roleConfirm": "Change the role of {email} to {role}?",
+      "disableConfirm": "Disable {email}? They are signed out everywhere and cannot sign in until enabled again.",
+      "deleteConfirm": "Delete the account {email}? Their dashboards, notifications and access to shared cameras are removed. This cannot be undone.",
+      "deleted": "Account deleted."
+    },
+    "cameras": {
+      "tab": "All cameras",
+      "title": "All cameras",
+      "subtitle": "Every camera registered in FlyBot, with its owner. Each device can be registered only once.",
+      "search": "Search by name, serial or owner email",
+      "owner": "Owner",
+      "noOwner": "No owner",
+      "sharedWith": "Shared with",
+      "transfer": "Transfer",
+      "transferTitle": "Transfer ownership",
+      "transferDesc": "Move {name} ({serial}) to another account.",
+      "newOwnerEmail": "New owner email",
+      "keepAccess": "Keep view access for the current owner",
+      "transferHint": "The new owner must be a manager or an admin.",
+      "transferred": "Ownership transferred."
+    },
+    "system": {
+      "tab": "System settings",
+      "title": "System settings",
+      "subtitle": "Settings that apply to every account.",
+      "allowRegistration": "Allow new accounts",
+      "allowRegistrationDesc": "When off, nobody can sign up, including people who were invited by email.",
+      "retentionMonths": "Keep snapshots for",
+      "months": "months",
+      "retentionDesc": "Older snapshots and their images are deleted automatically.",
+      "defaultThreshold": "Default alert threshold for new cameras",
+      "defaultThresholdDesc": "Owners can change it per camera in Notifications.",
+      "updatedAt": "Last changed {time}"
+    }
+  },
+  "dashboards": {
+    "title": "Dashboards",
+    "subtitle": "Build your own views of your traps and share them by email or with a public link.",
+    "create": "New dashboard",
+    "createAndEdit": "Create and edit",
+    "empty": "No dashboards yet. Create one to pick the cameras and charts you care about.",
+    "emptyViewer": "No dashboards have been shared with you yet.",
+    "noDescription": "No description",
+    "counts": "{widgets} widgets · {cameras} cameras",
+    "sharedBy": "Shared by {owner}",
+    "ownedBy": "Owner: {owner}",
+    "visibility": {
+      "private": "Private",
+      "public": "Public link"
+    },
+    "name": "Name",
+    "nameRequired": "Please enter a dashboard name.",
+    "description": "Description",
+    "cameras": "Cameras",
+    "camerasPlaceholder": "Choose cameras",
+    "template": "Start from",
+    "templates": {
+      "overview": "Overview (all widgets)",
+      "blank": "Blank"
+    },
+    "backToList": "All dashboards",
+    "edit": "Edit",
+    "editing": "Editing {name}",
+    "delete": "Delete dashboard",
+    "deleteConfirm": "Delete the dashboard {name}? People it is shared with lose access and the public link stops working.",
+    "deleted": "Dashboard deleted.",
+    "saved": "Dashboard saved.",
+    "notFound": "Dashboard not found",
+    "notFoundDesc": "It may have been deleted, or it is no longer shared with you.",
+    "updatedAt": "Updated {time}",
+    "addWidget": "Add widget",
+    "maxWidgets": "A dashboard can have at most 20 widgets.",
+    "noWidgets": "This dashboard has no widgets yet.",
+    "noWidgetsEditing": "Add widgets with the buttons above.",
+    "sharedCamerasHint": "Cameras that were shared with you only appear for people who can see them too, and cannot be used on a public link.",
+    "editWidget": "Widget settings",
+    "removeWidget": "Remove widget",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "widgetType": "Type",
+    "widgetTitle": "Title",
+    "widgetCameras": "Cameras",
+    "allDashboardCameras": "All dashboard cameras",
+    "range": "Time range",
+    "lastDays": "Last {days} days",
+    "width": "Width",
+    "height": "Height",
+    "widths": {
+      "6": "Quarter",
+      "8": "Third",
+      "12": "Half",
+      "16": "Two thirds",
+      "24": "Full"
+    },
+    "heights": {
+      "3": "S",
+      "4": "M",
+      "5": "L",
+      "6": "XL",
+      "8": "XXL"
+    },
+    "widgetTypes": {
+      "kpi": "Key figures",
+      "trend": "Daily trend",
+      "species": "Species",
+      "cameraRanking": "Camera ranking",
+      "latestSnapshot": "Latest snapshots"
+    },
+    "kpi": {
+      "cameras": "Cameras",
+      "online": "{count} online",
+      "alertCameras": "Over threshold",
+      "totalPests": "Insects counted",
+      "peak": "Highest scan",
+      "scans": "Scans"
+    },
+    "ranking": {
+      "total": "Total",
+      "peak": "Peak",
+      "latest": "Latest"
+    },
+    "noData": "Save the dashboard to load data.",
+    "noDetections": "No insects detected in this period.",
+    "noCameras": "No cameras on this widget.",
+    "noSnapshot": "No snapshot yet",
+    "errors": {
+      "PUBLIC_FOREIGN_CAMERA": "A public dashboard can only use cameras you own. Remove: {cameras}",
+      "CAMERA_NOT_FOUND": "Some cameras are not available: {cameras}",
+      "SHARE_WITH_OWNER": "This person owns the dashboard.",
+      "ALREADY_SHARED": "Already shared with this email.",
+      "FORBIDDEN": "You cannot change this dashboard."
+    },
+    "share": {
+      "title": "Share {name}",
+      "publicTitle": "Public link",
+      "publicDesc": "Anyone with the link can view this dashboard without signing in. Only cameras you own are shown.",
+      "publicConfirm": "Anyone with the link will be able to see this dashboard, including its snapshots. Continue?",
+      "publicHint": "Create a new link to stop the old one from working.",
+      "copy": "Copy",
+      "copied": "Link copied.",
+      "copyFailed": "Could not copy. Select the link and copy it manually.",
+      "rotate": "New link",
+      "rotateConfirm": "The current link stops working. Continue?",
+      "rotated": "New link created.",
+      "peopleTitle": "People",
+      "peopleDesc": "People you add can view the dashboard after signing in. Unknown emails get an invitation."
+    },
+    "public": {
+      "badge": "Public dashboard",
+      "by": "By {owner}",
+      "notFound": "This link is not available",
+      "notFoundDesc": "The dashboard may have been made private, or a new link was created.",
+      "home": "Go to FlyBot"
     }
   }
 }

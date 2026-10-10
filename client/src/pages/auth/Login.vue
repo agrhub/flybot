@@ -40,7 +40,7 @@
         </el-button>
       </el-form>
 
-      <p class="auth-footer text-center mt-6">
+      <p v-if="allowRegistration" class="auth-footer text-center mt-6">
         {{ t('auth.noAccount') }}
         <el-button link type="primary" class="ml-1" @click="toggleAuth('register')">
           {{ t('auth.registerNow') }}
@@ -85,6 +85,14 @@
 
     <!-- Register Form -->
     <div v-if="formType === 'register'">
+      <el-alert
+        v-if="!allowRegistration"
+        type="warning"
+        :closable="false"
+        show-icon
+        :title="t('auth.registrationClosed')"
+        class="mb-4"
+      />
       <el-form label-position="top" size="large" @submit.prevent="handleRegister">
         <el-form-item :label="t('auth.newEmail')">
           <el-input
@@ -104,7 +112,7 @@
           />
         </el-form-item>
 
-        <el-button type="primary" class="w-full" :loading="loading" @click="handleRegister">
+        <el-button type="primary" class="w-full" :loading="loading" :disabled="!allowRegistration" @click="handleRegister">
           {{ t('auth.registerBtn') }}
         </el-button>
       </el-form>
@@ -120,7 +128,7 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue';
+import { ref, reactive, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import api from '@/services/api';
 import { useI18n } from 'vue-i18n';
@@ -130,21 +138,31 @@ import { ElNotification } from 'element-plus';
 const router = useRouter();
 const route = useRoute();
 const { t, locale } = useI18n();
-const EMAIL_REGEX = /^[^s@]+@[^s@]+.[^s@]+$/;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const { setAuth } = useAuth();
 
-// 'login' | 'register' | 'forgot' (?mode=forgot opens the reset request form)
-const formType = ref(route.query.mode === 'forgot' ? 'forgot' : 'login');
+// 'login' | 'register' | 'forgot' (?mode=forgot | ?mode=register opens that form;
+// invitation emails link to ?mode=register&email=...)
+const formType = ref(['forgot', 'register'].includes(route.query.mode) ? route.query.mode : 'login');
+const invitedEmail = typeof route.query.email === 'string' ? route.query.email.slice(0, 254) : '';
+// Admins can close sign-up; the server enforces it, this only hides the link
+const allowRegistration = ref(true);
+onMounted(async () => {
+  try {
+    const res = await api.getAuthConfig();
+    allowRegistration.value = res.data.allowRegistration !== false;
+  } catch {}
+});
 const resetLinkSent = ref(false);
 const loading = ref(false);
 
 const loginForm = reactive({
-  email: '',
+  email: invitedEmail,
   password: '',
 });
 
 const registerForm = reactive({
-  email: '',
+  email: invitedEmail,
   password: '',
 });
 

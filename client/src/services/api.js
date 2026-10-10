@@ -59,6 +59,64 @@ export default {
   sendTelegramTest() {
     return apiClient.post('/telegram/test');
   },
+  // Public sign-in page settings (e.g. whether registration is open)
+  getAuthConfig() {
+    return apiClient.get('/auth/config');
+  },
+  // Administration (admin only)
+  adminListUsers(params = {}) {
+    return apiClient.get('/admin/users', { params });
+  },
+  adminUpdateUser(userId, data) {
+    return apiClient.put(`/admin/users/${userId}`, data);
+  },
+  adminDeleteUser(userId) {
+    return apiClient.delete(`/admin/users/${userId}`);
+  },
+  adminListCameras(params = {}) {
+    return apiClient.get('/admin/cameras', { params });
+  },
+  adminTransferCamera(deviceSerial, email, keepPreviousOwnerAccess = true) {
+    return apiClient.put(`/admin/cameras/${encodeURIComponent(deviceSerial)}/owner`, { email, keepPreviousOwnerAccess });
+  },
+  getAdminSettings() {
+    return apiClient.get('/admin/settings');
+  },
+  updateAdminSettings(data) {
+    return apiClient.put('/admin/settings', data);
+  },
+  // Custom dashboards
+  listDashboards() {
+    return apiClient.get('/dashboards');
+  },
+  createDashboard(data) {
+    return apiClient.post('/dashboards', data);
+  },
+  getDashboard(id) {
+    return apiClient.get(`/dashboards/${id}`);
+  },
+  updateDashboard(id, data) {
+    return apiClient.put(`/dashboards/${id}`, data);
+  },
+  deleteDashboard(id) {
+    return apiClient.delete(`/dashboards/${id}`);
+  },
+  getDashboardData(id) {
+    return apiClient.get(`/dashboards/${id}/data`);
+  },
+  rotateDashboardLink(id) {
+    return apiClient.post(`/dashboards/${id}/public-token`);
+  },
+  shareDashboard(id, email) {
+    return apiClient.post(`/dashboards/${id}/share`, { email });
+  },
+  unshareDashboard(id, email) {
+    return apiClient.delete(`/dashboards/${id}/share`, { data: { email } });
+  },
+  // Public dashboard link: no sign-in, so no token and no redirect on errors
+  getPublicDashboard(token) {
+    return axios.get(`${API_URL}/public/dashboards/${encodeURIComponent(token)}`);
+  },
   getSystemInfo() {
     return apiClient.get('/system/info');
   },
@@ -142,6 +200,16 @@ export default {
   // Capture, store and analyze a snapshot right now
   captureNow(deviceSerial) {
     return apiClient.post('/user/camera/capture', { deviceSerial });
+  },
+  // Camera sharing (owner/admin): view-only access by email, invitations for unknown emails
+  getCameraShares(deviceSerial) {
+    return apiClient.get('/user/camera/shares', { params: { deviceSerial } });
+  },
+  shareCamera(deviceSerial, email) {
+    return apiClient.post('/user/camera/share', { deviceSerial, email });
+  },
+  unshareCamera(deviceSerial, email) {
+    return apiClient.delete('/user/camera/share', { data: { deviceSerial, email } });
   },
   getCamerasHealth() {
     return apiClient.get('/user/cameras/health');
