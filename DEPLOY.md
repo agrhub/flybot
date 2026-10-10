@@ -181,3 +181,11 @@ Cloud Run gives you HTTPS automatically; the VM does not. Either put a Google Cl
 - Logging in works, and camera snapshot images load. Images need the login cookie, so if they fail on plain HTTP, check that `COOKIE_SECURE` is not `true`.
 - The logs show `⏰ Periodic Cron jobs initialized.` on exactly one deployment.
 - After upgrading an existing database: if the logs warn about duplicate camera serials, run `node scripts/merge_duplicate_cameras.js --apply` once (see `server/README.md`, Roles and sharing).
+- After upgrading: the old single-field index `deviceSerial_1` on `snapshots` is no longer used (replaced by `{deviceSerial, createdAt}`). It can be dropped to save space and write time: `db.snapshots.dropIndex("deviceSerial_1")`.
+
+## Known risks (accepted for now)
+- **EZVIZ account token reaches viewers.** Live view and playback (`POST /api/live`, `/api/playback`) return the EZVIZ access token of the app account, because the EZUIKit player needs one. Anyone who can watch any camera can read it in the browser and call the EZVIZ Open API directly, with access to **every** device in the account (list, live, settings, delete). Only give FlyBot accounts to people you trust with the whole EZVIZ account. The fix is per-user EZVIZ sub-account (RAM) tokens limited to the cameras each person may watch; it needs testing against the real EZVIZ account.
+- **Viewers can see a camera's verification code.** Encrypted streams are decrypted in the browser, so the live/playback response includes the code. Change the code on the device if you remove someone's access to an encrypted camera.
+- **Rate limits are per instance.** Login, chat, share and capture limits live in memory. `cloudbuild.yaml` pins Cloud Run to one instance (`--max-instances=1`); raising it multiplies every limit unless they move to a shared store.
+- **Snapshot bucket must be private.** Images are served through `/api/s3` with access checks; a public bucket or public `S3_PUBLIC_URL` would bypass them, since object keys are predictable.
+- **Public dashboards are cached for 60 s.** After a camera is transferred or its share removed, a public link can show it for up to a minute.
