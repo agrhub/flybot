@@ -38,7 +38,8 @@ const SECRETS = {
 // Created and wired into Cloud Run only when the .env value is set
 const OPTIONAL_SECRETS = {
     'flybot-smtp-pass': 'SMTP_PASS',
-    'flybot-telegram-bot-token': 'TELEGRAM_BOT_TOKEN'
+    'flybot-telegram-bot-token': 'TELEGRAM_BOT_TOKEN',
+    'flybot-vapid-private-key': 'VAPID_PRIVATE_KEY'
 };
 
 // Never copied from the local .env: these differ between development and Cloud Run

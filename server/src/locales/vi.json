@@ -70,5 +70,9 @@
     "notLinked": "Cuộc trò chuyện này chưa kết nối với tài khoản FlyBot nào.",
     "help": "Lệnh:\n/stop - ngừng nhận cảnh báo\nĐể kết nối, dùng \"Kết nối Telegram\" trong FlyBot → Cài đặt → Thông báo.",
     "test": "✅ Tin nhắn thử từ FlyBot. Cảnh báo của {email} sẽ được gửi tới cuộc trò chuyện này."
+  },
+  "push": {
+    "testTitle": "Thông báo FlyBot đang hoạt động",
+    "testBody": "Bạn sẽ nhận cảnh báo sâu bệnh và trạng thái camera trên thiết bị này."
   }
 }

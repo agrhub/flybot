@@ -7,6 +7,7 @@ const Session = require('./Session');
 const SystemSetting = require('./SystemSetting');
 const Dashboard = require('./Dashboard');
 const AuditLog = require('./AuditLog');
+const PushSubscription = require('./PushSubscription');
 
 module.exports = {
     User,
@@ -17,5 +18,6 @@ module.exports = {
     Session,
     SystemSetting,
     Dashboard,
-    AuditLog
+    AuditLog,
+    PushSubscription
 };

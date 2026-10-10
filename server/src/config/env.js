@@ -84,6 +84,13 @@ const config = {
     TELEGRAM_BOT_TOKEN: (process.env.TELEGRAM_BOT_TOKEN || "").trim(),
     TELEGRAM_BOT_USERNAME: (process.env.TELEGRAM_BOT_USERNAME || "").replace(/^@/, "").trim(),
 
+    // Web push (installed app / browser notifications). Create the pair with
+    // `node scripts/generate_vapid_keys.js`. Unset = feature off.
+    VAPID_PUBLIC_KEY: (process.env.VAPID_PUBLIC_KEY || "").trim(),
+    VAPID_PRIVATE_KEY: (process.env.VAPID_PRIVATE_KEY || "").trim(),
+    // Contact for push services: "mailto:you@example.com" or an https URL
+    VAPID_SUBJECT: (process.env.VAPID_SUBJECT || "").trim(),
+
     // Set ENABLE_CRON=false on every deployment except one, so captures/cleanup don't run twice
     ENABLE_CRON: process.env.ENABLE_CRON !== 'false',
     // Set ALLOW_REGISTRATION=false to close public sign-up

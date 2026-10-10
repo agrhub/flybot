@@ -10,6 +10,7 @@ import App from './App.vue'
 import router from './router'
 import i18n from './i18n'
 import api from './services/api'
+import { initPwa } from './composables/usePush'
 
 const app = createApp(App)
 
@@ -25,3 +26,6 @@ try {
 
 const sessionReady = hasToken ? api.refreshSession().catch(() => {}) : Promise.resolve()
 sessionReady.finally(() => app.mount('#app'))
+
+// Installable app + push notifications
+initPwa()

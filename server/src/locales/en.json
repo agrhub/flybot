@@ -70,5 +70,9 @@
     "notLinked": "This chat is not connected to a FlyBot account.",
     "help": "Commands:\n/stop - stop receiving alerts\nTo connect, use \"Connect Telegram\" in FlyBot → Settings → Notifications.",
     "test": "✅ Test message from FlyBot. Alerts for {email} will arrive in this chat."
+  },
+  "push": {
+    "testTitle": "FlyBot notifications are working",
+    "testBody": "You will get pest alerts and camera status changes on this device."
   }
 }

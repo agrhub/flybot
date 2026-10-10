@@ -1132,5 +1132,24 @@
       "owner": "Owner",
       "sharedWith": "Shared with"
     }
+  },
+  "push": {
+    "title": "Push notifications on this device",
+    "desc": "Pest alerts, cameras going offline and new shares pop up on this phone or computer, even when FlyBot is closed.",
+    "onThisDevice": "On for this device",
+    "enabled": "Push notifications are on for this device.",
+    "disabled": "Push notifications are off for this device.",
+    "failed": "Could not change push notifications. Please try again.",
+    "test": "Send a test",
+    "testSent": "Test sent to {count} device(s).",
+    "testNone": "No device received it. Turn push notifications off and on again.",
+    "install": "Install the app",
+    "installed": "FlyBot was installed.",
+    "unsupported": "This browser does not support push notifications.",
+    "notConfigured": "Push notifications are not set up on the server yet. Ask an administrator.",
+    "blocked": "Notifications are blocked for FlyBot in this browser.",
+    "blockedHelp": "Allow notifications for this site in the browser settings (the icon next to the address bar), then reload the page.",
+    "iosTitle": "On iPhone and iPad, add FlyBot to the Home Screen first",
+    "iosSteps": "Open FlyBot in Safari, tap Share, then \"Add to Home Screen\". Open FlyBot from the new icon and turn on notifications here."
   }
 }

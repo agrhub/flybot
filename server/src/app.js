@@ -70,7 +70,13 @@ if (clientStaticDir) {
     });
 
     // Serve static files (HTML, JS, CSS, images, etc.)
-    app.use(express.static(clientStaticDir));
+    app.use(express.static(clientStaticDir, {
+        setHeaders(res, filePath) {
+            // Browsers must always check for a new service worker / manifest
+            if (/[\\/](sw\.js|manifest\.webmanifest)$/.test(filePath)) res.setHeader('Cache-Control', 'no-cache');
+            if (filePath.endsWith('.webmanifest')) res.setHeader('Content-Type', 'application/manifest+json');
+        }
+    }));
 
     // Fallback to index.html for client-side SPA routing (excluding /api and /health)
     app.use((req, res, next) => {

@@ -372,6 +372,9 @@
             </template>
           </el-card>
 
+          <!-- Push notifications on this device (installed app / browser) -->
+          <PushNotificationsCard />
+
           <!-- Per-camera thresholds -->
           <el-card shadow="never">
             <template #header>
@@ -629,6 +632,7 @@ import AdminUsersPanel from '@/components/admin/AdminUsersPanel.vue';
 import AdminCamerasPanel from '@/components/admin/AdminCamerasPanel.vue';
 import SystemSettingsPanel from '@/components/admin/SystemSettingsPanel.vue';
 import AuditLogPanel from '@/components/admin/AuditLogPanel.vue';
+import PushNotificationsCard from '@/components/settings/PushNotificationsCard.vue';
 import {
   User,
   Lock,

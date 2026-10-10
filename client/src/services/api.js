@@ -124,6 +124,21 @@ export default {
   getPublicDashboard(token) {
     return axios.get(`${API_URL}/public/dashboards/${encodeURIComponent(token)}`);
   },
+  // Web push on this device
+  getPushConfig() {
+    return apiClient.get('/push/config');
+  },
+  subscribePush(subscription) {
+    return apiClient.post('/push/subscriptions', { subscription });
+  },
+  // token: on sign-out the stored token is already being cleared, so it is passed explicitly
+  unsubscribePush(endpoint, token = null) {
+    const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+    return apiClient.delete('/push/subscriptions', { data: { endpoint }, headers });
+  },
+  sendTestPush() {
+    return apiClient.post('/push/test');
+  },
   getSystemInfo() {
     return apiClient.get('/system/info');
   },

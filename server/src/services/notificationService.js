@@ -6,6 +6,7 @@ const { queueMail } = require('./mailService');
 const emailTemplates = require('./emailTemplates');
 const { appUrl } = require('./authTokenService');
 const telegramService = require('./telegramService');
+const pushService = require('./pushService');
 
 // Minimum gap between two notifications of the same type for the same user + camera
 const COOLDOWN_MINUTES = {
@@ -29,6 +30,8 @@ const SEVERITY = {
 
 // "Back online" is good news: in-app only
 const EMAIL_TYPES = new Set(['pest_threshold', 'camera_offline', 'ai_failure']);
+// Phone/browser push: the alerts, plus something new shared with you
+const PUSH_TYPES = new Set([...EMAIL_TYPES, 'camera_shared', 'dashboard_shared']);
 
 // Consecutive failed AI analyses before alerting
 const AI_FAILURE_THRESHOLD = 3;
@@ -65,26 +68,32 @@ async function notifyUser({ userId, type, deviceSerial = '', params = {} }) {
 
     sseHub.sendToUser(userId, 'notification', toClient(notification));
 
+    const needsUser = EMAIL_TYPES.has(type) || (PUSH_TYPES.has(type) && pushService.isEnabled());
+    const user = needsUser ? await User.findById(userId) : null;
+    if (!user || user.disabled) return notification;
+
+    // Each subscribed device is opted in by the user on that device
+    if (PUSH_TYPES.has(type)) {
+        pushService.queueNotification(user, { type, params, deviceSerial });
+    }
+
     // Email and Telegram carry the same alert types ("back online" stays in-app only)
     if (EMAIL_TYPES.has(type)) {
-        const user = await User.findById(userId);
-        if (user) {
-            let url = null;
-            try {
-                url = appUrl('/dashboard');
-            } catch (err) {
-                console.warn('⚠️ Alert without link:', err.message);
-            }
-            const language = normalizeLanguage(user.language);
-            const fullParams = { ...params, deviceSerial };
+        let url = null;
+        try {
+            url = appUrl('/dashboard');
+        } catch (err) {
+            console.warn('⚠️ Alert without link:', err.message);
+        }
+        const language = normalizeLanguage(user.language);
+        const fullParams = { ...params, deviceSerial };
 
-            // Only verified addresses get alert emails, so typos never receive farm data
-            if (user.emailVerified && user.notificationPrefs?.email !== false) {
-                queueMail(emailTemplates.alertEmail({ user, language, type, params: fullParams, url }));
-            }
-            if (user.telegram?.chatId && user.notificationPrefs?.telegram !== false) {
-                telegramService.queueMessage(user.telegram.chatId, telegramService.formatAlert({ language, type, params: fullParams, url }));
-            }
+        // Only verified addresses get alert emails, so typos never receive farm data
+        if (user.emailVerified && user.notificationPrefs?.email !== false) {
+            queueMail(emailTemplates.alertEmail({ user, language, type, params: fullParams, url }));
+        }
+        if (user.telegram?.chatId && user.notificationPrefs?.telegram !== false) {
+            telegramService.queueMessage(user.telegram.chatId, telegramService.formatAlert({ language, type, params: fullParams, url }));
         }
     }
     return notification;

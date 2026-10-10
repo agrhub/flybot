@@ -22,6 +22,17 @@ Optional:
 - `CORS_ORIGINS`: comma-separated extra origins allowed to call the API.
 - `ALLOW_REGISTRATION=false` to close public sign-up. Admins can also change this, the snapshot retention and the default alert threshold in Settings → System settings; saved values override the environment.
 
+## Push notifications and the installable app
+The web app can be installed (Chrome/Edge: install button in the address bar or Settings → Notifications; iPhone/iPad: Safari → Share → Add to Home Screen) and can show alerts on the device even when it is closed.
+1. Create the key pair once and put it in the root `.env` (keep it: new keys cut off every device already subscribed):
+   ```bash
+   node scripts/generate_vapid_keys.js
+   ```
+   This prints `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` and `VAPID_SUBJECT` (set a real `mailto:` address).
+2. Users turn it on per device in Settings → Notifications → "Push notifications on this device".
+
+Push needs HTTPS (or `localhost`). Pest alerts, cameras going offline, failing AI analysis and new camera/dashboard shares are pushed; "back online" stays in-app. Signing out removes the device, so the next person on a shared phone does not get the previous account's alerts.
+
 ## Roles and sharing
 - **admin**: everything: all cameras, all accounts (Settings → Users / All cameras) and system settings. The first account ever created is the admin.
 - **manager**: adds cameras, edits, deletes and shares the cameras they own, builds dashboards.

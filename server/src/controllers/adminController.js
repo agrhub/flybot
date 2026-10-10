@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { User, Camera, Session, Notification, AuthToken, Dashboard, AuditLog } = require('../models');
+const { User, Camera, Session, Notification, AuthToken, Dashboard, AuditLog, PushSubscription } = require('../models');
 const { ROLES, roleOf } = require('../constants/roles');
 const { sendServerError } = require('../utils/http');
 const { recordAudit, AUDIT_ACTIONS, CATEGORIES } = require('../services/auditService');
@@ -101,6 +101,8 @@ async function updateUser(req, res) {
                 // Sign the account out everywhere
                 target.tokenVersion = (target.tokenVersion || 0) + 1;
                 await Session.updateMany({ userId: target._id, revokedAt: null }, { $set: { revokedAt: new Date() } });
+                // ...and stop alerts to their phones
+                await PushSubscription.deleteMany({ userId: target._id });
             }
         }
         await target.save();
@@ -152,7 +154,8 @@ async function deleteUser(req, res) {
             Dashboard.deleteMany({ ownerId: target._id }),
             Session.deleteMany({ userId: target._id }),
             Notification.deleteMany({ userId: target._id }),
-            AuthToken.deleteMany({ userId: target._id })
+            AuthToken.deleteMany({ userId: target._id }),
+            PushSubscription.deleteMany({ userId: target._id })
         ]);
         await User.deleteOne({ _id: target._id });
         recordAudit(req, { action: 'user.deleted', target: { type: 'user', id: String(target._id), label: target.email }, details: { role: roleOf(target) } });

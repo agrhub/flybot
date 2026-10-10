@@ -3,6 +3,7 @@ import { useRouter } from 'vue-router';
 import api from '@/services/api';
 import i18n from '@/i18n';
 import { useNotifications } from '@/composables/useNotifications';
+import { forgetDeviceOnLogout } from '@/composables/usePush';
 
 // Singleton authentication state
 const user = ref((() => {
@@ -56,6 +57,8 @@ export function useAuth() {
   };
 
   const logout = () => {
+    // This device should not keep getting the previous account's alerts
+    forgetDeviceOnLogout(token.value || localStorage.getItem('token'));
     api.logout().catch(() => {});
     useNotifications().reset();
     user.value = null;

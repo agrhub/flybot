@@ -1132,5 +1132,24 @@
       "owner": "Chủ sở hữu",
       "sharedWith": "Chia sẻ với"
     }
+  },
+  "push": {
+    "title": "Thông báo đẩy trên thiết bị này",
+    "desc": "Cảnh báo sâu bệnh, camera mất kết nối và nội dung mới được chia sẻ sẽ hiện trên điện thoại hoặc máy tính này, kể cả khi đang không mở FlyBot.",
+    "onThisDevice": "Đang bật trên thiết bị này",
+    "enabled": "Đã bật thông báo đẩy cho thiết bị này.",
+    "disabled": "Đã tắt thông báo đẩy cho thiết bị này.",
+    "failed": "Không đổi được cài đặt thông báo đẩy. Vui lòng thử lại.",
+    "test": "Gửi thử",
+    "testSent": "Đã gửi thử tới {count} thiết bị.",
+    "testNone": "Không thiết bị nào nhận được. Hãy tắt rồi bật lại thông báo đẩy.",
+    "install": "Cài đặt ứng dụng",
+    "installed": "Đã cài đặt FlyBot.",
+    "unsupported": "Trình duyệt này không hỗ trợ thông báo đẩy.",
+    "notConfigured": "Máy chủ chưa được cấu hình thông báo đẩy. Hãy liên hệ quản trị viên.",
+    "blocked": "Trình duyệt đang chặn thông báo của FlyBot.",
+    "blockedHelp": "Cho phép thông báo cho trang này trong cài đặt trình duyệt (biểu tượng cạnh thanh địa chỉ), rồi tải lại trang.",
+    "iosTitle": "Trên iPhone và iPad, cần thêm FlyBot vào Màn hình chính trước",
+    "iosSteps": "Mở FlyBot bằng Safari, chạm nút Chia sẻ, chọn \"Thêm vào MH chính\". Mở FlyBot từ biểu tượng mới rồi bật thông báo tại đây."
   }
 }
