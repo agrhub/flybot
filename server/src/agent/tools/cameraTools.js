@@ -1,5 +1,4 @@
 const { Camera } = require('../../models');
-const ezvizService = require('../../services/ezvizService');
 
 const getCamerasStatusDeclaration = {
     name: 'get_cameras_status',
@@ -58,12 +57,24 @@ async function executeTriggerCaptureSnapshot({ deviceSerial, userId, addAction }
             return { error: `You do not have permission to control camera ${deviceSerial} or device not found.` };
         }
 
-        const result = await ezvizService.captureDevice(deviceSerial);
-        addAction('CAPTURE_TRIGGERED', { deviceSerial, result });
+        // Same pipeline as the "Capture now" button: capture, store, AI analysis, alerts
+        const { captureAndSaveSnapshot } = require('../../cron/captureJob');
+        const saved = await captureAndSaveSnapshot(String(deviceSerial));
+        if (!saved) {
+            return { error: `Camera ${deviceSerial} did not return an image. It may be offline.` };
+        }
+        const { Snapshot } = require('../../models');
+        const { countPests } = require('../../services/notificationService');
+        const snapshot = await Snapshot.findById(saved._id);
+        addAction('CAPTURE_TRIGGERED', { deviceSerial, snapshotId: saved._id });
         return {
             success: true,
             deviceSerial,
-            message: `Snapshot request sent to camera ${deviceSerial}. New image will be uploaded and analyzed by AI.`
+            analyzed: !!snapshot?.aiProcessed,
+            insectCount: snapshot?.aiProcessed ? countPests(snapshot.aiResults?.summary) : null,
+            message: snapshot?.aiProcessed
+                ? `New snapshot from ${deviceSerial} stored and analyzed.`
+                : `New snapshot from ${deviceSerial} stored; AI analysis did not complete.`
         };
     } catch (err) {
         return { error: `Could not capture image from ${deviceSerial}: ${err.message}` };

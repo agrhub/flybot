@@ -333,6 +333,20 @@
       "playbackUnavailable": "Could not load the playback stream.",
       "playbackSegmentFailed": "Could not replay this video segment.",
       "playbackRequestFailed": "Error requesting the playback stream."
+    },
+    "captureNow": "Capture now",
+    "captureDone": "Snapshot captured: {count} insects",
+    "captureDoneNoAi": "Snapshot captured; AI analysis did not complete.",
+    "captureFailed": "The camera did not return an image. It may be offline.",
+    "health": {
+      "lastSnapshot": "Last snapshot",
+      "snapshots24h": "Snapshots (24h)",
+      "aiSuccess": "AI analyzed (24h)",
+      "schedule": "Capture schedule"
+    },
+    "schedule": {
+      "every": "Every {minutes} min",
+      "daytimeOnly": "daytime only"
     }
   },
   "analytics": {
@@ -491,7 +505,10 @@
     "passwordFieldsRequired": "Please fill in all password fields.",
     "passwordChanged": "Password changed. Other devices have been signed out.",
     "saveFailed": "Could not save. Please try again.",
-    "storageBucket": "S3 bucket (MinIO)"
+    "storageBucket": "S3 bucket (MinIO)",
+    "captureInterval": "Automatic capture",
+    "captureDaytimeOnly": "Daytime only (06:00–18:00)",
+    "captureDaytimeOnlyHint": "Skip night captures; sticky traps are hard to read in the dark."
   },
   "assistant": {
     "title": "Smart Trap Copilot",

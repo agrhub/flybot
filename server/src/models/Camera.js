@@ -22,6 +22,12 @@ const cameraSchema = new mongoose.Schema({
     cropType: { type: String, default: 'Mango Orchard' }, // Agricultural crop
     // Pest alert fires when one scan counts at least this many insects (per user, per camera)
     alertThreshold: { type: Number, default: 15, min: 1 },
+    // Automatic snapshot schedule (per user; a camera shared by several users uses the most frequent)
+    captureIntervalMinutes: { type: Number, enum: [15, 30, 60, 120], default: 30 },
+    // Only capture during daylight hours (06:00-18:00 local time); sticky traps are unreadable at night
+    captureDaytimeOnly: { type: Boolean, default: false },
+    // Last automatic or manual capture attempt for this device
+    lastCaptureAt: { type: Date, default: null },
     addedAt: { type: Date, default: Date.now },
     lastSync: { type: Date, default: Date.now }
 });

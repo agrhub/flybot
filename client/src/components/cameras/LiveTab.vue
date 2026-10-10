@@ -25,7 +25,20 @@
       <!-- Quick Info Side Cards (1 Col) -->
       <el-card shadow="never">
         <template #header>
-          <span class="live-tab__card-title">{{ t('cameras.quickInfo') }}</span>
+          <div class="flex items-center justify-between gap-2">
+            <span class="live-tab__card-title">{{ t('cameras.quickInfo') }}</span>
+            <el-button
+              v-if="camera"
+              size="small"
+              type="primary"
+              plain
+              :icon="Camera"
+              :loading="capturing"
+              @click="handleCaptureNow"
+            >
+              {{ t('cameras.captureNow') }}
+            </el-button>
+          </div>
         </template>
         <el-descriptions :column="1" size="small">
           <el-descriptions-item :label="t('cameras.status')">
@@ -78,6 +91,30 @@
             <el-tag :type="camera?.defence === 1 ? 'warning' : 'info'" effect="light" round size="small">
               {{ camera?.defence === 1 ? t('cameras.on') : t('cameras.off') }}
             </el-tag>
+          </el-descriptions-item>
+          <!-- Device health (last 24h) -->
+          <el-descriptions-item v-if="health" :label="t('cameras.health.lastSnapshot')">
+            <span class="live-tab__value">{{ health.lastSnapshotAt ? relativeTime(health.lastSnapshotAt) : '--' }}</span>
+          </el-descriptions-item>
+          <el-descriptions-item v-if="health" :label="t('cameras.health.snapshots24h')">
+            <span class="live-tab__value">{{ health.snapshots24h }}</span>
+          </el-descriptions-item>
+          <el-descriptions-item v-if="health" :label="t('cameras.health.aiSuccess')">
+            <el-tag
+              v-if="health.aiSuccessRate !== null"
+              :type="health.aiSuccessRate >= 90 ? 'success' : (health.aiSuccessRate >= 60 ? 'warning' : 'danger')"
+              effect="light"
+              round
+              size="small"
+            >
+              {{ health.aiSuccessRate }}%
+            </el-tag>
+            <span v-else class="live-tab__value">--</span>
+          </el-descriptions-item>
+          <el-descriptions-item v-if="health" :label="t('cameras.health.schedule')">
+            <span class="live-tab__value">
+              {{ t('cameras.schedule.every', { minutes: health.captureIntervalMinutes || 30 }) }}<template v-if="health.captureDaytimeOnly">, {{ t('cameras.schedule.daytimeOnly') }}</template>
+            </span>
           </el-descriptions-item>
         </el-descriptions>
       </el-card>
@@ -141,7 +178,8 @@ import EZUIKit from 'ezuikit-js'
 import api from '@/services/api'
 import PlaybackControls from './PlaybackControls.vue'
 import { ElNotification } from 'element-plus'
-import { VideoCamera, Key, Lock, EditPen } from '@element-plus/icons-vue'
+import { VideoCamera, Key, Lock, EditPen, Camera } from '@element-plus/icons-vue'
+import { useNotifications } from '@/composables/useNotifications'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
@@ -157,6 +195,51 @@ const isPlaceholderVisible = ref(true)
 const placeholderText = ref(t('cameras.noCameraSelected'))
 const currentStreamType = ref(t('cameras.waitingConnection'))
 const currentStreamId = ref('')
+
+// Device health and manual capture
+const { relativeTime } = useNotifications()
+const health = ref(null)
+const capturing = ref(false)
+
+const loadHealth = async () => {
+  const serial = props.camera?.deviceSerial
+  if (!serial) {
+    health.value = null
+    return
+  }
+  try {
+    const res = await api.getCamerasHealth()
+    health.value = (res.data?.health || []).find(h => h.deviceSerial === serial) || null
+  } catch (e) {
+    health.value = null
+  }
+}
+
+const handleCaptureNow = async () => {
+  if (!props.camera?.deviceSerial) return
+  capturing.value = true
+  try {
+    const res = await api.captureNow(props.camera.deviceSerial)
+    const count = res.data?.count
+    ElNotification({
+      title: t('common.success'),
+      message: count === null || count === undefined
+        ? t('cameras.captureDoneNoAi')
+        : t('cameras.captureDone', { count }),
+      type: 'success'
+    })
+    loadHealth()
+  } catch (err) {
+    const status = err.response?.status
+    ElNotification({
+      title: t('common.error'),
+      message: status === 429 ? err.response.data.message : t('cameras.captureFailed'),
+      type: 'error'
+    })
+  } finally {
+    capturing.value = false
+  }
+}
 
 const validateCodeDialogVisible = ref(false)
 const inputValidateCode = ref('')
@@ -540,6 +623,7 @@ watch(
   () => props.camera,
   (newCam, oldCam) => {
     if (newCam && newCam.deviceSerial !== oldCam?.deviceSerial) {
+      loadHealth()
       playLiveStream()
     } else if (newCam && oldCam && newCam.validateCode !== oldCam.validateCode) {
       updatePlayerValidCode(newCam.validateCode)
@@ -552,6 +636,7 @@ watch(
 
 onMounted(() => {
   if (props.camera) {
+    loadHealth()
     playLiveStream()
   }
 })

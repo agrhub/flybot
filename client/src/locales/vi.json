@@ -333,6 +333,20 @@
       "playbackUnavailable": "Không tải được luồng xem lại.",
       "playbackSegmentFailed": "Không phát lại được đoạn video này.",
       "playbackRequestFailed": "Lỗi khi yêu cầu luồng xem lại."
+    },
+    "captureNow": "Chụp ngay",
+    "captureDone": "Đã chụp ảnh: {count} con",
+    "captureDoneNoAi": "Đã chụp ảnh; AI chưa phân tích xong.",
+    "captureFailed": "Camera không trả về ảnh. Có thể camera đang mất kết nối.",
+    "health": {
+      "lastSnapshot": "Ảnh gần nhất",
+      "snapshots24h": "Số ảnh (24 giờ)",
+      "aiSuccess": "AI phân tích (24 giờ)",
+      "schedule": "Lịch chụp"
+    },
+    "schedule": {
+      "every": "Mỗi {minutes} phút",
+      "daytimeOnly": "chỉ ban ngày"
     }
   },
   "analytics": {
@@ -491,7 +505,10 @@
     "passwordFieldsRequired": "Vui lòng nhập đầy đủ các trường mật khẩu.",
     "passwordChanged": "Đã đổi mật khẩu. Các thiết bị khác đã bị đăng xuất.",
     "saveFailed": "Không lưu được. Vui lòng thử lại.",
-    "storageBucket": "Bucket S3 (MinIO)"
+    "storageBucket": "Bucket S3 (MinIO)",
+    "captureInterval": "Chụp tự động",
+    "captureDaytimeOnly": "Chỉ ban ngày (06:00–18:00)",
+    "captureDaytimeOnlyHint": "Bỏ qua chụp ban đêm vì bẫy dính khó đọc trong bóng tối."
   },
   "assistant": {
     "title": "Smart Trap Copilot",

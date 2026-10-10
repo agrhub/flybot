@@ -5,12 +5,16 @@ const ezvizService = require('../services/ezvizService');
 const s3Service = require('../services/s3Service');
 const aiService = require('../services/aiService');
 const notificationService = require('../services/notificationService');
+const { dueSerials } = require('../services/captureSchedule');
 
 /**
  * Capture image from camera, upload to S3, and trigger AI analysis
  */
 async function captureAndSaveSnapshot(deviceSerial) {
     try {
+        // Record the attempt first, so an offline camera is retried on its normal cadence, not every tick
+        await Camera.updateMany({ deviceSerial }, { $set: { lastCaptureAt: new Date() } });
+
         const captureRes = await ezvizService.captureDevice(deviceSerial);
 
         if (captureRes.code != '200') {
@@ -123,31 +127,33 @@ async function backfillCameraThumbnails() {
     }
 }
 
-/**
- * Automatically scan and capture snapshots from all cameras
- */
-async function autoCaptureAllCameras() {
-    console.log("🚀 Starting automatic snapshot capture & AI recognition job...");
-    try {
-        // Backfill any missing camera thumbnails first
-        await backfillCameraThumbnails();
+let captureRunInProgress = false;
 
-        const onlineCameras = await Camera.find({});
-        const deviceSerials = [];
-        for (const cam of onlineCameras) {
-            if (!deviceSerials.includes(cam.deviceSerial)) {
-                await captureAndSaveSnapshot(cam.deviceSerial);
-                deviceSerials.push(cam.deviceSerial);
-            }
+/**
+ * Capture every device whose schedule says it is due (see services/captureSchedule.js).
+ * Runs on a short tick; a run is skipped if the previous one is still going.
+ */
+async function autoCaptureDueCameras() {
+    if (captureRunInProgress) return;
+    captureRunInProgress = true;
+    try {
+        const cameras = await Camera.find({}).select('deviceSerial captureIntervalMinutes captureDaytimeOnly lastCaptureAt');
+        const due = dueSerials(cameras, new Date());
+        if (due.length === 0) return;
+        console.log(`🚀 Capturing ${due.length} due camera(s)...`);
+        for (const serial of due) {
+            await captureAndSaveSnapshot(serial);
             await new Promise(resolve => setTimeout(resolve, 2000)); // Delay to avoid rate limit
         }
     } catch (error) {
         console.error("❌ Auto-capture error:", error.message);
+    } finally {
+        captureRunInProgress = false;
     }
 }
 
 module.exports = {
     captureAndSaveSnapshot,
-    autoCaptureAllCameras,
+    autoCaptureDueCameras,
     backfillCameraThumbnails
 };

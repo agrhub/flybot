@@ -3,6 +3,15 @@ const router = express.Router();
 const cameraController = require('../controllers/cameraController');
 const { authenticate } = require('../middlewares/auth');
 const { requireStringFields } = require('../middlewares/validate');
+const { rateLimit } = require('../middlewares/rateLimit');
+
+// Manual captures hit the camera and the AI API: at most 3 per camera per user per minute
+const captureLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 3,
+    includeIp: false,
+    keyFn: (req) => `${req.user?.id}:${req.body?.deviceSerial}`
+});
 
 // Apply authentication to all camera routes
 router.use(authenticate);
@@ -17,6 +26,8 @@ router.put('/user/camera/location', cameraController.updateCameraLocation);
 router.post('/user/update-camera-location', cameraController.updateCameraLocation);
 router.delete('/user/delete-camera', cameraController.deleteCamera);
 router.post('/user/update-camera-code', cameraController.updateCameraCode);
+router.get('/user/cameras/health', cameraController.getCamerasHealth);
+router.post('/user/camera/capture', captureLimiter, cameraController.captureNow);
 
 // Stream & playback routes
 router.post('/live', cameraController.getLiveStream);

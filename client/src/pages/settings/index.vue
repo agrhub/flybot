@@ -385,13 +385,32 @@
             clearable
           />
         </el-form-item>
-        <el-form-item :label="t('cameras.validateCode')" class="!mb-0">
+        <el-form-item :label="t('cameras.validateCode')">
           <el-input
             v-model="editForm.validateCode"
             :placeholder="t('settings.validateCodePlaceholder')"
             clearable
             show-password
           />
+        </el-form-item>
+        <el-form-item :label="t('settings.captureInterval')">
+          <el-select v-model="editForm.captureIntervalMinutes" class="w-full">
+            <el-option
+              v-for="minutes in CAPTURE_INTERVALS"
+              :key="minutes"
+              :value="minutes"
+              :label="t('cameras.schedule.every', { minutes })"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item class="!mb-0">
+          <div class="flex items-start justify-between gap-4 w-full">
+            <div>
+              <div class="text-sm">{{ t('settings.captureDaytimeOnly') }}</div>
+              <div class="text-xs" style="color: var(--el-text-color-secondary)">{{ t('settings.captureDaytimeOnlyHint') }}</div>
+            </div>
+            <el-switch v-model="editForm.captureDaytimeOnly" />
+          </div>
         </el-form-item>
       </el-form>
 
@@ -513,7 +532,12 @@ const passwordForm = reactive({
 // Edit Camera modal state
 const editCameraDialogVisible = ref(false);
 const savingCamera = ref(false);
+// Must match the server's allowed values (server/src/services/captureSchedule.js)
+const CAPTURE_INTERVALS = [15, 30, 60, 120];
+
 const editForm = reactive({
+  captureIntervalMinutes: 30,
+  captureDaytimeOnly: false,
   deviceSerial: '',
   deviceName: '',
   validateCode: ''
@@ -597,6 +621,8 @@ const openEditCameraModal = (cam) => {
   editForm.deviceSerial = cam.deviceSerial;
   editForm.deviceName = cam.deviceName || '';
   editForm.validateCode = cam.validateCode || '';
+  editForm.captureIntervalMinutes = cam.captureIntervalMinutes || 30;
+  editForm.captureDaytimeOnly = !!cam.captureDaytimeOnly;
   editCameraDialogVisible.value = true;
 };
 
@@ -606,7 +632,9 @@ const handleSaveEditCamera = async () => {
     savingCamera.value = true;
     const res = await api.updateCamera(user.id, editForm.deviceSerial, {
       deviceName: editForm.deviceName,
-      validateCode: editForm.validateCode
+      validateCode: editForm.validateCode,
+      captureIntervalMinutes: editForm.captureIntervalMinutes,
+      captureDaytimeOnly: editForm.captureDaytimeOnly
     });
     if (res.data?.success) {
       ElNotification({ title: t('common.success'), message: t('settings.cameraUpdated'), type: 'success' });

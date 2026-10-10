@@ -102,6 +102,9 @@ const camerasMatching = (filter = {}) => store.cameras.filter(c =>
 models.Camera.exists = async (filter) => (camerasMatching(filter).length ? { _id: 1 } : null);
 models.Camera.findOne = (filter) => query(() => camerasMatching(filter)[0] || null);
 models.Camera.find = (filter) => query(() => camerasMatching(filter));
+models.Camera.updateMany = async (filter, update) => {
+    camerasMatching(filter).forEach(c => Object.assign(c, update.$set || {}));
+};
 
 // Snapshot
 models.Snapshot.find = () => query(() => []);

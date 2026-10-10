@@ -116,6 +116,13 @@ export default {
   updateCameraCode(deviceSerial, validateCode) {
     return apiClient.post('/user/update-camera-code', { deviceSerial, validateCode });
   },
+  // Capture, store and analyze a snapshot right now
+  captureNow(deviceSerial) {
+    return apiClient.post('/user/camera/capture', { deviceSerial });
+  },
+  getCamerasHealth() {
+    return apiClient.get('/user/cameras/health');
+  },
   getLiveStream(deviceSerial, urlId = '', quality = 1, protocol = 1) {
     return apiClient.post('/live', { deviceSerial, urlId, quality, protocol });
   },

@@ -10,7 +10,7 @@ const { PORT, JWT_SECRET, CORS_ORIGINS, TRUST_PROXY, ENABLE_CRON } = require('./
 const { connectDB } = require('./config/db');
 const routes = require('./routes');
 const { syncCameraStatus } = require('./services/ezvizService');
-const { autoCaptureAllCameras } = require('./cron/captureJob');
+const { autoCaptureDueCameras, backfillCameraThumbnails } = require('./cron/captureJob');
 const { startCronJobs } = require('./cron/scheduler');
 
 const app = express();
@@ -128,7 +128,7 @@ async function startServer() {
 
         // 3. Initial camera status sync & capture
         syncCameraStatus();
-        autoCaptureAllCameras();
+        backfillCameraThumbnails().then(autoCaptureDueCameras);
 
         // 4. Start periodic cron jobs
         startCronJobs();

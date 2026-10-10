@@ -1,7 +1,7 @@
 const cron = require('node-cron');
 const { cleanupOldData } = require('../services/s3Service');
 const { syncCameraStatus } = require('../services/ezvizService');
-const { autoCaptureAllCameras } = require('./captureJob');
+const { autoCaptureDueCameras } = require('./captureJob');
 
 /**
  * Start scheduled tasks (Cron Jobs)
@@ -17,9 +17,10 @@ function startCronJobs() {
         syncCameraStatus();
     });
 
-    // Snapshot capture & AI recognition: Every 30 minutes
-    cron.schedule('*/30 * * * *', () => {
-        autoCaptureAllCameras();
+    // Snapshot capture & AI recognition: check every 5 minutes which cameras are due
+    // (each camera has its own interval and optional daytime-only setting)
+    cron.schedule('*/5 * * * *', () => {
+        autoCaptureDueCameras();
     });
 
     console.log("⏰ Periodic Cron jobs initialized.");

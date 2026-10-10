@@ -1,9 +1,25 @@
-const { Camera } = require('../models');
+const { Camera, Snapshot } = require('../models');
+const { CAPTURE_INTERVALS } = require('../services/captureSchedule');
+const { countPests } = require('../services/notificationService');
 const ezvizService = require('../services/ezvizService');
 const { sendServerError } = require('../utils/http');
 
-// Store active stream session IDs for each camera to invalidate old streams upon mode switch
+// Each viewer's own active stream id per camera ("userId:serial" -> urlId), so switching
+// streams only closes that viewer's previous stream, never someone else's
 const activeStreamSessions = new Map();
+const sessionKey = (userId, deviceSerial) => `${userId}:${deviceSerial}`;
+
+/**
+ * Close the caller's previous stream for this camera, if we know it.
+ * Never calls EZVIZ without a urlId: that would disable every stream of the device.
+ */
+async function closePreviousStream(userId, deviceSerial, body) {
+    const key = sessionKey(userId, deviceSerial);
+    const urlId = body.urlId || body.id || activeStreamSessions.get(key) || '';
+    activeStreamSessions.delete(key);
+    if (!urlId) return null;
+    return ezvizService.disableLiveAddress({ deviceSerial, urlId, channelNo: body.channelNo || 1 });
+}
 
 /**
  * Get User Camera List
@@ -136,11 +152,17 @@ async function deleteCamera(req, res) {
  */
 async function updateCamera(req, res) {
     const userId = req.user.id;
-    const { deviceSerial, deviceName, validateCode, alertThreshold } = req.body;
+    const { deviceSerial, deviceName, validateCode, alertThreshold, captureIntervalMinutes, captureDaytimeOnly } = req.body;
     if (!deviceSerial) return res.status(400).json({ success: false, message: "Missing deviceSerial." });
     if (typeof alertThreshold !== 'undefined' &&
         (!Number.isInteger(alertThreshold) || alertThreshold < 1 || alertThreshold > 10000)) {
         return res.status(400).json({ success: false, message: "alertThreshold must be a whole number from 1 to 10000." });
+    }
+    if (typeof captureIntervalMinutes !== 'undefined' && !CAPTURE_INTERVALS.includes(captureIntervalMinutes)) {
+        return res.status(400).json({ success: false, message: `captureIntervalMinutes must be one of ${CAPTURE_INTERVALS.join(', ')}.` });
+    }
+    if (typeof captureDaytimeOnly !== 'undefined' && typeof captureDaytimeOnly !== 'boolean') {
+        return res.status(400).json({ success: false, message: "captureDaytimeOnly must be true or false." });
     }
     try {
         const camera = await Camera.findOne({ userId, deviceSerial });
@@ -155,6 +177,12 @@ async function updateCamera(req, res) {
         }
         if (typeof alertThreshold !== 'undefined') {
             camera.alertThreshold = alertThreshold;
+        }
+        if (typeof captureIntervalMinutes !== 'undefined') {
+            camera.captureIntervalMinutes = captureIntervalMinutes;
+        }
+        if (typeof captureDaytimeOnly !== 'undefined') {
+            camera.captureDaytimeOnly = captureDaytimeOnly;
         }
         await camera.save();
         res.json({ success: true, message: "Camera updated successfully.", camera });
@@ -233,8 +261,7 @@ async function getLiveStream(req, res) {
         // check camera setting first
 
         // Invalidate / disable old active stream using urlId from client or server cache
-        const oldStreamId = req.body.urlId || req.body.id || activeStreamSessions.get(deviceSerial) || '';
-        await ezvizService.disableLiveAddress({ deviceSerial, urlId: oldStreamId });
+        await closePreviousStream(userId, deviceSerial, req.body);
 
         const isEncrypt = (camera.isEncrypt === 1);
         console.log("isEncrypt: ", isEncrypt);
@@ -289,7 +316,7 @@ async function getLiveStream(req, res) {
             await Camera.updateMany({ deviceSerial }, { $set: { isEncrypt: isEncrypted } });
 
             if (responseData.data?.id) {
-                activeStreamSessions.set(deviceSerial, responseData.data.id);
+                activeStreamSessions.set(sessionKey(userId, deviceSerial), responseData.data.id);
             }
 
             responseData.data.accessToken = token;
@@ -352,8 +379,7 @@ async function getPlaybackStream(req, res) {
         console.log("startTime: ", startTime, "stopTime: ", stopTime);
 
         // Invalidate / disable old active stream with urlId
-        const oldStreamId = req.body.urlId || req.body.id || activeStreamSessions.get(deviceSerial) || '';
-        await ezvizService.disableLiveAddress({ deviceSerial, urlId: oldStreamId });
+        await closePreviousStream(userId, deviceSerial, req.body);
 
         const { responseData, token, areaDomain } = await ezvizService.getPlaybackAddress({
             deviceSerial,
@@ -366,7 +392,7 @@ async function getPlaybackStream(req, res) {
 
         if (responseData.code == '200') {
             if (responseData.data?.id) {
-                activeStreamSessions.set(deviceSerial, responseData.data.id);
+                activeStreamSessions.set(sessionKey(userId, deviceSerial), responseData.data.id);
             }
             responseData.data.accessToken = token;
             responseData.data.areaDomain = areaDomain;
@@ -392,20 +418,93 @@ async function disableStream(req, res) {
             return res.status(403).json({ code: "403", msg: "You do not have permission to access this camera." });
         }
 
-        const streamId = urlId || id || activeStreamSessions.get(deviceSerial) || '';
-        const result = await ezvizService.disableLiveAddress({
-            deviceSerial,
-            channelNo: channelNo || 1,
-            urlId: streamId
-        });
-        activeStreamSessions.delete(deviceSerial);
+        const result = await closePreviousStream(userId, deviceSerial, { urlId, id, channelNo });
         res.json(result || { code: "200", msg: "Stream disabled successfully" });
     } catch (error) {
         sendServerError(res, error, { format: 'ezviz' });
     }
 }
 
+/**
+ * Take a snapshot right now (capture, store, AI analysis, alerts) and return the result
+ */
+async function captureNow(req, res) {
+    const userId = req.user.id;
+    const { deviceSerial } = req.body;
+    if (!deviceSerial) return res.status(400).json({ success: false, message: "Missing deviceSerial." });
+    try {
+        const camera = await Camera.findOne({ userId, deviceSerial });
+        if (!camera) {
+            return res.status(404).json({ success: false, message: "Camera not found or permission denied." });
+        }
+        // Lazy require: captureJob pulls in the AI and S3 services
+        const { captureAndSaveSnapshot } = require('../cron/captureJob');
+        const saved = await captureAndSaveSnapshot(deviceSerial);
+        if (!saved) {
+            return res.status(502).json({ success: false, code: 'CAPTURE_FAILED', message: "The camera did not return an image. It may be offline." });
+        }
+        const snapshot = await Snapshot.findById(saved._id);
+        res.json({
+            success: true,
+            snapshot,
+            count: snapshot?.aiProcessed ? countPests(snapshot.aiResults?.summary) : null
+        });
+    } catch (err) {
+        sendServerError(res, err, { context: 'Capture now' });
+    }
+}
+
+/**
+ * Device health for the user's cameras: last capture, snapshots and AI success over the last 24h
+ */
+async function getCamerasHealth(req, res) {
+    try {
+        const userId = req.user.id;
+        const cameras = await Camera.find({ userId });
+        const serials = [...new Set(cameras.map(c => c.deviceSerial))];
+        const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+        const [recent, latest] = await Promise.all([
+            Snapshot.aggregate([
+                { $match: { deviceSerial: { $in: serials }, createdAt: { $gte: since } } },
+                { $group: { _id: '$deviceSerial', total: { $sum: 1 }, analyzed: { $sum: { $cond: ['$aiProcessed', 1, 0] } } } }
+            ]),
+            Snapshot.aggregate([
+                { $match: { deviceSerial: { $in: serials } } },
+                { $sort: { createdAt: -1 } },
+                { $group: { _id: '$deviceSerial', lastSnapshotAt: { $first: '$createdAt' } } }
+            ])
+        ]);
+        const recentBy = new Map(recent.map(r => [r._id, r]));
+        const latestBy = new Map(latest.map(r => [r._id, r.lastSnapshotAt]));
+
+        res.json({
+            success: true,
+            health: cameras.map(cam => {
+                const r = recentBy.get(cam.deviceSerial) || { total: 0, analyzed: 0 };
+                return {
+                    deviceSerial: cam.deviceSerial,
+                    status: cam.status,
+                    lastSync: cam.lastSync,
+                    lastCaptureAt: cam.lastCaptureAt,
+                    lastSnapshotAt: latestBy.get(cam.deviceSerial) || null,
+                    snapshots24h: r.total,
+                    analyzed24h: r.analyzed,
+                    // null when nothing was captured, so the UI shows "--" instead of a misleading 0%
+                    aiSuccessRate: r.total > 0 ? Math.round((r.analyzed / r.total) * 100) : null,
+                    captureIntervalMinutes: cam.captureIntervalMinutes,
+                    captureDaytimeOnly: cam.captureDaytimeOnly
+                };
+            })
+        });
+    } catch (err) {
+        sendServerError(res, err, { context: 'Camera health' });
+    }
+}
+
 module.exports = {
+    captureNow,
+    getCamerasHealth,
     getUserCameras,
     addCamera,
     deleteCamera,
