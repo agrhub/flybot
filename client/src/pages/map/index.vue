@@ -2,6 +2,10 @@
   <div class="w-full max-w-7xl mx-auto pb-12 select-none">
     <PageHeader :title="t('dashboard.mapViewTitle')" :subtitle="t('dashboard.mapViewSubtitle')">
       <template #actions>
+        <div class="flex items-center gap-2 mr-2">
+          <el-switch v-model="showHeatmap" size="small" />
+          <span class="text-sm">{{ t('map.heatmap') }}</span>
+        </div>
         <!-- Outbreak legend -->
         <el-tag type="success" effect="light" round size="small">{{ t('map.safe') }}</el-tag>
         <el-tag type="warning" effect="light" round size="small">{{ t('map.moderate') }}</el-tag>
@@ -129,9 +133,12 @@
 
             <!-- Coordinates & edit -->
             <div class="mt-1 flex items-center justify-between">
-              <span class="trap-item__mono">{{ cam.latitude?.toFixed(4) }}, {{ cam.longitude?.toFixed(4) }}</span>
+              <span v-if="cam.hasLocation" class="trap-item__mono">
+                {{ Number(cam.latitude).toFixed(4) }}, {{ Number(cam.longitude).toFixed(4) }}
+              </span>
+              <el-tag v-else type="warning" effect="light" round size="small">{{ t('map.noLocation') }}</el-tag>
               <el-button link type="primary" size="small" :icon="Edit" @click.stop="openEditModal(cam)">
-                {{ t('map.edit') }}
+                {{ cam.hasLocation ? t('map.edit') : t('map.setLocation') }}
               </el-button>
             </div>
           </div>
@@ -221,6 +228,8 @@ import { Search, MapLocation, Picture, Rank, Aim, VideoCamera, Location, Edit } 
 import PageHeader from '@/components/common/PageHeader.vue';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import 'leaflet.markercluster/dist/MarkerCluster.css';
+import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import EZUIKit from 'ezuikit-js';
 
 const { t } = useI18n();
@@ -232,6 +241,23 @@ let map = null;
 let streetLayer = null;
 let earthLayer = null;
 const markersMap = new Map();
+let clusterGroup = null;
+let heatLayer = null;
+const showHeatmap = ref(false);
+
+// Country-level view when no trap has a GPS position yet (never a made-up orchard)
+const FALLBACK_CENTER = [16.0, 106.0];
+const FALLBACK_ZOOM = 6;
+
+const hasLocation = (cam) => [cam.latitude, cam.longitude].every(v => v !== null && v !== undefined && v !== '' && Number.isFinite(Number(v)));
+
+// Popups are raw HTML strings: escape every value that comes from user or device data
+const escapeHtml = (value) => String(value ?? '')
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#39;');
 
 const selectedCam = ref(null);
 const realtimeData = ref([]);
@@ -245,8 +271,8 @@ const DEFAULT_CROP_TYPE = 'Mango Orchard';
 
 const editForm = ref({
   locationAddress: '',
-  latitude: 11.1345,
-  longitude: 106.5052,
+  latitude: null,
+  longitude: null,
   trapType: DEFAULT_TRAP_TYPE,
   cropType: DEFAULT_CROP_TYPE
 });
@@ -257,8 +283,8 @@ const enrichedCameras = computed(() => {
     const live = realtimeData.value.find(r => r.deviceSerial === cam.deviceSerial);
     return {
       ...cam,
-      latitude: cam.latitude || live?.latitude || 11.1345,
-      longitude: cam.longitude || live?.longitude || 106.5052,
+      latitude: cam.latitude ?? live?.latitude ?? null,
+      longitude: cam.longitude ?? live?.longitude ?? null,
       locationAddress: cam.locationAddress || live?.locationAddress || '',
       currentCount: live?.currentCount ?? 0,
       // Computed by the API against each camera's own alert threshold
@@ -267,8 +293,10 @@ const enrichedCameras = computed(() => {
       trapType: cam.trapType || live?.trapType || DEFAULT_TRAP_TYPE,
       cropType: cam.cropType || live?.cropType || DEFAULT_CROP_TYPE
     };
-  });
+  }).map(cam => ({ ...cam, hasLocation: hasLocation(cam) }));
 });
+
+const locatedCameras = computed(() => enrichedCameras.value.filter(c => c.hasLocation));
 
 // Search & Filter state
 const searchQuery = ref('');
@@ -288,7 +316,7 @@ const handleSearchEnter = () => {
   if (filteredCameras.value.length === 1) {
     focusCamera(filteredCameras.value[0]);
   } else if (filteredCameras.value.length > 1) {
-    const latLngs = filteredCameras.value.map(c => [Number(c.latitude) || 11.1345, Number(c.longitude) || 106.5052]);
+    const latLngs = filteredCameras.value.filter(c => c.hasLocation).map(c => [Number(c.latitude), Number(c.longitude)]);
     if (map && latLngs.length > 0) {
       map.fitBounds(L.latLngBounds(latLngs), { padding: [60, 60], maxZoom: 16 });
     }
@@ -297,11 +325,11 @@ const handleSearchEnter = () => {
 
 const resetMapView = () => {
   if (!map) return;
-  const latLngs = enrichedCameras.value.map(c => [Number(c.latitude) || 11.141, Number(c.longitude) || 106.514]);
+  const latLngs = locatedCameras.value.map(c => [Number(c.latitude), Number(c.longitude)]);
   if (latLngs.length > 0) {
     map.fitBounds(L.latLngBounds(latLngs), { padding: [50, 50], maxZoom: 16 });
   } else {
-    map.setView([11.141, 106.514], 13);
+    map.setView(FALLBACK_CENTER, FALLBACK_ZOOM);
   }
 };
 
@@ -405,11 +433,18 @@ const toggleBaseLayer = () => {
 const initMap = () => {
   if (!mapContainerRef.value || map) return;
 
-  // Default coordinate center: Cu Chi orchard plot
-  const defaultCenter = [11.141, 106.514];
   map = L.map(mapContainerRef.value, {
     zoomControl: false
-  }).setView(defaultCenter, 13);
+  }).setView(FALLBACK_CENTER, FALLBACK_ZOOM);
+
+  // Nearby traps merge into a numbered cluster until zoomed in
+  clusterGroup = L.markerClusterGroup({
+    showCoverageOnHover: false,
+    spiderfyOnMaxZoom: true,
+    disableClusteringAtZoom: 17,
+    maxClusterRadius: 50
+  });
+  map.addLayer(clusterGroup);
 
   // 1. Google Maps Street Layer
   streetLayer = L.tileLayer(getStreetTileUrl(), {
@@ -650,23 +685,29 @@ const renderMarkers = () => {
 
   // Clear existing markers & any running popup player
   stopPopupPlayer();
-  markersMap.forEach(marker => marker.remove());
+  clusterGroup?.clearLayers();
   markersMap.clear();
+  renderHeatmap();
 
-  const cams = enrichedCameras.value;
-  if (cams.length === 0) return;
+  // Traps without GPS are listed in the roster (with "set location"), not placed on the map
+  const cams = locatedCameras.value;
+  if (cams.length === 0) {
+    map.setView(FALLBACK_CENTER, FALLBACK_ZOOM);
+    return;
+  }
 
   const latLngs = [];
 
   cams.forEach(cam => {
-    const lat = Number(cam.latitude) || 11.1345;
-    const lng = Number(cam.longitude) || 106.5052;
+    const lat = Number(cam.latitude);
+    const lng = Number(cam.longitude);
     latLngs.push([lat, lng]);
 
     const marker = L.marker([lat, lng], {
       icon: createCustomIcon(cam),
       draggable: true
-    }).addTo(map);
+    });
+    clusterGroup.addLayer(marker);
 
     // Draggable event
     marker.on('dragend', async (e) => {
@@ -697,7 +738,7 @@ const renderMarkers = () => {
     // Thumbnail & In-place Video Player Container
     const thumbUrl = (cam.thumbnailUrl || cam.picUrl) ? api.getImageUrl(cam.thumbnailUrl || cam.picUrl) : '';
     const thumbImgHtml = thumbUrl
-      ? `<img id="popup-thumb-${cam.deviceSerial}" class="map-popup__thumb" src="${thumbUrl}" style="display: block;" onerror="this.style.display='none'" />`
+      ? `<img id="popup-thumb-${escapeHtml(cam.deviceSerial)}" class="map-popup__thumb" src="${escapeHtml(thumbUrl)}" style="display: block;" onerror="this.style.display='none'" />`
       : `<div id="popup-thumb-${cam.deviceSerial}" class="map-popup__placeholder" style="display: flex;">📷</div>`;
 
     // Popup is a raw HTML string rendered by Leaflet; styled via the .map-popup classes below.
@@ -719,19 +760,19 @@ const renderMarkers = () => {
 
         <!-- Header info -->
         <div class="map-popup__header">
-          <div class="map-popup__title">${cam.deviceName || cam.deviceSerial}</div>
+          <div class="map-popup__title">${escapeHtml(cam.deviceName || cam.deviceSerial)}</div>
           <span class="map-popup__status ${cam.status ? 'is-online' : 'is-offline'}">
             ${cam.status ? (t('common.online')) : (t('common.offline'))}
           </span>
         </div>
 
-        <div class="map-popup__serial">SN: ${cam.deviceSerial}</div>
+        <div class="map-popup__serial">SN: ${escapeHtml(cam.deviceSerial)}</div>
 
         <!-- Density & orchard info -->
         <div class="popup-info-box">
           <div><b>${t('dashboard.realtimeByCamera')}:</b> <span style="color: ${getPinColor(cam.riskLevel)}; font-weight: 600;">${cam.currentCount} ${t('dashboard.insectsShort')}</span></div>
-          <div><b>${t('map.cropType')}:</b> ${cam.cropType}</div>
-          <div class="map-popup__ellipsis"><b>${t('map.orchardAddress')}:</b> ${cam.locationAddress || t('map.noAddress')}</div>
+          <div><b>${t('map.cropType')}:</b> ${escapeHtml(cam.cropType)}</div>
+          <div class="map-popup__ellipsis"><b>${t('map.orchardAddress')}:</b> ${escapeHtml(cam.locationAddress || t('map.noAddress'))}</div>
         </div>
 
         <!-- In-place live view button -->
@@ -780,24 +821,44 @@ const renderMarkers = () => {
 
 const focusCamera = (cam) => {
   selectedCam.value = cam;
+  // No GPS yet: open the location editor instead of jumping to a made-up place
+  if (!cam.hasLocation) {
+    openEditModal(cam);
+    return;
+  }
   if (!map) return;
-  const lat = Number(cam.latitude) || 11.1345;
-  const lng = Number(cam.longitude) || 106.5052;
-  map.flyTo([lat, lng], 16, { duration: 1.2 });
-
   const marker = markersMap.get(cam.deviceSerial);
-  if (marker) {
-    marker.openPopup();
+  if (marker && clusterGroup) {
+    // Expands the cluster containing this marker, then opens its popup
+    clusterGroup.zoomToShowLayer(marker, () => marker.openPopup());
+  } else {
+    map.flyTo([Number(cam.latitude), Number(cam.longitude)], 16, { duration: 1.2 });
   }
 };
+
+// Density heatmap: intensity is the trap's count relative to its own alert threshold
+const renderHeatmap = () => {
+  if (!map) return;
+  if (heatLayer) {
+    map.removeLayer(heatLayer);
+    heatLayer = null;
+  }
+  if (!showHeatmap.value || typeof L.heatLayer !== 'function') return;
+  const points = locatedCameras.value
+    .filter(c => c.currentCount > 0)
+    .map(c => [Number(c.latitude), Number(c.longitude), Math.min(1, c.currentCount / (c.alertThreshold || 15))]);
+  heatLayer = L.heatLayer(points, { radius: 40, blur: 30, maxZoom: 17, minOpacity: 0.35 }).addTo(map);
+};
+
+watch(showHeatmap, renderHeatmap);
 
 
 const openEditModal = (cam) => {
   editingCam.value = cam;
   editForm.value = {
     locationAddress: cam.locationAddress || '',
-    latitude: Number(cam.latitude) || 11.1345,
-    longitude: Number(cam.longitude) || 106.5052,
+    latitude: cam.hasLocation ? Number(cam.latitude) : Number((map?.getCenter().lat ?? FALLBACK_CENTER[0]).toFixed(6)),
+    longitude: cam.hasLocation ? Number(cam.longitude) : Number((map?.getCenter().lng ?? FALLBACK_CENTER[1]).toFixed(6)),
     trapType: cam.trapType || DEFAULT_TRAP_TYPE,
     cropType: cam.cropType || DEFAULT_CROP_TYPE
   };
@@ -867,6 +928,8 @@ watch(isDark, () => {
 });
 
 onMounted(async () => {
+  window.L = L;
+  await Promise.all([import('leaflet.markercluster'), import('leaflet.heat')]);
   await loadRealtimeOverview();
   await nextTick();
   initMap();

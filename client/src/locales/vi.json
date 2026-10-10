@@ -701,9 +701,9 @@
     "resources": "Tài Nguyên"
   },
   "map": {
-    "safe": "<5 An toàn",
-    "moderate": "5-15 Trung bình",
-    "alert": ">15 Cảnh báo",
+    "safe": "An toàn",
+    "moderate": "Trung bình (1/3 ngưỡng)",
+    "alert": "Đạt ngưỡng cảnh báo",
     "locateMe": "Định vị tôi",
     "locateMeTitle": "Định vị GPS hiện tại",
     "viewWholeOrchard": "Xem toàn vườn",
@@ -744,7 +744,10 @@
     "coordsUpdated": "Đã cập nhật tọa độ mới cho {name}: [{lat}, {lng}]",
     "coordsSaveFailed": "Không thể lưu tọa độ: {error}",
     "locationSaved": "Đã lưu thông tin vị trí và lô vườn thành công!",
-    "locationSaveFailed": "Lưu thông tin thất bại: {error}"
+    "locationSaveFailed": "Lưu thông tin thất bại: {error}",
+    "heatmap": "Bản đồ nhiệt",
+    "noLocation": "Chưa có vị trí",
+    "setLocation": "Đặt vị trí"
   },
   "species": {
     "fruitFly": "Ruồi vàng",
