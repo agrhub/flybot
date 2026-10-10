@@ -421,7 +421,7 @@
     "storageRetention": "Chu kỳ lưu trữ tự động",
     "storageMonths": "12 Tháng",
     "termsSub": "Quy định sử dụng hệ thống giám sát và bảo mật dữ liệu nông nghiệp",
-    "termsP1": "Hệ thống Smart Trap - CamHub Studio thu thập hình ảnh phục vụ mục đích phân tích mật độ dịch hại nông nghiệp và giám sát vườn trồng thông minh.",
+    "termsP1": "Hệ thống FlyBot Smart Trap Studio thu thập hình ảnh phục vụ mục đích phân tích mật độ dịch hại nông nghiệp và giám sát vườn trồng thông minh.",
     "termsP2": "Toàn bộ dữ liệu snapshot và luồng video được bảo mật theo tiêu chuẩn mã hóa đám mây EZVIZ Open Platform và lưu trữ cục bộ trên MinIO S3 cluster.",
     "notificationsTab": "Thông báo",
     "notificationsSub": "Chọn cách nhận cảnh báo dịch hại và camera",

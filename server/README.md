@@ -23,7 +23,7 @@ Optional:
 - `ALLOW_REGISTRATION=false` to close public sign-up.
 
 ## Email (password reset, email confirmation, alerts)
-- `APP_BASE_URL`: public URL of the web app, used in email links (e.g. `https://camhub.example.com`). Required in production; links are never built from request headers.
+- `APP_BASE_URL`: public URL of the web app, used in email links (e.g. `https://flybot.example.com`). Required in production; links are never built from request headers.
 - `SMTP_HOST`, `SMTP_PORT` (default 587), `SMTP_SECURE` (`true` for port 465), `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM` (e.g. `FlyBot <no-reply@agrhub.com>`).
 - Without `SMTP_HOST`, emails are printed to the server log in development (handy for testing reset links) and dropped in production.
 - Google Workspace: `SMTP_HOST=smtp.gmail.com`, `SMTP_PORT=465`, `SMTP_SECURE=true`, `SMTP_USER` = the sending mailbox, `SMTP_PASS` = an app password for it.

@@ -1,4 +1,4 @@
-# CamHub: one image for Cloud Run and the Compute Engine VM.
+# FlyBot: one image for Cloud Run and the Compute Engine VM.
 # The server (server/dist/app.js) serves both the API and the built Vue client.
 
 # ---------- Build stage ----------

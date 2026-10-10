@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Automated Cloud Run deploy for CamHub (called by deploy-cloudrun.sh / deploy-cloudrun.bat).
+ * Automated Cloud Run deploy for FlyBot (called by deploy-cloudrun.sh / deploy-cloudrun.bat).
  *
  * Every run is idempotent:
  *   1. checks gcloud, project and the local .env
@@ -19,25 +19,25 @@ const { spawnSync } = require('child_process');
 
 const ROOT = path.resolve(__dirname, '..');
 const ENV_YAML = path.join(ROOT, 'deploy', 'cloudrun.env.yaml');
-const SERVICE = 'camhub';
-const REPO = 'camhub';
-const RUN_SA_NAME = 'camhub-run';
+const SERVICE = 'flybot';
+const REPO = 'flybot';
+const RUN_SA_NAME = 'flybot-run';
 const IS_WINDOWS = process.platform === 'win32';
 
 // Secret Manager name -> .env variable (must match --set-secrets in cloudbuild.yaml)
 const SECRETS = {
-    'camhub-jwt-secret': 'JWT_SECRET',
-    'camhub-mongo-uri': 'MONGO_URI',
-    'camhub-ezviz-app-key': 'APP_KEY',
-    'camhub-ezviz-secret-key': 'SECRET_KEY',
-    'camhub-s3-access-key': 'S3_ACCESS_KEY',
-    'camhub-s3-secret-key': 'S3_SECRET_KEY',
-    'camhub-roboflow-api-key': 'ROBOFLOW_API_KEY'
+    'flybot-jwt-secret': 'JWT_SECRET',
+    'flybot-mongo-uri': 'MONGO_URI',
+    'flybot-ezviz-app-key': 'APP_KEY',
+    'flybot-ezviz-secret-key': 'SECRET_KEY',
+    'flybot-s3-access-key': 'S3_ACCESS_KEY',
+    'flybot-s3-secret-key': 'S3_SECRET_KEY',
+    'flybot-roboflow-api-key': 'ROBOFLOW_API_KEY'
 };
 
 // Created and wired into Cloud Run only when the .env value is set
 const OPTIONAL_SECRETS = {
-    'camhub-smtp-pass': 'SMTP_PASS'
+    'flybot-smtp-pass': 'SMTP_PASS'
 };
 
 // Never copied from the local .env: these differ between development and Cloud Run
@@ -77,7 +77,7 @@ function parseArgs(argv) {
 }
 
 function printHelp() {
-    console.log(`Deploy CamHub to Google Cloud Run.
+    console.log(`Deploy FlyBot to Google Cloud Run.
 
 Options:
   --project ID        GCP project (default: gcloud config project)
@@ -215,7 +215,7 @@ function setup(opts) {
     if (exists(['iam', 'service-accounts', 'describe', runSa, `--project=${project}`])) {
         ok(`${runSa} exists`);
     } else {
-        gcloud(['iam', 'service-accounts', 'create', RUN_SA_NAME, '--display-name=CamHub Cloud Run', `--project=${project}`], { mutating: true });
+        gcloud(['iam', 'service-accounts', 'create', RUN_SA_NAME, '--display-name=FlyBot Cloud Run', `--project=${project}`], { mutating: true });
         ok(`Created ${runSa}`);
     }
     for (const role of ['roles/aiplatform.user', 'roles/secretmanager.secretAccessor']) {

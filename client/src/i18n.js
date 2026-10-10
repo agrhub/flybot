@@ -7,7 +7,8 @@ export const SUPPORTED_LOCALES = [
   { code: 'en', label: 'English', flag: '🇺🇸' },
 ];
 
-const savedLocale = (typeof localStorage !== 'undefined' && (localStorage.getItem('camhub_language') || localStorage.getItem('smart_trap_lang'))) || 'vi';
+// 'camhub_language' / 'smart_trap_lang' are legacy keys from earlier app names
+const savedLocale = (typeof localStorage !== 'undefined' && (localStorage.getItem('flybot_language') || localStorage.getItem('camhub_language') || localStorage.getItem('smart_trap_lang'))) || 'vi';
 
 const i18n = createI18n({
   legacy: false,

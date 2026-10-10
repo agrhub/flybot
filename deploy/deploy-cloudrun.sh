@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Deploy CamHub to Google Cloud Run (macOS / Linux / Git Bash).
+# Deploy FlyBot to Google Cloud Run (macOS / Linux / Git Bash).
 # Usage: ./deploy/deploy-cloudrun.sh [--project ID] [--region REGION] [--update-secrets] [--skip-setup] [--dry-run] [--yes]
 set -euo pipefail
 

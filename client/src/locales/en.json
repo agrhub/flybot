@@ -421,7 +421,7 @@
     "storageRetention": "Auto Retention Cycle",
     "storageMonths": "12 Months",
     "termsSub": "Surveillance usage terms and agricultural data security",
-    "termsP1": "Smart Trap - CamHub Studio captures images for agricultural pest monitoring and smart orchard management.",
+    "termsP1": "FlyBot Smart Trap Studio captures images for agricultural pest monitoring and smart orchard management.",
     "termsP2": "All snapshots and video streams are secured via EZVIZ Open Platform and archived locally on MinIO S3 clusters.",
     "notificationsTab": "Notifications",
     "notificationsSub": "Choose how you receive pest and camera alerts",

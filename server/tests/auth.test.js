@@ -66,7 +66,7 @@ test('session endpoint sets an httpOnly cookie scoped to /api', async () => {
     const res = await app.request('/api/auth/session', { method: 'POST', headers: bearer(ALICE) });
     assert.equal(res.status, 200);
     const setCookie = res.headers.get('set-cookie') || '';
-    assert.match(setCookie, /camhub_token=/);
+    assert.match(setCookie, /flybot_token=/);
     assert.match(setCookie, /HttpOnly/i);
     assert.match(setCookie, /Path=\/api/);
     assert.match(setCookie, /SameSite=Lax/i);
@@ -74,7 +74,7 @@ test('session endpoint sets an httpOnly cookie scoped to /api', async () => {
 
 test('logout clears the cookie', async () => {
     const res = await app.request('/api/auth/logout', { method: 'POST' });
-    assert.match(res.headers.get('set-cookie') || '', /camhub_token=;/);
+    assert.match(res.headers.get('set-cookie') || '', /flybot_token=;/);
 });
 
 test('CORS does not allow foreign origins', async () => {

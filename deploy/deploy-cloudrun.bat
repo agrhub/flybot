@@ -1,5 +1,5 @@
 @echo off
-rem Deploy CamHub to Google Cloud Run (Windows).
+rem Deploy FlyBot to Google Cloud Run (Windows).
 rem Usage: deploy\deploy-cloudrun.bat [--project ID] [--region REGION] [--update-secrets] [--skip-setup] [--dry-run] [--yes]
 setlocal
 

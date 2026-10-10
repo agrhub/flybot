@@ -1,12 +1,12 @@
 # Compute Engine VM deployment: docker compose up -d --build
 # Docker restarts the container if it crashes or the VM reboots.
 services:
-  camhub:
+  flybot:
     build:
       context: .
       args:
         VITE_GOOGLE_MAP_KEY: ${VITE_GOOGLE_MAP_KEY:-}
-    image: camhub:latest
+    image: flybot:latest
     restart: unless-stopped
     env_file: .env
     environment:

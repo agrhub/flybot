@@ -1,4 +1,4 @@
-# Deploying CamHub
+# Deploying FlyBot
 
 One Docker image (`Dockerfile`) runs on both targets. The server serves the API and the built Vue client on one port.
 
@@ -54,23 +54,23 @@ gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregi
 The app reaches Vertex AI through this account, so no JSON key file is needed.
 
 ```bash
-gcloud iam service-accounts create camhub-run
-gcloud projects add-iam-policy-binding PROJECT_ID --member=serviceAccount:camhub-run@PROJECT_ID.iam.gserviceaccount.com --role=roles/aiplatform.user
-gcloud projects add-iam-policy-binding PROJECT_ID --member=serviceAccount:camhub-run@PROJECT_ID.iam.gserviceaccount.com --role=roles/secretmanager.secretAccessor
+gcloud iam service-accounts create flybot-run
+gcloud projects add-iam-policy-binding PROJECT_ID --member=serviceAccount:flybot-run@PROJECT_ID.iam.gserviceaccount.com --role=roles/aiplatform.user
+gcloud projects add-iam-policy-binding PROJECT_ID --member=serviceAccount:flybot-run@PROJECT_ID.iam.gserviceaccount.com --role=roles/secretmanager.secretAccessor
 ```
 
 ## Cloud Run
 
 ### 1. Image repository
 ```bash
-gcloud artifacts repositories create camhub --repository-format=docker --location=asia-southeast1
+gcloud artifacts repositories create flybot --repository-format=docker --location=asia-southeast1
 ```
 
 ### 2. Secrets
 Create one secret per value, copying each value from your `.env`. Typing values at the prompt keeps them out of your shell history:
 
 ```bash
-for name in camhub-jwt-secret camhub-mongo-uri camhub-ezviz-app-key camhub-ezviz-secret-key camhub-s3-access-key camhub-s3-secret-key camhub-roboflow-api-key; do
+for name in flybot-jwt-secret flybot-mongo-uri flybot-ezviz-app-key flybot-ezviz-secret-key flybot-s3-access-key flybot-s3-secret-key flybot-roboflow-api-key; do
   read -rsp "$name: " value; echo
   printf '%s' "$value" | gcloud secrets create "$name" --data-file=-
 done
@@ -78,14 +78,14 @@ done
 
 | Secret | `.env` variable |
 |---|---|
-| `camhub-jwt-secret` | `JWT_SECRET` |
-| `camhub-mongo-uri` | `MONGO_URI` |
-| `camhub-ezviz-app-key` | `APP_KEY` |
-| `camhub-ezviz-secret-key` | `SECRET_KEY` |
-| `camhub-s3-access-key` | `S3_ACCESS_KEY` |
-| `camhub-s3-secret-key` | `S3_SECRET_KEY` |
-| `camhub-roboflow-api-key` | `ROBOFLOW_API_KEY` |
-| `camhub-smtp-pass` (optional) | `SMTP_PASS`, only needed when sending email |
+| `flybot-jwt-secret` | `JWT_SECRET` |
+| `flybot-mongo-uri` | `MONGO_URI` |
+| `flybot-ezviz-app-key` | `APP_KEY` |
+| `flybot-ezviz-secret-key` | `SECRET_KEY` |
+| `flybot-s3-access-key` | `S3_ACCESS_KEY` |
+| `flybot-s3-secret-key` | `S3_SECRET_KEY` |
+| `flybot-roboflow-api-key` | `ROBOFLOW_API_KEY` |
+| `flybot-smtp-pass` (optional) | `SMTP_PASS`, only needed when sending email |
 
 To change a secret later, run `gcloud secrets versions add NAME --data-file=-`, then redeploy.
 
@@ -96,7 +96,7 @@ The build's deploy step needs to manage Cloud Run and act as the runtime account
 PROJECT_NUMBER=$(gcloud projects describe PROJECT_ID --format='value(projectNumber)')
 CB=serviceAccount:$PROJECT_NUMBER@cloudbuild.gserviceaccount.com
 gcloud projects add-iam-policy-binding PROJECT_ID --member=$CB --role=roles/run.admin
-gcloud iam service-accounts add-iam-policy-binding camhub-run@PROJECT_ID.iam.gserviceaccount.com --member=$CB --role=roles/iam.serviceAccountUser
+gcloud iam service-accounts add-iam-policy-binding flybot-run@PROJECT_ID.iam.gserviceaccount.com --member=$CB --role=roles/iam.serviceAccountUser
 ```
 
 Newer projects may run builds as the Compute Engine default service account instead (`PROJECT_NUMBER-compute@developer.gserviceaccount.com`). If the deploy step fails with a permission error, grant the same roles to that account.
@@ -104,7 +104,7 @@ Newer projects may run builds as the Compute Engine default service account inst
 ### 4. Settings
 Fill in the `TODO` values in `deploy/cloudrun.env.yaml`. Everything in that file is non-secret.
 
-For email (password reset, email confirmation, alert emails), fill `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER` and `MAIL_FROM`, and store `SMTP_PASS` as the `camhub-smtp-pass` secret. Then add `,SMTP_PASS=camhub-smtp-pass:latest` to `_EXTRA_SECRETS`. The deploy script does all of this from `.env`. `APP_BASE_URL` must be the public URL of the app; the deploy script sets it to the Cloud Run URL when it is empty.
+For email (password reset, email confirmation, alert emails), fill `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER` and `MAIL_FROM`, and store `SMTP_PASS` as the `flybot-smtp-pass` secret. Then add `,SMTP_PASS=flybot-smtp-pass:latest` to `_EXTRA_SECRETS`. The deploy script does all of this from `.env`. `APP_BASE_URL` must be the public URL of the app; the deploy script sets it to the Cloud Run URL when it is empty.
 
 ### 5. Deploy
 ```bash
@@ -120,12 +120,12 @@ Restrict the Maps key to your Cloud Run URL or domain under **APIs & Services â†
 ## Compute Engine VM
 
 ### 1. Create the VM
-Attach the `camhub-run` service account so Vertex AI works without a key file:
+Attach the `flybot-run` service account so Vertex AI works without a key file:
 
 ```bash
-gcloud compute instances create camhub-vm --zone=asia-southeast1-b --machine-type=e2-small \
+gcloud compute instances create flybot-vm --zone=asia-southeast1-b --machine-type=e2-small \
   --image-family=debian-12 --image-project=debian-cloud \
-  --service-account=camhub-run@PROJECT_ID.iam.gserviceaccount.com --scopes=cloud-platform \
+  --service-account=flybot-run@PROJECT_ID.iam.gserviceaccount.com --scopes=cloud-platform \
   --tags=http-server,https-server
 ```
 

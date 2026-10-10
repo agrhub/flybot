@@ -13,8 +13,7 @@ export function useLanguage() {
     if (!SUPPORTED_LOCALES.some((l) => l.code === code)) return;
     locale.value = code;
     try {
-      localStorage.setItem('camhub_language', code);
-      localStorage.setItem('smart_trap_lang', code);
+      localStorage.setItem('flybot_language', code);
     } catch (e) {}
 
     let signedIn = false;

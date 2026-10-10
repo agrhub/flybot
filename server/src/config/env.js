@@ -59,7 +59,7 @@ const config = {
     MONGO_URI: process.env.MONGO_URI || "mongodb://localhost:27017/ezviz_manager",
     // No fallback: a known default would let anyone forge login tokens
     JWT_SECRET: (process.env.JWT_SECRET || "").trim(),
-    AUTH_COOKIE_NAME: 'camhub_token',
+    AUTH_COOKIE_NAME: 'flybot_token',
     // Set COOKIE_SECURE=true when served over HTTPS
     COOKIE_SECURE: process.env.COOKIE_SECURE === 'true',
     // Comma-separated list of extra origins allowed to call the API cross-origin (same-origin needs nothing)
