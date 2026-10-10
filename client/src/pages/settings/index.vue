@@ -270,6 +270,62 @@
             </el-alert>
           </el-card>
 
+          <!-- Telegram alerts -->
+          <el-card shadow="never" class="mb-4" v-loading="loadingSystemInfo">
+            <div class="flex items-start justify-between gap-4">
+              <div class="min-w-0">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="settings-label">{{ t('settings.telegram.title') }}</span>
+                  <el-tag v-if="telegramConnected" type="success" effect="light" round size="small">
+                    {{ authUser?.telegram?.username ? t('settings.telegram.connectedAs', { username: authUser.telegram.username }) : t('settings.telegram.connected') }}
+                  </el-tag>
+                </div>
+                <p class="settings-meta mt-1">{{ t('settings.telegram.desc') }}</p>
+              </div>
+              <el-switch
+                v-if="telegramConnected"
+                :model-value="authUser?.notificationPrefs?.telegram !== false"
+                :loading="savingPrefs"
+                @change="saveTelegramAlerts"
+              />
+            </div>
+
+            <el-alert
+              v-if="systemInfo && !systemInfo.telegram?.enabled"
+              type="info"
+              :title="t('settings.telegram.notConfigured')"
+              :closable="false"
+              show-icon
+              class="mt-3"
+            />
+
+            <template v-else-if="systemInfo">
+              <div v-if="telegramConnected" class="flex flex-wrap gap-2 mt-3">
+                <el-button :icon="Promotion" :loading="sendingTelegramTest" @click="sendTelegramTest">
+                  {{ t('settings.telegram.sendTest') }}
+                </el-button>
+                <el-button type="danger" plain @click="unlinkTelegram">
+                  {{ t('settings.telegram.disconnect') }}
+                </el-button>
+              </div>
+
+              <div v-else class="mt-3 space-y-3">
+                <el-button type="primary" :icon="ChatDotRound" :loading="linkingTelegram" @click="connectTelegram">
+                  {{ t('settings.telegram.connect') }}
+                </el-button>
+                <el-alert
+                  v-if="waitingForTelegram"
+                  type="warning"
+                  :title="t('settings.telegram.waiting', { bot: systemInfo.telegram.botUsername })"
+                  :closable="false"
+                  show-icon
+                >
+                  <el-button link type="primary" @click="refreshUser">{{ t('settings.telegram.checkNow') }}</el-button>
+                </el-alert>
+              </div>
+            </template>
+          </el-card>
+
           <!-- Per-camera thresholds -->
           <el-card shadow="never">
             <template #header>
@@ -498,7 +554,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, watch } from 'vue';
+import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useTheme } from '@/utils/theme';
@@ -523,7 +579,9 @@ import {
   Moon,
   Sunny,
   Monitor,
-  SwitchButton
+  SwitchButton,
+  Promotion,
+  ChatDotRound
 } from '@element-plus/icons-vue';
 import { useNotifications } from '@/composables/useNotifications';
 
@@ -626,8 +684,94 @@ const loadSystemInfo = async () => {
 
 watch(activeTab, (tab) => {
   if (tab === 'sessions') loadSessions();
-  if (tab === 'storage') loadSystemInfo();
+  if (tab === 'storage' || tab === 'notifications') loadSystemInfo();
 }, { immediate: true });
+
+// ---------- Telegram ----------
+const telegramConnected = computed(() => !!authUser.value?.telegram?.connected);
+const linkingTelegram = ref(false);
+const waitingForTelegram = ref(false);
+const sendingTelegramTest = ref(false);
+let telegramPoll = null;
+const TELEGRAM_POLL_MS = 3000;
+const TELEGRAM_POLL_LIMIT_MS = 15 * 60 * 1000; // the link code expires after 15 minutes
+
+const stopTelegramPoll = () => {
+  if (telegramPoll) clearInterval(telegramPoll);
+  telegramPoll = null;
+  waitingForTelegram.value = false;
+};
+
+const connectTelegram = async () => {
+  linkingTelegram.value = true;
+  try {
+    const res = await api.createTelegramLink();
+    window.open(res.data.url, '_blank', 'noopener');
+    // Wait for the user to press Start in Telegram, then the profile shows the link
+    waitingForTelegram.value = true;
+    const startedAt = Date.now();
+    if (telegramPoll) clearInterval(telegramPoll);
+    telegramPoll = setInterval(async () => {
+      await refreshUser();
+      if (telegramConnected.value) {
+        stopTelegramPoll();
+        ElNotification({ title: t('common.success'), message: t('settings.telegram.linked'), type: 'success' });
+      } else if (Date.now() - startedAt > TELEGRAM_POLL_LIMIT_MS) {
+        stopTelegramPoll();
+      }
+    }, TELEGRAM_POLL_MS);
+  } catch (err) {
+    ElNotification({ title: t('common.error'), message: err.response?.data?.message || t('settings.saveFailed'), type: 'error' });
+  } finally {
+    linkingTelegram.value = false;
+  }
+};
+
+const unlinkTelegram = async () => {
+  try {
+    await ElMessageBox.confirm(t('settings.telegram.disconnectConfirm'), t('settings.telegram.disconnect'), {
+      type: 'warning',
+      confirmButtonText: t('settings.telegram.disconnect'),
+      cancelButtonText: t('common.cancel')
+    });
+  } catch {
+    return;
+  }
+  try {
+    await api.unlinkTelegram();
+    await refreshUser();
+  } catch (err) {
+    ElNotification({ title: t('common.error'), message: t('settings.saveFailed'), type: 'error' });
+  }
+};
+
+const sendTelegramTest = async () => {
+  sendingTelegramTest.value = true;
+  try {
+    await api.sendTelegramTest();
+    ElNotification({ title: t('common.success'), message: t('settings.telegram.testSent'), type: 'success' });
+  } catch (err) {
+    if (err.response?.data?.code === 'TELEGRAM_BLOCKED') refreshUser();
+    ElNotification({ title: t('common.error'), message: err.response?.data?.message || t('settings.saveFailed'), type: 'error' });
+  } finally {
+    sendingTelegramTest.value = false;
+  }
+};
+
+const saveTelegramAlerts = async (enabled) => {
+  savingPrefs.value = true;
+  try {
+    const res = await api.updateProfile({ notificationPrefs: { telegram: enabled } });
+    if (res.data?.user) setAuth(res.data.user);
+    ElNotification({ title: t('common.success'), message: t('settings.prefsSaved'), type: 'success' });
+  } catch (err) {
+    ElNotification({ title: t('common.error'), message: err.response?.data?.message || t('settings.saveFailed'), type: 'error' });
+  } finally {
+    savingPrefs.value = false;
+  }
+};
+
+onUnmounted(stopTelegramPoll);
 
 // Notifications tab state
 const savingPrefs = ref(false);

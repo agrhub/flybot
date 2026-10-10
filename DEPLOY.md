@@ -86,6 +86,7 @@ done
 | `flybot-s3-secret-key` | `S3_SECRET_KEY` |
 | `flybot-roboflow-api-key` | `ROBOFLOW_API_KEY` |
 | `flybot-smtp-pass` (optional) | `SMTP_PASS`, only needed when sending email |
+| `flybot-telegram-bot-token` (optional) | `TELEGRAM_BOT_TOKEN`, only needed for Telegram alerts |
 
 To change a secret later, run `gcloud secrets versions add NAME --data-file=-`, then redeploy.
 

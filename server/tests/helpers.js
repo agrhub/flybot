@@ -94,6 +94,24 @@ models.User.prototype.save = async function () {
     return this;
 };
 models.User.findById = (id) => query(() => store.users.get(String(id)) || null);
+const userMatches = (u, filter) =>
+    (filter._id === undefined || (typeof filter._id === 'object' && filter._id.$ne !== undefined
+        ? !sameId(u._id, filter._id.$ne) : sameId(u._id, filter._id))) &&
+    (filter['telegram.chatId'] === undefined || u.telegram?.chatId === filter['telegram.chatId']);
+const applyUserUpdate = (u, update) => {
+    Object.assign(u, update.$set || {});
+    for (const key of Object.keys(update.$unset || {})) delete u[key];
+};
+models.User.updateOne = async (filter, update) => {
+    const u = [...store.users.values()].find(x => userMatches(x, filter));
+    if (u) applyUserUpdate(u, update);
+    return { modifiedCount: u ? 1 : 0 };
+};
+models.User.updateMany = async (filter, update) => {
+    const list = [...store.users.values()].filter(x => userMatches(x, filter));
+    list.forEach(u => applyUserUpdate(u, update));
+    return { modifiedCount: list.length };
+};
 models.User.findOne = ({ email }) => query(() =>
     [...store.users.values()].find(u => u.email.toLowerCase() === String(email).toLowerCase()) || null);
 

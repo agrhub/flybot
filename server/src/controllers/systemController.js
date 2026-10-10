@@ -1,5 +1,6 @@
 const { Camera, Snapshot } = require('../models');
-const { S3_BUCKET, RETENTION_CYCLE, AI_PROVIDER, VERTEX_MODEL } = require('../config/env');
+const { S3_BUCKET, RETENTION_CYCLE, AI_PROVIDER, VERTEX_MODEL, TELEGRAM_BOT_USERNAME } = require('../config/env');
+const telegramService = require('../services/telegramService');
 const { sendServerError } = require('../utils/http');
 
 /**
@@ -38,6 +39,11 @@ async function getSystemInfo(req, res) {
                     provider,
                     // Only meaningful for Vertex; Roboflow runs a hosted workflow
                     model: provider === 'roboflow' ? null : VERTEX_MODEL
+                },
+                // Lets the client show or hide the Telegram option
+                telegram: {
+                    enabled: telegramService.isEnabled(),
+                    botUsername: telegramService.isEnabled() ? TELEGRAM_BOT_USERNAME : null
                 },
                 usage: {
                     cameras: serials.length,

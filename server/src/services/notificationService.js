@@ -5,6 +5,7 @@ const sseHub = require('../realtime/sseHub');
 const { queueMail } = require('./mailService');
 const emailTemplates = require('./emailTemplates');
 const { appUrl } = require('./authTokenService');
+const telegramService = require('./telegramService');
 
 // Minimum gap between two notifications of the same type for the same user + camera
 const COOLDOWN_MINUTES = {
@@ -59,23 +60,26 @@ async function notifyUser({ userId, type, deviceSerial = '', params = {} }) {
 
     sseHub.sendToUser(userId, 'notification', toClient(notification));
 
+    // Email and Telegram carry the same alert types ("back online" stays in-app only)
     if (EMAIL_TYPES.has(type)) {
         const user = await User.findById(userId);
-        // Only verified addresses get alert emails, so typos never receive farm data
-        if (user && user.emailVerified && user.notificationPrefs?.email !== false) {
+        if (user) {
             let url = null;
             try {
                 url = appUrl('/dashboard');
             } catch (err) {
-                console.warn('⚠️ Alert email without link:', err.message);
+                console.warn('⚠️ Alert without link:', err.message);
             }
-            queueMail(emailTemplates.alertEmail({
-                user,
-                language: normalizeLanguage(user.language),
-                type,
-                params: { ...params, deviceSerial },
-                url
-            }));
+            const language = normalizeLanguage(user.language);
+            const fullParams = { ...params, deviceSerial };
+
+            // Only verified addresses get alert emails, so typos never receive farm data
+            if (user.emailVerified && user.notificationPrefs?.email !== false) {
+                queueMail(emailTemplates.alertEmail({ user, language, type, params: fullParams, url }));
+            }
+            if (user.telegram?.chatId && user.notificationPrefs?.telegram !== false) {
+                telegramService.queueMessage(user.telegram.chatId, telegramService.formatAlert({ language, type, params: fullParams, url }));
+            }
         }
     }
     return notification;

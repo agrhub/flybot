@@ -37,7 +37,14 @@ function toPublicUser(user) {
         avatar: user.avatar || '',
         emailVerified: !!user.emailVerified,
         language: normalizeLanguage(user.language),
-        notificationPrefs: { email: user.notificationPrefs?.email !== false }
+        notificationPrefs: {
+            email: user.notificationPrefs?.email !== false,
+            telegram: user.notificationPrefs?.telegram !== false
+        },
+        telegram: {
+            connected: !!user.telegram?.chatId,
+            username: user.telegram?.username || ''
+        }
     };
 }
 
@@ -405,7 +412,8 @@ async function updateProfile(req, res) {
         }
         if (typeof notificationPrefs !== 'undefined' &&
             (typeof notificationPrefs !== 'object' || notificationPrefs === null ||
-             (notificationPrefs.email !== undefined && typeof notificationPrefs.email !== 'boolean'))) {
+             (notificationPrefs.email !== undefined && typeof notificationPrefs.email !== 'boolean') ||
+             (notificationPrefs.telegram !== undefined && typeof notificationPrefs.telegram !== 'boolean'))) {
             return res.status(400).json({ success: false, message: "Invalid notification preferences." });
         }
         const user = await User.findById(userId);
@@ -416,6 +424,7 @@ async function updateProfile(req, res) {
         if (typeof avatar !== 'undefined') user.avatar = avatar;
         if (typeof language !== 'undefined') user.language = language;
         if (typeof notificationPrefs?.email === 'boolean') user.set('notificationPrefs.email', notificationPrefs.email);
+        if (typeof notificationPrefs?.telegram === 'boolean') user.set('notificationPrefs.telegram', notificationPrefs.telegram);
         await user.save();
         res.json({
             success: true,

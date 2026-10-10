@@ -148,3 +148,9 @@ test('camera alert threshold can be updated and is validated', async () => {
         assert.equal(bad.status, 400, String(alertThreshold));
     }
 });
+
+test('Telegram endpoints report when the bot is not configured', async () => {
+    const res = await app.request('/api/telegram/link', { method: 'POST', headers: bearer(ALICE) });
+    assert.equal(res.status, 503);
+    assert.equal((await res.json()).code, 'TELEGRAM_DISABLED');
+});

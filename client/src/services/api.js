@@ -49,6 +49,16 @@ export default {
   revokeOtherSessions() {
     return apiClient.post('/auth/sessions/revoke-others');
   },
+  // Telegram alerts: one-time deep link to the bot, unlink, test message
+  createTelegramLink() {
+    return apiClient.post('/telegram/link');
+  },
+  unlinkTelegram() {
+    return apiClient.delete('/telegram/link');
+  },
+  sendTelegramTest() {
+    return apiClient.post('/telegram/test');
+  },
   getSystemInfo() {
     return apiClient.get('/system/info');
   },

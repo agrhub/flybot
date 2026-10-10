@@ -80,6 +80,10 @@ const config = {
     SMTP_PASS: process.env.SMTP_PASS || "",
     MAIL_FROM: process.env.MAIL_FROM || "FlyBot <no-reply@localhost>",
 
+    // Telegram alerts: bot token from @BotFather and the bot username (without @). Unset = feature off.
+    TELEGRAM_BOT_TOKEN: (process.env.TELEGRAM_BOT_TOKEN || "").trim(),
+    TELEGRAM_BOT_USERNAME: (process.env.TELEGRAM_BOT_USERNAME || "").replace(/^@/, "").trim(),
+
     // Set ENABLE_CRON=false on every deployment except one, so captures/cleanup don't run twice
     ENABLE_CRON: process.env.ENABLE_CRON !== 'false',
     // Set ALLOW_REGISTRATION=false to close public sign-up

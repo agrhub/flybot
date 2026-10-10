@@ -28,3 +28,10 @@ Optional:
 - Without `SMTP_HOST`, emails are printed to the server log in development (handy for testing reset links) and dropped in production.
 - Google Workspace: `SMTP_HOST=smtp.gmail.com`, `SMTP_PORT=465`, `SMTP_SECURE=true`, `SMTP_USER` = the sending mailbox, `SMTP_PASS` = an app password for it.
 - Alert emails go only to users who confirmed their address and left email alerts on (Settings → Notifications).
+
+## Telegram alerts
+1. In Telegram, talk to [@BotFather](https://t.me/BotFather), send `/newbot`, and copy the token and the bot username.
+2. Set `TELEGRAM_BOT_TOKEN` and `TELEGRAM_BOT_USERNAME` (without @).
+3. Users connect in Settings → Notifications → "Connect Telegram", then press Start in the bot chat.
+
+The bot receives messages by long polling on the instance with `ENABLE_CRON=true` (Telegram allows only one consumer per bot), so no public webhook is needed. Use a separate bot for development, otherwise your dev server and production will compete for updates.

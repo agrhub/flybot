@@ -11,6 +11,7 @@ const { connectDB } = require('./config/db');
 const routes = require('./routes');
 const { syncCameraStatus } = require('./services/ezvizService');
 const { autoCaptureDueCameras, backfillCameraThumbnails } = require('./cron/captureJob');
+const telegramService = require('./services/telegramService');
 const { startCronJobs } = require('./cron/scheduler');
 
 const app = express();
@@ -132,6 +133,9 @@ async function startServer() {
 
         // 4. Start periodic cron jobs
         startCronJobs();
+
+        // 5. Telegram bot (one consumer per bot, so only on the background-jobs instance)
+        telegramService.startPolling();
     });
 
     // Graceful shutdown: Cloud Run / Docker send SIGTERM before stopping the container
@@ -140,6 +144,7 @@ async function startServer() {
         if (shuttingDown) return;
         shuttingDown = true;
         console.log(`🛑 ${signal} received, shutting down...`);
+        telegramService.stopPolling();
         setTimeout(() => process.exit(1), 10000).unref();
         server.close(async () => {
             await mongoose.disconnect().catch(() => {});

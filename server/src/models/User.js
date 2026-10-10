@@ -12,7 +12,14 @@ const userSchema = new mongoose.Schema({
     tokenVersion: { type: Number, default: 0 },
     notificationPrefs: {
         // Alert emails are only sent to verified addresses
-        email: { type: Boolean, default: true }
+        email: { type: Boolean, default: true },
+        telegram: { type: Boolean, default: true }
+    },
+    // Linked Telegram chat for alerts (set by the bot after the user presses Start)
+    telegram: {
+        chatId: { type: String, default: undefined },
+        username: { type: String, default: undefined },
+        linkedAt: { type: Date, default: undefined }
     },
     createdAt: { type: Date, default: Date.now }
 });

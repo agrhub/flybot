@@ -41,5 +41,14 @@
         "body": "{failures} ảnh gần nhất từ camera {deviceName} ({deviceSerial}) không phân tích được. Số liệu côn trùng của bẫy này có thể bị thiếu."
       }
     }
+  },
+  "telegram": {
+    "welcome": "Xin chào! Để nhận cảnh báo FlyBot tại đây, hãy mở FlyBot → Cài đặt → Thông báo và bấm \"Kết nối Telegram\".",
+    "linkInvalid": "Đường dẫn không hợp lệ hoặc đã hết hạn. Hãy tạo đường dẫn mới trong FlyBot → Cài đặt → Thông báo.",
+    "linked": "Đã kết nối với tài khoản FlyBot {email}. Cảnh báo dịch hại và camera sẽ được gửi tới đây. Gửi /stop để ngắt kết nối.",
+    "unlinked": "Đã ngắt kết nối. Bạn sẽ không nhận cảnh báo FlyBot tại đây nữa.",
+    "notLinked": "Cuộc trò chuyện này chưa kết nối với tài khoản FlyBot nào.",
+    "help": "Lệnh:\n/stop - ngừng nhận cảnh báo\nĐể kết nối, dùng \"Kết nối Telegram\" trong FlyBot → Cài đặt → Thông báo.",
+    "test": "✅ Tin nhắn thử từ FlyBot. Cảnh báo của {email} sẽ được gửi tới cuộc trò chuyện này."
   }
 }

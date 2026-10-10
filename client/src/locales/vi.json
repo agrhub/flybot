@@ -565,7 +565,22 @@
     },
     "usageSnapshots": "Ảnh của bạn",
     "usageSnapshotsValue": "{snapshots} ảnh ({analyzed} đã phân tích) từ {cameras} camera",
-    "usageOldest": "Ảnh cũ nhất còn lưu"
+    "usageOldest": "Ảnh cũ nhất còn lưu",
+    "telegram": {
+      "title": "Cảnh báo qua Telegram",
+      "desc": "Nhận các cảnh báo giống email trong cuộc trò chuyện Telegram với bot FlyBot.",
+      "connected": "Đã kết nối",
+      "connectedAs": "Đã kết nối: @{username}",
+      "connect": "Kết nối Telegram",
+      "waiting": "Hãy bấm \"Start\" trong cuộc trò chuyện với @{bot} vừa mở. Trang này sẽ tự cập nhật.",
+      "checkNow": "Tôi đã bấm Start",
+      "linked": "Đã kết nối Telegram.",
+      "sendTest": "Gửi tin nhắn thử",
+      "testSent": "Đã gửi tin nhắn thử. Hãy kiểm tra Telegram.",
+      "disconnect": "Ngắt kết nối",
+      "disconnectConfirm": "Ngừng gửi cảnh báo FlyBot qua Telegram?",
+      "notConfigured": "Máy chủ chưa được thiết lập cảnh báo Telegram (quản trị viên cần thêm bot)."
+    }
   },
   "assistant": {
     "title": "Smart Trap Copilot",

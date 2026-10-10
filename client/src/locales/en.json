@@ -565,7 +565,22 @@
     },
     "usageSnapshots": "Your snapshots",
     "usageSnapshotsValue": "{snapshots} snapshots ({analyzed} analyzed) from {cameras} cameras",
-    "usageOldest": "Oldest kept snapshot"
+    "usageOldest": "Oldest kept snapshot",
+    "telegram": {
+      "title": "Telegram alerts",
+      "desc": "Get the same alerts as email in a Telegram chat with the FlyBot bot.",
+      "connected": "Connected",
+      "connectedAs": "Connected as @{username}",
+      "connect": "Connect Telegram",
+      "waiting": "Press \"Start\" in the chat with @{bot} that just opened. This page updates by itself.",
+      "checkNow": "I pressed Start",
+      "linked": "Telegram connected.",
+      "sendTest": "Send test message",
+      "testSent": "Test message sent. Check Telegram.",
+      "disconnect": "Disconnect",
+      "disconnectConfirm": "Stop sending FlyBot alerts to Telegram?",
+      "notConfigured": "Telegram alerts are not set up on this server yet (the administrator needs to add a bot)."
+    }
   },
   "assistant": {
     "title": "Smart Trap Copilot",

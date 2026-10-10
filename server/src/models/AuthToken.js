@@ -6,7 +6,7 @@ const mongoose = require('mongoose');
  */
 const authTokenSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
-    type: { type: String, enum: ['password_reset', 'email_verify'], required: true },
+    type: { type: String, enum: ['password_reset', 'email_verify', 'telegram_link'], required: true },
     tokenHash: { type: String, required: true, unique: true },
     usedAt: { type: Date, default: null },
     // MongoDB removes expired tokens automatically

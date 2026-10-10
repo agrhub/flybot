@@ -41,5 +41,14 @@
         "body": "The last {failures} snapshots from camera {deviceName} ({deviceSerial}) could not be analyzed. Insect counts for this trap may be missing."
       }
     }
+  },
+  "telegram": {
+    "welcome": "Hello! To receive FlyBot alerts here, open FlyBot → Settings → Notifications and press \"Connect Telegram\".",
+    "linkInvalid": "This link is invalid or has expired. Create a new one in FlyBot → Settings → Notifications.",
+    "linked": "Connected to FlyBot account {email}. Pest and camera alerts will arrive here. Send /stop to disconnect.",
+    "unlinked": "Disconnected. You will no longer receive FlyBot alerts here.",
+    "notLinked": "This chat is not connected to a FlyBot account.",
+    "help": "Commands:\n/stop - stop receiving alerts\nTo connect, use \"Connect Telegram\" in FlyBot → Settings → Notifications.",
+    "test": "✅ Test message from FlyBot. Alerts for {email} will arrive in this chat."
   }
 }
