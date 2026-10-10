@@ -60,9 +60,9 @@
               <h3 class="section-title">{{ t('dashboard.realtimeByCamera') }}</h3>
               <p class="section-desc">{{ t('dashboard.realtimeByCameraDesc') }}</p>
             </div>
-            <el-tag type="danger" effect="plain" round size="small">
+            <el-button link type="primary" :icon="Setting" @click="router.push({ path: '/settings', query: { tab: 'notifications' } })">
               {{ t('dashboard.alertThreshold') }}
-            </el-tag>
+            </el-button>
           </div>
         </template>
 
@@ -80,22 +80,22 @@
                 <span class="meta-text font-mono truncate">({{ cam.deviceSerial }})</span>
               </div>
               <div class="shrink-0">
-                <span class="item-count" :class="`is-${densityLevel(cam.currentCount)}`">{{ cam.currentCount }}</span>
-                <span class="meta-text ml-1">{{ t('dashboard.insectsShort') }}</span>
+                <span class="item-count" :class="`is-${levelTagType(cam.riskLevel)}`">{{ cam.currentCount }}</span>
+                <span class="meta-text ml-1">/ {{ cam.alertThreshold }} {{ t('dashboard.insectsShort') }}</span>
               </div>
             </div>
 
             <el-progress
-              :percentage="Math.min(100, Math.max(8, (cam.currentCount / 40) * 100))"
-              :color="`var(--el-color-${densityLevel(cam.currentCount)})`"
+              :percentage="Math.min(100, Math.max(4, (cam.currentCount / (cam.alertThreshold || 15)) * 100))"
+              :color="`var(--el-color-${levelTagType(cam.riskLevel)})`"
               :stroke-width="8"
               :show-text="false"
             />
 
             <div class="flex items-center justify-between gap-3 mt-2">
               <span class="meta-text truncate">{{ cam.locationAddress || t('map.noAddress') }}</span>
-              <el-tag :type="densityLevel(cam.currentCount)" effect="light" round size="small">
-                {{ cam.currentCount >= 16 ? t('dashboard.pestHotspot') : (cam.currentCount >= 5 ? t('dashboard.moderateLevel') : t('dashboard.wellControlled')) }}
+              <el-tag :type="levelTagType(cam.riskLevel)" effect="light" round size="small">
+                {{ riskLevelLabel(cam.riskLevel) }}
               </el-tag>
             </div>
           </div>
@@ -199,9 +199,37 @@
               <el-icon class="is-primary"><TrendCharts /></el-icon>
               <span>{{ t('dashboard.trajectoryTitle') }}</span>
             </h4>
-            <span class="meta-text">
-              {{ t('dashboard.modelConfidence') }} {{ diagnosisResult.forecast?.confidence || '95.8%' }}
+            <div class="flex flex-wrap items-center gap-2">
+              <el-tag :type="TRAJECTORY_TAG[diagnosisResult.forecast?.trajectory] || 'info'" effect="light" round size="small">
+                {{ t(`dashboard.diagnosis.trajectory.${diagnosisResult.forecast?.trajectory || 'stable'}`) }}
+              </el-tag>
+              <span class="meta-text">
+                {{ t('dashboard.modelConfidence') }}
+                {{ t(`dashboard.diagnosis.confidence.${diagnosisResult.forecast?.confidence || 'low'}`) }}
+                · {{ t('dashboard.diagnosis.basis', { days: diagnosisResult.forecast?.dataDays || 0 }) }}
+              </span>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-x-4 gap-y-1 meta-text">
+            <span v-if="diagnosisResult.peakCamera">
+              {{ t('dashboard.diagnosis.peakTrap', {
+                name: diagnosisResult.peakCamera.deviceName,
+                count: diagnosisResult.currentPeakCount,
+                threshold: diagnosisResult.peakCamera.alertThreshold
+              }) }}
             </span>
+            <span v-if="diagnosisResult.weather" class="inline-flex items-center gap-1">
+              <el-icon><Sunny /></el-icon>
+              {{ t('dashboard.diagnosis.weather', {
+                temperature: diagnosisResult.weather.temperature,
+                humidity: diagnosisResult.weather.humidity
+              }) }}
+              <template v-if="diagnosisResult.weatherFactor">
+                · {{ t(`dashboard.diagnosis.weatherFactor.${diagnosisResult.weatherFactor}`) }}
+              </template>
+            </span>
+            <span v-else>{{ t('dashboard.diagnosis.weatherUnavailable') }}</span>
           </div>
 
           <!-- Forecast bars (data visualization) -->
@@ -215,8 +243,8 @@
               <div
                 class="forecast-bar w-full"
                 :style="{
-                  height: `${Math.min(100, Math.max(15, (day.projectedCount / 40) * 100))}%`,
-                  backgroundColor: `var(--el-color-${forecastLevel(day.projectedCount)})`
+                  height: `${Math.min(100, Math.max(6, (day.projectedCount / forecastScale) * 100))}%`,
+                  backgroundColor: `var(--el-color-${levelTagType(day.risk)})`
                 }"
               ></div>
               <span class="meta-text font-mono">{{ day.date }}</span>
@@ -255,7 +283,7 @@
               </div>
               <div class="rec-footer">
                 <span class="meta-text">{{ t('dashboard.appliedZone') }}</span>
-                <span class="rec-zone truncate">{{ getTargetZoneLabel(rec) }}</span>
+                <span class="rec-zone truncate" :title="getTargetZoneLabel(rec)">{{ getTargetZoneLabel(rec) }}</span>
               </div>
             </el-card>
           </div>
@@ -338,7 +366,9 @@ import {
   Cpu,
   TrendCharts,
   ArrowRight,
-  Right
+  Right,
+  Setting,
+  Sunny
 } from '@element-plus/icons-vue';
 import PageHeader from '@/components/common/PageHeader.vue';
 import StatCard from '@/components/common/StatCard.vue';
@@ -356,7 +386,8 @@ const recText = (rec, field) => (rec.key ? t(`dashboard.diagnosis.recs.${rec.key
 const getMethodLabel = (rec) => recText(rec, 'method');
 const getTitleLabel = (rec) => recText(rec, 'title');
 const getDescLabel = (rec) => recText(rec, 'desc');
-const getTargetZoneLabel = (rec) => recText(rec, 'zone');
+const getTargetZoneLabel = (rec) =>
+  rec.targetCameras?.length ? rec.targetCameras.join(', ') : recText(rec, 'zone');
 
 // Element Plus tag type per recommendation urgency
 const urgencyTagType = (urgency) => {
@@ -367,10 +398,21 @@ const urgencyTagType = (urgency) => {
 };
 
 // Status type for realtime density per camera (same thresholds as the labels)
-const densityLevel = (count) => (count >= 16 ? 'danger' : (count >= 5 ? 'warning' : 'success'));
+// Risk levels come from the API (each camera's own alert threshold); only map them to colors here
+const RISK_TAG = { high: 'danger', moderate: 'warning', low: 'success' };
+const levelTagType = (level) => RISK_TAG[level] || 'success';
+const riskLevelLabel = (level) => (level === 'high'
+  ? t('dashboard.pestHotspot')
+  : level === 'moderate' ? t('dashboard.moderateLevel') : t('dashboard.wellControlled'));
+const TRAJECTORY_TAG = { surging: 'danger', declining: 'success', stable: 'info' };
 
 // Status type for projected forecast counts
-const forecastLevel = (count) => (count >= 20 ? 'danger' : (count >= 6 ? 'warning' : 'success'));
+// Bar height scale: the larger of the alert threshold and the highest projection
+const forecastScale = computed(() => Math.max(
+  diagnosisResult.value?.referenceThreshold || 15,
+  ...(diagnosisResult.value?.forecast?.days || []).map(d => d.projectedCount),
+  1
+));
 
 const user = computed(() => {
   try {

@@ -163,7 +163,7 @@
     "individualsUnit": "cá thể",
     "fruitFlyUnit": "ruồi vàng",
     "avgPerTrap": "TB: {count} con / bẫy",
-    "alertThreshold": "Ngưỡng cảnh báo: 15 con",
+    "alertThreshold": "Ngưỡng cảnh báo: Cài đặt → Thông báo",
     "insectsShort": "con",
     "pestHotspot": "⚠️ Điểm nóng dịch hại",
     "moderateLevel": "Mức trung bình",
@@ -194,7 +194,7 @@
         "pheromoneLure": {
           "title": "Bổ sung mồi dẫn dụ Pheromone (Methyl Eugenol)",
           "desc": "Mồi dẫn dụ đực sau 15-20 ngày giảm hoạt tính. Bổ sung ngay 2-3ml Methyl Eugenol vào lõi bông bẫy dính để duy trì sức hút.",
-          "zone": "Vùng bẫy Củ Chi & Bình Dương",
+          "zone": "Các bẫy đạt hoặc vượt mức cảnh báo",
           "method": "Bẫy sinh học"
         },
         "proteinBait": {
@@ -215,6 +215,27 @@
           "zone": "Vườn đang trong giai đoạn phát triển quả",
           "method": "Cơ học"
         }
+      },
+      "trajectory": {
+        "surging": "Đang tăng",
+        "declining": "Đang giảm",
+        "stable": "Ổn định"
+      },
+      "confidence": {
+        "low": "Thấp",
+        "medium": "Trung bình",
+        "high": "Cao"
+      },
+      "basis": "{days} ngày dữ liệu",
+      "peakTrap": "Bẫy cao nhất: {name}, {count}/{threshold}",
+      "weather": "{temperature}°C, độ ẩm {humidity}%",
+      "weatherUnavailable": "Chưa có dữ liệu thời tiết (hãy thêm toạ độ GPS cho bẫy trên bản đồ)",
+      "weatherFactor": {
+        "hot_humid": "thuận lợi cho ruồi vàng sinh sản nhanh",
+        "cool": "làm ruồi vàng hoạt động chậm lại",
+        "very_hot": "nắng nóng gay gắt làm giảm hoạt động của ruồi",
+        "dry": "không khí khô làm ruồi trưởng thành sống ngắn hơn",
+        "moderate": "điều kiện bình thường"
       }
     }
   },

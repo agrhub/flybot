@@ -163,7 +163,7 @@
     "individualsUnit": "insects",
     "fruitFlyUnit": "fruit flies",
     "avgPerTrap": "Avg: {count} / trap",
-    "alertThreshold": "Alert threshold: 15 insects",
+    "alertThreshold": "Alert thresholds: Settings → Notifications",
     "insectsShort": "insects",
     "pestHotspot": "⚠️ Pest Hotspot",
     "moderateLevel": "Moderate Level",
@@ -194,7 +194,7 @@
         "pheromoneLure": {
           "title": "Replenish Pheromone Lure (Methyl Eugenol)",
           "desc": "Male attractant loses potency after 15-20 days. Add 2-3ml Methyl Eugenol to the cotton core to maintain trap attraction.",
-          "zone": "Cu Chi & Binh Duong Trap Zones",
+          "zone": "Traps at or above the alert level",
           "method": "Bio Trap"
         },
         "proteinBait": {
@@ -215,6 +215,27 @@
           "zone": "Orchards in the fruit development stage",
           "method": "Mechanical"
         }
+      },
+      "trajectory": {
+        "surging": "Rising",
+        "declining": "Falling",
+        "stable": "Stable"
+      },
+      "confidence": {
+        "low": "Low",
+        "medium": "Medium",
+        "high": "High"
+      },
+      "basis": "{days} days of data",
+      "peakTrap": "Highest trap: {name}, {count} of {threshold}",
+      "weather": "{temperature}°C, humidity {humidity}%",
+      "weatherUnavailable": "No weather data (add GPS coordinates to a trap on the map)",
+      "weatherFactor": {
+        "hot_humid": "favors rapid fruit fly breeding",
+        "cool": "slows fruit fly activity",
+        "very_hot": "extreme heat reduces fly activity",
+        "dry": "dry air shortens adult fly lifespan",
+        "moderate": "normal conditions"
       }
     }
   },

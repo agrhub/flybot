@@ -6,6 +6,10 @@ const s3Service = require('../services/s3Service');
 const { sendServerError } = require('../utils/http');
 const { userOwnsCamera } = require('../utils/ownership');
 const { FRUIT_FLY, NON_PEST_LABELS, normalizeSpeciesExpr } = require('../constants/species');
+const { thresholdOf, riskLevel, worstRisk } = require('../constants/risk');
+const { countPests } = require('../services/notificationService');
+const forecastService = require('../services/forecastService');
+const weatherService = require('../services/weatherService');
 
 /**
  * Get AI detection history with pagination (filter by specific camera or all cameras)
@@ -383,20 +387,11 @@ async function getAiOverview(req, res) {
         let totalRealtimeInsects = 0;
 
         for (const cam of dedupedCameras) {
+            // Same counting as alerts and diagnosis: pests only (no people, cars...)
             const extractCount = (snap) => {
-                let cnt = 0;
                 if (!snap) return 0;
-                const summary = snap.aiResults?.summary;
-                if (summary) {
-                    if (summary instanceof Map) {
-                        for (const val of summary.values()) cnt += Number(val) || 0;
-                    } else if (typeof summary === 'object') {
-                        for (const val of Object.values(summary)) cnt += Number(val) || 0;
-                    }
-                } else if (Array.isArray(snap.aiResults?.insects)) {
-                    cnt = snap.aiResults.insects.length;
-                }
-                return cnt;
+                if (snap.aiResults?.summary) return countPests(snap.aiResults.summary);
+                return Array.isArray(snap.aiResults?.insects) ? snap.aiResults.insects.length : 0;
             };
 
             let latestSnapshot = await Snapshot.findOne({
@@ -419,24 +414,28 @@ async function getAiOverview(req, res) {
                 peakCamera = {
                     deviceSerial: cam.deviceSerial,
                     deviceName: cam.deviceName || cam.deviceSerial,
-                    locationAddress: cam.locationAddress || 'Orchard Field'
+                    locationAddress: cam.locationAddress || ''
                 };
             }
 
             totalRealtimeInsects += currentCount;
 
-            const riskLevel = currentCount >= 20 ? 'high' : (currentCount >= 6 ? 'moderate' : 'low');
+            // Risk against this camera's own alert threshold (Settings > Notifications)
+            const alertThreshold = thresholdOf(cam);
+            const camRisk = riskLevel(currentCount, alertThreshold);
 
             cameraRealtimeList.push({
                 deviceSerial: cam.deviceSerial,
                 deviceName: cam.deviceName || cam.deviceSerial,
                 locationAddress: cam.locationAddress || '',
-                latitude: cam.latitude || 11.1345,
-                longitude: cam.longitude || 106.5052,
+                // null when the trap has no GPS position yet (never a made-up default)
+                latitude: Number.isFinite(cam.latitude) ? cam.latitude : null,
+                longitude: Number.isFinite(cam.longitude) ? cam.longitude : null,
                 trapType: cam.trapType || 'Yellow Sticky Trap',
                 cropType: cam.cropType || 'Mango Orchard',
                 currentCount,
-                riskLevel,
+                riskLevel: camRisk,
+                alertThreshold,
                 status: cam.status ?? 1,
                 lastScanTime,
                 lastImageUrl
@@ -521,7 +520,8 @@ async function getAiOverview(req, res) {
         ]);
 
         // Overall risk index
-        const overallRisk = peakRealtimeInsects >= 20 ? 'high' : (peakRealtimeInsects >= 6 ? 'moderate' : 'low');
+        // Worst camera, each judged against its own threshold
+        const overallRisk = worstRisk(cameraRealtimeList.map(c => c.riskLevel));
 
         res.json({
             success: true,
@@ -550,150 +550,179 @@ async function getAiOverview(req, res) {
     }
 }
 
+const TIMEZONE = 'Asia/Ho_Chi_Minh';
+const HISTORY_DAYS = 14;
+const FORECAST_DAYS = 7;
+
+// Sum of pest counts in a snapshot summary, excluding non-pest detections
+const PEST_COUNT_EXPR = {
+    $reduce: {
+        input: { $objectToArray: { $ifNull: ['$aiResults.summary', {}] } },
+        initialValue: 0,
+        in: {
+            $add: ['$$value', {
+                $cond: [{ $in: [{ $toLower: '$$this.k' }, NON_PEST_LABELS] }, 0, { $ifNull: ['$$this.v', 0] }]
+            }]
+        }
+    }
+};
+
+const dayKey = (date) => new Intl.DateTimeFormat('en-CA', { timeZone: TIMEZONE }).format(date); // YYYY-MM-DD
+const dayLabel = (date) => new Intl.DateTimeFormat('en-GB', { timeZone: TIMEZONE, day: '2-digit', month: '2-digit' }).format(date); // DD/MM
+
+function emptyDiagnosis() {
+    return {
+        riskLevel: 'low',
+        riskScore: 0,
+        currentPeakCount: 0,
+        peakCamera: null,
+        referenceThreshold: null,
+        dominantPest: null,
+        weather: null,
+        weatherFactor: null,
+        forecast: { trajectory: 'stable', confidence: 'low', dataDays: 0, projectedPeakDate: '', days: [] },
+        recommendations: []
+    };
+}
+
 /**
- * AI Agricultural Copilot: Deep Diagnostic, Future Trajectory Forecasting & Actionable IPM Plans
+ * Rule-based IPM advice from the current risk, trend and weather.
+ * Texts live in the client i18n files (dashboard.diagnosis.recs.<key>).
+ */
+function buildRecommendations({ risk, trajectory, weatherFactor, hasDetections, affectedTraps }) {
+    if (!hasDetections) return [];
+    const favorable = weatherFactor === 'hot_humid';
+    const recs = [];
+    const add = (id, key, urgency, targetsTraps = false) =>
+        recs.push({ id, key, urgency, ...(targetsTraps ? { targetCameras: affectedTraps } : {}) });
+
+    if (risk === 'high') {
+        add('REC-01', 'pheromoneLure', 'urgent', true);
+        add('REC-02', 'proteinBait', 'urgent', true);
+        add('REC-03', 'fieldSanitation', 'important');
+        add('REC-04', 'fruitBagging', 'important');
+    } else if (risk === 'moderate') {
+        add('REC-01', 'pheromoneLure', trajectory === 'surging' ? 'urgent' : 'recommended', true);
+        add('REC-02', 'proteinBait', favorable || trajectory === 'surging' ? 'important' : 'recommended', true);
+        add('REC-03', 'fieldSanitation', 'routine');
+        if (trajectory === 'surging') add('REC-04', 'fruitBagging', 'recommended');
+    } else {
+        add('REC-03', 'fieldSanitation', 'routine');
+        if (trajectory === 'surging' || favorable) add('REC-01', 'pheromoneLure', 'recommended', affectedTraps.length > 0);
+    }
+    return recs;
+}
+
+/**
+ * AI Copilot: current risk, 7-day trend forecast and actionable IPM plan.
+ * Every number is computed from this user's data; nothing is a fixed placeholder.
  */
 async function getAiDiagnosis(req, res) {
     try {
-        const { deviceSerial, timeRange = '7d' } = req.body;
+        const { deviceSerial } = req.body;
         const userId = req.user.id;
 
-        // Fetch user's cameras
         const userCameras = await Camera.find({ userId });
-
-        // If user has 0 cameras, return clean empty diagnosis (no fake forecasts or actions)
-        if (userCameras.length === 0) {
-            return res.json({
-                success: true,
-                diagnosis: {
-                    riskLevel: 'low',
-                    riskScore: 0,
-                    currentPeakCount: 0,
-                    dominantPest: '--',
-                    weatherFactor: '',
-                    forecast: {
-                        trajectory: 'stable',
-                        confidence: '100%',
-                        projectedPeakDate: '',
-                        days: []
-                    },
-                    recommendations: []
-                }
-            });
+        const bySerial = new Map();
+        userCameras.forEach(c => { if (!bySerial.has(c.deviceSerial)) bySerial.set(c.deviceSerial, c); });
+        let cameras = [...bySerial.values()];
+        if (cameras.length === 0) {
+            return res.json({ success: true, diagnosis: emptyDiagnosis() });
         }
-
-        const matchQuery = { aiProcessed: true };
         if (deviceSerial && deviceSerial !== 'all') {
-            if (!userCameras.some(c => c.deviceSerial === deviceSerial)) {
+            cameras = cameras.filter(c => c.deviceSerial === deviceSerial);
+            if (cameras.length === 0) {
                 return res.status(403).json({ success: false, message: "You do not have permission to access this camera." });
             }
-            matchQuery.deviceSerial = deviceSerial;
-        } else {
-            matchQuery.deviceSerial = { $in: userCameras.map(c => c.deviceSerial) };
         }
+        const serials = cameras.map(c => c.deviceSerial);
 
-        // Fetch recent snapshots to analyze density trajectory
-        const recentSnapshots = await Snapshot.find(matchQuery)
-            .sort({ createdAt: -1 })
-            .limit(30);
-
-        let latestCount = 0;
-        let prevCount = 0;
-        const counts = [];
-
-        recentSnapshots.forEach(snap => {
-            let c = 0;
-            if (snap.aiResults?.summary) {
-                const s = snap.aiResults.summary;
-                if (s instanceof Map) for (const v of s.values()) c += Number(v) || 0;
-                else for (const v of Object.values(s)) c += Number(v) || 0;
-            } else if (Array.isArray(snap.aiResults?.insects)) {
-                c = snap.aiResults.insects.length;
-            }
-            counts.push(c);
-        });
-
-        if (counts.length > 0) latestCount = counts[0];
-        if (counts.length > 5) prevCount = counts[5];
-
-        // If no insects are detected, do NOT create fake 1s or unnecessary chemical plans
-        if (counts.length === 0 || latestCount === 0) {
-            const today = new Date();
-            const forecastDays = [];
-            for (let i = 1; i <= 7; i++) {
-                const nextDate = new Date(today);
-                nextDate.setDate(today.getDate() + i);
-                const dateStr = `${String(nextDate.getDate()).padStart(2, '0')}/${String(nextDate.getMonth() + 1).padStart(2, '0')}`;
-                forecastDays.push({
-                    date: dateStr,
-                    projectedCount: 0,
-                    risk: 'low'
-                });
-            }
-            return res.json({
-                success: true,
-                diagnosis: {
-                    riskLevel: 'low',
-                    riskScore: 0,
-                    currentPeakCount: 0,
-                    dominantPest: '--',
-                    weatherFactor: '',
-                    forecast: {
-                        trajectory: 'stable',
-                        confidence: '99%',
-                        projectedPeakDate: forecastDays[forecastDays.length - 1].date,
-                        days: forecastDays
-                    },
-                    recommendations: []
-                }
-            });
+        // 1. Current state: latest processed snapshot of each camera vs its own threshold
+        const current = [];
+        for (const cam of cameras) {
+            const snap = await Snapshot.findOne({ deviceSerial: cam.deviceSerial, aiProcessed: true }).sort({ createdAt: -1 });
+            const count = snap ? countPests(snap.aiResults?.summary) : 0;
+            const threshold = thresholdOf(cam);
+            current.push({ cam, count, threshold, risk: riskLevel(count, threshold), ratio: count / threshold });
         }
+        const peak = current.reduce((best, c) => (c.ratio > best.ratio ? c : best), current[0]);
+        const overallRisk = worstRisk(current.map(c => c.risk));
+        // Forecast risk is judged against the most sensitive camera's threshold
+        const referenceThreshold = Math.min(...current.map(c => c.threshold));
+        const affectedTraps = current.filter(c => c.risk !== 'low').map(c => c.cam.deviceName || c.cam.deviceSerial);
 
-        const isSurging = latestCount > prevCount * 1.25 && latestCount >= 10;
-        const riskLevel = latestCount >= 20 ? 'high' : (latestCount >= 6 ? 'moderate' : 'low');
+        // 2. History: highest single-trap count per day over the last HISTORY_DAYS days
+        const now = new Date();
+        const windowKeys = [];
+        for (let i = HISTORY_DAYS - 1; i >= 0; i--) windowKeys.push(dayKey(new Date(now.getTime() - i * 86400000)));
+        const windowStart = new Date(now.getTime() - HISTORY_DAYS * 86400000);
 
-        // Formulate 7-day forecast points
-        const forecastDays = [];
-        const today = new Date();
-        const baseRate = isSurging ? 1.08 : (riskLevel === 'high' ? 1.02 : 0.96);
+        const [daily, species] = await Promise.all([
+            Snapshot.aggregate([
+                { $match: { deviceSerial: { $in: serials }, aiProcessed: true, createdAt: { $gte: windowStart } } },
+                { $project: { day: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt', timezone: TIMEZONE } }, count: PEST_COUNT_EXPR } },
+                { $group: { _id: '$day', peak: { $max: '$count' } } }
+            ]),
+            Snapshot.aggregate([
+                { $match: { deviceSerial: { $in: serials }, aiProcessed: true, createdAt: { $gte: windowStart } } },
+                { $project: { summaryArray: { $objectToArray: { $ifNull: ['$aiResults.summary', {}] } } } },
+                { $unwind: '$summaryArray' },
+                { $match: { 'summaryArray.k': { $nin: NON_PEST_LABELS } } },
+                { $group: { _id: normalizeSpeciesExpr('$summaryArray.k'), total: { $sum: '$summaryArray.v' } } },
+                { $sort: { total: -1 } },
+                { $limit: 1 }
+            ])
+        ]);
 
-        for (let i = 1; i <= 7; i++) {
-            const nextDate = new Date(today);
-            nextDate.setDate(today.getDate() + i);
-            const dateStr = `${String(nextDate.getDate()).padStart(2, '0')}/${String(nextDate.getMonth() + 1).padStart(2, '0')}`;
-            const projected = Math.round(latestCount * Math.pow(baseRate, i));
-            forecastDays.push({
-                date: dateStr,
-                projectedCount: projected,
-                risk: projected >= 20 ? 'high' : (projected >= 6 ? 'moderate' : 'low')
-            });
-        }
+        const points = daily
+            .map(d => ({ dayIndex: windowKeys.indexOf(d._id), value: d.peak || 0 }))
+            .filter(p => p.dayIndex >= 0)
+            .sort((a, b) => a.dayIndex - b.dayIndex);
+        const hasDetections = peak.count > 0 || points.some(p => p.value > 0);
 
-        const diagnosisResult = {
-            riskLevel,
-            riskScore: latestCount >= 20 ? 88 : (latestCount >= 6 ? 55 : 22),
-            currentPeakCount: latestCount,
-            // Display text for dominantPest, recommendations and urgency lives in the client
-            // i18n files (dashboard.diagnosis.*); the API only returns stable keys
-            dominantPest: FRUIT_FLY,
-            weatherFactor: 'hot_humid', // 28-32°C with humidity above 75% favors rapid larval outbreaks
-            forecast: {
-                trajectory: isSurging ? 'surging' : (riskLevel === 'high' ? 'elevated' : 'stable'),
-                confidence: '95.8%',
-                projectedPeakDate: forecastDays[forecastDays.length - 1].date,
-                days: forecastDays
-            },
-            recommendations: [
-                { id: 'REC-01', key: 'pheromoneLure', urgency: 'urgent' },
-                { id: 'REC-02', key: 'proteinBait', urgency: riskLevel === 'high' ? 'urgent' : 'recommended' },
-                { id: 'REC-03', key: 'fieldSanitation', urgency: 'routine' },
-                { id: 'REC-04', key: 'fruitBagging', urgency: 'important' }
-            ]
-        };
+        const trend = forecastService.forecast(points, HISTORY_DAYS, FORECAST_DAYS);
+        const forecastDays = trend.projected.map((projectedCount, i) => ({
+            date: dayLabel(new Date(now.getTime() + (i + 1) * 86400000)),
+            projectedCount,
+            risk: riskLevel(projectedCount, referenceThreshold)
+        }));
+
+        // 3. Weather at the peak trap (or any trap with GPS)
+        const located = [peak.cam, ...cameras].find(c => Number.isFinite(c.latitude) && Number.isFinite(c.longitude));
+        const weather = located ? await weatherService.getCurrentWeather(located.latitude, located.longitude) : null;
+        const factor = weatherService.weatherFactor(weather);
 
         res.json({
             success: true,
-            diagnosis: diagnosisResult
+            diagnosis: {
+                riskLevel: overallRisk,
+                // Peak count as a percentage of that camera's alert threshold
+                riskScore: Math.min(100, Math.round(peak.ratio * 100)),
+                currentPeakCount: peak.count,
+                peakCamera: {
+                    deviceSerial: peak.cam.deviceSerial,
+                    deviceName: peak.cam.deviceName || peak.cam.deviceSerial,
+                    alertThreshold: peak.threshold
+                },
+                referenceThreshold,
+                dominantPest: species[0]?._id || null,
+                weather,
+                weatherFactor: factor,
+                forecast: {
+                    trajectory: trend.trajectory,
+                    confidence: trend.confidence, // 'low' | 'medium' | 'high'
+                    dataDays: trend.dataDays,
+                    projectedPeakDate: forecastDays.reduce((best, d) => (d.projectedCount > best.projectedCount ? d : best), forecastDays[0]).date,
+                    days: forecastDays
+                },
+                recommendations: buildRecommendations({
+                    risk: overallRisk,
+                    trajectory: trend.trajectory,
+                    weatherFactor: factor,
+                    hasDetections,
+                    affectedTraps
+                })
+            }
         });
     } catch (err) {
         console.error("❌ Error in AI Diagnosis:", err);

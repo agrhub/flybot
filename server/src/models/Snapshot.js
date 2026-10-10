@@ -20,6 +20,12 @@ const snapshotSchema = new mongoose.Schema({
     }
 });
 
+// Statistics, history and "latest snapshot per camera" all filter by camera + processed flag
+// and sort/range on time
+snapshotSchema.index({ deviceSerial: 1, aiProcessed: 1, createdAt: -1 });
+// Retention cleanup scans by age only
+snapshotSchema.index({ createdAt: 1 });
+
 const Snapshot = mongoose.model('Snapshot', snapshotSchema);
 
 module.exports = Snapshot;

@@ -108,7 +108,7 @@
                 <div class="flex items-center justify-between gap-1">
                   <div class="trap-item__name truncate">{{ cam.deviceName || cam.deviceSerial }}</div>
                   <!-- Insect density tag -->
-                  <el-tag :type="getDensityTagType(cam.currentCount)" effect="light" round size="small" class="shrink-0">
+                  <el-tag :type="getDensityTagType(cam.riskLevel)" effect="light" round size="small" class="shrink-0">
                     {{ cam.currentCount }} {{ t('map.fruitFlyShort') }}
                   </el-tag>
                 </div>
@@ -261,7 +261,9 @@ const enrichedCameras = computed(() => {
       longitude: cam.longitude || live?.longitude || 106.5052,
       locationAddress: cam.locationAddress || live?.locationAddress || '',
       currentCount: live?.currentCount ?? 0,
-      riskLevel: live?.riskLevel || (live?.currentCount >= 20 ? 'high' : (live?.currentCount >= 6 ? 'moderate' : 'low')),
+      // Computed by the API against each camera's own alert threshold
+      riskLevel: live?.riskLevel || 'low',
+      alertThreshold: live?.alertThreshold,
       trapType: cam.trapType || live?.trapType || DEFAULT_TRAP_TYPE,
       cropType: cam.cropType || live?.cropType || DEFAULT_CROP_TYPE
     };
@@ -334,21 +336,21 @@ const clearSearch = () => {
   resetMapView();
 };
 
-const getDensityTagType = (count) => {
-  if (count >= 16) return 'danger';
-  if (count >= 5) return 'warning';
+const getDensityTagType = (riskLevel) => {
+  if (riskLevel === 'high') return 'danger';
+  if (riskLevel === 'moderate') return 'warning';
   return 'success';
 };
 
-const getPinColor = (count) => {
-  if (count >= 16) return '#ef4444'; // Red
-  if (count >= 5) return '#f59e0b'; // Amber
+const getPinColor = (riskLevel) => {
+  if (riskLevel === 'high') return '#ef4444'; // Red
+  if (riskLevel === 'moderate') return '#f59e0b'; // Amber
   return '#10b981'; // Emerald
 };
 
 const createCustomIcon = (cam) => {
-  const color = getPinColor(cam.currentCount);
-  const isHigh = cam.currentCount >= 16;
+  const color = getPinColor(cam.riskLevel);
+  const isHigh = cam.riskLevel === 'high';
   // Risk color is data visualization, so it stays an explicit color
   const pulseHtml = isHigh ? `<div class="map-marker__pulse" style="background-color: ${color}"></div>` : '';
 
@@ -727,7 +729,7 @@ const renderMarkers = () => {
 
         <!-- Density & orchard info -->
         <div class="popup-info-box">
-          <div><b>${t('dashboard.realtimeByCamera')}:</b> <span style="color: ${getPinColor(cam.currentCount)}; font-weight: 600;">${cam.currentCount} ${t('dashboard.insectsShort')}</span></div>
+          <div><b>${t('dashboard.realtimeByCamera')}:</b> <span style="color: ${getPinColor(cam.riskLevel)}; font-weight: 600;">${cam.currentCount} ${t('dashboard.insectsShort')}</span></div>
           <div><b>${t('map.cropType')}:</b> ${cam.cropType}</div>
           <div class="map-popup__ellipsis"><b>${t('map.orchardAddress')}:</b> ${cam.locationAddress || t('map.noAddress')}</div>
         </div>
