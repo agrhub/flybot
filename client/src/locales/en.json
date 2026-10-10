@@ -61,7 +61,8 @@
     "mainNavigation": "Main navigation",
     "overviewShort": "Overview",
     "more": "More",
-    "logbook": "Field log"
+    "logbook": "Field log",
+    "farms": "Farms"
   },
   "topbar": {
     "notifications": "Notifications",
@@ -798,7 +799,8 @@
     "locationSaveFailed": "Failed to save: {error}",
     "heatmap": "Heatmap",
     "noLocation": "No location",
-    "setLocation": "Set location"
+    "setLocation": "Set location",
+    "plots": "Plots"
   },
   "species": {
     "fruitFly": "Fruit Fly",
@@ -843,6 +845,14 @@
       "card_change_detected": {
         "title": "New sticky card detected",
         "desc": "{deviceName}: the count dropped from {previous} to {count}, so the card was probably replaced. Delete the entry in the camera if not."
+      },
+      "plot_threshold": {
+        "title": "Plot alert",
+        "desc": "{plotName} ({farmName}): traps average {average} insects, threshold {threshold}."
+      },
+      "farm_shared": {
+        "title": "Farm shared with you",
+        "desc": "{sharer} shared the farm {farmName} with you."
       }
     }
   },
@@ -880,7 +890,9 @@
     "errors": {
       "SHARE_WITH_OWNER": "This person is the owner.",
       "ALREADY_SHARED": "Already shared with this email."
-    }
+    },
+    "viaFarm": "Via farm",
+    "viaFarmHint": "This person sees the camera through its farm. Remove them on the farm page."
   },
   "admin": {
     "group": "Administration",
@@ -1091,7 +1103,8 @@
       "camera": "Cameras",
       "dashboard": "Dashboards",
       "settings": "System settings",
-      "treatment": "Treatments"
+      "treatment": "Treatments",
+      "farm": "Farms"
     },
     "actions": {
       "auth": {
@@ -1132,6 +1145,12 @@
         "created": "Treatment logged",
         "updated": "Treatment changed",
         "deleted": "Treatment deleted"
+      },
+      "farm": {
+        "created": "Farm created",
+        "deleted": "Farm deleted",
+        "shared": "Farm shared",
+        "unshared": "Farm access removed"
       }
     },
     "reasons": {
@@ -1280,6 +1299,58 @@
       "phi": "PHI (days)",
       "harvestFrom": "Harvest from",
       "note": "Note"
+    }
+  },
+  "farms": {
+    "title": "Farms",
+    "subtitle": "Group traps into farms and plots, draw plot boundaries and share a whole farm.",
+    "create": "New farm",
+    "empty": "No farms yet. Create one, add its plots, then put traps in them.",
+    "emptyViewer": "No farms have been shared with you yet.",
+    "counts": "{plots} plots · {cameras} traps",
+    "name": "Farm name",
+    "notFound": "Farm not found",
+    "backToList": "All farms",
+    "rename": "Rename",
+    "delete": "Delete farm",
+    "deleteConfirm": "Delete the farm {name}? Its plots are deleted; the traps stay but are no longer shared through it.",
+    "sharedHint": "Shared with you by {owner}. You can see its plots and traps.",
+    "noPlots": "No plots yet.",
+    "addPlot": "Add plot",
+    "editPlot": "Edit plot",
+    "deletePlot": "Delete plot",
+    "deletePlotConfirm": "Delete the plot {name}? Its traps are kept but leave the plot.",
+    "plotName": "Plot name",
+    "crop": "Crop",
+    "areaHa": "Area (ha)",
+    "alertThreshold": "Plot alert (average per trap)",
+    "alertOff": "Off",
+    "alertAt": "Alert when traps average {count} or more",
+    "color": "Color",
+    "noCameras": "No traps in this plot",
+    "otherFarm": "Another farm",
+    "assignCameras": "Traps in this plot",
+    "assignTitle": "Traps in {name}",
+    "assignHint": "Choose the traps in this plot. A trap can be in one plot only: choosing one from another plot moves it here.",
+    "shareTitle": "Share {name}",
+    "shareDesc": "People you add can see every trap in this farm (view only), including traps added later. Unknown emails get an invitation.",
+    "stats": {
+      "traps": "Traps",
+      "average": "Avg now",
+      "week": "Last 7 days"
+    },
+    "risk": {
+      "high": "High",
+      "moderate": "Moderate",
+      "low": "Low"
+    },
+    "boundary": {
+      "title": "Boundary",
+      "hint": "Click on the map to add the corners of the plot (at least 3).",
+      "done": "{count} corners. Keep clicking to add more.",
+      "undo": "Undo",
+      "clear": "Clear",
+      "needThree": "A boundary needs at least 3 corners (or clear it)."
     }
   }
 }

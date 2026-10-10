@@ -121,7 +121,7 @@ const singleLine = (value) => String(value ?? '').replace(/[\r\n\t]+/g, ' ').sli
 
 /**
  * "X shared <item> with you" for an existing account, or an invitation to sign up
- * for an email without an account. `kind` is 'cameraShared' | 'invite' | 'dashboardShared' | 'dashboardInvite'.
+ * for an email without an account. `kind` is 'cameraShared' | 'invite' | 'dashboardShared' | 'dashboardInvite' | 'farmShared' | 'farmInvite'.
  */
 function shareEmail({ kind, to, user, language, sharer, params = {}, url }) {
     const t = (key, p) => translate(language, key, p);

@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { User, Camera, Session, Notification, AuthToken, Dashboard, AuditLog, PushSubscription } = require('../models');
+const { User, Camera, Session, Notification, AuthToken, Dashboard, AuditLog, PushSubscription, Farm, Plot } = require('../models');
 const { ROLES, roleOf } = require('../constants/roles');
 const { sendServerError } = require('../utils/http');
 const { recordAudit, AUDIT_ACTIONS, CATEGORIES } = require('../services/auditService');
@@ -152,11 +152,20 @@ async function deleteUser(req, res) {
             Camera.updateMany({ 'sharedWith.userId': target._id }, { $pull: { sharedWith: { userId: target._id } } }),
             Dashboard.updateMany({ 'sharedWith.userId': target._id }, { $pull: { sharedWith: { userId: target._id } } }),
             Dashboard.deleteMany({ ownerId: target._id }),
+            Farm.updateMany({ 'sharedWith.userId': target._id }, { $pull: { sharedWith: { userId: target._id } } }),
             Session.deleteMany({ userId: target._id }),
             Notification.deleteMany({ userId: target._id }),
             AuthToken.deleteMany({ userId: target._id }),
             PushSubscription.deleteMany({ userId: target._id })
         ]);
+        // Their farms go too (they own no cameras any more, so the plots are empty)
+        const ownedFarms = await Farm.find({ ownerId: target._id }).select('_id').lean();
+        if (ownedFarms.length) {
+            const farmIds = ownedFarms.map(f => f._id);
+            await Camera.updateMany({ 'sharedWith.viaFarm': { $in: farmIds } }, { $pull: { sharedWith: { viaFarm: { $in: farmIds } } } });
+            await Plot.deleteMany({ farmId: { $in: farmIds } });
+            await Farm.deleteMany({ _id: { $in: farmIds } });
+        }
         await User.deleteOne({ _id: target._id });
         recordAudit(req, { action: 'user.deleted', target: { type: 'user', id: String(target._id), label: target.email }, details: { role: roleOf(target) } });
         res.json({ success: true });
@@ -234,6 +243,8 @@ async function transferCamera(req, res) {
         }
         camera.userId = newOwner._id;
         await camera.save();
+        // The plot belongs to the previous owner's farm
+        await require('../services/farmService').unassignCameras({ _id: camera._id });
         recordAudit(req, {
             action: 'camera.transferred',
             target: { type: 'camera', id: camera.deviceSerial, label: camera.deviceName },

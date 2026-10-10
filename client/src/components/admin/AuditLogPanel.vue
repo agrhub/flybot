@@ -105,7 +105,7 @@ import api from '@/services/api';
 import PageHeader from '@/components/common/PageHeader.vue';
 import { adminErrorText } from './adminErrors';
 
-const CATEGORIES = ['auth', 'user', 'camera', 'dashboard', 'treatment', 'settings'];
+const CATEGORIES = ['auth', 'user', 'camera', 'dashboard', 'farm', 'treatment', 'settings'];
 // Color by risk: red for destructive or failed, orange for access changes
 const ACTION_TAG = {
   'auth.login_failed': 'danger',
@@ -113,6 +113,8 @@ const ACTION_TAG = {
   'camera.deleted': 'danger',
   'dashboard.deleted': 'danger',
   'treatment.deleted': 'danger',
+  'farm.deleted': 'danger',
+  'farm.shared': 'warning',
   'user.disabled': 'warning',
   'user.role_changed': 'warning',
   'camera.transferred': 'warning',

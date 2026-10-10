@@ -19,7 +19,9 @@ function sharesOf(camera) {
         email: sh.email,
         userId: sh.userId ? String(sh.userId) : null,
         status: sh.userId ? 'active' : 'pending',
-        sharedAt: sh.sharedAt
+        sharedAt: sh.sharedAt,
+        // Access through the camera's farm (managed on the farm page)
+        viaFarm: sh.viaFarm ? String(sh.viaFarm) : null
     }));
 }
 
@@ -138,8 +140,11 @@ async function removeShare(req, res) {
         const camera = await findManageableCamera(req.user, req.body.deviceSerial);
         if (!camera) return res.status(404).json({ success: false, message: "Camera not found or you cannot manage it." });
         const before = camera.sharedWith.length;
-        camera.sharedWith = camera.sharedWith.filter(sh => sh.email !== email);
+        camera.sharedWith = camera.sharedWith.filter(sh => sh.email !== email || sh.viaFarm);
         if (camera.sharedWith.length === before) {
+            if (camera.sharedWith.some(sh => sh.email === email)) {
+                return res.status(409).json({ success: false, code: 'VIA_FARM', message: "This person sees the camera through its farm. Remove them from the farm instead." });
+            }
             return res.status(404).json({ success: false, message: "This camera is not shared with that email." });
         }
         await camera.save();
@@ -156,9 +161,11 @@ async function removeShare(req, res) {
 async function claimPendingShares(user) {
     const email = String(user.email || '').toLowerCase();
     if (!email) return 0;
-    // Lazy: dashboardController requires this module
+    // Lazy: these controllers require this module
     const { claimPendingDashboardShares } = require('./dashboardController');
+    const { claimPendingFarmShares } = require('./farmController');
     await claimPendingDashboardShares(user);
+    await claimPendingFarmShares(user);
     const result = await Camera.updateMany(
         { sharedWith: { $elemMatch: { email, userId: null } } },
         { $set: { 'sharedWith.$[invite].userId': user._id } },

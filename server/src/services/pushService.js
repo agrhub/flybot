@@ -13,6 +13,8 @@ const TEXT_KEYS = {
     camera_online: 'email.alerts.camera_online',
     ai_failure: 'email.alerts.ai_failure',
     card_due: 'email.alerts.card_due',
+    plot_threshold: 'email.alerts.plot_threshold',
+    farm_shared: 'email.farmShared',
     camera_shared: 'email.cameraShared',
     dashboard_shared: 'email.dashboardShared'
 };
@@ -23,6 +25,7 @@ const TARGET_PATH = {
     camera_online: '/cameras',
     ai_failure: '/analytics',
     card_due: '/cameras',
+    plot_threshold: '/farms',
     camera_shared: '/cameras'
 };
 const URGENT_TYPES = new Set(['pest_threshold', 'camera_offline']);
@@ -62,14 +65,16 @@ function buildPayload({ type, language, params = {}, deviceSerial = '' }) {
     const base = TEXT_KEYS[type];
     if (!base) return null;
     const fullParams = { ...params, deviceSerial };
-    const url = type === 'dashboard_shared' && params.dashboardId ? `/dashboards/${params.dashboardId}` : (TARGET_PATH[type] || '/dashboard');
+    let url = TARGET_PATH[type] || '/dashboard';
+    if (type === 'dashboard_shared' && params.dashboardId) url = `/dashboards/${params.dashboardId}`;
+    if ((type === 'farm_shared' || type === 'plot_threshold') && params.farmId) url = `/farms/${params.farmId}`;
     return {
         type,
         title: clip(translate(lang, `${base}.subject`, fullParams)),
         body: clip(translate(lang, `${base}.body`, fullParams)),
         url,
         // A newer alert of the same kind for the same camera replaces the old one on the device
-        tag: `${type}:${deviceSerial || params.dashboardId || ''}`
+        tag: `${type}:${deviceSerial || params.dashboardId || params.farmId || ''}`
     };
 }
 

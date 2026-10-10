@@ -61,7 +61,8 @@
     "mainNavigation": "Điều hướng chính",
     "overviewShort": "Tổng quan",
     "more": "Thêm",
-    "logbook": "Nhật ký vườn"
+    "logbook": "Nhật ký vườn",
+    "farms": "Vườn & lô"
   },
   "topbar": {
     "notifications": "Thông báo",
@@ -798,7 +799,8 @@
     "locationSaveFailed": "Lưu thông tin thất bại: {error}",
     "heatmap": "Bản đồ nhiệt",
     "noLocation": "Chưa có vị trí",
-    "setLocation": "Đặt vị trí"
+    "setLocation": "Đặt vị trí",
+    "plots": "Lô"
   },
   "species": {
     "fruitFly": "Ruồi vàng",
@@ -843,6 +845,14 @@
       "card_change_detected": {
         "title": "Phát hiện tấm bẫy mới",
         "desc": "{deviceName}: số côn trùng giảm từ {previous} xuống {count}, có thể vừa thay tấm bẫy. Nếu không phải, hãy xoá mục này trong camera."
+      },
+      "plot_threshold": {
+        "title": "Cảnh báo lô",
+        "desc": "{plotName} ({farmName}): trung bình {average} con mỗi bẫy, ngưỡng {threshold}."
+      },
+      "farm_shared": {
+        "title": "Vườn được chia sẻ với bạn",
+        "desc": "{sharer} đã chia sẻ vườn {farmName} với bạn."
       }
     }
   },
@@ -880,7 +890,9 @@
     "errors": {
       "SHARE_WITH_OWNER": "Người này là chủ sở hữu.",
       "ALREADY_SHARED": "Đã chia sẻ với email này."
-    }
+    },
+    "viaFarm": "Qua vườn",
+    "viaFarmHint": "Người này xem camera qua vườn chứa nó. Hãy gỡ họ ở trang vườn."
   },
   "admin": {
     "group": "Quản trị",
@@ -1091,7 +1103,8 @@
       "camera": "Camera",
       "dashboard": "Bảng tùy chỉnh",
       "settings": "Cài đặt hệ thống",
-      "treatment": "Xử lý dịch hại"
+      "treatment": "Xử lý dịch hại",
+      "farm": "Vườn"
     },
     "actions": {
       "auth": {
@@ -1132,6 +1145,12 @@
         "created": "Ghi nhận xử lý",
         "updated": "Sửa lần xử lý",
         "deleted": "Xoá lần xử lý"
+      },
+      "farm": {
+        "created": "Tạo vườn",
+        "deleted": "Xoá vườn",
+        "shared": "Chia sẻ vườn",
+        "unshared": "Gỡ quyền xem vườn"
       }
     },
     "reasons": {
@@ -1280,6 +1299,58 @@
       "phi": "Thời gian cách ly (ngày)",
       "harvestFrom": "Ngày được thu hoạch",
       "note": "Ghi chú"
+    }
+  },
+  "farms": {
+    "title": "Vườn & lô",
+    "subtitle": "Nhóm bẫy theo vườn và lô, vẽ ranh giới lô và chia sẻ cả vườn.",
+    "create": "Tạo vườn",
+    "empty": "Chưa có vườn nào. Tạo vườn, thêm các lô rồi đưa bẫy vào lô.",
+    "emptyViewer": "Chưa có vườn nào được chia sẻ với bạn.",
+    "counts": "{plots} lô · {cameras} bẫy",
+    "name": "Tên vườn",
+    "notFound": "Không tìm thấy vườn",
+    "backToList": "Tất cả vườn",
+    "rename": "Đổi tên",
+    "delete": "Xoá vườn",
+    "deleteConfirm": "Xoá vườn {name}? Các lô sẽ bị xoá; bẫy vẫn giữ nhưng không còn được chia sẻ qua vườn.",
+    "sharedHint": "{owner} đã chia sẻ vườn này với bạn. Bạn xem được các lô và bẫy.",
+    "noPlots": "Chưa có lô nào.",
+    "addPlot": "Thêm lô",
+    "editPlot": "Sửa lô",
+    "deletePlot": "Xoá lô",
+    "deletePlotConfirm": "Xoá lô {name}? Các bẫy vẫn giữ nhưng không còn thuộc lô.",
+    "plotName": "Tên lô",
+    "crop": "Cây trồng",
+    "areaHa": "Diện tích (ha)",
+    "alertThreshold": "Cảnh báo lô (trung bình mỗi bẫy)",
+    "alertOff": "Tắt",
+    "alertAt": "Cảnh báo khi trung bình từ {count} con mỗi bẫy",
+    "color": "Màu",
+    "noCameras": "Lô chưa có bẫy",
+    "otherFarm": "Vườn khác",
+    "assignCameras": "Bẫy trong lô",
+    "assignTitle": "Bẫy trong {name}",
+    "assignHint": "Chọn các bẫy thuộc lô này. Mỗi bẫy chỉ thuộc một lô: chọn bẫy đang ở lô khác sẽ chuyển nó sang đây.",
+    "shareTitle": "Chia sẻ {name}",
+    "shareDesc": "Người được thêm xem được mọi bẫy trong vườn (chỉ xem), kể cả bẫy thêm sau này. Email chưa có tài khoản sẽ nhận lời mời.",
+    "stats": {
+      "traps": "Bẫy",
+      "average": "TB hiện tại",
+      "week": "7 ngày qua"
+    },
+    "risk": {
+      "high": "Cao",
+      "moderate": "Trung bình",
+      "low": "Thấp"
+    },
+    "boundary": {
+      "title": "Ranh giới",
+      "hint": "Bấm lên bản đồ để thêm các góc của lô (ít nhất 3).",
+      "done": "{count} góc. Bấm tiếp để thêm.",
+      "undo": "Hoàn tác",
+      "clear": "Xoá hết",
+      "needThree": "Ranh giới cần ít nhất 3 góc (hoặc xoá hết)."
     }
   }
 }

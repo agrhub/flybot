@@ -19,7 +19,9 @@ const COOLDOWN_MINUTES = {
     dashboard_shared: 0,
     // Daily reminder until the card is replaced
     card_due: 20 * 60,
-    card_change_detected: 0
+    card_change_detected: 0,
+    plot_threshold: 120,
+    farm_shared: 0
 };
 
 const SEVERITY = {
@@ -30,13 +32,15 @@ const SEVERITY = {
     camera_shared: 'info',
     dashboard_shared: 'info',
     card_due: 'warning',
-    card_change_detected: 'info'
+    card_change_detected: 'info',
+    plot_threshold: 'critical',
+    farm_shared: 'info'
 };
 
 // "Back online" is good news: in-app only
-const EMAIL_TYPES = new Set(['pest_threshold', 'camera_offline', 'ai_failure', 'card_due']);
+const EMAIL_TYPES = new Set(['pest_threshold', 'camera_offline', 'ai_failure', 'card_due', 'plot_threshold']);
 // Phone/browser push: the alerts, plus something new shared with you
-const PUSH_TYPES = new Set([...EMAIL_TYPES, 'camera_shared', 'dashboard_shared']);
+const PUSH_TYPES = new Set([...EMAIL_TYPES, 'camera_shared', 'dashboard_shared', 'farm_shared']);
 
 // Consecutive failed AI analyses before alerting
 const AI_FAILURE_THRESHOLD = 3;

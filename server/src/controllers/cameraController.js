@@ -32,7 +32,8 @@ function toClientCamera(camera, user) {
             email: sh.email,
             userId: sh.userId ? String(sh.userId) : null,
             status: sh.userId ? 'active' : 'pending',
-            sharedAt: sh.sharedAt
+            sharedAt: sh.sharedAt,
+            viaFarm: sh.viaFarm ? String(sh.viaFarm) : null
         }));
     } else {
         delete obj.sharedWith;

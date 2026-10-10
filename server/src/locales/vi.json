@@ -43,6 +43,10 @@
       "card_due": {
         "subject": "🪤 Đến lúc thay tấm bẫy dính: {deviceName}",
         "body": "Tấm bẫy dính của camera {deviceName} ({deviceSerial}) đã dùng {days} ngày. Hãy thay để số liệu chính xác, rồi bấm \"Đã thay tấm bẫy\" trong FlyBot."
+      },
+      "plot_threshold": {
+        "subject": "⚠️ Cảnh báo lô: {plotName} ({farmName})",
+        "body": "Các bẫy trong lô {plotName} của {farmName} có trung bình {average} con ở lần quét gần nhất, bằng hoặc vượt ngưỡng của lô là {threshold}."
       }
     },
     "cameraShared": {
@@ -63,6 +67,16 @@
     "dashboardInvite": {
       "subject": "{sharer} mời bạn dùng FlyBot",
       "body": "{sharer} đã chia sẻ dashboard {dashboardName} với {email} trên FlyBot. Hãy tạo tài khoản bằng địa chỉ email này và xác nhận email để được truy cập.",
+      "button": "Tạo tài khoản"
+    },
+    "farmShared": {
+      "subject": "{sharer} đã chia sẻ vườn {farmName} với bạn",
+      "body": "{sharer} đã chia sẻ vườn {farmName} với bạn trên FlyBot. Bạn có thể xem các lô và bẫy của vườn.",
+      "button": "Mở vườn"
+    },
+    "farmInvite": {
+      "subject": "{sharer} mời bạn dùng FlyBot",
+      "body": "{sharer} đã chia sẻ vườn {farmName} với {email} trên FlyBot. Hãy tạo tài khoản bằng địa chỉ email này và xác nhận email để được truy cập.",
       "button": "Tạo tài khoản"
     }
   },

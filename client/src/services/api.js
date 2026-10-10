@@ -243,6 +243,43 @@ export default {
   deleteMaintenance(id) {
     return apiClient.delete(`/user/camera/maintenance/${id}`);
   },
+  // Farms and plots
+  listFarms() {
+    return apiClient.get('/farms');
+  },
+  createFarm(data) {
+    return apiClient.post('/farms', data);
+  },
+  getFarm(id) {
+    return apiClient.get(`/farms/${id}`);
+  },
+  updateFarm(id, data) {
+    return apiClient.put(`/farms/${id}`, data);
+  },
+  deleteFarm(id) {
+    return apiClient.delete(`/farms/${id}`);
+  },
+  createPlot(farmId, data) {
+    return apiClient.post(`/farms/${farmId}/plots`, data);
+  },
+  updatePlot(farmId, plotId, data) {
+    return apiClient.put(`/farms/${farmId}/plots/${plotId}`, data);
+  },
+  deletePlot(farmId, plotId) {
+    return apiClient.delete(`/farms/${farmId}/plots/${plotId}`);
+  },
+  setPlotCameras(farmId, plotId, cameraSerials) {
+    return apiClient.put(`/farms/${farmId}/plots/${plotId}/cameras`, { cameraSerials });
+  },
+  shareFarm(farmId, email) {
+    return apiClient.post(`/farms/${farmId}/share`, { email });
+  },
+  unshareFarm(farmId, email) {
+    return apiClient.delete(`/farms/${farmId}/share`, { data: { email } });
+  },
+  getFarmMap() {
+    return apiClient.get('/farms/map');
+  },
   // Treatment (IPM) log
   listTreatments(params = {}) {
     return apiClient.get('/treatments', { params });

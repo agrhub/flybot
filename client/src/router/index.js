@@ -115,6 +115,16 @@ const router = createRouter({
           component: () => import('@/pages/dashboards/View.vue'),
         },
         {
+          path: 'farms',
+          name: 'farms',
+          component: () => import('@/pages/farms/index.vue'),
+        },
+        {
+          path: 'farms/:id',
+          name: 'farm-view',
+          component: () => import('@/pages/farms/View.vue'),
+        },
+        {
           path: 'logbook',
           name: 'logbook',
           component: () => import('@/pages/logbook/index.vue'),

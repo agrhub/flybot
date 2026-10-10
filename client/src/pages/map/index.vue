@@ -6,6 +6,10 @@
           <el-switch v-model="showHeatmap" size="small" />
           <span class="text-sm">{{ t('map.heatmap') }}</span>
         </div>
+        <div class="flex items-center gap-2 mr-2">
+          <el-switch v-model="showPlots" size="small" />
+          <span class="text-sm">{{ t('map.plots') }}</span>
+        </div>
         <!-- Outbreak legend -->
         <el-tag type="success" effect="light" round size="small">{{ t('map.safe') }}</el-tag>
         <el-tag type="warning" effect="light" round size="small">{{ t('map.moderate') }}</el-tag>
@@ -244,6 +248,33 @@ const markersMap = new Map();
 let clusterGroup = null;
 let heatLayer = null;
 const showHeatmap = ref(false);
+// Plot boundaries (farms)
+const showPlots = ref(true);
+let plotLayer = null;
+const RISK_COLOR = { high: '#f56c6c', moderate: '#e6a23c', low: '#3ecf8e' };
+const renderPlots = async () => {
+  if (!map) return;
+  if (!plotLayer) plotLayer = L.layerGroup().addTo(map);
+  plotLayer.clearLayers();
+  if (!showPlots.value) return;
+  let plots = [];
+  try {
+    plots = (await api.getFarmMap()).data.plots || [];
+  } catch (e) {
+    return;
+  }
+  for (const plot of plots) {
+    const stats = plot.stats || {};
+    L.polygon(plot.boundary, { color: plot.color, weight: 2, fillOpacity: 0.12 })
+      .bindTooltip(
+        `<strong>${escapeHtml(plot.name)}</strong> · ${escapeHtml(plot.farmName || '')}<br>` +
+        `${escapeHtml(t('farms.stats.traps'))}: ${escapeHtml(stats.cameras ?? 0)} · ${escapeHtml(t('farms.stats.average'))}: ` +
+        `<span style="color: ${RISK_COLOR[stats.risk] || RISK_COLOR.low}">${escapeHtml(stats.latestAverage ?? 0)}</span>`,
+        { sticky: true }
+      )
+      .addTo(plotLayer);
+  }
+};
 
 // Country-level view when no trap has a GPS position yet (never a made-up orchard)
 const FALLBACK_CENTER = [16.0, 106.0];
@@ -434,7 +465,9 @@ const initMap = () => {
   if (!mapContainerRef.value || map) return;
 
   map = L.map(mapContainerRef.value, {
-    zoomControl: false
+    zoomControl: false,
+    // markercluster needs a max zoom before any tile layer is added
+    maxZoom: 20
   }).setView(FALLBACK_CENTER, FALLBACK_ZOOM);
 
   // Nearby traps merge into a numbered cluster until zoomed in
@@ -853,6 +886,7 @@ const renderHeatmap = () => {
 };
 
 watch(showHeatmap, renderHeatmap);
+watch(showPlots, renderPlots);
 
 
 const openEditModal = (cam) => {
@@ -935,6 +969,7 @@ onMounted(async () => {
   await loadRealtimeOverview();
   await nextTick();
   initMap();
+  renderPlots();
 });
 
 onUnmounted(() => {

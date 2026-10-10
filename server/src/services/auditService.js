@@ -27,7 +27,11 @@ const AUDIT_ACTIONS = [
     'settings.updated',
     'treatment.created',
     'treatment.updated',
-    'treatment.deleted'
+    'treatment.deleted',
+    'farm.created',
+    'farm.deleted',
+    'farm.shared',
+    'farm.unshared'
 ];
 const CATEGORIES = [...new Set(AUDIT_ACTIONS.map(a => a.split('.')[0]))];
 

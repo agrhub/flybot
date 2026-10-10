@@ -45,9 +45,12 @@
             </el-tooltip>
           </template>
         </el-table-column>
-        <el-table-column width="60" align="right">
+        <el-table-column width="90" align="right">
           <template #default="{ row }">
-            <el-tooltip :content="t('share.remove')" placement="top">
+            <el-tooltip v-if="row.viaFarm" :content="t('share.viaFarmHint')" placement="top">
+              <el-tag type="info" effect="plain" size="small">{{ t('share.viaFarm') }}</el-tag>
+            </el-tooltip>
+            <el-tooltip v-else :content="t('share.remove')" placement="top">
               <el-button link type="danger" :icon="Delete" @click="removeShare(row)" />
             </el-tooltip>
           </template>

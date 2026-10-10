@@ -43,6 +43,10 @@
       "card_due": {
         "subject": "🪤 Time to replace the sticky card: {deviceName}",
         "body": "The sticky card on camera {deviceName} ({deviceSerial}) has been up for {days} days. Replace it so counts stay accurate, then press \"Card replaced\" in FlyBot."
+      },
+      "plot_threshold": {
+        "subject": "⚠️ Plot alert: {plotName} ({farmName})",
+        "body": "The traps in plot {plotName} of {farmName} average {average} insects in their latest scans, at or above the plot threshold of {threshold}."
       }
     },
     "cameraShared": {
@@ -63,6 +67,16 @@
     "dashboardInvite": {
       "subject": "{sharer} invited you to FlyBot",
       "body": "{sharer} shared the dashboard {dashboardName} with {email} on FlyBot. Create an account with this email address and confirm it to get access.",
+      "button": "Create account"
+    },
+    "farmShared": {
+      "subject": "{sharer} shared the farm {farmName} with you",
+      "body": "{sharer} shared the farm {farmName} with you on FlyBot. You can now see its plots and traps.",
+      "button": "Open farm"
+    },
+    "farmInvite": {
+      "subject": "{sharer} invited you to FlyBot",
+      "body": "{sharer} shared the farm {farmName} with {email} on FlyBot. Create an account with this email address and confirm it to get access.",
       "button": "Create account"
     }
   },

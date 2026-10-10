@@ -11,6 +11,8 @@ const PushSubscription = require('./PushSubscription');
 const DailyStat = require('./DailyStat');
 const MaintenanceEvent = require('./MaintenanceEvent');
 const Treatment = require('./Treatment');
+const Farm = require('./Farm');
+const Plot = require('./Plot');
 
 module.exports = {
     User,
@@ -25,5 +27,7 @@ module.exports = {
     PushSubscription,
     DailyStat,
     MaintenanceEvent,
-    Treatment
+    Treatment,
+    Farm,
+    Plot
 };

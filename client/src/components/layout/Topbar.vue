@@ -147,6 +147,7 @@ const currentSectionTitle = computed(() => {
     cameras: t('nav.cameras'),
     dashboards: t('nav.dashboards'),
     logbook: t('nav.logbook'),
+    farms: t('nav.farms'),
     analytics: t('nav.analytics'),
     map: t('nav.map'),
     settings: t('nav.settings')
@@ -176,6 +177,10 @@ const notificationItems = computed(() => {
 
 const openNotification = (n) => {
   markRead([n.id]);
+  if ((n.type === 'farm_shared' || n.type === 'plot_threshold') && n.params?.farmId) {
+    router.push(`/farms/${n.params.farmId}`);
+    return;
+  }
   if (n.type === 'dashboard_shared' && n.params?.dashboardId) {
     router.push(`/dashboards/${n.params.dashboardId}`);
     return;

@@ -8,7 +8,9 @@ const shareSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     email: { type: String, required: true, lowercase: true, trim: true },
     sharedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    sharedAt: { type: Date, default: Date.now }
+    sharedAt: { type: Date, default: Date.now },
+    // Set when the access comes from sharing the camera's farm (managed by farmService)
+    viaFarm: { type: mongoose.Schema.Types.ObjectId, ref: 'Farm', default: null }
 }, { _id: false });
 
 const cameraSchema = new mongoose.Schema({
@@ -40,6 +42,9 @@ const cameraSchema = new mongoose.Schema({
     captureIntervalMinutes: { type: Number, enum: [15, 30, 60, 120], default: 30 },
     // Only capture during daylight hours (06:00-18:00 local time); sticky traps are unreadable at night
     captureDaytimeOnly: { type: Boolean, default: false },
+    // Farm and plot the trap belongs to (null = not assigned)
+    farmId: { type: mongoose.Schema.Types.ObjectId, ref: 'Farm', default: null, index: true },
+    plotId: { type: mongoose.Schema.Types.ObjectId, ref: 'Plot', default: null, index: true },
     // Sticky card: when it was last replaced (latest "card_replaced" maintenance event) and
     // after how many days to remind (0 = off)
     cardReplacedAt: { type: Date, default: null },
