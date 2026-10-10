@@ -1,5 +1,6 @@
 import { createApp } from 'vue'
-import ElementPlus from 'element-plus'
+// Components are imported on demand (vite.config.js); only the v-loading directive is global
+import { ElLoading } from 'element-plus'
 import 'element-plus/dist/index.css'
 // Official dark-mode variables for every component (applied by html.dark)
 import 'element-plus/theme-chalk/dark/css-vars.css'
@@ -16,7 +17,7 @@ const app = createApp(App)
 
 app.use(router)
 app.use(i18n)
-app.use(ElementPlus)
+app.use(ElLoading)
 
 // Make sure the httpOnly image cookie exists before any <img src="/api/s3/..."> loads
 let hasToken = false

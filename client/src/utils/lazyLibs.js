@@ -22,5 +22,6 @@ export const loadPdf = () => (pdf ||= Promise.all([
   addQuicksandFonts: fonts.addQuicksandFonts,
 })));
 
-let xlsx;
-export const loadXlsx = () => (xlsx ||= import('xlsx'));
+// Writes .xlsx only (no parsing of untrusted files)
+let excel;
+export const loadExcelWriter = () => (excel ||= import('write-excel-file/browser').then((m) => m.default));

@@ -3,6 +3,8 @@ import path from 'node:path'
 
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
+import Components from 'unplugin-vue-components/vite'
+import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -21,6 +23,12 @@ export default defineConfig({
   },
   plugins: [
     vue(),
+    // Element Plus components are imported where they are used (smaller first load).
+    // Styles stay global (main.js) so ElMessage/ElNotification/ElMessageBox keep theirs.
+    Components({
+      resolvers: [ElementPlusResolver({ importStyle: false })],
+      dts: false,
+    }),
   ],
   resolve: {
     alias: {

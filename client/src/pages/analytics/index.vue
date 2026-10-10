@@ -122,7 +122,7 @@ import { useCameras } from '@/composables/useCameras';
 import StatisticsTab from './tabs/StatisticsTab.vue';
 import HistoryTab from './tabs/HistoryTab.vue';
 import api from '@/services/api';
-import { loadPdf, loadXlsx } from '@/utils/lazyLibs';
+import { loadPdf, loadExcelWriter } from '@/utils/lazyLibs';
 import { formatSummary, normalizeSummary } from '@/utils/species';
 import { ElNotification } from 'element-plus';
 import { Calendar, Document, Download, Files, List, TrendCharts, VideoCamera } from '@element-plus/icons-vue';
@@ -308,43 +308,41 @@ const exportToExcel = async () => {
     }
 
     const dateLocale = locale.value === 'vi' ? 'vi-VN' : 'en-US';
+    // Localized header row, then one row per scan (cells are written as plain values, never formulas)
+    const header = [
+      t('analytics.report.colIndex'),
+      t('analytics.report.colDevice'),
+      'Serial Number',
+      t('analytics.report.colScanTime'),
+      t('analytics.report.colInsectCount'),
+      t('analytics.report.colSpecies'),
+      t('analytics.report.colAiAssessment'),
+      t('analytics.report.colProvider'),
+      t('analytics.report.colImageUrl')
+    ].map((value) => ({ value, fontWeight: 'bold' }));
     const rows = results.map((item, index) => {
       const speciesDetail = formatSummary(item.aiResults?.summary, t) || t('analytics.report.notIdentified');
       const totalCount = Object.values(normalizeSummary(item.aiResults?.summary)).reduce((a, b) => a + b, 0);
-
-      // Column headers are localized; keys of this object become the sheet header row
-      return {
-        [t('analytics.report.colIndex')]: index + 1,
-        [t('analytics.report.colDevice')]: selectedCamera.value?.deviceName || item.deviceSerial,
-        'Serial Number': item.deviceSerial,
-        [t('analytics.report.colScanTime')]: new Date(item.createdAt).toLocaleString(dateLocale),
-        [t('analytics.report.colInsectCount')]: totalCount,
-        [t('analytics.report.colSpecies')]: speciesDetail,
-        [t('analytics.report.colAiAssessment')]: item.aiResults?.raw_description || '',
-        [t('analytics.report.colProvider')]: item.aiProvider || 'Vertex AI Gemini',
-        [t('analytics.report.colImageUrl')]: item.imageUrl || ''
-      };
+      return [
+        index + 1,
+        selectedCamera.value?.deviceName || item.deviceSerial,
+        item.deviceSerial,
+        new Date(item.createdAt).toLocaleString(dateLocale),
+        totalCount,
+        speciesDetail,
+        item.aiResults?.raw_description || '',
+        item.aiProvider || 'Vertex AI Gemini',
+        item.imageUrl || ''
+      ];
     });
 
-    const XLSX = await loadXlsx();
-    const worksheet = XLSX.utils.json_to_sheet(rows);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, t('analytics.report.sheetName'));
-
-    worksheet['!cols'] = [
-      { wch: 6 },
-      { wch: 20 },
-      { wch: 16 },
-      { wch: 22 },
-      { wch: 18 },
-      { wch: 30 },
-      { wch: 40 },
-      { wch: 18 },
-      { wch: 35 }
-    ];
-
+    const writeExcelFile = await loadExcelWriter();
     const fileName = `FlyBot_Surveillance_${serial}_${Date.now()}.xlsx`;
-    XLSX.writeFile(workbook, fileName);
+    await writeExcelFile([header, ...rows], {
+      sheet: t('analytics.report.sheetName').slice(0, 31),
+      columns: [6, 20, 16, 22, 18, 30, 40, 18, 35].map((width) => ({ width })),
+      stickyRowsCount: 1
+    }).toFile(fileName);
     ElNotification({ title: t('common.success'), message: t('analytics.report.excelExported', { count: results.length }), type: 'success' });
   } catch (err) {
     ElNotification({ title: t('common.error'), message: t('analytics.report.excelFailed', { error: err.message }), type: 'error' });
