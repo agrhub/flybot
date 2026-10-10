@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import api from '@/services/api';
+import { useNotifications } from '@/composables/useNotifications';
 
 // Singleton authentication state
 const user = ref((() => {
@@ -40,8 +41,17 @@ export function useAuth() {
     }
   };
 
+  // Reload the profile (e.g. emailVerified after confirming the address)
+  const refreshUser = async () => {
+    try {
+      const res = await api.getMe();
+      if (res.data?.user) setAuth(res.data.user);
+    } catch (e) {}
+  };
+
   const logout = () => {
     api.logout().catch(() => {});
+    useNotifications().reset();
     user.value = null;
     token.value = null;
     localStorage.removeItem('user');
@@ -61,6 +71,7 @@ export function useAuth() {
     userEmail,
     userInitial,
     setAuth,
+    refreshUser,
     logout,
   };
 }

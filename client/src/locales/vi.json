@@ -62,16 +62,7 @@
     "darkMode": "Chuyển sang chế độ Tối",
     "changePassword": "Đổi mật khẩu",
     "profileSettings": "Cài đặt tài khoản",
-    "recentAlerts": "Cảnh báo gần đây",
-    "notifFruitFlyTitle": "Phát hiện mật độ ruồi vàng cao",
-    "notifFruitFlyDesc": "Camera Cu Chi ghi nhận 14 cá thể trong chu kỳ quét 08:00.",
-    "notifFruitFlyTime": "15 phút trước",
-    "notifOnlineTitle": "Camera Gravity01 trực tuyến",
-    "notifOnlineDesc": "Thiết bị AC6527557 đã khôi phục kết nối thành công.",
-    "notifOnlineTime": "1 giờ trước",
-    "notifCleanupTitle": "Đã hoàn tất dọn dẹp S3 định kỳ",
-    "notifCleanupDesc": "Tiến trình tự động xóa bản ghi cũ hơn chu kỳ lưu trữ.",
-    "notifCleanupTime": "3 giờ trước"
+    "recentAlerts": "Cảnh báo gần đây"
   },
   "auth": {
     "tagline": "Smart Trap & Vision AI Studio",
@@ -90,7 +81,30 @@
     "registerSuccess": "Đăng ký thành công",
     "registerSuccessMsg": "Tài khoản đã sẵn sàng! Vui lòng đăng nhập.",
     "loginFailed": "Đăng nhập thất bại",
-    "registerFailed": "Đăng ký thất bại"
+    "registerFailed": "Đăng ký thất bại",
+    "forgotPassword": "Quên mật khẩu?",
+    "forgotTitle": "Đặt lại mật khẩu",
+    "forgotDesc": "Nhập email tài khoản, chúng tôi sẽ gửi đường dẫn để đặt lại mật khẩu.",
+    "sendResetLink": "Gửi đường dẫn",
+    "resetLinkSent": "Nếu email này có tài khoản, đường dẫn đặt lại mật khẩu đang được gửi tới. Hãy kiểm tra hộp thư, kể cả thư rác.",
+    "invalidEmail": "Vui lòng nhập email hợp lệ.",
+    "newPasswordTitle": "Đặt mật khẩu mới",
+    "newPassword": "Mật khẩu mới",
+    "confirmPassword": "Nhập lại mật khẩu mới",
+    "passwordMismatch": "Mật khẩu nhập lại không khớp.",
+    "passwordTooShort": "Mật khẩu phải có ít nhất 6 ký tự.",
+    "resetBtn": "Đặt lại mật khẩu",
+    "resetSuccess": "Đã đặt lại mật khẩu. Hãy đăng nhập bằng mật khẩu mới.",
+    "resetInvalid": "Đường dẫn không hợp lệ hoặc đã hết hạn. Hãy yêu cầu đường dẫn mới.",
+    "requestNewLink": "Yêu cầu đường dẫn mới",
+    "verifyingEmail": "Đang xác nhận email...",
+    "emailVerified": "Email đã được xác nhận. Bạn sẽ nhận được email cảnh báo.",
+    "verifyInvalid": "Đường dẫn xác nhận không hợp lệ hoặc đã hết hạn.",
+    "goToDashboard": "Đến dashboard",
+    "verifyBanner": "Xác nhận email ({email}) để nhận email cảnh báo dịch hại.",
+    "resendVerification": "Gửi lại email",
+    "verificationSent": "Đã gửi email xác nhận. Hãy kiểm tra hộp thư.",
+    "registerSuccessVerify": "Tài khoản đã sẵn sàng! Chúng tôi đã gửi đường dẫn xác nhận tới email của bạn."
   },
   "dashboard": {
     "welcome": "Chào mừng trở lại",
@@ -408,7 +422,21 @@
     "storageMonths": "12 Tháng",
     "termsSub": "Quy định sử dụng hệ thống giám sát và bảo mật dữ liệu nông nghiệp",
     "termsP1": "Hệ thống Smart Trap - CamHub Studio thu thập hình ảnh phục vụ mục đích phân tích mật độ dịch hại nông nghiệp và giám sát vườn trồng thông minh.",
-    "termsP2": "Toàn bộ dữ liệu snapshot và luồng video được bảo mật theo tiêu chuẩn mã hóa đám mây EZVIZ Open Platform và lưu trữ cục bộ trên MinIO S3 cluster."
+    "termsP2": "Toàn bộ dữ liệu snapshot và luồng video được bảo mật theo tiêu chuẩn mã hóa đám mây EZVIZ Open Platform và lưu trữ cục bộ trên MinIO S3 cluster.",
+    "notificationsTab": "Thông báo",
+    "notificationsSub": "Chọn cách nhận cảnh báo dịch hại và camera",
+    "emailAlerts": "Email cảnh báo",
+    "emailAlertsDesc": "Nhận email khi bẫy vượt ngưỡng, camera mất kết nối, hoặc AI phân tích lỗi liên tục.",
+    "emailNotVerified": "Email của bạn chưa được xác nhận nên email cảnh báo đang tạm dừng.",
+    "emailVerifiedBadge": "Đã xác nhận",
+    "thresholdsTitle": "Ngưỡng cảnh báo theo camera",
+    "thresholdsDesc": "Cảnh báo được gửi khi một lần quét đếm được từ ngần này con trở lên.",
+    "thresholdUnit": "con",
+    "thresholdSaved": "Đã lưu ngưỡng cảnh báo",
+    "prefsSaved": "Đã lưu cài đặt thông báo",
+    "passwordFieldsRequired": "Vui lòng nhập đầy đủ các trường mật khẩu.",
+    "passwordChanged": "Đã đổi mật khẩu. Các thiết bị khác đã bị đăng xuất.",
+    "saveFailed": "Không lưu được. Vui lòng thử lại."
   },
   "assistant": {
     "title": "Smart Trap Copilot",
@@ -616,5 +644,29 @@
     "bug": "Bọ",
     "caterpillar": "Sâu hại",
     "other": "Khác"
+  },
+  "notifications": {
+    "markAllRead": "Đánh dấu đã đọc tất cả",
+    "loadMore": "Xem thêm",
+    "unreadCount": "{count} chưa đọc",
+    "justNow": "Vừa xong",
+    "types": {
+      "pest_threshold": {
+        "title": "Vượt ngưỡng dịch hại",
+        "desc": "{deviceName}: {count} con (ngưỡng {threshold})"
+      },
+      "camera_offline": {
+        "title": "Camera mất kết nối",
+        "desc": "{deviceName} đã mất kết nối."
+      },
+      "camera_online": {
+        "title": "Camera đã kết nối lại",
+        "desc": "{deviceName} đã trực tuyến trở lại."
+      },
+      "ai_failure": {
+        "title": "Phân tích AI bị lỗi",
+        "desc": "{deviceName}: {failures} ảnh gần nhất không phân tích được."
+      }
+    }
   }
 }

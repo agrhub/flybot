@@ -66,6 +66,20 @@ const config = {
     CORS_ORIGINS: (process.env.CORS_ORIGINS || "").split(',').map(o => o.trim()).filter(Boolean),
     // Express "trust proxy" setting (e.g. 1 behind one reverse proxy) so rate limits see the real client IP
     TRUST_PROXY: process.env.TRUST_PROXY || "",
+    // Public URL of the web app, used in email links. Never derived from request headers
+    // (a spoofed Host header would let attackers redirect password reset links).
+    APP_BASE_URL: (process.env.APP_BASE_URL || "").replace(/\/+$/, ""),
+
+    // Email (any SMTP provider: Google Workspace, SendGrid, Resend, Mailgun...).
+    // Without SMTP_HOST, emails are only logged (development).
+    SMTP_HOST: process.env.SMTP_HOST || "",
+    SMTP_PORT: parseInt(process.env.SMTP_PORT || '587', 10),
+    // true for port 465 (implicit TLS); false uses STARTTLS on 587
+    SMTP_SECURE: process.env.SMTP_SECURE === 'true',
+    SMTP_USER: process.env.SMTP_USER || "",
+    SMTP_PASS: process.env.SMTP_PASS || "",
+    MAIL_FROM: process.env.MAIL_FROM || "FlyBot <no-reply@localhost>",
+
     // Set ENABLE_CRON=false on every deployment except one, so captures/cleanup don't run twice
     ENABLE_CRON: process.env.ENABLE_CRON !== 'false',
     // Set ALLOW_REGISTRATION=false to close public sign-up

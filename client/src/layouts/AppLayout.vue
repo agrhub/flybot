@@ -16,6 +16,21 @@
         @open-settings-tab="handleOpenSettingsTab"
       />
 
+      <!-- Email confirmation reminder (alert emails need a confirmed address) -->
+      <div
+        v-if="user && user.emailVerified === false"
+        class="shrink-0 px-6 lg:px-8 py-2.5 bg-amber-500/10 border-b border-amber-500/30 text-[12px] text-amber-500 flex flex-wrap items-center gap-x-3 gap-y-1"
+      >
+        <span>{{ t('auth.verifyBanner', { email: user.email }) }}</span>
+        <button
+          @click="resendVerification"
+          :disabled="resending"
+          class="font-bold underline cursor-pointer disabled:opacity-50"
+        >
+          {{ t('auth.resendVerification') }}
+        </button>
+      </div>
+
       <!-- Scrollable Main Content Router View -->
       <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 custom-scrollbar">
         <router-view />
@@ -37,7 +52,11 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { ElNotification } from 'element-plus';
+import api from '@/services/api';
+import { useAuth } from '@/composables/useAuth';
 import { useRouter, useRoute } from 'vue-router';
 import { useTheme } from '@/utils/theme';
 import { useCameras } from '@/composables/useCameras';
@@ -50,6 +69,25 @@ import AddCameraModal from '@/components/modals/AddCameraModal.vue';
 const router = useRouter();
 const route = useRoute();
 const { initTheme } = useTheme();
+const { t } = useI18n();
+const { user, refreshUser } = useAuth();
+const resending = ref(false);
+
+const resendVerification = async () => {
+  resending.value = true;
+  try {
+    const res = await api.resendVerification();
+    if (res.data?.alreadyVerified) {
+      refreshUser();
+      return;
+    }
+    ElNotification({ title: t('common.success'), message: t('auth.verificationSent'), type: 'success' });
+  } catch (err) {
+    ElNotification({ title: t('common.error'), message: err.response?.data?.message || t('settings.saveFailed'), type: 'error' });
+  } finally {
+    resending.value = false;
+  }
+};
 const { cameras, selectedCamera, loadCameras, selectCamera, openAddCameraModal } = useCameras();
 
 const currentSection = computed(() => {
@@ -80,6 +118,7 @@ onMounted(() => {
   }
   initTheme();
   loadCameras();
+  refreshUser();
 });
 </script>
 

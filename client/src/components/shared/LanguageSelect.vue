@@ -1,21 +1,17 @@
 <script setup>
 import { computed } from 'vue';
-import { useI18n } from 'vue-i18n';
 import { SUPPORTED_LOCALES } from '@/i18n';
+import { useLanguage } from '@/composables/useLanguage';
 import CountryFlag from '@/components/common/CountryFlag.vue';
 
-const { locale } = useI18n();
+const { locale, setAppLocale } = useLanguage();
 
 const currentLocaleItem = computed(() => {
   return SUPPORTED_LOCALES.find(l => l.code === locale.value) || SUPPORTED_LOCALES[0];
 });
 
 function switchLocale(code) {
-  locale.value = code;
-  if (typeof localStorage !== 'undefined') {
-    localStorage.setItem('camhub_language', code);
-    localStorage.setItem('smart_trap_lang', code);
-  }
+  setAppLocale(code);
 }
 </script>
 

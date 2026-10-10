@@ -35,6 +35,14 @@ const SECRETS = {
     'camhub-roboflow-api-key': 'ROBOFLOW_API_KEY'
 };
 
+// Created and wired into Cloud Run only when the .env value is set
+const OPTIONAL_SECRETS = {
+    'camhub-smtp-pass': 'SMTP_PASS'
+};
+
+// Never copied from the local .env: these differ between development and Cloud Run
+const DEPLOY_SPECIFIC_KEYS = ['NODE_ENV', 'APP_BASE_URL', 'COOKIE_SECURE', 'TRUST_PROXY', 'ENABLE_CRON', 'ALLOW_REGISTRATION'];
+
 const APIS = [
     'run.googleapis.com',
     'cloudbuild.googleapis.com',
@@ -238,7 +246,8 @@ function setup(opts) {
 
 function syncSecrets(opts, env) {
     step(opts.updateSecrets ? 'Secrets (creating missing, updating existing)' : 'Secrets (creating missing)');
-    for (const [name, key] of Object.entries(SECRETS)) {
+    const optional = Object.entries(OPTIONAL_SECRETS).filter(([, key]) => env[key]);
+    for (const [name, key] of [...Object.entries(SECRETS), ...optional]) {
         const value = env[key];
         if (exists(['secrets', 'describe', name, `--project=${opts.project}`])) {
             if (opts.updateSecrets) {
@@ -252,6 +261,11 @@ function syncSecrets(opts, env) {
             ok(`${name}: created from ${key}`);
         }
     }
+    for (const [name, key] of Object.entries(OPTIONAL_SECRETS)) {
+        if (!env[key]) ok(`${name}: skipped (${key} not set in .env)`);
+    }
+    // Appended to --set-secrets in cloudbuild.yaml
+    return optional.map(([name, key]) => `,${key}=${name}:latest`).join('');
 }
 
 function fillEnvYaml(opts, env) {
@@ -259,9 +273,11 @@ function fillEnvYaml(opts, env) {
     const original = fs.readFileSync(ENV_YAML, 'utf8');
     const filled = [];
     const updated = original.split(/\r?\n/).map(line => {
-        const m = line.match(/^(\s*)([A-Z_][A-Z0-9_]*):\s*"TODO[^"]*"\s*$/);
+        // Fill "TODO..." (required) and "" (optional) values from .env
+        const m = line.match(/^(\s*)([A-Z_][A-Z0-9_]*):\s*"(TODO[^"]*)?"\s*$/);
         if (!m) return line;
         const key = m[2];
+        if (DEPLOY_SPECIFIC_KEYS.includes(key)) return line;
         const value = key === 'VERTEX_PROJECT_ID' ? (env.VERTEX_PROJECT_ID || opts.project) : env[key];
         if (!value) return line;
         filled.push(key);
@@ -284,10 +300,12 @@ function fillEnvYaml(opts, env) {
     ok(`ENABLE_CRON=${cron || 'true'}${cron === 'false' ? '' : ' (set "false" there if the VM runs the jobs on the same database)'}`);
 }
 
-function deploy(opts, env) {
+function deploy(opts, env, extraSecrets) {
     step('Building and deploying with Cloud Build (this takes several minutes)');
     if (!env.VITE_GOOGLE_MAP_KEY) warn('VITE_GOOGLE_MAP_KEY not set in .env: the map page will have no Google Maps key');
-    const substitutions = `_REGION=${opts.region},_MAPS_KEY=${env.VITE_GOOGLE_MAP_KEY || ''}`;
+    if (!env.SMTP_HOST) warn('SMTP_HOST not set: password reset and alert emails will not be sent');
+    // "^~^" switches the separator to "~" because _EXTRA_SECRETS contains commas (gcloud topic escaping)
+    const substitutions = `^~^_REGION=${opts.region}~_MAPS_KEY=${env.VITE_GOOGLE_MAP_KEY || ''}~_EXTRA_SECRETS=${extraSecrets}`;
     gcloud(['builds', 'submit', '--config=cloudbuild.yaml', `--substitutions=${substitutions}`, `--project=${opts.project}`, '.'], { mutating: true, inherit: true });
 }
 
@@ -299,6 +317,14 @@ async function verify(opts) {
     }
     const url = gcloud(['run', 'services', 'describe', SERVICE, `--region=${opts.region}`, `--project=${opts.project}`, '--format=value(status.url)']).stdout;
     ok(`Service URL: ${url}`);
+
+    // Email links need APP_BASE_URL; default it to the Cloud Run URL and remember it for next deploys
+    const yaml = fs.readFileSync(ENV_YAML, 'utf8');
+    if (/^APP_BASE_URL:\s*""\s*$/m.test(yaml) && url) {
+        gcloud(['run', 'services', 'update', SERVICE, `--region=${opts.region}`, `--project=${opts.project}`, `--update-env-vars=APP_BASE_URL=${url}`, '--quiet'], { mutating: true });
+        fs.writeFileSync(ENV_YAML, yaml.replace(/^APP_BASE_URL:\s*""\s*$/m, `APP_BASE_URL: ${JSON.stringify(url)}`));
+        ok(`APP_BASE_URL set to ${url} (saved in deploy/cloudrun.env.yaml)`);
+    }
     try {
         const res = await fetch(`${url}/health`);
         const body = await res.text();
@@ -333,9 +359,9 @@ async function main() {
     }
 
     if (!opts.skipSetup) setup(opts);
-    syncSecrets(opts, env);
+    const extraSecrets = syncSecrets(opts, env);
     fillEnvYaml(opts, env);
-    deploy(opts, env);
+    deploy(opts, env, extraSecrets);
     await verify(opts);
 
     console.log(`\n${green(bold('Done.'))}`);

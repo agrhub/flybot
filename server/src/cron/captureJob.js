@@ -4,6 +4,7 @@ const { AI_PROVIDER, S3_PUBLIC_URL } = require('../config/env');
 const ezvizService = require('../services/ezvizService');
 const s3Service = require('../services/s3Service');
 const aiService = require('../services/aiService');
+const notificationService = require('../services/notificationService');
 
 /**
  * Capture image from camera, upload to S3, and trigger AI analysis
@@ -69,6 +70,18 @@ async function captureAndSaveSnapshot(deviceSerial) {
             }
 
             console.log(`📸 Snapshot saved & sent to AI: ${deviceSerial}`);
+
+            // 5. Alerts: pest threshold reached, or AI analysis failing repeatedly
+            try {
+                const analyzed = await Snapshot.findById(savedDoc._id);
+                const succeeded = !!analyzed?.aiProcessed;
+                await notificationService.recordAiResult(deviceSerial, succeeded);
+                if (succeeded) {
+                    await notificationService.checkPestThreshold(deviceSerial, notificationService.countPests(analyzed.aiResults?.summary));
+                }
+            } catch (alertErr) {
+                console.error(`⚠️ Alert check failed (${deviceSerial}):`, alertErr.message);
+            }
             return savedDoc;
         }
     } catch (error) {

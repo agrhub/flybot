@@ -40,10 +40,16 @@ async function authenticate(req, res, next) {
         if (!user) {
             return res.status(401).json({ success: false, message: 'User does not exist or has been disabled.' });
         }
+        // Tokens issued before a password reset/change carry an older version and are rejected
+        if ((decoded.v || 0) !== (user.tokenVersion || 0)) {
+            return res.status(401).json({ success: false, message: 'Session has expired. Please log in again.' });
+        }
         req.user = {
             id: user._id.toString(),
             email: user.email,
-            name: user.name || user.email.split('@')[0]
+            name: user.name || user.email.split('@')[0],
+            emailVerified: !!user.emailVerified,
+            language: user.language
         };
         req.authToken = token;
         return next();
@@ -55,7 +61,7 @@ async function authenticate(req, res, next) {
 
 function signToken(user) {
     return jwt.sign(
-        { id: user._id.toString(), email: user.email },
+        { id: user._id.toString(), email: user.email, v: user.tokenVersion || 0 },
         JWT_SECRET,
         { expiresIn: '7d' }
     );

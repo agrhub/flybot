@@ -20,6 +20,8 @@ const cameraSchema = new mongoose.Schema({
     locationAddress: { type: String, default: '' }, // Orchard address or plot name
     trapType: { type: String, default: 'Yellow Sticky Trap' }, // Trap modality
     cropType: { type: String, default: 'Mango Orchard' }, // Agricultural crop
+    // Pest alert fires when one scan counts at least this many insects (per user, per camera)
+    alertThreshold: { type: Number, default: 15, min: 1 },
     addedAt: { type: Date, default: Date.now },
     lastSync: { type: Date, default: Date.now }
 });

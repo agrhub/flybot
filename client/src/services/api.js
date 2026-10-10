@@ -21,7 +21,8 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
-      if (window.location.pathname !== '/auth/login') {
+      // Auth pages (login, reset password, verify email) handle their own errors
+      if (!window.location.pathname.startsWith('/auth/')) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         window.location.href = '/auth/login';
@@ -32,8 +33,23 @@ apiClient.interceptors.response.use(
 );
 
 export default {
-  login(email, password) {
-    return apiClient.post('/auth/login', { email, password });
+  login(email, password, language) {
+    return apiClient.post('/auth/login', { email, password, language });
+  },
+  getMe() {
+    return apiClient.get('/auth/me');
+  },
+  forgotPassword(email, language) {
+    return apiClient.post('/auth/forgot-password', { email, language });
+  },
+  resetPassword(token, password) {
+    return apiClient.post('/auth/reset-password', { token, password });
+  },
+  verifyEmail(token) {
+    return apiClient.post('/auth/verify-email', { token });
+  },
+  resendVerification() {
+    return apiClient.post('/auth/resend-verification');
   },
   logout() {
     // Clears the httpOnly image cookie on the server
@@ -43,8 +59,8 @@ export default {
     // Sets the httpOnly image cookie from the stored Bearer token (sessions from before the cookie existed)
     return apiClient.post('/auth/session');
   },
-  register(email, password) {
-    return apiClient.post('/auth/register', { email, password });
+  register(email, password, language) {
+    return apiClient.post('/auth/register', { email, password, language });
   },
   changePassword(...args) {
     // Supports both (currentPassword, newPassword) and legacy (userId, currentPassword, newPassword)
@@ -141,6 +157,14 @@ export default {
   clearChatSession(sessionId = 'default-session') {
     return apiClient.post('/ai/chat/clear', { sessionId });
   },
+  getNotifications(params = {}) {
+    return apiClient.get('/notifications', { params });
+  },
+  markNotificationsRead(ids) {
+    return apiClient.post('/notifications/read', ids === 'all' ? { all: true } : { ids });
+  },
+  // SSE endpoint; authenticated by the httpOnly cookie
+  notificationStreamUrl: '/api/notifications/stream',
   getImageUrl(urlOrKey) {
     if (!urlOrKey) return '';
     if (urlOrKey.startsWith('http://') || urlOrKey.startsWith('https://')) {

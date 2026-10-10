@@ -44,28 +44,50 @@
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
             </svg>
-            <!-- Amber Notification Dot -->
-            <span class="absolute top-2 right-2 w-2 h-2 rounded-full bg-amber-400 ring-2 ring-[var(--el-card-bg-color)]"></span>
+            <!-- Unread badge -->
+            <span
+              v-if="unreadCount > 0"
+              class="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-amber-400 text-slate-950 text-[10px] font-black flex items-center justify-center ring-2 ring-[var(--el-card-bg-color)]"
+            >{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
           </button>
         </template>
 
-        <div class="p-4 border-b border-[var(--el-border-color)] flex items-center justify-between">
+        <div class="p-4 border-b border-[var(--el-border-color)] flex items-center justify-between gap-2">
           <span class="text-xs font-bold uppercase tracking-wider text-[var(--el-text-color-primary)]">{{ t('topbar.notifications') }}</span>
-          <span class="text-[10px] text-[var(--primary-green)] bg-[var(--primary-green)]/10 px-2 py-0.5 rounded-full font-bold">{{ notifications.length }} {{ t('common.new') }}</span>
-        </div>
-        <div class="p-2 space-y-1.5 max-h-72 overflow-y-auto custom-scrollbar">
-          <div
-            v-for="(n, idx) in notifications"
-            :key="idx"
-            class="p-2.5 rounded-xl hover:bg-[var(--el-bg-color)] transition-colors cursor-pointer flex items-start gap-2.5"
+          <button
+            v-if="unreadCount > 0"
+            @click="markAllRead"
+            class="text-[10px] text-[var(--primary-green)] hover:underline font-bold cursor-pointer"
           >
-            <div class="w-2 h-2 rounded-full mt-1.5 shrink-0" :class="n.dotClass"></div>
+            {{ t('notifications.markAllRead') }}
+          </button>
+        </div>
+        <div class="p-2 space-y-1.5 max-h-80 overflow-y-auto custom-scrollbar">
+          <p v-if="!loading && notificationItems.length === 0" class="py-6 text-center text-xs text-[var(--el-text-color-secondary)]">
+            {{ t('topbar.noNotifications') }}
+          </p>
+          <div
+            v-for="n in notificationItems"
+            :key="n.id"
+            @click="openNotification(n)"
+            class="p-2.5 rounded-xl hover:bg-[var(--el-bg-color)] transition-colors cursor-pointer flex items-start gap-2.5"
+            :class="n.read ? 'opacity-60' : ''"
+          >
+            <div class="w-2 h-2 rounded-full mt-1.5 shrink-0" :class="n.read ? 'bg-slate-500' : DOT_CLASS[n.severity]"></div>
             <div class="min-w-0">
               <p class="text-xs font-semibold text-[var(--el-text-color-primary)] truncate">{{ n.title }}</p>
               <p class="text-[11px] text-[var(--el-text-color-secondary)] leading-relaxed mt-0.5">{{ n.desc }}</p>
               <span class="text-[10px] text-[var(--text-muted)] mt-1 block">{{ n.time }}</span>
             </div>
           </div>
+          <button
+            v-if="hasMore"
+            @click="loadMore"
+            :disabled="loading"
+            class="w-full py-2 text-[11px] font-semibold text-[var(--primary-green)] hover:underline cursor-pointer disabled:opacity-50"
+          >
+            {{ t('notifications.loadMore') }}
+          </button>
         </div>
       </el-popover>
 
@@ -159,12 +181,13 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useTheme } from '@/utils/theme';
 import { useAuth } from '@/composables/useAuth';
 import LanguageSelect from '@/components/shared/LanguageSelect.vue';
+import { useNotifications } from '@/composables/useNotifications';
 
 const props = defineProps({
   currentSection: {
@@ -176,7 +199,7 @@ const props = defineProps({
 const emit = defineEmits(['navigate', 'open-settings-tab']);
 
 const router = useRouter();
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const { isDark, isAssistantOpen, toggleTheme, toggleAssistant } = useTheme();
 const { userName, userEmail, userInitial, logout } = useAuth();
 
@@ -191,26 +214,30 @@ const currentSectionTitle = computed(() => {
   return map[props.currentSection] || t('nav.dashboard');
 });
 
-const notifications = computed(() => [
-  {
-    title: t('topbar.notifFruitFlyTitle'),
-    desc: t('topbar.notifFruitFlyDesc'),
-    time: t('topbar.notifFruitFlyTime'),
-    dotClass: 'bg-amber-400'
-  },
-  {
-    title: t('topbar.notifOnlineTitle'),
-    desc: t('topbar.notifOnlineDesc'),
-    time: t('topbar.notifOnlineTime'),
-    dotClass: 'bg-emerald-400'
-  },
-  {
-    title: t('topbar.notifCleanupTitle'),
-    desc: t('topbar.notifCleanupDesc'),
-    time: t('topbar.notifCleanupTime'),
-    dotClass: 'bg-blue-400'
-  }
-]);
+const DOT_CLASS = { critical: 'bg-red-500', warning: 'bg-amber-400', info: 'bg-emerald-400' };
+// Where a click on each notification type leads
+const TARGET_SECTION = { pest_threshold: 'analytics', camera_offline: 'cameras', camera_online: 'cameras', ai_failure: 'analytics' };
+
+const {
+  items, unreadCount, hasMore, loading,
+  load, loadMore, markRead, markAllRead, connect, format, relativeTime
+} = useNotifications();
+
+const notificationItems = computed(() => {
+  locale.value; // re-render text when the language changes
+  return items.value.map((n) => ({ ...n, ...format(n), time: relativeTime(n.createdAt) }));
+});
+
+const openNotification = (n) => {
+  markRead([n.id]);
+  const section = TARGET_SECTION[n.type];
+  if (section) emit('navigate', section);
+};
+
+onMounted(() => {
+  load();
+  connect();
+});
 
 const goToSection = (section, tab = null) => {
   emit('navigate', section);

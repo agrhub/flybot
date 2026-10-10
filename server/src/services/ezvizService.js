@@ -1,6 +1,7 @@
 const axios = require('axios');
 const { APP_KEY, SECRET_KEY, APP_DOMAIN, DOMAIN_AREAS } = require('../config/env');
 const { Camera } = require('../models');
+const notificationService = require('./notificationService');
 
 // In-memory token cache to prevent exceeding EZVIZ Rate Limits
 let cachedToken = {
@@ -100,6 +101,10 @@ async function syncCameraStatus(deviceSerial) {
 
                     // console.log("sync CameraStatus:", JSON.stringify(deviceList));
 
+                    // Previous status, to detect online/offline transitions for alerts
+                    const previous = await Camera.find({ deviceSerial: { $in: deviceList.map(d => d.deviceSerial) } }).select('deviceSerial status');
+                    const previousStatus = new Map(previous.map(c => [c.deviceSerial, Number(c.status)]));
+
                     const updatePromises = deviceList.map(item => {
                         const updateData = {
                             deviceName: item.deviceName,
@@ -130,6 +135,14 @@ async function syncCameraStatus(deviceSerial) {
                     });
 
                     await Promise.all(updatePromises);
+
+                    for (const item of deviceList) {
+                        const before = previousStatus.get(item.deviceSerial);
+                        if (before !== undefined && before !== Number(item.status)) {
+                            notificationService.cameraStatusChanged(item.deviceSerial, Number(item.status))
+                                .catch(err => console.error(`⚠️ Status alert failed (${item.deviceSerial}):`, err.message));
+                        }
+                    }
 
                     if (deviceList.length < pageSize) {
                         hasMore = false;

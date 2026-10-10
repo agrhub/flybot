@@ -1,0 +1,45 @@
+{
+  "email": {
+    "greeting": "Xin chào {name},",
+    "footer": "Đây là email tự động từ FlyBot Smart Trap Studio.",
+    "footerAlerts": "Bạn nhận email cảnh báo vì đang bật thông báo qua email. Có thể tắt trong Cài đặt → Thông báo.",
+    "linkFallback": "Nếu nút không hoạt động, hãy sao chép đường dẫn này vào trình duyệt:",
+    "passwordReset": {
+      "subject": "Đặt lại mật khẩu FlyBot",
+      "intro": "Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn.",
+      "button": "Đặt lại mật khẩu",
+      "expiry": "Đường dẫn có hiệu lực trong {minutes} phút và chỉ dùng được một lần.",
+      "ignore": "Nếu bạn không yêu cầu, hãy bỏ qua email này. Mật khẩu của bạn không thay đổi."
+    },
+    "passwordChanged": {
+      "subject": "Mật khẩu FlyBot của bạn đã được đổi",
+      "intro": "Mật khẩu tài khoản của bạn vừa được đổi, và mọi phiên đăng nhập khác đã bị đăng xuất.",
+      "notYou": "Nếu không phải bạn thực hiện, hãy đặt lại mật khẩu ngay và liên hệ quản trị viên."
+    },
+    "verifyEmail": {
+      "subject": "Xác nhận email cho FlyBot",
+      "intro": "Vui lòng xác nhận địa chỉ email này để nhận cảnh báo dịch hại và thông báo tài khoản.",
+      "button": "Xác nhận email",
+      "expiry": "Đường dẫn có hiệu lực trong {hours} giờ."
+    },
+    "alerts": {
+      "button": "Mở dashboard",
+      "pest_threshold": {
+        "subject": "⚠️ Cảnh báo dịch hại: {count} con tại {deviceName}",
+        "body": "Camera {deviceName} ({deviceSerial}) đếm được {count} con côn trùng trong lần quét gần nhất, bằng hoặc vượt ngưỡng cảnh báo {threshold} của bạn."
+      },
+      "camera_offline": {
+        "subject": "📡 Camera mất kết nối: {deviceName}",
+        "body": "Camera {deviceName} ({deviceSerial}) đã mất kết nối. Hãy kiểm tra nguồn điện và kết nối Wi-Fi/4G."
+      },
+      "camera_online": {
+        "subject": "✅ Camera đã kết nối lại: {deviceName}",
+        "body": "Camera {deviceName} ({deviceSerial}) đã trực tuyến trở lại."
+      },
+      "ai_failure": {
+        "subject": "🤖 Phân tích AI bị lỗi: {deviceName}",
+        "body": "{failures} ảnh gần nhất từ camera {deviceName} ({deviceSerial}) không phân tích được. Số liệu côn trùng của bẫy này có thể bị thiếu."
+      }
+    }
+  }
+}

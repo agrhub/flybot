@@ -1,6 +1,7 @@
 /**
- * Test harness: boots the Express app in-process with MongoDB models and S3 stubbed,
- * so tests never touch the real database, bucket, EZVIZ or AI APIs (and no cron jobs start).
+ * Test harness: boots the Express app in-process with MongoDB models, S3 and email stubbed,
+ * so tests never touch the real database, bucket, mail server, EZVIZ or AI APIs (and no cron jobs start).
+ * Models are backed by a small in-memory store implementing only the queries the app uses.
  */
 const { Readable } = require('stream');
 
@@ -8,48 +9,159 @@ const { Readable } = require('stream');
 process.env.JWT_SECRET = 'test-secret-'.padEnd(48, 'x');
 process.env.CORS_ORIGINS = '';
 process.env.ALLOW_REGISTRATION = 'true';
+process.env.APP_BASE_URL = 'https://app.example.test';
+process.env.SMTP_HOST = '';
+// Lets tests vary the client IP with X-Forwarded-For so per-IP rate limits do not leak between tests
+process.env.TRUST_PROXY = 'true';
 
 const jwt = require('jsonwebtoken');
 const env = require('../src/config/env');
 const models = require('../src/models');
 const { s3Client } = require('../src/config/s3');
+const mailService = require('../src/services/mailService');
 
 const ALICE = '64b000000000000000000001';
 const BOB = '64b000000000000000000002';
 
-// userId -> owned camera serials
-const ownership = {
-    [ALICE]: ['CAMA'],
-    [BOB]: []
+// ---------- In-memory store ----------
+const store = {
+    users: new Map(),
+    cameras: [],
+    authTokens: [],
+    notifications: []
 };
-const ownedBy = (userId, serial) => (ownership[userId] || []).includes(serial);
+const sentMails = [];
+let nextId = 1;
+const newId = () => (0x64c000000000000000000000n + BigInt(nextId++)).toString(16);
 
-models.User.findById = (id) => ({
-    select: async () => (ownership[id] ? { _id: id, email: `${id}@example.test` } : null)
-});
-models.User.findOne = async () => null;
-models.Camera.exists = async ({ userId, deviceSerial }) => (ownedBy(userId, deviceSerial) ? { _id: 1 } : null);
-models.Camera.findOne = async ({ userId, deviceSerial }) =>
-    ownedBy(userId, deviceSerial) ? { deviceSerial, validateCode: '', save: async () => {} } : null;
-models.Camera.find = ({ userId } = {}) => {
-    const docs = (ownership[userId] || []).map(deviceSerial => ({ deviceSerial, status: 1 }));
-    const query = Promise.resolve(docs);
-    query.select = async () => docs;
-    query.limit = async () => docs;
-    query.sort = () => query;
-    return query;
+function makeDoc(data) {
+    const doc = { ...data };
+    Object.defineProperty(doc, 'save', { value: async () => doc, enumerable: false });
+    Object.defineProperty(doc, 'set', {
+        value: (path, value) => {
+            const parts = path.split('.');
+            let node = doc;
+            for (const p of parts.slice(0, -1)) node = node[p] = node[p] || {};
+            node[parts[parts.length - 1]] = value;
+        },
+        enumerable: false
+    });
+    return doc;
+}
+
+function resetStore() {
+    store.users.clear();
+    for (const id of [ALICE, BOB]) {
+        store.users.set(id, makeDoc({
+            _id: id,
+            email: `${id}@example.test`,
+            password: '',
+            name: id === ALICE ? 'Alice' : 'Bob',
+            emailVerified: true,
+            language: 'en',
+            tokenVersion: 0,
+            notificationPrefs: { email: true }
+        }));
+    }
+    store.cameras = [
+        makeDoc({ userId: ALICE, deviceSerial: 'CAMA', deviceName: 'Mango Lot A', validateCode: '', status: 1, alertThreshold: 15 })
+    ];
+    store.authTokens = [];
+    store.notifications = [];
+    sentMails.length = 0;
+}
+resetStore();
+
+// A thenable query result supporting the chained calls the app uses
+function query(resultFn) {
+    const q = {
+        then: (resolve, reject) => Promise.resolve().then(resultFn).then(resolve, reject),
+        select: () => q,
+        sort: () => q,
+        limit: () => q,
+        collation: () => q
+    };
+    return q;
+}
+
+const sameId = (a, b) => String(a) === String(b);
+
+// User
+models.User.prototype.save = async function () {
+    store.users.set(String(this._id), makeDoc(this.toObject()));
+    return this;
 };
-models.Snapshot.find = () => ({ sort: () => ({ limit: async () => [] }) });
+models.User.findById = (id) => query(() => store.users.get(String(id)) || null);
+models.User.findOne = ({ email }) => query(() =>
+    [...store.users.values()].find(u => u.email.toLowerCase() === String(email).toLowerCase()) || null);
 
+// Camera
+const camerasMatching = (filter = {}) => store.cameras.filter(c =>
+    (filter.userId === undefined || (typeof filter.userId === 'object' ? c.userId != null : sameId(c.userId, filter.userId))) &&
+    (filter.deviceSerial === undefined || c.deviceSerial === filter.deviceSerial));
+models.Camera.exists = async (filter) => (camerasMatching(filter).length ? { _id: 1 } : null);
+models.Camera.findOne = (filter) => query(() => camerasMatching(filter)[0] || null);
+models.Camera.find = (filter) => query(() => camerasMatching(filter));
+
+// Snapshot
+models.Snapshot.find = () => query(() => []);
+
+// AuthToken
+models.AuthToken.deleteMany = async ({ userId, type }) => {
+    store.authTokens = store.authTokens.filter(t => !(sameId(t.userId, userId) && t.type === type && !t.usedAt));
+};
+models.AuthToken.create = async (data) => {
+    const doc = { _id: newId(), usedAt: null, ...data };
+    store.authTokens.push(doc);
+    return doc;
+};
+models.AuthToken.findOneAndUpdate = async (filter, update) => {
+    const now = filter.expiresAt.$gt;
+    const doc = store.authTokens.find(t =>
+        t.tokenHash === filter.tokenHash && t.type === filter.type && !t.usedAt && t.expiresAt > now);
+    if (!doc) return null;
+    Object.assign(doc, update.$set);
+    return doc;
+};
+
+// Notification
+const notificationMatches = (n, filter) =>
+    sameId(n.userId, filter.userId) &&
+    (filter.type === undefined || n.type === filter.type) &&
+    (filter.deviceSerial === undefined || n.deviceSerial === filter.deviceSerial) &&
+    (filter.read === undefined || n.read === filter.read) &&
+    (filter._id === undefined || filter._id.$in.some(id => sameId(id, n._id))) &&
+    (filter.createdAt === undefined ||
+        ((!filter.createdAt.$gte || n.createdAt >= filter.createdAt.$gte) &&
+         (!filter.createdAt.$lt || n.createdAt < filter.createdAt.$lt)));
+models.Notification.exists = async (filter) => (store.notifications.some(n => notificationMatches(n, filter)) ? { _id: 1 } : null);
+models.Notification.create = async (data) => {
+    const doc = { _id: newId(), read: false, createdAt: new Date(), ...data };
+    store.notifications.push(doc);
+    return doc;
+};
+models.Notification.find = (filter) => query(() =>
+    store.notifications.filter(n => notificationMatches(n, filter)).sort((a, b) => b.createdAt - a.createdAt));
+models.Notification.countDocuments = async (filter) => store.notifications.filter(n => notificationMatches(n, filter)).length;
+models.Notification.updateMany = async (filter, update) => {
+    store.notifications.filter(n => notificationMatches(n, filter)).forEach(n => Object.assign(n, update.$set));
+};
+
+// S3
 s3Client.send = async () => ({
     ContentType: 'image/jpeg',
     Body: Readable.from([Buffer.from('JPEGDATA')])
 });
 
+// Email: capture instead of sending (patched before controllers load)
+mailService.queueMail = (message) => sentMails.push(message);
+mailService.sendMail = async (message) => { sentMails.push(message); return {}; };
+
 const { app } = require('../src/app');
 
-function token(userId, secret = env.JWT_SECRET) {
-    return jwt.sign({ id: userId }, secret, { expiresIn: '1h' });
+function token(userId, secret = env.JWT_SECRET, version) {
+    const v = version ?? store.users.get(userId)?.tokenVersion ?? 0;
+    return jwt.sign({ id: userId, v }, secret, { expiresIn: '1h' });
 }
 
 /**
@@ -73,18 +185,28 @@ async function startApp() {
     return {
         base,
         request,
-        close: () => new Promise(resolve => server.close(resolve))
+        close: () => new Promise(resolve => {
+            server.closeAllConnections?.();
+            server.close(resolve);
+        })
     };
 }
 
 const bearer = (userId) => ({ Authorization: `Bearer ${token(userId)}` });
 const cookie = (userId) => ({ Cookie: `${env.AUTH_COOKIE_NAME}=${token(userId)}` });
 
+// Wait for background work (setImmediate + queued promises)
+const flush = () => new Promise(resolve => setTimeout(resolve, 50));
+
 module.exports = {
     ALICE,
     BOB,
+    store,
+    sentMails,
+    resetStore,
     token,
     bearer,
     cookie,
+    flush,
     startApp
 };

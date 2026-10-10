@@ -85,6 +85,7 @@ done
 | `camhub-s3-access-key` | `S3_ACCESS_KEY` |
 | `camhub-s3-secret-key` | `S3_SECRET_KEY` |
 | `camhub-roboflow-api-key` | `ROBOFLOW_API_KEY` |
+| `camhub-smtp-pass` (optional) | `SMTP_PASS`, only needed when sending email |
 
 To change a secret later, run `gcloud secrets versions add NAME --data-file=-`, then redeploy.
 
@@ -102,6 +103,8 @@ Newer projects may run builds as the Compute Engine default service account inst
 
 ### 4. Settings
 Fill in the `TODO` values in `deploy/cloudrun.env.yaml`. Everything in that file is non-secret.
+
+For email (password reset, email confirmation, alert emails), fill `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER` and `MAIL_FROM`, and store `SMTP_PASS` as the `camhub-smtp-pass` secret. Then add `,SMTP_PASS=camhub-smtp-pass:latest` to `_EXTRA_SECRETS`. The deploy script does all of this from `.env`. `APP_BASE_URL` must be the public URL of the app; the deploy script sets it to the Cloud Run URL when it is empty.
 
 ### 5. Deploy
 ```bash
@@ -151,6 +154,8 @@ HOST_PORT=80
 ```
 
 Put comments on their own lines. Docker Compose does not reliably strip comments at the end of a value.
+
+Also set `APP_BASE_URL` to the public URL of the VM (used in email links) and the `SMTP_*` settings to send email; see `server/README.md`.
 
 Leave out `GOOGLE_APPLICATION_CREDENTIALS`; the attached service account is used instead. Keep the file private with `chmod 600 .env`.
 

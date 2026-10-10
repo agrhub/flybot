@@ -5,6 +5,8 @@ substitutions:
   _SERVICE: camhub
   _REPO: camhub
   _MAPS_KEY: ""
+  # Optional secrets, e.g. ",SMTP_PASS=camhub-smtp-pass:latest" (set by the deploy script when present)
+  _EXTRA_SECRETS: ""
 
 steps:
   - id: build
@@ -37,7 +39,7 @@ steps:
       - --max-instances=1
       - --no-cpu-throttling
       - --env-vars-file=deploy/cloudrun.env.yaml
-      - --set-secrets=JWT_SECRET=camhub-jwt-secret:latest,MONGO_URI=camhub-mongo-uri:latest,APP_KEY=camhub-ezviz-app-key:latest,SECRET_KEY=camhub-ezviz-secret-key:latest,S3_ACCESS_KEY=camhub-s3-access-key:latest,S3_SECRET_KEY=camhub-s3-secret-key:latest,ROBOFLOW_API_KEY=camhub-roboflow-api-key:latest
+      - --set-secrets=JWT_SECRET=camhub-jwt-secret:latest,MONGO_URI=camhub-mongo-uri:latest,APP_KEY=camhub-ezviz-app-key:latest,SECRET_KEY=camhub-ezviz-secret-key:latest,S3_ACCESS_KEY=camhub-s3-access-key:latest,S3_SECRET_KEY=camhub-s3-secret-key:latest,ROBOFLOW_API_KEY=camhub-roboflow-api-key:latest${_EXTRA_SECRETS}
 
 images:
   - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_SERVICE}:${BUILD_ID}

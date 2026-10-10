@@ -1,5 +1,5 @@
 // Fields used directly in Mongo filters; an object here (e.g. { "$ne": null }) would act as a query operator
-const STRING_FIELDS = ['deviceSerial', 'validateCode', 'urlId', 'id', 'sessionId'];
+const STRING_FIELDS = ['deviceSerial', 'validateCode', 'urlId', 'id', 'sessionId', 'email', 'token', 'language'];
 
 /**
  * Reject requests where identifier fields are not plain strings (NoSQL operator injection guard).

@@ -16,7 +16,12 @@ const { startCronJobs } = require('./cron/scheduler');
 const app = express();
 
 if (TRUST_PROXY) {
-    app.set('trust proxy', /^\d+$/.test(TRUST_PROXY) ? Number(TRUST_PROXY) : TRUST_PROXY);
+    // "1" = number of proxy hops, "true"/"false" = booleans, anything else = IP/subnet list
+    const trustProxy = /^\d+$/.test(TRUST_PROXY) ? Number(TRUST_PROXY)
+        : TRUST_PROXY === 'true' ? true
+        : TRUST_PROXY === 'false' ? false
+        : TRUST_PROXY;
+    app.set('trust proxy', trustProxy);
 }
 
 // Middlewares

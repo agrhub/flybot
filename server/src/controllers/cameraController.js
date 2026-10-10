@@ -135,8 +135,12 @@ async function deleteCamera(req, res) {
  */
 async function updateCamera(req, res) {
     const userId = req.user.id;
-    const { deviceSerial, deviceName, validateCode } = req.body;
+    const { deviceSerial, deviceName, validateCode, alertThreshold } = req.body;
     if (!deviceSerial) return res.status(400).json({ success: false, message: "Missing deviceSerial." });
+    if (typeof alertThreshold !== 'undefined' &&
+        (!Number.isInteger(alertThreshold) || alertThreshold < 1 || alertThreshold > 10000)) {
+        return res.status(400).json({ success: false, message: "alertThreshold must be a whole number from 1 to 10000." });
+    }
     try {
         const camera = await Camera.findOne({ userId, deviceSerial });
         if (!camera) {
@@ -147,6 +151,9 @@ async function updateCamera(req, res) {
         }
         if (typeof validateCode !== 'undefined') {
             camera.validateCode = validateCode.trim();
+        }
+        if (typeof alertThreshold !== 'undefined') {
+            camera.alertThreshold = alertThreshold;
         }
         await camera.save();
         res.json({ success: true, message: "Camera updated successfully.", camera });

@@ -62,16 +62,7 @@
     "darkMode": "Switch to Dark Mode",
     "changePassword": "Change Password",
     "profileSettings": "Profile Settings",
-    "recentAlerts": "Recent Alerts",
-    "notifFruitFlyTitle": "High fruit fly density detected",
-    "notifFruitFlyDesc": "Cu Chi camera recorded 14 insects in 08:00 scan cycle.",
-    "notifFruitFlyTime": "15 mins ago",
-    "notifOnlineTitle": "Camera Gravity01 online",
-    "notifOnlineDesc": "Device AC6527557 connection restored successfully.",
-    "notifOnlineTime": "1 hour ago",
-    "notifCleanupTitle": "Scheduled S3 cleanup completed",
-    "notifCleanupDesc": "Automated cleanup of records older than retention policy.",
-    "notifCleanupTime": "3 hours ago"
+    "recentAlerts": "Recent Alerts"
   },
   "auth": {
     "tagline": "Smart Trap & Vision AI Studio",
@@ -90,7 +81,30 @@
     "registerSuccess": "Registration successful",
     "registerSuccessMsg": "Your account is ready! Please sign in.",
     "loginFailed": "Sign in failed",
-    "registerFailed": "Registration failed"
+    "registerFailed": "Registration failed",
+    "forgotPassword": "Forgot password?",
+    "forgotTitle": "Reset your password",
+    "forgotDesc": "Enter your account email and we'll send you a link to reset your password.",
+    "sendResetLink": "Send reset link",
+    "resetLinkSent": "If an account exists for this email, a reset link is on its way. Check your inbox and spam folder.",
+    "invalidEmail": "Please enter a valid email address.",
+    "newPasswordTitle": "Choose a new password",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm new password",
+    "passwordMismatch": "Passwords do not match.",
+    "passwordTooShort": "Password must be at least 6 characters.",
+    "resetBtn": "Reset password",
+    "resetSuccess": "Your password has been reset. Please sign in with the new password.",
+    "resetInvalid": "This reset link is invalid or has expired. Please request a new one.",
+    "requestNewLink": "Request a new link",
+    "verifyingEmail": "Confirming your email...",
+    "emailVerified": "Your email is confirmed. You will now receive alert emails.",
+    "verifyInvalid": "This confirmation link is invalid or has expired.",
+    "goToDashboard": "Go to dashboard",
+    "verifyBanner": "Confirm your email ({email}) to receive pest alert emails.",
+    "resendVerification": "Resend email",
+    "verificationSent": "Confirmation email sent. Check your inbox.",
+    "registerSuccessVerify": "Your account is ready! We sent a confirmation link to your email."
   },
   "dashboard": {
     "welcome": "Welcome back",
@@ -408,7 +422,21 @@
     "storageMonths": "12 Months",
     "termsSub": "Surveillance usage terms and agricultural data security",
     "termsP1": "Smart Trap - CamHub Studio captures images for agricultural pest monitoring and smart orchard management.",
-    "termsP2": "All snapshots and video streams are secured via EZVIZ Open Platform and archived locally on MinIO S3 clusters."
+    "termsP2": "All snapshots and video streams are secured via EZVIZ Open Platform and archived locally on MinIO S3 clusters.",
+    "notificationsTab": "Notifications",
+    "notificationsSub": "Choose how you receive pest and camera alerts",
+    "emailAlerts": "Alert emails",
+    "emailAlertsDesc": "Get an email when a trap reaches its threshold, a camera goes offline, or AI analysis keeps failing.",
+    "emailNotVerified": "Your email is not confirmed yet, so alert emails are paused.",
+    "emailVerifiedBadge": "Confirmed",
+    "thresholdsTitle": "Alert threshold per camera",
+    "thresholdsDesc": "An alert fires when one scan counts at least this many insects.",
+    "thresholdUnit": "insects",
+    "thresholdSaved": "Alert threshold saved",
+    "prefsSaved": "Notification settings saved",
+    "passwordFieldsRequired": "Please fill in all password fields.",
+    "passwordChanged": "Password changed. Other devices have been signed out.",
+    "saveFailed": "Could not save. Please try again."
   },
   "assistant": {
     "title": "Smart Trap Copilot",
@@ -616,5 +644,29 @@
     "bug": "Bug",
     "caterpillar": "Caterpillar",
     "other": "Other"
+  },
+  "notifications": {
+    "markAllRead": "Mark all as read",
+    "loadMore": "Load more",
+    "unreadCount": "{count} unread",
+    "justNow": "Just now",
+    "types": {
+      "pest_threshold": {
+        "title": "Pest threshold reached",
+        "desc": "{deviceName}: {count} insects (threshold {threshold})"
+      },
+      "camera_offline": {
+        "title": "Camera offline",
+        "desc": "{deviceName} has gone offline."
+      },
+      "camera_online": {
+        "title": "Camera back online",
+        "desc": "{deviceName} is back online."
+      },
+      "ai_failure": {
+        "title": "AI analysis failing",
+        "desc": "{deviceName}: the last {failures} snapshots could not be analyzed."
+      }
+    }
   }
 }

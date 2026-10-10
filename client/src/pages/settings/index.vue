@@ -66,6 +66,19 @@
           </button>
 
           <button
+            @click="activeTab = 'notifications'"
+            class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer text-left"
+            :class="activeTab === 'notifications'
+              ? 'bg-[var(--primary-green)] text-slate-950 font-bold shadow-md shadow-emerald-500/20'
+              : 'text-[var(--el-text-color-secondary)] hover:bg-[var(--el-card-bg-color)] hover:text-[var(--el-text-color-primary)]'"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            </svg>
+            <span>{{ t('settings.notificationsTab') }}</span>
+          </button>
+
+          <button
             @click="activeTab = 'preferences'"
             class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer text-left"
             :class="activeTab === 'preferences'
@@ -360,6 +373,78 @@
       </div>
 
       <!-- 4. Preferences (Theme & Language) Tab -->
+      <!-- Notifications Tab -->
+      <div v-else-if="activeTab === 'notifications'" class="space-y-6 max-w-3xl">
+        <div>
+          <h2 class="text-2xl font-bold tracking-tight text-[var(--el-text-color-primary)]">
+            {{ t('settings.notificationsTab') }}
+          </h2>
+          <p class="text-xs text-[var(--el-text-color-secondary)] mt-1">
+            {{ t('settings.notificationsSub') }}
+          </p>
+        </div>
+
+        <!-- Email alerts -->
+        <div class="bg-[var(--el-bg-color)]/50 border border-[var(--el-border-color)] rounded-2xl p-6 space-y-3">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-bold text-[var(--el-text-color-primary)]">{{ t('settings.emailAlerts') }}</span>
+                <span
+                  v-if="authUser?.emailVerified"
+                  class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                >{{ t('settings.emailVerifiedBadge') }}</span>
+              </div>
+              <p class="text-xs text-[var(--el-text-color-secondary)] mt-1 leading-relaxed">{{ t('settings.emailAlertsDesc') }}</p>
+              <p class="text-[11px] text-[var(--el-text-color-secondary)] mt-1">{{ authUser?.email }}</p>
+            </div>
+            <el-switch
+              :model-value="emailAlertsEnabled"
+              :loading="savingPrefs"
+              @change="saveEmailAlerts"
+            />
+          </div>
+          <div
+            v-if="authUser && authUser.emailVerified === false"
+            class="text-[11px] text-amber-500 bg-amber-500/10 border border-amber-500/30 rounded-xl px-3 py-2 flex flex-wrap items-center gap-2"
+          >
+            <span>{{ t('settings.emailNotVerified') }}</span>
+            <button @click="resendVerification" :disabled="resending" class="font-bold underline cursor-pointer disabled:opacity-50">
+              {{ t('auth.resendVerification') }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Per-camera thresholds -->
+        <div class="bg-[var(--el-bg-color)]/50 border border-[var(--el-border-color)] rounded-2xl p-6">
+          <span class="text-sm font-bold text-[var(--el-text-color-primary)]">{{ t('settings.thresholdsTitle') }}</span>
+          <p class="text-xs text-[var(--el-text-color-secondary)] mt-1 mb-4">{{ t('settings.thresholdsDesc') }}</p>
+
+          <p v-if="cameras.length === 0" class="text-xs text-[var(--el-text-color-secondary)] italic">{{ t('settings.noCameras') }}</p>
+          <div v-else class="divide-y divide-[var(--el-border-color)]/60">
+            <div v-for="cam in cameras" :key="cam.deviceSerial" class="py-3 flex flex-wrap items-center justify-between gap-3">
+              <div class="min-w-0">
+                <p class="text-xs font-semibold text-[var(--el-text-color-primary)] truncate">{{ cam.deviceName }}</p>
+                <p class="text-[10px] font-mono text-[var(--el-text-color-secondary)]">SN: {{ cam.deviceSerial }}</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <el-input-number
+                  :model-value="cam.alertThreshold || 15"
+                  :min="1"
+                  :max="10000"
+                  :step="1"
+                  step-strictly
+                  size="small"
+                  :disabled="savingThreshold === cam.deviceSerial"
+                  @change="(value) => saveThreshold(cam, value)"
+                />
+                <span class="text-[11px] text-[var(--el-text-color-secondary)]">{{ t('settings.thresholdUnit') }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div v-else-if="activeTab === 'preferences'" class="space-y-6 max-w-2xl">
         <div>
           <h2 class="text-2xl font-bold tracking-tight text-[var(--el-text-color-primary)]">
@@ -520,20 +605,78 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useTheme } from '@/utils/theme';
 import { useCameras } from '@/composables/useCameras';
 import api from '@/services/api';
 import { ElNotification, ElMessageBox } from 'element-plus';
+import { useAuth } from '@/composables/useAuth';
+import { useLanguage } from '@/composables/useLanguage';
 
 const route = useRoute();
 const { t } = useI18n();
 const { isDark, toggleTheme } = useTheme();
 const { cameras, loadCameras, openAddCameraModal, selectCameraAndGoToLive } = useCameras();
+const { user: authUser, setAuth, refreshUser } = useAuth();
+// Used by the language picker in the preferences tab
+const { locale, locales: supportedLocales, setAppLocale: setLocale } = useLanguage();
 
 const activeTab = ref(route.query.tab || 'profile');
+// Topbar links switch tabs while already on this page
+watch(() => route.query.tab, (tab) => {
+  if (tab) activeTab.value = tab;
+});
+
+// Notifications tab state
+const savingPrefs = ref(false);
+const savingThreshold = ref(null);
+const resending = ref(false);
+const emailAlertsEnabled = computed(() => authUser.value?.notificationPrefs?.email !== false);
+
+const saveEmailAlerts = async (enabled) => {
+  savingPrefs.value = true;
+  try {
+    const res = await api.updateProfile({ notificationPrefs: { email: enabled } });
+    if (res.data?.user) setAuth(res.data.user);
+    ElNotification({ title: t('common.success'), message: t('settings.prefsSaved'), type: 'success' });
+  } catch (err) {
+    ElNotification({ title: t('common.error'), message: err.response?.data?.message || t('settings.saveFailed'), type: 'error' });
+  } finally {
+    savingPrefs.value = false;
+  }
+};
+
+const saveThreshold = async (cam, value) => {
+  if (!Number.isInteger(value) || value < 1 || value === cam.alertThreshold) return;
+  savingThreshold.value = cam.deviceSerial;
+  try {
+    await api.updateCamera(cam.deviceSerial, { alertThreshold: value });
+    cam.alertThreshold = value;
+    ElNotification({ title: t('common.success'), message: t('settings.thresholdSaved'), type: 'success', duration: 2000 });
+  } catch (err) {
+    ElNotification({ title: t('common.error'), message: err.response?.data?.message || t('settings.saveFailed'), type: 'error' });
+  } finally {
+    savingThreshold.value = null;
+  }
+};
+
+const resendVerification = async () => {
+  resending.value = true;
+  try {
+    const res = await api.resendVerification();
+    if (res.data?.alreadyVerified) {
+      refreshUser();
+      return;
+    }
+    ElNotification({ title: t('common.success'), message: t('auth.verificationSent'), type: 'success' });
+  } catch (err) {
+    ElNotification({ title: t('common.error'), message: err.response?.data?.message || t('settings.saveFailed'), type: 'error' });
+  } finally {
+    resending.value = false;
+  }
+};
 const savingProfile = ref(false);
 const savingPassword = ref(false);
 
@@ -596,15 +739,15 @@ const saveProfile = async () => {
 
 const changePassword = async () => {
   if (!passwordForm.currentPassword || !passwordForm.newPassword) {
-    ElNotification({ title: t('common.error'), message: 'Please fill in all password fields!', type: 'warning' });
+    ElNotification({ title: t('common.error'), message: t('settings.passwordFieldsRequired'), type: 'warning' });
     return;
   }
   if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-    ElNotification({ title: t('common.error'), message: 'Password confirmation does not match!', type: 'error' });
+    ElNotification({ title: t('common.error'), message: t('auth.passwordMismatch'), type: 'error' });
     return;
   }
   if (passwordForm.newPassword.length < 6) {
-    ElNotification({ title: t('common.error'), message: 'New password must be at least 6 characters!', type: 'error' });
+    ElNotification({ title: t('common.error'), message: t('auth.passwordTooShort'), type: 'error' });
     return;
   }
 
@@ -615,15 +758,17 @@ const changePassword = async () => {
     savingPassword.value = true;
     const res = await api.changePassword(user.id, passwordForm.currentPassword, passwordForm.newPassword);
     if (res.data?.success) {
-      ElNotification({ title: t('common.success'), message: t('settings.updatePasswordBtn') + ' ✓', type: 'success' });
+      // Other sessions were signed out; keep this one with the fresh token
+      if (res.data.token) setAuth(authUser.value, res.data.token);
+      ElNotification({ title: t('common.success'), message: t('settings.passwordChanged'), type: 'success' });
       passwordForm.currentPassword = '';
       passwordForm.newPassword = '';
       passwordForm.confirmPassword = '';
     } else {
-      ElNotification({ title: t('common.error'), message: res.data?.message || 'Failed to change password.', type: 'error' });
+      ElNotification({ title: t('common.error'), message: res.data?.message || t('settings.saveFailed'), type: 'error' });
     }
   } catch (err) {
-    ElNotification({ title: t('common.error'), message: err.response?.data?.message || 'Error changing password.', type: 'error' });
+    ElNotification({ title: t('common.error'), message: err.response?.data?.message || t('settings.saveFailed'), type: 'error' });
   } finally {
     savingPassword.value = false;
   }
