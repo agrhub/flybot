@@ -1,7 +1,7 @@
 {
-  "name": "ezviz-manager",
+  "name": "flybot-server",
   "version": "1.0.0",
-  "description": "",
+  "description": "FlyBot API server: EZVIZ cameras, AI insect detection, alerts",
   "main": "dist/app.js",
   "scripts": {
     "start": "node dist/app.js",

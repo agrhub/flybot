@@ -1,8 +1,8 @@
 {
-  "name": "smart-trap-system",
+  "name": "flybot",
   "version": "1.0.0",
   "private": true,
-  "description": "Smart Trap System",
+  "description": "FlyBot Smart Trap Studio",
   "workspaces": [
     "client",
     "server"
