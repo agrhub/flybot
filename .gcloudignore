@@ -1,0 +1,10 @@
+# Files NOT uploaded by `gcloud builds submit`
+.gcloudignore
+.git
+.gitignore
+
+# Same exclusions as git: secrets (.env, GCP keys), node_modules, dist, tmp, origin
+#!include:.gitignore
+
+server/tests
+server/test_ezopen.js

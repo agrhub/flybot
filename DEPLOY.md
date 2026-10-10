@@ -11,6 +11,36 @@ One Docker image (`Dockerfile`) runs on both targets. The server serves the API 
 
 > **Run the background jobs in one place only.** If both deployments use the same MongoDB, set `ENABLE_CRON=false` on one of them. Otherwise snapshots get captured and analyzed twice.
 
+## Cloud Run: automated deploy script
+
+The scripts below do everything in the Cloud Run sections that follow: enable APIs, create the service account, repository, permissions and secrets, fill `deploy/cloudrun.env.yaml` from `.env`, build, deploy and check `/health`. They are safe to re-run; anything that already exists is skipped.
+
+Requirements: Node.js, and the Google Cloud CLI logged in with `gcloud auth login`.
+
+```bash
+./deploy/deploy-cloudrun.sh --project PROJECT_ID
+```
+
+On Windows (cmd or PowerShell):
+
+```bat
+deploy\deploy-cloudrun.bat --project PROJECT_ID
+```
+
+| Option | Effect |
+|---|---|
+| `--project ID` | GCP project (default: the current `gcloud config` project) |
+| `--region REGION` | Default `asia-southeast1` |
+| `--env-file PATH` | Where to read settings and secrets from (default `./.env`) |
+| `--update-secrets` | Push the current `.env` values as new secret versions. Without it, existing secrets are left unchanged. |
+| `--skip-setup` | Skip the one-time setup checks, for faster redeploys |
+| `--dry-run` | Show the changes without making them. Read-only `gcloud` checks still run. |
+| `--yes` | Don't ask for confirmation |
+
+Secret values go to `gcloud` through stdin, never on the command line. The script stops before changing anything if `.env` is missing a required value or `MONGO_URI`/`S3_ENDPOINT` point to `localhost`.
+
+The manual steps below do the same thing by hand.
+
 ## Google Cloud setup (once)
 
 Replace `PROJECT_ID` with your project. Region `asia-southeast1` (Singapore) is the closest to Vietnam; change `_REGION` in `cloudbuild.yaml` if you pick another.
