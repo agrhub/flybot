@@ -1,0 +1,10 @@
+node_modules/
+.env
+.env.*
+gcp-service-account.json
+*.log
+dist/
+tmp/
+
+# Legacy monolith (kept locally, not versioned; contains old secrets/tokens)
+origin/

@@ -1,0 +1,284 @@
+/* ==========================================================================
+   Shine & CamHub Design System Tokens
+   ========================================================================== */
+:root {
+  /* Brand Tokens (Light Mode - Default) */
+  --primary-green: #3ecf8e;
+  --primary-dark-green: #006c45;
+  --bg-main: #fcfcfc;
+  --text-primary: #171717;
+  --text-secondary: #5a5f5c;
+  --text-muted: #707572;
+  --border-color: #e6e8e7;
+  --input-border: #e6e8e7;
+
+  /* Element Plus Global Tokens (Light Mode) */
+  --el-color-primary: #3ecf8e;
+  --el-color-primary-light-3: #71fcb6;
+  --el-color-primary-light-5: #9effce;
+  --el-color-primary-light-7: #cbfde2;
+  --el-color-primary-light-8: #e1feef;
+  --el-color-primary-light-9: #e8fbf3;
+  --el-color-primary-dark-2: #006c45;
+
+  --el-color-success: #3ecf8e;
+  --el-color-warning: #e6a23c;
+  --el-color-danger: #f56c6c;
+  --el-color-info: #909399;
+
+  --el-bg-color: #f5f6f5;
+  --el-bg-color-page: #fcfcfc;
+  --el-bg-color-overlay: #ffffff;
+  --el-fill-color-blank: #ffffff;
+  --el-fill-color-light: #f5f6f5;
+
+  --el-text-color-primary: #171717;
+  --el-text-color-regular: #5a5f5c;
+  --el-text-color-secondary: #707572;
+  --el-text-color-placeholder: #707572;
+
+  --el-border-color: #e6e8e7;
+  --el-border-color-light: #f0f2f1;
+  --el-border-color-lighter: #f5f6f5;
+  --el-border-radius-base: 0.75rem;
+
+  --el-card-bg-color: #ffffff;
+  --el-card-border-color: #e6e8e7;
+  --el-dialog-bg-color: #ffffff;
+}
+
+/* ==========================================================================
+   Element Plus & Shine Design System Tokens (Dark Mode)
+   ========================================================================== */
+html.dark,
+body.dark,
+.dark {
+  --primary-green: #3ecf8e;
+  --primary-dark-green: #006c45;
+  --bg-main: #121414;
+  --text-primary: #f0f2f1;
+  --text-secondary: #b4b9b6;
+  --text-muted: #868c88;
+  --border-color: #282a29;
+  --input-border: #282a29;
+
+  --el-color-primary: #3ecf8e;
+  --el-color-primary-light-3: #71fcb6;
+  --el-color-primary-light-5: #006c45;
+  --el-color-primary-light-7: #004d31;
+  --el-color-primary-light-8: #003823;
+  --el-color-primary-light-9: #002718;
+  --el-color-primary-dark-2: #006c45;
+
+  --el-color-success: #3ecf8e;
+  --el-color-warning: #e6a23c;
+  --el-color-danger: #ffb4ab;
+  --el-color-info: #c8c6c5;
+
+  --el-bg-color: #1a1c1b;
+  --el-bg-color-page: #121414;
+  --el-bg-color-overlay: #1e2020;
+  --el-fill-color-blank: #1a1c1b;
+  --el-fill-color-light: #222423;
+
+  --el-text-color-primary: #f0f2f1;
+  --el-text-color-regular: #b4b9b6;
+  --el-text-color-secondary: #868c88;
+  --el-text-color-placeholder: #585f64;
+
+  --el-border-color: #282a29;
+  --el-border-color-light: #222423;
+  --el-border-color-lighter: #1a1c1b;
+  --el-border-radius-base: 0.75rem;
+
+  --el-card-bg-color: #1e2020;
+  --el-card-border-color: #282a29;
+  --el-dialog-bg-color: #1e2020;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: var(--el-bg-color-page);
+  color: var(--el-text-color-primary);
+  min-height: 100vh;
+  margin: 0;
+  overflow-x: hidden;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+#app {
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+/* ==========================================================================
+   Custom Sleek Auto-hide Scrollbar UI (Global)
+   ========================================================================== */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 0.3s ease;
+}
+
+*:hover {
+  scrollbar-color: rgba(120, 120, 120, 0.25) transparent;
+}
+
+.dark * {
+  scrollbar-color: transparent transparent;
+}
+
+.dark *:hover {
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+
+/* Webkit Scrollbars (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-radius: 9999px;
+  transition: background-color 0.25s ease;
+}
+
+/* Reveal thumb smoothly on container hover */
+*:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.18);
+}
+
+.dark *:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.18);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--primary-green) !important;
+}
+
+/* Specific scrollbar utility class */
+.custom-scrollbar,
+.auto-hide-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+.custom-scrollbar:hover,
+.auto-hide-scrollbar:hover {
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+/* Shadows */
+.shadow-soft {
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.08);
+}
+.dark .shadow-soft {
+  box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.4);
+}
+
+/* Active camera ring */
+.camera-active-ring {
+  border-color: var(--primary-green) !important;
+  box-shadow: 0 0 16px rgba(62, 207, 142, 0.25);
+}
+
+/* Table styling */
+.dark table thead th {
+  background-color: #1a1c1b !important;
+  color: #868c88 !important;
+  border-color: #282a29 !important;
+}
+.dark table tbody tr {
+  border-color: #282a29 !important;
+}
+.dark table tbody tr:hover {
+  background-color: rgba(62, 207, 142, 0.05) !important;
+}
+
+/* Element Plus Custom Overrides for Dark Mode */
+.dark .el-input__wrapper {
+  background-color: #161817 !important;
+  box-shadow: 0 0 0 1px #282a29 inset !important;
+}
+.dark .el-input__inner {
+  color: #f0f2f1 !important;
+}
+.dark .el-dialog {
+  background-color: #1a1c1b !important;
+  border: 1px solid #282a29 !important;
+}
+.dark .el-dialog__title {
+  color: #f0f2f1 !important;
+}
+.dark .el-popover.el-popper {
+  background: #1e2020 !important;
+  border-color: #282a29 !important;
+  color: #f0f2f1 !important;
+}
+.dark .el-dropdown-menu {
+  background-color: #1e2020 !important;
+  border-color: #282a29 !important;
+}
+.dark .el-dropdown-menu__item {
+  color: #b4b9b6 !important;
+}
+.dark .el-dropdown-menu__item:hover {
+  background-color: #282a29 !important;
+  color: #f0f2f1 !important;
+}
+
+/* ==========================================================================
+   Shine Landing Page & Public Pages Modern Effects
+   ========================================================================== */
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  display: inline-flex;
+  width: max-content;
+  animation: marquee 25s linear infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+.animate-pulse-dot {
+  animation: pulse-dot 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.text-outline {
+  -webkit-text-stroke: 1.5px var(--el-text-color-primary);
+  color: transparent;
+}
+
+.nav-link-shine::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 1.5px;
+  background-color: var(--primary-green);
+  transition: width 0.3s ease;
+}
+
+.nav-link-shine:hover::after {
+  width: 100%;
+}
