@@ -50,6 +50,16 @@
       "subject": "{sharer} mời bạn dùng FlyBot",
       "body": "{sharer} đã chia sẻ camera bẫy {deviceName} với {email} trên FlyBot. Hãy tạo tài khoản bằng địa chỉ email này và xác nhận email để được truy cập.",
       "button": "Tạo tài khoản"
+    },
+    "dashboardShared": {
+      "subject": "{sharer} đã chia sẻ dashboard {dashboardName} với bạn",
+      "body": "{sharer} đã chia sẻ dashboard {dashboardName} với bạn trên FlyBot.",
+      "button": "Mở dashboard"
+    },
+    "dashboardInvite": {
+      "subject": "{sharer} mời bạn dùng FlyBot",
+      "body": "{sharer} đã chia sẻ dashboard {dashboardName} với {email} trên FlyBot. Hãy tạo tài khoản bằng địa chỉ email này và xác nhận email để được truy cập.",
+      "button": "Tạo tài khoản"
     }
   },
   "telegram": {

@@ -5,6 +5,7 @@ const AuthToken = require('./AuthToken');
 const Notification = require('./Notification');
 const Session = require('./Session');
 const SystemSetting = require('./SystemSetting');
+const Dashboard = require('./Dashboard');
 
 module.exports = {
     User,
@@ -13,5 +14,6 @@ module.exports = {
     AuthToken,
     Notification,
     Session,
-    SystemSetting
+    SystemSetting,
+    Dashboard
 };

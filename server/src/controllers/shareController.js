@@ -129,11 +129,14 @@ async function removeShare(req, res) {
 }
 
 /**
- * Turn pending invitations for this (now verified) email into real access.
+ * Turn pending camera and dashboard invitations for this (now verified) email into real access.
  */
 async function claimPendingShares(user) {
     const email = String(user.email || '').toLowerCase();
     if (!email) return 0;
+    // Lazy: dashboardController requires this module
+    const { claimPendingDashboardShares } = require('./dashboardController');
+    await claimPendingDashboardShares(user);
     const result = await Camera.updateMany(
         { sharedWith: { $elemMatch: { email, userId: null } } },
         { $set: { 'sharedWith.$[invite].userId': user._id } },
@@ -146,5 +149,9 @@ module.exports = {
     listShares,
     addShare,
     removeShare,
-    claimPendingShares
+    claimPendingShares,
+    EMAIL_REGEX,
+    normalizeEmail,
+    findUserByEmail,
+    safeUrl
 };

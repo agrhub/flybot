@@ -14,7 +14,8 @@ const COOLDOWN_MINUTES = {
     camera_online: 60,
     ai_failure: 360,
     // Every share is its own event
-    camera_shared: 0
+    camera_shared: 0,
+    dashboard_shared: 0
 };
 
 const SEVERITY = {
@@ -22,7 +23,8 @@ const SEVERITY = {
     camera_offline: 'warning',
     camera_online: 'info',
     ai_failure: 'warning',
-    camera_shared: 'info'
+    camera_shared: 'info',
+    dashboard_shared: 'info'
 };
 
 // "Back online" is good news: in-app only

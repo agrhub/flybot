@@ -9,6 +9,8 @@ const notificationRoutes = require('./notificationRoutes');
 const systemRoutes = require('./systemRoutes');
 const telegramRoutes = require('./telegramRoutes');
 const adminRoutes = require('./adminRoutes');
+const dashboardRoutes = require('./dashboardRoutes');
+const publicRoutes = require('./publicRoutes');
 
 // S3 image stream route must be mounted before generic /api route
 router.use('/api/s3', s3Routes);
@@ -18,6 +20,9 @@ router.use('/api/notifications', notificationRoutes);
 router.use('/api/system', systemRoutes);
 router.use('/api/telegram', telegramRoutes);
 router.use('/api/admin', adminRoutes);
+router.use('/api/dashboards', dashboardRoutes);
+// Public (no sign-in) read-only views
+router.use('/api/public', publicRoutes);
 router.use('/api', cameraRoutes);
 
 module.exports = router;

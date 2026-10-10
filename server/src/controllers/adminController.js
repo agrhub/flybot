@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { User, Camera, Session, Notification, AuthToken } = require('../models');
+const { User, Camera, Session, Notification, AuthToken, Dashboard } = require('../models');
 const { ROLES, roleOf } = require('../constants/roles');
 const { sendServerError } = require('../utils/http');
 
@@ -137,6 +137,8 @@ async function deleteUser(req, res) {
 
         await Promise.all([
             Camera.updateMany({ 'sharedWith.userId': target._id }, { $pull: { sharedWith: { userId: target._id } } }),
+            Dashboard.updateMany({ 'sharedWith.userId': target._id }, { $pull: { sharedWith: { userId: target._id } } }),
+            Dashboard.deleteMany({ ownerId: target._id }),
             Session.deleteMany({ userId: target._id }),
             Notification.deleteMany({ userId: target._id }),
             AuthToken.deleteMany({ userId: target._id })
