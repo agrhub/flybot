@@ -9,6 +9,7 @@ const { FRUIT_FLY, NON_PEST_LABELS, normalizeSpeciesExpr, pestCountExpr, isFruit
 const { thresholdOf, riskLevel, worstRisk } = require('../constants/risk');
 const { countPests } = require('../services/notificationService');
 const forecastService = require('../services/forecastService');
+const { latestProcessedByCamera } = require('../services/snapshotQueries');
 const weatherService = require('../services/weatherService');
 
 /**
@@ -19,7 +20,8 @@ async function getAiResults(req, res) {
         const userId = req.user.id;
         const { deviceSerial } = req.query;
         const page = parseInt(req.query.page, 10) || 1;
-        const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 10, 1), 100);
+        // Capped at 500 (the Excel export size)
+        const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 10, 1), 500);
         const skip = (page - 1) * limit;
 
         const userCams = await viewableCameras(req.user).select('deviceSerial');
@@ -218,6 +220,15 @@ async function getAiStatistics(req, res) {
             startDate.setDate(startDate.getDate() - 30);
         }
 
+        // Hourly buckets over months (or daily over years) are expensive and unreadable
+        const MAX_RANGE_DAYS = { hour: 7, day: 400, month: 400 };
+        const maxRangeMs = (MAX_RANGE_DAYS[mode] || MAX_RANGE_DAYS.day) * 24 * 60 * 60 * 1000;
+        const rangeEnd = endDate || new Date();
+        if (isNaN(startDate) || (endDate && isNaN(endDate))) {
+            return res.status(400).json({ success: false, message: "Invalid date range." });
+        }
+        if (rangeEnd - startDate > maxRangeMs) startDate = new Date(rangeEnd.getTime() - maxRangeMs);
+
         const matchQuery = {
             aiProcessed: true
         };
@@ -385,19 +396,17 @@ async function getAiOverview(req, res) {
         let peakRealtimeInsects = 0;
         let peakCamera = null;
         let totalRealtimeInsects = 0;
+        const latestByCamera = await latestProcessedByCamera(cameraSerials);
 
         for (const cam of dedupedCameras) {
             // Same counting as alerts and diagnosis: pests only (no people, cars...)
             const extractCount = (snap) => {
                 if (!snap) return 0;
-                if (snap.aiResults?.summary) return countPests(snap.aiResults.summary);
-                return Array.isArray(snap.aiResults?.insects) ? snap.aiResults.insects.length : 0;
+                if (snap.summary) return countPests(snap.summary);
+                return Array.isArray(snap.insects) ? snap.insects.length : 0;
             };
 
-            let latestSnapshot = await Snapshot.findOne({
-                deviceSerial: cam.deviceSerial,
-                aiProcessed: true
-            }).sort({ createdAt: -1 });
+            const latestSnapshot = latestByCamera.get(cam.deviceSerial);
 
             let currentCount = 0;
             let lastScanTime = null;
@@ -461,9 +470,9 @@ async function getAiOverview(req, res) {
             createdAt: { $gte: last24h }
         });
 
-        // 4. Species breakdown
+        // 4. Species breakdown (last 30 days: an all-time scan grows with retention)
         const speciesAgg = await Snapshot.aggregate([
-            { $match: matchQuery },
+            { $match: { ...matchQuery, createdAt: { $gte: last30d } } },
             {
                 $project: {
                     summaryArray: { $objectToArray: "$aiResults.summary" }
@@ -628,9 +637,10 @@ async function getAiDiagnosis(req, res) {
 
         // 1. Current state: latest processed snapshot of each camera vs its own threshold
         const current = [];
+        const latestByCamera = await latestProcessedByCamera(serials);
         for (const cam of cameras) {
-            const snap = await Snapshot.findOne({ deviceSerial: cam.deviceSerial, aiProcessed: true }).sort({ createdAt: -1 });
-            const count = snap ? countPests(snap.aiResults?.summary) : 0;
+            const snap = latestByCamera.get(cam.deviceSerial);
+            const count = snap ? countPests(snap.summary) : 0;
             const threshold = thresholdOf(cam);
             current.push({ cam, count, threshold, risk: riskLevel(count, threshold), ratio: count / threshold });
         }

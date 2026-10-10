@@ -10,6 +10,7 @@ const emailTemplates = require('../services/emailTemplates');
 const notificationService = require('../services/notificationService');
 const dashboardService = require('../services/dashboardService');
 const { recordAudit } = require('../services/auditService');
+const { createTtlCache } = require('../utils/ttlCache');
 const { SNAPSHOT_KEY_REGEX, pipeSnapshot } = require('./s3Controller');
 const { EMAIL_REGEX, normalizeEmail, findUserByEmail, safeUrl } = require('./shareController');
 
@@ -422,6 +423,9 @@ async function unshareDashboard(req, res) {
 // --- Public link (no sign-in) ----------------------------------------------
 
 const TOKEN_REGEX = /^[A-Za-z0-9_-]{16,64}$/;
+// Public pages can be opened by many people at once: compute each dashboard at most once a minute.
+// Keyed by updatedAt, so an edit shows up immediately.
+const publicDataCache = createTtlCache({ ttlMs: 60 * 1000, maxEntries: 200 });
 
 async function findPublicDashboard(token) {
     if (typeof token !== 'string' || !TOKEN_REGEX.test(token)) return null;
@@ -438,16 +442,20 @@ async function getPublicDashboard(req, res) {
     try {
         const dashboard = await findPublicDashboard(req.params.token);
         if (!dashboard) return res.status(404).json(NOT_FOUND);
-        const serials = await dashboardService.effectiveSerials(dashboard, null);
-        const base = `/api/public/dashboards/${encodeURIComponent(req.params.token)}/images/`;
-        const [widgets, cameras] = await Promise.all([
-            dashboardService.computeWidgetData(dashboard, serials, { imageUrl: (key) => base + key }),
-            serials.length ? Camera.find({ deviceSerial: { $in: serials } }).select('deviceSerial deviceName status') : []
-        ]);
+        const cacheKey = `${dashboard._id}:${dashboard.publicToken}:${new Date(dashboard.updatedAt).getTime()}`;
+        const { widgets, cameras, generatedAt } = await publicDataCache.wrap(cacheKey, async () => {
+            const serials = await dashboardService.effectiveSerials(dashboard, null);
+            const base = `/api/public/dashboards/${encodeURIComponent(req.params.token)}/images/`;
+            const [widgetData, cameraDocs] = await Promise.all([
+                dashboardService.computeWidgetData(dashboard, serials, { imageUrl: (key) => base + key }),
+                serials.length ? Camera.find({ deviceSerial: { $in: serials } }).select('deviceSerial deviceName status').lean() : []
+            ]);
+            return { widgets: widgetData, cameras: cameraDocs, generatedAt: new Date() };
+        });
         const owner = dashboard.ownerId;
         res.json({
             success: true,
-            generatedAt: new Date(),
+            generatedAt,
             dashboard: {
                 name: dashboard.name,
                 description: dashboard.description,

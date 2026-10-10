@@ -122,10 +122,7 @@ import { useCameras } from '@/composables/useCameras';
 import StatisticsTab from './tabs/StatisticsTab.vue';
 import HistoryTab from './tabs/HistoryTab.vue';
 import api from '@/services/api';
-import * as XLSX from 'xlsx';
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import { addQuicksandFonts } from '@/utils/pdfFonts';
+import { loadPdf, loadXlsx } from '@/utils/lazyLibs';
 import { formatSummary, normalizeSummary } from '@/utils/species';
 import { ElNotification } from 'element-plus';
 import { Calendar, Document, Download, Files, List, TrendCharts, VideoCamera } from '@element-plus/icons-vue';
@@ -222,6 +219,7 @@ const exportToPdf = async () => {
     const res = await api.getAiResults(serial, 1, 100, effectiveStartDate.value, effectiveEndDate.value);
     const results = res.data?.results || [];
 
+    const { jsPDF, autoTable, addQuicksandFonts } = await loadPdf();
     const doc = new jsPDF({
       orientation: 'p',
       unit: 'mm',
@@ -328,6 +326,7 @@ const exportToExcel = async () => {
       };
     });
 
+    const XLSX = await loadXlsx();
     const worksheet = XLSX.utils.json_to_sheet(rows);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, t('analytics.report.sheetName'));

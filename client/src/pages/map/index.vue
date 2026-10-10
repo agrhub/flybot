@@ -230,7 +230,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
-import EZUIKit from 'ezuikit-js';
+import { loadEzuikit } from '@/utils/lazyLibs';
 
 const { t } = useI18n();
 const { isDark } = useTheme();
@@ -635,6 +635,7 @@ const playPopupStream = async (cam) => {
     }
 
     activePopupSerial = serial;
+    const EZUIKit = await loadEzuikit();
 
     const box = document.getElementById(`popup-media-box-${serial}`);
     const width = box ? box.clientWidth : 270;

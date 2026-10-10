@@ -12,7 +12,8 @@ const vertexAI = new GoogleGenAI({
 
 // Session conversation history store: Map<"userId:sessionId", Array<{ role, parts }>>
 // Keyed by user so two accounts using the same sessionId never share history
-const chatHistoryStore = new Map();
+// Per user + chat session; idle sessions expire and the total is capped
+const chatHistoryStore = require('../utils/ttlCache').createTtlCache({ ttlMs: 60 * 60 * 1000, maxEntries: 5000 });
 
 function historyKey(userId, sessionId) {
     return `${userId}:${sessionId}`;

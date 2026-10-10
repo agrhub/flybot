@@ -130,9 +130,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import api from '@/services/api'
 import DetectionModal from '@/components/modals/DetectionModal.vue'
-import { jsPDF } from 'jspdf'
-import autoTable from 'jspdf-autotable'
-import { addQuicksandFonts } from '@/utils/pdfFonts'
+import { loadPdf } from '@/utils/lazyLibs'
 import { ElNotification } from 'element-plus'
 import { Document, View } from '@element-plus/icons-vue'
 import { speciesName, formatSummary } from '@/utils/species'
@@ -255,6 +253,7 @@ const exportToPDF = async () => {
   exporting.value = true
 
   try {
+    const { jsPDF, autoTable, addQuicksandFonts } = await loadPdf()
     const doc = new jsPDF({
       orientation: 'p',
       unit: 'mm',

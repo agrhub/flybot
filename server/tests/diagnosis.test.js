@@ -77,7 +77,13 @@ function stubSnapshots({ latestCount, dailyPeaks, topSpecies = 'fruit_fly' }) {
         return q;
     };
     let call = 0;
-    models.Snapshot.aggregate = async () => {
+    models.Snapshot.aggregate = async (pipeline) => {
+        // "Latest processed snapshot per camera" (services/snapshotQueries.js)
+        if (pipeline.some(stage => stage.$group?.summary)) {
+            if (latestCount === null) return [];
+            const serials = pipeline[0].$match.deviceSerial.$in;
+            return serials.map(serial => ({ _id: serial, createdAt: new Date(), summary: { fruit_fly: latestCount, person: 3 } }));
+        }
         call++;
         if (call % 2 === 1) {
             // Daily peaks: last N days ending today

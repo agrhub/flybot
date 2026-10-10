@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const snapshotSchema = new mongoose.Schema({
-    deviceSerial: { type: String, required: true, index: true },
+    deviceSerial: { type: String, required: true },
     imageUrl: { type: String, required: true },
     s3Key: { type: String, required: true },
     createdAt: { type: Date, default: Date.now },
@@ -33,6 +33,10 @@ const snapshotSchema = new mongoose.Schema({
 // Statistics, history and "latest snapshot per camera" all filter by camera + processed flag
 // and sort/range on time
 snapshotSchema.index({ deviceSerial: 1, aiProcessed: 1, createdAt: -1 });
+// Latest snapshot per camera regardless of AI state (camera health)
+snapshotSchema.index({ deviceSerial: 1, createdAt: -1 });
+// Review export: only reviewed snapshots have these fields
+snapshotSchema.index({ 'review.status': 1, 'review.reviewedAt': -1 }, { sparse: true });
 // Retention cleanup scans by age only
 snapshotSchema.index({ createdAt: 1 });
 

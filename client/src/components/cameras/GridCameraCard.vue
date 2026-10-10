@@ -251,7 +251,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
-import EZUIKit from 'ezuikit-js';
+import { loadEzuikit } from '@/utils/lazyLibs';
 import api from '@/services/api';
 import { useI18n } from 'vue-i18n';
 import { ElNotification } from 'element-plus';
@@ -410,8 +410,10 @@ const startLiveStream = async () => {
   }
 };
 
-const initPlayer = (url, accessToken, areaDomain, code) => {
+const initPlayer = async (url, accessToken, areaDomain, code) => {
   stopLiveStream();
+  const EZUIKit = await loadEzuikit();
+  // The card may have been closed while the player library was loading
   const container = playerContainerRef.value;
   if (!container) return;
   container.innerHTML = '';
@@ -449,7 +451,6 @@ const initPlayer = (url, accessToken, areaDomain, code) => {
         if (error.type === 'handleRunTimeInfoError' && error.data?.nErrorCode === 5) {
           if (code && playerInstance && typeof playerInstance.changePlayUrl === 'function') {
             try {
-              console.log(`[EZUIKit ${props.camera.deviceSerial}] Decrypting stream with validCode:`, code);
               await playerInstance.changePlayUrl({
                 type: 'live',
                 deviceSerial: props.camera?.deviceSerial,
@@ -481,7 +482,6 @@ const initPlayer = (url, accessToken, areaDomain, code) => {
       }
     };
 
-    console.log(`[Grid EZUIKit ${props.camera.deviceSerial}] Creating EZUIKitPlayer with:`, playerOptions);
     playerInstance = new EZUIKit.EZUIKitPlayer(playerOptions);
 
     if (playerInstance && playerInstance.on) {

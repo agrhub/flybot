@@ -4,6 +4,8 @@ const { viewFilter } = require('../utils/ownership');
 const { pestCountExpr, normalizeSpeciesExpr, NON_PEST_LABELS } = require('../constants/species');
 const { thresholdOf, riskLevel } = require('../constants/risk');
 const { TIMEZONE } = require('./captureSchedule');
+const { latestProcessedByCamera } = require('./snapshotQueries');
+const { countPests } = require('./notificationService');
 
 /**
  * Dashboard access rules:
@@ -93,21 +95,15 @@ const dailyPeakStages = [
     { $group: { _id: { day: '$day', camera: '$deviceSerial' }, peak: { $max: '$count' }, scans: { $sum: 1 } } }
 ];
 
+// Latest processed snapshot per camera, with its pest count (one DISTINCT_SCAN query)
 async function latestPerCamera(serials) {
-    if (!serials.length) return new Map();
-    const rows = await Snapshot.aggregate([
-        { $match: { deviceSerial: { $in: serials }, aiProcessed: true } },
-        { $sort: { createdAt: -1 } },
-        { $group: { _id: '$deviceSerial', createdAt: { $first: '$createdAt' }, s3Key: { $first: '$s3Key' }, count: { $first: pestCountExpr() } } }
-    ]);
-    return new Map(rows.map(r => [r._id, r]));
+    const latest = await latestProcessedByCamera(serials);
+    for (const row of latest.values()) row.count = countPests(row.summary);
+    return latest;
 }
 
-async function kpiData(cameras, serials, days) {
-    const [rows, latest] = await Promise.all([
-        Snapshot.aggregate([matchScans(serials, days), ...dailyPeakStages]),
-        latestPerCamera(serials)
-    ]);
+async function kpiData(cameras, serials, days, latest) {
+    const rows = await Snapshot.aggregate([matchScans(serials, days), ...dailyPeakStages]);
     const alertCameras = cameras.filter(c => (latest.get(c.deviceSerial)?.count || 0) >= thresholdOf(c)).length;
     return {
         cameras: cameras.length,
@@ -156,14 +152,11 @@ async function speciesData(serials, days) {
     return { species: rows.map(r => ({ label: r._id, value: r.value })) };
 }
 
-async function cameraRankingData(cameras, serials, days) {
-    const [rows, latest] = await Promise.all([
-        Snapshot.aggregate([
-            matchScans(serials, days),
-            ...dailyPeakStages,
-            { $group: { _id: '$_id.camera', total: { $sum: '$peak' }, peak: { $max: '$peak' } } }
-        ]),
-        latestPerCamera(serials)
+async function cameraRankingData(cameras, serials, days, latest) {
+    const rows = await Snapshot.aggregate([
+        matchScans(serials, days),
+        ...dailyPeakStages,
+        { $group: { _id: '$_id.camera', total: { $sum: '$peak' }, peak: { $max: '$peak' } } }
     ]);
     const byCamera = new Map(rows.map(r => [r._id, r]));
     const ranking = cameras.map(c => {
@@ -181,8 +174,7 @@ async function cameraRankingData(cameras, serials, days) {
     return { cameras: ranking };
 }
 
-async function latestSnapshotData(cameras, serials, imageUrl) {
-    const latest = await latestPerCamera(serials);
+async function latestSnapshotData(cameras, latest, imageUrl) {
     return {
         snapshots: cameras.map(c => {
             const snap = latest.get(c.deviceSerial);
@@ -210,6 +202,9 @@ async function computeWidgetData(dashboard, serials, { imageUrl }) {
         : [];
     const cameraBySerial = new Map(cameras.map(c => [c.deviceSerial, c]));
     const allowed = new Set(serials);
+    // Shared by the kpi, ranking and snapshot widgets: query once, only if one of them is present
+    const needsLatest = (dashboard.widgets || []).some(w => ['kpi', 'cameraRanking', 'latestSnapshot'].includes(w.type));
+    const latest = needsLatest ? await latestPerCamera(serials) : new Map();
 
     const entries = await Promise.all((dashboard.widgets || []).map(async (widget) => {
         const scoped = widget.cameraSerials?.length ? widget.cameraSerials.filter(s => allowed.has(s)) : serials;
@@ -217,11 +212,11 @@ async function computeWidgetData(dashboard, serials, { imageUrl }) {
         const days = widget.rangeDays || 7;
         let data;
         switch (widget.type) {
-            case 'kpi': data = await kpiData(scopedCameras, scoped, days); break;
+            case 'kpi': data = await kpiData(scopedCameras, scoped, days, latest); break;
             case 'trend': data = await trendData(scoped, days); break;
             case 'species': data = await speciesData(scoped, days); break;
-            case 'cameraRanking': data = await cameraRankingData(scopedCameras, scoped, days); break;
-            case 'latestSnapshot': data = await latestSnapshotData(scopedCameras, scoped, imageUrl); break;
+            case 'cameraRanking': data = await cameraRankingData(scopedCameras, scoped, days, latest); break;
+            case 'latestSnapshot': data = await latestSnapshotData(scopedCameras, latest, imageUrl); break;
             default: data = null;
         }
         return [widget.id, data];

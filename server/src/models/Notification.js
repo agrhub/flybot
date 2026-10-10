@@ -20,6 +20,8 @@ const notificationSchema = new mongoose.Schema({
 // Listing a user's feed, and the cooldown lookup (same user + type + camera)
 notificationSchema.index({ userId: 1, createdAt: -1 });
 notificationSchema.index({ userId: 1, type: 1, deviceSerial: 1, createdAt: -1 });
+// Unread badge count
+notificationSchema.index({ userId: 1, read: 1 });
 
 const Notification = mongoose.model('Notification', notificationSchema);
 

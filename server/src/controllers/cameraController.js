@@ -4,6 +4,7 @@ const { countPests } = require('../services/notificationService');
 const ezvizService = require('../services/ezvizService');
 const { sendServerError } = require('../utils/http');
 const { recordAudit } = require('../services/auditService');
+const { latestSnapshotTimeByCamera } = require('../services/snapshotQueries');
 
 const cameraTarget = (camera) => ({ type: 'camera', id: camera.deviceSerial, label: camera.deviceName });
 const { viewFilter, viewableCameras, findViewableCamera, findManageableCamera, canManageCamera } = require('../utils/ownership');
@@ -540,14 +541,10 @@ async function getCamerasHealth(req, res) {
                 { $match: { deviceSerial: { $in: serials }, createdAt: { $gte: since } } },
                 { $group: { _id: '$deviceSerial', total: { $sum: 1 }, analyzed: { $sum: { $cond: ['$aiProcessed', 1, 0] } } } }
             ]),
-            Snapshot.aggregate([
-                { $match: { deviceSerial: { $in: serials } } },
-                { $sort: { createdAt: -1 } },
-                { $group: { _id: '$deviceSerial', lastSnapshotAt: { $first: '$createdAt' } } }
-            ])
+            latestSnapshotTimeByCamera(serials)
         ]);
         const recentBy = new Map(recent.map(r => [r._id, r]));
-        const latestBy = new Map(latest.map(r => [r._id, r.lastSnapshotAt]));
+        const latestBy = latest;
 
         res.json({
             success: true,

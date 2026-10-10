@@ -171,10 +171,7 @@
 
 <script setup>
 import { ref, watch, onMounted, onUnmounted } from 'vue'
-import Hls from 'hls.js'
-import HLSPlayer from '@ezuikit/player-hls'
-import '@ezuikit/player-hls/dist/style/css.css'
-import EZUIKit from 'ezuikit-js'
+import { loadEzuikit, loadHlsPlayers } from '@/utils/lazyLibs'
 import api from '@/services/api'
 import PlaybackControls from './PlaybackControls.vue'
 import { ElNotification } from 'element-plus'
@@ -260,7 +257,6 @@ const updatePlayerValidCode = async (newCode) => {
 
   if (ezPlayer && typeof ezPlayer.changePlayUrl === 'function') {
     try {
-      console.log('[EZUIKit] Updating validCode via player.changePlayUrl:', code)
       placeholderText.value = t('cameras.player.redecrypting')
 
       await ezPlayer.changePlayUrl({
@@ -342,7 +338,8 @@ const resetPlayer = () => {
   isPlaceholderVisible.value = true
 }
 
-const initNativeHls = (url) => {
+const initNativeHls = async (url) => {
+  const { Hls } = await loadHlsPlayers()
   const video = hlsVideo.value
   if (!video) return
   video.classList.remove('hidden')
@@ -365,9 +362,10 @@ const initNativeHls = (url) => {
   }
 }
 
-const initHls = (url, accessToken, areaDomain, requestedDecoder = 'soft') => {
+const initHls = async (url, accessToken, areaDomain, requestedDecoder = 'soft') => {
   resetPlayer()
   isPlaceholderVisible.value = false
+  const { HLSPlayer } = await loadHlsPlayers()
   const container = hlsContainer.value
   if (!container) return
   container.classList.remove('hidden')
@@ -397,7 +395,6 @@ const initHls = (url, accessToken, areaDomain, requestedDecoder = 'soft') => {
       }
     }
 
-    console.log(`[EZUIKit HLS] Initializing @ezuikit/player-hls (decoderType: ${requestedDecoder}) with options:`, hlsOptions)
     hlsEzPlayer = new HLSPlayer(hlsOptions)
 
     if (hlsEzPlayer && hlsEzPlayer.on) {
@@ -438,9 +435,10 @@ const initHls = (url, accessToken, areaDomain, requestedDecoder = 'soft') => {
   }
 }
 
-const initEzOpen = (url, accessToken, areaDomain, customCode) => {
+const initEzOpen = async (url, accessToken, areaDomain, customCode) => {
   resetPlayer()
   isPlaceholderVisible.value = false
+  const EZUIKit = await loadEzuikit()
   const container = ezopenVideo.value
   if (!container) return
   container.classList.remove('hidden')
@@ -480,7 +478,6 @@ const initEzOpen = (url, accessToken, areaDomain, customCode) => {
         // When video stream is encrypted (nErrorCode 5)
         if (error.type === 'handleRunTimeInfoError' && error.data?.nErrorCode === 5) {
           if (code && ezPlayer && typeof ezPlayer.changePlayUrl === 'function') {
-            console.log('[EZUIKit] Encrypted video (nErrorCode 5), triggering changePlayUrl with code:', code)
             try {
               const changeOpts = { validCode: code, code, validateCode: code }
               if (isPlayback) {

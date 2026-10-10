@@ -4,18 +4,22 @@ const { getSettings } = require('../services/settingsService');
 const telegramService = require('../services/telegramService');
 const { sendServerError } = require('../utils/http');
 const { viewableCameras } = require('../utils/ownership');
+const { createTtlCache } = require('../utils/ttlCache');
 
 /**
  * GET /api/system/info: real storage and AI settings, plus this user's snapshot usage
  * (replaces the hard-coded values the Settings > Storage tab used to show).
  */
+// Counting every snapshot is slow on a big history and the numbers change slowly
+const usageCache = createTtlCache({ ttlMs: 10 * 60 * 1000, maxEntries: 1000 });
+
 async function getSystemInfo(req, res) {
     try {
         const cameras = await viewableCameras(req.user).select('deviceSerial');
-        const serials = [...new Set(cameras.map(c => c.deviceSerial))];
+        const serials = [...new Set(cameras.map(c => c.deviceSerial))].sort();
 
         const [usage] = serials.length
-            ? await Snapshot.aggregate([
+            ? await usageCache.wrap(serials.join(','), () => Snapshot.aggregate([
                 { $match: { deviceSerial: { $in: serials } } },
                 {
                     $group: {
@@ -26,7 +30,7 @@ async function getSystemInfo(req, res) {
                         newest: { $max: '$createdAt' }
                     }
                 }
-            ])
+            ]))
             : [];
 
         const provider = ['vertex', 'roboflow', 'both'].includes(AI_PROVIDER) ? AI_PROVIDER : 'vertex';
