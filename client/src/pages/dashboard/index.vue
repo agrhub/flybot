@@ -380,7 +380,7 @@ const user = computed(() => {
   }
 });
 
-const userName = computed(() => user.value.name || user.value.email?.split('@')[0] || 'Admin');
+const userName = computed(() => user.value.name || user.value.email?.split('@')[0] || t('common.defaultUserName'));
 
 const onlineCount = computed(() => {
   return cameras.value.filter(c => c.status === 1).length;
@@ -441,7 +441,7 @@ const runDeepDiagnosis = async () => {
     if (res.data?.success && res.data.diagnosis) {
       diagnosisResult.value = res.data.diagnosis;
       ElNotification({
-        title: 'AI Copilot',
+        title: t('assistant.title'),
         message: t('dashboard.diagnosisDone'),
         type: 'success'
       });

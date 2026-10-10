@@ -54,7 +54,8 @@ async function addCamera(req, res) {
             existing.validateCode = validateCode.trim();
             if (customName) existing.deviceName = customName.trim();
             await existing.save();
-            return res.status(400).json({ success: true, message: "Device information updated successfully.", camera: existing });
+            // Already added: just refresh the code/name (a success, not a client error)
+            return res.json({ success: true, message: "Device information updated successfully.", camera: existing });
         }
 
         // Call EZVIZ API to bind device to APP account

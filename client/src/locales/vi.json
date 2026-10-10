@@ -27,7 +27,8 @@
     "page": "Trang",
     "prevPage": "Trang trước",
     "nextPage": "Trang kế tiếp",
-    "notice": "Thông báo"
+    "notice": "Thông báo",
+    "defaultUserName": "Người dùng"
   },
   "nav": {
     "home": "Trang chủ",
@@ -284,7 +285,34 @@
     "copied": "Đã sao chép",
     "live": "Trực tiếp",
     "model": "Mẫu thiết bị",
-    "firmware": "Phiên bản firmware"
+    "firmware": "Phiên bản firmware",
+    "addRequired": "Vui lòng nhập cả số serial và mã xác minh.",
+    "added": "Đã thêm camera.",
+    "addFailed": "Không thêm được camera.",
+    "addRequestFailed": "Lỗi khi gửi yêu cầu thêm camera.",
+    "player": {
+      "redecrypting": "Đang giải mã luồng với mã xác minh mới...",
+      "codeRequiredInput": "Vui lòng nhập mã xác minh.",
+      "codeUpdated": "Đã cập nhật mã xác minh.",
+      "codeUpdateFailed": "Không cập nhật được mã xác minh.",
+      "encryptedWithCode": "Video đang được mã hoá. Giải mã bằng mã [{code}] không thành công. Hãy dùng \"Đổi mã\" để cập nhật.",
+      "permissionError": "EZVIZ: không có quyền xem thiết bị này (lỗi 5411). Hãy kiểm tra quyền chia sẻ thiết bị hoặc mã xác minh.",
+      "invalidParams": "Tham số luồng ezopen không hợp lệ (lỗi 10001).",
+      "connectionError": "Không kết nối được luồng camera.",
+      "initError": "Lỗi khởi tạo trình phát: {error}",
+      "noDevice": "Chưa chọn thiết bị",
+      "codeMissing": "Camera đang bật mã hoá nhưng chưa có mã xác minh. Hãy nhập mã để giải mã luồng video.",
+      "codeRequired": "Cần mã xác minh",
+      "loadingLive": "Đang tải luồng trực tiếp...",
+      "streamUnavailable": "Không lấy được luồng video.",
+      "disconnected": "Mất kết nối",
+      "systemError": "Lỗi hệ thống phát video.",
+      "loadingPlayback": "Đang tải đoạn ghi...",
+      "playbackRange": "Xem lại ({start} - {end})",
+      "playbackUnavailable": "Không tải được luồng xem lại.",
+      "playbackSegmentFailed": "Không phát lại được đoạn video này.",
+      "playbackRequestFailed": "Lỗi khi yêu cầu luồng xem lại."
+    }
   },
   "analytics": {
     "title": "Báo Cáo & Lịch Sử Nhận Dạng AI",
@@ -456,7 +484,8 @@
     "send": "Gửi",
     "thinking": "Trợ lý AI đang phân tích dữ liệu...",
     "reset": "Làm mới cuộc trò chuyện",
-    "toolExecutions": "Công cụ đã thực thi ({count})"
+    "toolExecutions": "Công cụ đã thực thi ({count})",
+    "unavailable": "Trợ lý AI hiện không khả dụng. Vui lòng thử lại sau ít phút."
   },
   "home": {
     "tagline": "STUDIO BẪY THÔNG MINH & THỊ GIÁC AI",

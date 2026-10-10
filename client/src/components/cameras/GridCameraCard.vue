@@ -24,7 +24,7 @@
         <div class="min-w-0">
           <div class="flex items-center gap-1.5 min-w-0">
             <h4 class="grid-cam__title truncate">
-              {{ camera.deviceName || 'Camera' }}
+              {{ camera.deviceName || camera.deviceSerial }}
             </h4>
             <!-- Encrypted badge -->
             <el-tooltip v-if="camera.isEncrypt === 1" :content="t('cameras.encrypted')" placement="top">
@@ -326,7 +326,7 @@ const openCodeModal = () => {
 const handleSaveCode = async () => {
   const code = (inputCode.value || '').trim();
   if (!code) {
-    ElNotification({ title: t('common.error'), message: 'Please enter verification code!', type: 'warning' });
+    ElNotification({ title: t('common.error'), message: t('cameras.player.codeRequiredInput'), type: 'warning' });
     return;
   }
 
@@ -334,7 +334,7 @@ const handleSaveCode = async () => {
   try {
     const res = await api.updateCameraCode(props.camera.deviceSerial, code);
     if (res.data?.success) {
-      ElNotification({ title: t('common.success'), message: 'Verification code updated!', type: 'success' });
+      ElNotification({ title: t('common.success'), message: t('cameras.player.codeUpdated'), type: 'success' });
       props.camera.validateCode = code;
       codeDialogVisible.value = false;
 
@@ -357,7 +357,7 @@ const handleSaveCode = async () => {
       }
       startLiveStream();
     } else {
-      ElNotification({ title: t('common.error'), message: res.data?.message || 'Failed to save verification code.', type: 'error' });
+      ElNotification({ title: t('common.error'), message: res.data?.message || t('cameras.player.codeUpdateFailed'), type: 'error' });
     }
   } catch (err) {
     ElNotification({ title: t('common.error'), message: err.message, type: 'error' });
@@ -397,7 +397,7 @@ const startLiveStream = async () => {
     }
 
     if (!playUrl) {
-      throw new Error(data.msg || 'Unable to retrieve video stream.');
+      throw new Error(data.msg || t('cameras.player.streamUnavailable'));
     }
 
     await nextTick();
@@ -468,7 +468,7 @@ const initPlayer = (url, accessToken, areaDomain, code) => {
           errorMessage.value = t('cameras.encryptedWarning');
         } else if (error.retcode === 5411 || error.code === 5411) {
           hasError.value = true;
-          errorMessage.value = 'No permission to view device (Error 5411). Please check verification code.';
+          errorMessage.value = t('cameras.player.permissionError');
         } else {
           hasError.value = true;
           errorMessage.value = error.msg || t('cameras.streamError');

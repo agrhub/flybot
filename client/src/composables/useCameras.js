@@ -81,7 +81,7 @@ export function useCameras() {
     if (!serial || !code) {
       ElNotification({
         title: t('common.error'),
-        message: 'Please enter both Serial Number and Verification Code!',
+        message: t('cameras.addRequired'),
         type: 'warning'
       });
       return false;
@@ -101,7 +101,7 @@ export function useCameras() {
       if (res.data?.success) {
         ElNotification({
           title: t('common.success'),
-          message: res.data.message || 'Camera added successfully!',
+          message: t('cameras.added'),
           type: 'success'
         });
         isAddCameraOpen.value = false;
@@ -114,7 +114,7 @@ export function useCameras() {
       } else {
         ElNotification({
           title: t('common.error'),
-          message: res.data?.message || 'Failed to add camera.',
+          message: res.data?.message || t('cameras.addFailed'),
           type: 'error'
         });
         return false;
@@ -122,7 +122,7 @@ export function useCameras() {
     } catch (err) {
       ElNotification({
         title: t('common.error'),
-        message: 'Error sending add device request.',
+        message: err.response?.data?.message || t('cameras.addRequestFailed'),
         type: 'error'
       });
       return false;

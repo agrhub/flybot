@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import api from '@/services/api';
+import i18n from '@/i18n';
 import { useNotifications } from '@/composables/useNotifications';
 
 // Singleton authentication state
@@ -24,8 +25,8 @@ export function useAuth() {
   const router = useRouter();
 
   const isAuthenticated = computed(() => !!user.value && !!user.value.id);
-  const userName = computed(() => user.value?.name || user.value?.email?.split('@')[0] || 'Admin');
-  const userEmail = computed(() => user.value?.email || 'admin@smarttrap.com');
+  const userName = computed(() => user.value?.name || user.value?.email?.split('@')[0] || i18n.global.t('common.defaultUserName'));
+  const userEmail = computed(() => user.value?.email || '');
   const userInitial = computed(() => (userName.value.charAt(0) || 'A').toUpperCase());
 
   const setAuth = (userData, userToken = null) => {

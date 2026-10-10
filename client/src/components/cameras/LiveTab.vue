@@ -150,8 +150,6 @@ const props = defineProps({
   camera: Object
 })
 
-const emit = defineEmits(['status'])
-
 const hlsContainer = ref(null)
 const hlsVideo = ref(null)
 const ezopenVideo = ref(null)
@@ -180,8 +178,7 @@ const updatePlayerValidCode = async (newCode) => {
   if (ezPlayer && typeof ezPlayer.changePlayUrl === 'function') {
     try {
       console.log('[EZUIKit] Updating validCode via player.changePlayUrl:', code)
-      placeholderText.value = 'Re-decrypting stream with new verification code...'
-      emit('status', { text: 'Decrypting...', class: 'bg-amber-50 text-amber-600 border-amber-200' })
+      placeholderText.value = t('cameras.player.redecrypting')
 
       await ezPlayer.changePlayUrl({
         type: 'live',
@@ -193,7 +190,6 @@ const updatePlayerValidCode = async (newCode) => {
 
       console.log('[EZUIKit] player.changePlayUrl succeeded!')
       isPlaceholderVisible.value = false
-      emit('status', { text: 'Live', class: 'bg-emerald-50 text-emerald-600 border-emerald-200' })
       return true
     } catch (err) {
       console.warn('[EZUIKit] player.changePlayUrl failed, falling back to reload stream:', err)
@@ -208,7 +204,7 @@ const updatePlayerValidCode = async (newCode) => {
 const handleSaveValidateCode = async () => {
   const code = inputValidateCode.value?.trim()
   if (!code) {
-    ElNotification({ title: t('common.error'), message: 'Please enter verification code!', type: 'error' })
+    ElNotification({ title: t('common.error'), message: t('cameras.player.codeRequiredInput'), type: 'error' })
     return
   }
 
@@ -216,17 +212,17 @@ const handleSaveValidateCode = async () => {
   try {
     const res = await api.updateCameraCode(props.camera.deviceSerial, code)
     if (res.data.success) {
-      ElNotification({ title: t('common.success'), message: 'Device verification code updated successfully!', type: 'success' })
+      ElNotification({ title: t('common.success'), message: t('cameras.player.codeUpdated'), type: 'success' })
       if (props.camera) {
         props.camera.validateCode = code
       }
       validateCodeDialogVisible.value = false
       await updatePlayerValidCode(code)
     } else {
-      ElNotification({ title: t('common.error'), message: res.data.message || 'Failed to update code.', type: 'error' })
+      ElNotification({ title: t('common.error'), message: res.data.message || t('cameras.player.codeUpdateFailed'), type: 'error' })
     }
   } catch (error) {
-    ElNotification({ title: t('common.error'), message: 'Unable to update verification code.', type: 'error' })
+    ElNotification({ title: t('common.error'), message: t('cameras.player.codeUpdateFailed'), type: 'error' })
   } finally {
     updatingCode.value = false
   }
@@ -275,7 +271,6 @@ const initNativeHls = (url) => {
     hlsPlayer.on(Hls.Events.MANIFEST_PARSED, () => {
       video.play().catch(() => {})
       isPlaceholderVisible.value = false
-      emit('status', { text: 'Live (HLS)', class: 'bg-emerald-50 text-emerald-600 border-emerald-200' })
     })
     hlsPlayer.on(Hls.Events.ERROR, (event, data) => {
       console.warn('[Hls.js] Error:', data)
@@ -284,7 +279,6 @@ const initNativeHls = (url) => {
     video.src = url
     video.play().catch(() => {})
     isPlaceholderVisible.value = false
-    emit('status', { text: 'Live (HLS)', class: 'bg-emerald-50 text-emerald-600 border-emerald-200' })
   }
 }
 
@@ -327,10 +321,6 @@ const initHls = (url, accessToken, areaDomain, requestedDecoder = 'soft') => {
       const handleStreamReady = () => {
         console.log('[EZUIKit HLS] Video playback started successfully')
         isPlaceholderVisible.value = false
-        emit('status', {
-          text: `Live (HLS ${requestedDecoder === 'soft' ? 'WASM' : 'MSE'})`,
-          class: 'success'
-        })
       }
 
       hlsEzPlayer.on('play', handleStreamReady)
@@ -357,7 +347,6 @@ const initHls = (url, accessToken, areaDomain, requestedDecoder = 'soft') => {
         }
       })
       hlsEzPlayer.on('loading', () => {
-        emit('status', { text: 'Loading HLS...', class: 'primary' })
       })
     }
   } catch (err) {
@@ -418,31 +407,23 @@ const initEzOpen = (url, accessToken, areaDomain, customCode) => {
               }
               await ezPlayer.changePlayUrl(changeOpts)
               isPlaceholderVisible.value = false
-              emit('status', isPlayback
-                ? { text: 'Playback', class: 'primary' }
-                : { text: 'Live', class: 'success' }
-              )
               return
             } catch (err) {
               console.warn('[EZUIKit] changePlayUrl failed:', err)
             }
           }
           isPlaceholderVisible.value = true
-          placeholderText.value = `Video encryption is enabled. Decryption attempted with code [${code || 'empty'}]. Please click "Change Code" to update.`
-          emit('status', { text: 'Code Required', class: 'warning' })
+          placeholderText.value = t('cameras.player.encryptedWithCode', { code: code || '—' })
           openValidateCodeDialog()
         } else if (error.retcode === 5411 || error.code === 5411) {
           isPlaceholderVisible.value = true
-          placeholderText.value = 'EZVIZ: No permission to view device (Error 5411). Please check device sharing permissions or verification code.'
-          emit('status', { text: 'Permission Error (5411)', class: 'danger' })
+          placeholderText.value = t('cameras.player.permissionError')
         } else if (error.code === '10001' || error.msg?.includes('illegal parameter')) {
           isPlaceholderVisible.value = true
-          placeholderText.value = 'Invalid ezopen stream parameters (Error 10001).'
-          emit('status', { text: 'ezopen Error', class: 'danger' })
+          placeholderText.value = t('cameras.player.invalidParams')
         } else {
           isPlaceholderVisible.value = true
-          placeholderText.value = error.msg || 'Connection error to EZVIZ camera stream.'
-          emit('status', { text: 'Stream Error', class: 'danger' })
+          placeholderText.value = error.msg || t('cameras.player.connectionError')
         }
       }
     }
@@ -452,40 +433,33 @@ const initEzOpen = (url, accessToken, areaDomain, customCode) => {
       ezPlayer.on(EZUIKit.EZUIKitPlayer.EVENTS?.firstFrameDisplay || 'firstFrameDisplay', () => {
         isPlaceholderVisible.value = false
         const isPlayback = cleanUrl.includes('.rec')
-        emit('status', isPlayback
-          ? { text: 'Playback', class: 'primary' }
-          : { text: 'Live', class: 'success' }
-        )
       })
     }
 
   } catch (err) {
     console.error('EZUIKit init error:', err)
     isPlaceholderVisible.value = true
-    placeholderText.value = 'Player initialization error: ' + err.message
+    placeholderText.value = t('cameras.player.initError', { error: err.message })
   }
 }
 
 const playLiveStream = async () => {
   resetPlayer()
   if (!props.camera) {
-    placeholderText.value = 'Please select a camera to start'
-    emit('status', { text: 'Ready', class: 'info' })
-    currentStreamType.value = 'No device selected'
+    placeholderText.value = t('cameras.noCameraSelected')
+    currentStreamType.value = t('cameras.player.noDevice')
     return
   }
 
   // Automatically open popup only when camera is ENCRYPTED (isEncrypt === 1) and missing validateCode
   if (props.camera?.isEncrypt === 1 && !props.camera?.validateCode) {
-    placeholderText.value = 'Camera encryption is enabled but no verification code is set. Please enter code to decrypt.'
-    emit('status', { text: 'Code Required', class: 'warning' })
-    currentStreamType.value = 'Code Required'
+    placeholderText.value = t('cameras.player.codeMissing')
+    currentStreamType.value = t('cameras.player.codeRequired')
     openValidateCodeDialog()
     return
   }
 
-  placeholderText.value = 'Loading live stream...'
-  emit('status', { text: 'Connecting...', class: 'warning' })
+  placeholderText.value = t('cameras.player.loadingLive')
 
   // Check if camera has pre-configured deviceUrl
   if (props.camera.deviceUrl && props.camera.accessToken && props.camera.areaDomain) {
@@ -495,8 +469,7 @@ const playLiveStream = async () => {
     } else if (url.includes('ezopen://')) {
       initEzOpen(url, props.camera.accessToken, props.camera.areaDomain, props.camera.validateCode)
     }
-    emit('status', { text: 'Live', class: 'success' })
-    currentStreamType.value = 'Live'
+    currentStreamType.value = t('cameras.live')
     return
   }
 
@@ -516,25 +489,21 @@ const playLiveStream = async () => {
       } else if (data.data.url.includes('ezopen://')) {
         initEzOpen(data.data.url, data.data.accessToken, data.data.areaDomain, data.data.validateCode || props.camera.validateCode)
       }
-      emit('status', { text: 'Live', class: 'success' })
-      currentStreamType.value = 'Live'
+      currentStreamType.value = t('cameras.live')
     } else if (data.code === '60019') {
       if (props.camera) {
         props.camera.isEncrypt = 1
       }
-      placeholderText.value = 'Camera encryption is enabled but no verification code is set. Please enter code to decrypt.'
-      emit('status', { text: 'Code Required', class: 'warning' })
-      currentStreamType.value = 'Code Required'
+      placeholderText.value = t('cameras.player.codeMissing')
+      currentStreamType.value = t('cameras.player.codeRequired')
       openValidateCodeDialog()
     } else {
-      placeholderText.value = data.msg || 'Unable to retrieve stream.'
-      emit('status', { text: 'Offline', class: 'danger' })
-      currentStreamType.value = 'Disconnected'
+      placeholderText.value = data.msg || t('cameras.player.streamUnavailable')
+      currentStreamType.value = t('cameras.player.disconnected')
     }
   } catch (error) {
-    placeholderText.value = 'Stream system error.'
-    emit('status', { text: 'Error', class: 'danger' })
-    currentStreamType.value = 'Stream Error'
+    placeholderText.value = t('cameras.player.systemError')
+    currentStreamType.value = t('cameras.streamError')
   }
 }
 
@@ -542,8 +511,7 @@ const handlePlayPlayback = async ({ startTime, stopTime }) => {
   resetPlayer()
   if (!props.camera) return
 
-  placeholderText.value = 'Loading playback recording...'
-  emit('status', { text: 'Loading Playback...', class: 'info' })
+  placeholderText.value = t('cameras.player.loadingPlayback')
 
   try {
     const res = await api.getPlaybackStream(props.camera.deviceSerial, startTime, stopTime, currentStreamId.value)
@@ -557,16 +525,14 @@ const handlePlayPlayback = async ({ startTime, stopTime }) => {
       } else if (data.data.url.includes('ezopen://')) {
         initEzOpen(data.data.url, data.data.accessToken, data.data.areaDomain, data.data.validateCode || props.camera.validateCode)
       }
-      emit('status', { text: 'Playback', class: 'info' })
-      currentStreamType.value = `Playback (${startTime.slice(11, 16)} - ${stopTime.slice(11, 16)})`
+      currentStreamType.value = t('cameras.player.playbackRange', { start: startTime.slice(11, 16), end: stopTime.slice(11, 16) })
     } else {
-      ElNotification({ title: t('common.error'), message: data.msg || 'Unable to load playback stream.', type: 'error' })
-      placeholderText.value = 'Unable to replay this video segment.'
-      emit('status', { text: 'Playback Error', class: 'danger' })
+      ElNotification({ title: t('common.error'), message: data.msg || t('cameras.player.playbackUnavailable'), type: 'error' })
+      placeholderText.value = t('cameras.player.playbackSegmentFailed')
     }
   } catch (error) {
-    ElNotification({ title: t('common.error'), message: 'Error requesting playback stream.', type: 'error' })
-    placeholderText.value = 'Error requesting playback stream.'
+    ElNotification({ title: t('common.error'), message: t('cameras.player.playbackRequestFailed'), type: 'error' })
+    placeholderText.value = t('cameras.player.playbackRequestFailed')
   }
 }
 

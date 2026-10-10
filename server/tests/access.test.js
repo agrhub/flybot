@@ -75,3 +75,13 @@ test('malformed JSON gets a clean 400 without internal details', async () => {
     assert.equal(res.status, 400);
     assert.deepEqual(await res.json(), { success: false, message: 'Invalid JSON payload format' });
 });
+
+test('re-adding a camera you already have updates it and returns 200', async () => {
+    const res = await app.request('/api/user/add-camera', {
+        method: 'POST',
+        headers: bearer(ALICE),
+        body: { deviceSerial: 'CAMA', validateCode: 'NEWCODE', deviceName: 'Renamed' }
+    });
+    assert.equal(res.status, 200);
+    assert.equal((await res.json()).success, true);
+});

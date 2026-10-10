@@ -207,13 +207,7 @@ const sessionId = ref(`session_${Date.now()}`);
 const messages = ref([
   {
     role: 'assistant',
-    content: `👋 **Welcome! I am Smart Trap Copilot.**
-I am your intelligent agricultural AI assistant equipped with real-time pest density analytics and remote camera controls.
-
-* 📡 **Device Monitoring:** Online/offline status, video encryption check.
-* 📸 **Instant Snapshot:** Request new trap captures remotely.
-* 📊 **AI Analytics:** Density breakdown of fruit flies (*Bactrocera*) by hour/day.
-* 🧭 **UI Navigation:** Automatically navigate to camera feeds or analytics charts on demand.`
+    content: t('assistant.greeting')
   }
 ]);
 
@@ -319,26 +313,8 @@ const sendMessage = async (text) => {
       throw new Error(res.data?.message || 'No response received from AI Agent');
     }
   } catch (err) {
-    console.warn('Agent Chat API error, using smart fallback:', err.message);
-    const qLower = text.toLowerCase();
-    let reply = '';
-    if (qLower.includes('24h') || qLower.includes('summary')) {
-      reply = `📊 **24-Hour Summary Report:**\n\n• **Total detections:** 38 objects\n• **Dominant species:** Oriental fruit fly (*Bactrocera*) at **78%**\n• **Peak activity:** Around 07:00 - 09:30 AM as temperatures rise\n• **Device health:** All cameras recording reliably.`;
-    } else if (qLower.includes('fruit fly') || qLower.includes('density') || qLower.includes('bactrocera')) {
-      reply = `🪰 **Fruit Fly Density Analysis:**\n\n• Highest density logged during early morning scan cycles.\n• **Recommendation:** Replenish pheromone lure in trap funnel and inspect sticky plates regularly.`;
-    } else if (qLower.includes('offline') || qLower.includes('camera') || qLower.includes('disconnected')) {
-      const offlineCams = props.cameras.filter(c => c.status !== 1);
-      if (offlineCams.length > 0) {
-        reply = `📡 **Offline Device Alert:**\nDetected **${offlineCams.length}** offline cameras:\n` +
-          offlineCams.map(c => `• **${c.deviceName}** (SN: \`${c.deviceSerial}\`)`).join('\n') +
-          `\n\nPlease check power and Wi-Fi/4G connectivity at installation site.`;
-      } else {
-        reply = `📡 **Camera Status:**\nAll **${props.cameras.length}** cameras in your account are **Online** and functioning normally.`;
-      }
-    } else {
-      reply = `💡 **Farming & Insect Trap Recommendations:**\n\n• Replace sticky sheets or clean funnel traps every **7 - 10 days**.\n• Ensure camera lenses are free of fog, condensation, or agricultural dust.\n• Check automatic capture schedule periodically to maintain uninterrupted AI surveillance data.`;
-    }
-    messages.value.push({ role: 'assistant', content: reply });
+    console.warn('Agent chat API error:', err.message);
+    messages.value.push({ role: 'assistant', content: t('assistant.unavailable') });
   } finally {
     isThinking.value = false;
     scrollToBottom();

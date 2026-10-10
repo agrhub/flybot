@@ -27,7 +27,8 @@
     "page": "Page",
     "prevPage": "Previous page",
     "nextPage": "Next page",
-    "notice": "Notice"
+    "notice": "Notice",
+    "defaultUserName": "User"
   },
   "nav": {
     "home": "Home",
@@ -284,7 +285,34 @@
     "copied": "Copied",
     "live": "Live",
     "model": "Model",
-    "firmware": "Firmware"
+    "firmware": "Firmware",
+    "addRequired": "Please enter both the serial number and the verification code.",
+    "added": "Camera added.",
+    "addFailed": "Could not add the camera.",
+    "addRequestFailed": "Error sending the add-camera request.",
+    "player": {
+      "redecrypting": "Decrypting the stream with the new verification code...",
+      "codeRequiredInput": "Please enter the verification code.",
+      "codeUpdated": "Verification code updated.",
+      "codeUpdateFailed": "Could not update the verification code.",
+      "encryptedWithCode": "Video encryption is on. Decryption failed with code [{code}]. Use \"Change Code\" to update it.",
+      "permissionError": "EZVIZ: no permission to view this device (error 5411). Check the device sharing permissions or the verification code.",
+      "invalidParams": "Invalid ezopen stream parameters (error 10001).",
+      "connectionError": "Could not connect to the camera stream.",
+      "initError": "Player initialization error: {error}",
+      "noDevice": "No device selected",
+      "codeMissing": "Video encryption is on but no verification code is set. Enter the code to decrypt the stream.",
+      "codeRequired": "Code required",
+      "loadingLive": "Loading live stream...",
+      "streamUnavailable": "Could not get the video stream.",
+      "disconnected": "Disconnected",
+      "systemError": "Video stream system error.",
+      "loadingPlayback": "Loading recording...",
+      "playbackRange": "Playback ({start} - {end})",
+      "playbackUnavailable": "Could not load the playback stream.",
+      "playbackSegmentFailed": "Could not replay this video segment.",
+      "playbackRequestFailed": "Error requesting the playback stream."
+    }
   },
   "analytics": {
     "title": "AI Analytics & Detection History",
@@ -456,7 +484,8 @@
     "send": "Send",
     "thinking": "AI Copilot is analyzing...",
     "reset": "Reset conversation",
-    "toolExecutions": "Tool executions ({count})"
+    "toolExecutions": "Tool executions ({count})",
+    "unavailable": "The AI Copilot is unavailable right now. Please try again in a moment."
   },
   "home": {
     "tagline": "SMART TRAP & VISION AI STUDIO",
