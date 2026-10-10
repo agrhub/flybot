@@ -22,6 +22,10 @@
               <el-icon><Lock /></el-icon>
               <span>{{ t('settings.passwordTab') }}</span>
             </el-menu-item>
+            <el-menu-item index="sessions">
+              <el-icon><Monitor /></el-icon>
+              <span>{{ t('settings.sessionsTab') }}</span>
+            </el-menu-item>
           </el-menu-item-group>
 
           <el-menu-item-group :title="t('settings.system')">
@@ -337,19 +341,86 @@
         </div>
 
         <!-- 6. Storage & AI models -->
+        <!-- Signed-in devices -->
+        <div v-else-if="activeTab === 'sessions'" class="max-w-4xl">
+          <PageHeader :title="t('settings.sessionsTab')" :subtitle="t('settings.sessionsSub')">
+            <template #actions>
+              <el-button type="danger" plain :icon="SwitchButton" :loading="revokingOthers" @click="handleRevokeOthers">
+                {{ t('settings.signOutOthers') }}
+              </el-button>
+            </template>
+          </PageHeader>
+
+          <el-alert
+            v-if="sessionsUntracked"
+            type="info"
+            :title="t('settings.sessionsUntracked')"
+            :closable="false"
+            show-icon
+            class="mb-4"
+          />
+
+          <el-card shadow="never">
+            <el-table v-loading="loadingSessions" :data="sessions" class="w-full">
+              <template #empty>
+                <el-empty :description="t('settings.noSessions')" :image-size="60" />
+              </template>
+              <el-table-column :label="t('settings.sessionDevice')" min-width="200">
+                <template #default="{ row }">
+                  <div class="flex items-center gap-2">
+                    <el-icon><Monitor /></el-icon>
+                    <span>{{ row.browser }} · {{ row.os }}</span>
+                    <el-tag v-if="row.current" type="success" effect="light" round size="small">
+                      {{ t('settings.thisDevice') }}
+                    </el-tag>
+                  </div>
+                </template>
+              </el-table-column>
+              <el-table-column :label="t('settings.sessionIp')" prop="ip" min-width="130" />
+              <el-table-column :label="t('settings.sessionLastActive')" min-width="140">
+                <template #default="{ row }">{{ relativeTime(row.lastSeenAt) }}</template>
+              </el-table-column>
+              <el-table-column :label="t('settings.sessionSignedIn')" min-width="170">
+                <template #default="{ row }">{{ formatDateTime(row.createdAt) }}</template>
+              </el-table-column>
+              <el-table-column width="120" align="right">
+                <template #default="{ row }">
+                  <el-button link type="danger" @click="handleRevokeSession(row)">
+                    {{ t('settings.signOut') }}
+                  </el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+          </el-card>
+        </div>
+
         <div v-else-if="activeTab === 'storage'" class="max-w-2xl">
           <PageHeader :title="t('settings.storageTab')" :subtitle="t('settings.storageSub')" />
 
-          <el-card shadow="never">
+          <el-card shadow="never" v-loading="loadingSystemInfo">
             <el-descriptions :column="1" border>
               <el-descriptions-item :label="t('settings.storageBucket')">
-                <span class="font-mono">agrhub-storage / camos-data</span>
-              </el-descriptions-item>
-              <el-descriptions-item :label="t('settings.storageModel')">
-                <span class="font-mono">Gemini 2.5 Flash + Roboflow Trap AI</span>
+                <span class="font-mono">{{ systemInfo?.storage.bucket || '--' }}</span>
               </el-descriptions-item>
               <el-descriptions-item :label="t('settings.storageRetention')">
-                {{ t('settings.storageMonths') }}
+                {{ systemInfo ? t('settings.retentionMonths', { months: systemInfo.storage.retentionMonths }) : '--' }}
+              </el-descriptions-item>
+              <el-descriptions-item :label="t('settings.storageModel')">
+                <template v-if="systemInfo">
+                  {{ t(`settings.aiProvider.${systemInfo.ai.provider}`) }}
+                  <span v-if="systemInfo.ai.model" class="font-mono"> · {{ systemInfo.ai.model }}</span>
+                </template>
+                <template v-else>--</template>
+              </el-descriptions-item>
+              <el-descriptions-item :label="t('settings.usageSnapshots')">
+                {{ systemInfo ? t('settings.usageSnapshotsValue', {
+                  snapshots: systemInfo.usage.snapshots.toLocaleString(),
+                  analyzed: systemInfo.usage.analyzed.toLocaleString(),
+                  cameras: systemInfo.usage.cameras
+                }) : '--' }}
+              </el-descriptions-item>
+              <el-descriptions-item :label="t('settings.usageOldest')">
+                {{ systemInfo?.usage.oldestSnapshotAt ? formatDateTime(systemInfo.usage.oldestSnapshotAt) : '--' }}
               </el-descriptions-item>
             </el-descriptions>
           </el-card>
@@ -450,14 +521,17 @@ import {
   Edit,
   Delete,
   Moon,
-  Sunny
+  Sunny,
+  Monitor,
+  SwitchButton
 } from '@element-plus/icons-vue';
+import { useNotifications } from '@/composables/useNotifications';
 
 const route = useRoute();
 const { t } = useI18n();
 const { isDark, toggleTheme } = useTheme();
 const { cameras, loadCameras, openAddCameraModal, selectCameraAndGoToLive } = useCameras();
-const { user: authUser, setAuth, refreshUser } = useAuth();
+const { user: authUser, setAuth, refreshUser, logout } = useAuth();
 // Used by the language picker in the preferences tab
 const { locale, locales: supportedLocales, setAppLocale: setLocale } = useLanguage();
 
@@ -466,6 +540,94 @@ const activeTab = ref(route.query.tab || 'profile');
 watch(() => route.query.tab, (tab) => {
   if (tab) activeTab.value = tab;
 });
+
+// ---------- Signed-in devices ----------
+const { relativeTime } = useNotifications();
+const sessions = ref([]);
+const sessionsUntracked = ref(false);
+const loadingSessions = ref(false);
+const revokingOthers = ref(false);
+
+const formatDateTime = (value) => new Date(value).toLocaleString(locale.value === 'vi' ? 'vi-VN' : 'en-US');
+
+const loadSessions = async () => {
+  loadingSessions.value = true;
+  try {
+    const res = await api.getSessions();
+    sessions.value = res.data?.sessions || [];
+    sessionsUntracked.value = !!res.data?.currentUntracked;
+  } catch (err) {
+    ElNotification({ title: t('common.error'), message: t('settings.saveFailed'), type: 'error' });
+  } finally {
+    loadingSessions.value = false;
+  }
+};
+
+const handleRevokeSession = async (row) => {
+  try {
+    await ElMessageBox.confirm(
+      row.current ? t('settings.signOutThisConfirm') : t('settings.signOutConfirm', { device: `${row.browser} · ${row.os}` }),
+      t('settings.signOut'),
+      { type: 'warning', confirmButtonText: t('settings.signOut'), cancelButtonText: t('common.cancel') }
+    );
+  } catch {
+    return;
+  }
+  try {
+    const res = await api.revokeSession(row.id);
+    if (res.data?.signedOut) {
+      logout();
+      return;
+    }
+    ElNotification({ title: t('common.success'), message: t('settings.signedOutDevice'), type: 'success' });
+    loadSessions();
+  } catch (err) {
+    ElNotification({ title: t('common.error'), message: err.response?.data?.message || t('settings.saveFailed'), type: 'error' });
+  }
+};
+
+const handleRevokeOthers = async () => {
+  try {
+    await ElMessageBox.confirm(t('settings.signOutOthersConfirm'), t('settings.signOutOthers'), {
+      type: 'warning',
+      confirmButtonText: t('settings.signOutOthers'),
+      cancelButtonText: t('common.cancel')
+    });
+  } catch {
+    return;
+  }
+  revokingOthers.value = true;
+  try {
+    const res = await api.revokeOtherSessions();
+    if (res.data?.token) setAuth(authUser.value, res.data.token);
+    ElNotification({ title: t('common.success'), message: t('settings.signedOutOthers'), type: 'success' });
+    loadSessions();
+  } catch (err) {
+    ElNotification({ title: t('common.error'), message: err.response?.data?.message || t('settings.saveFailed'), type: 'error' });
+  } finally {
+    revokingOthers.value = false;
+  }
+};
+
+// ---------- Storage & AI (real values from the server) ----------
+const systemInfo = ref(null);
+const loadingSystemInfo = ref(false);
+const loadSystemInfo = async () => {
+  loadingSystemInfo.value = true;
+  try {
+    const res = await api.getSystemInfo();
+    systemInfo.value = res.data?.info || null;
+  } catch (err) {
+    systemInfo.value = null;
+  } finally {
+    loadingSystemInfo.value = false;
+  }
+};
+
+watch(activeTab, (tab) => {
+  if (tab === 'sessions') loadSessions();
+  if (tab === 'storage') loadSystemInfo();
+}, { immediate: true });
 
 // Notifications tab state
 const savingPrefs = ref(false);

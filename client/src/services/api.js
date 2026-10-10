@@ -39,6 +39,19 @@ export default {
   getMe() {
     return apiClient.get('/auth/me');
   },
+  getSessions() {
+    return apiClient.get('/auth/sessions');
+  },
+  revokeSession(sessionId) {
+    return apiClient.delete(`/auth/sessions/${sessionId}`);
+  },
+  // Signs out every other device; returns a fresh token for this one
+  revokeOtherSessions() {
+    return apiClient.post('/auth/sessions/revoke-others');
+  },
+  getSystemInfo() {
+    return apiClient.get('/system/info');
+  },
   forgotPassword(email, language) {
     return apiClient.post('/auth/forgot-password', { email, language });
   },

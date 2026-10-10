@@ -28,7 +28,8 @@ const store = {
     users: new Map(),
     cameras: [],
     authTokens: [],
-    notifications: []
+    notifications: [],
+    sessions: []
 };
 const sentMails = [];
 let nextId = 1;
@@ -68,6 +69,7 @@ function resetStore() {
     ];
     store.authTokens = [];
     store.notifications = [];
+    store.sessions = [];
     sentMails.length = 0;
 }
 resetStore();
@@ -148,6 +150,33 @@ models.Notification.find = (filter) => query(() =>
 models.Notification.countDocuments = async (filter) => store.notifications.filter(n => notificationMatches(n, filter)).length;
 models.Notification.updateMany = async (filter, update) => {
     store.notifications.filter(n => notificationMatches(n, filter)).forEach(n => Object.assign(n, update.$set));
+};
+
+// Session
+const sessionMatches = (sess, filter) =>
+    (filter._id === undefined || (typeof filter._id === 'object' && filter._id.$ne !== undefined
+        ? !sameId(sess._id, filter._id.$ne) : sameId(sess._id, filter._id))) &&
+    (filter.userId === undefined || sameId(sess.userId, filter.userId)) &&
+    (filter.revokedAt === undefined || (filter.revokedAt === null ? !sess.revokedAt : true)) &&
+    (filter.expiresAt === undefined || sess.expiresAt > filter.expiresAt.$gt);
+models.Session.create = async (data) => {
+    const doc = { _id: newId(), createdAt: new Date(), lastSeenAt: new Date(), revokedAt: null, ...data };
+    store.sessions.push(doc);
+    return doc;
+};
+models.Session.findById = async (id) => store.sessions.find(sess => sameId(sess._id, id)) || null;
+models.Session.find = (filter) => query(() => store.sessions.filter(sess => sessionMatches(sess, filter)));
+models.Session.updateOne = async (filter, update) => {
+    const doc = store.sessions.find(sess => sessionMatches(sess, filter));
+    if (doc) Object.assign(doc, update.$set);
+};
+models.Session.updateMany = async (filter, update) => {
+    store.sessions.filter(sess => sessionMatches(sess, filter)).forEach(sess => Object.assign(sess, update.$set));
+};
+models.Session.findOneAndUpdate = async (filter, update) => {
+    const doc = store.sessions.find(sess => sessionMatches(sess, filter));
+    if (doc) Object.assign(doc, update.$set);
+    return doc || null;
 };
 
 // S3

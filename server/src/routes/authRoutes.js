@@ -24,6 +24,9 @@ router.post('/verify-email', tokenLimiter, authController.verifyEmail);
 router.post('/resend-verification', authenticate, resendVerificationLimiter, authController.resendVerification);
 router.post('/session', authenticate, authController.refreshSession);
 router.get('/me', authenticate, authController.getMe);
+router.get('/sessions', authenticate, authController.listSessions);
+router.post('/sessions/revoke-others', authenticate, authController.revokeOtherSessions);
+router.delete('/sessions/:sessionId', authenticate, authController.revokeSession);
 router.post('/change-password', authenticate, passwordChangeLimiter, authController.changePassword);
 router.post('/profile', authenticate, authController.updateProfile);
 

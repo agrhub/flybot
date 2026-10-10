@@ -1,7 +1,8 @@
 const bcrypt = require('bcryptjs');
-const { User } = require('../models');
+const mongoose = require('mongoose');
+const { User, Session } = require('../models');
 const { ALLOW_REGISTRATION } = require('../config/env');
-const { signToken, setAuthCookie, clearAuthCookie } = require('../middlewares/auth');
+const { signToken, setAuthCookie, clearAuthCookie, createSession, readToken, resolveToken } = require('../middlewares/auth');
 const { sendServerError } = require('../utils/http');
 const { normalizeLanguage, SUPPORTED_LANGUAGES } = require('../utils/i18n');
 const { queueMail } = require('../services/mailService');
@@ -118,7 +119,8 @@ async function login(req, res) {
             await user.save();
         }
 
-        const token = signToken(user);
+        const sessionId = await createSession(user._id, req);
+        const token = signToken(user, sessionId);
         setAuthCookie(res, token);
 
         res.json({
@@ -157,8 +159,91 @@ async function getMe(req, res) {
  * Logout: clear the auth cookie
  */
 async function logout(req, res) {
+    try {
+        const token = readToken(req);
+        const resolved = token ? await resolveToken(token) : null;
+        if (resolved?.sessionId) {
+            await Session.updateOne({ _id: resolved.sessionId, revokedAt: null }, { $set: { revokedAt: new Date() } });
+        }
+    } catch (err) {
+        console.warn('⚠️ Logout session revoke failed:', err.message);
+    }
     clearAuthCookie(res);
     res.json({ success: true });
+}
+
+/**
+ * GET /api/auth/sessions: signed-in devices of the current user
+ */
+async function listSessions(req, res) {
+    try {
+        const sessions = await Session.find({ userId: req.user.id, revokedAt: null, expiresAt: { $gt: new Date() } })
+            .sort({ lastSeenAt: -1 });
+        res.json({
+            success: true,
+            sessions: sessions.map(sess => ({
+                id: sess._id,
+                browser: sess.browser,
+                os: sess.os,
+                ip: sess.ip,
+                createdAt: sess.createdAt,
+                lastSeenAt: sess.lastSeenAt,
+                current: String(sess._id) === String(req.sessionId)
+            })),
+            // Signed in with a token from before session tracking: it cannot be listed
+            currentUntracked: !req.sessionId
+        });
+    } catch (err) {
+        sendServerError(res, err, { context: 'List sessions' });
+    }
+}
+
+/**
+ * DELETE /api/auth/sessions/:sessionId: sign out one device
+ */
+async function revokeSession(req, res) {
+    try {
+        const { sessionId } = req.params;
+        if (!mongoose.isValidObjectId(sessionId)) {
+            return res.status(404).json({ success: false, message: "Session not found." });
+        }
+        const revoked = await Session.findOneAndUpdate(
+            { _id: sessionId, userId: req.user.id, revokedAt: null },
+            { $set: { revokedAt: new Date() } }
+        );
+        if (!revoked) return res.status(404).json({ success: false, message: "Session not found." });
+        const isCurrent = String(sessionId) === String(req.sessionId);
+        if (isCurrent) clearAuthCookie(res);
+        res.json({ success: true, signedOut: isCurrent });
+    } catch (err) {
+        sendServerError(res, err, { context: 'Revoke session' });
+    }
+}
+
+/**
+ * POST /api/auth/sessions/revoke-others: sign out every other device (including
+ * pre-session tokens, via tokenVersion) and return a fresh token for this one.
+ */
+async function revokeOtherSessions(req, res) {
+    try {
+        const user = await User.findById(req.user.id);
+        if (!user) return res.status(404).json({ success: false, message: "User not found." });
+
+        const filter = { userId: user._id, revokedAt: null };
+        if (req.sessionId) filter._id = { $ne: req.sessionId };
+        await Session.updateMany(filter, { $set: { revokedAt: new Date() } });
+
+        user.tokenVersion = (user.tokenVersion || 0) + 1;
+        await user.save();
+
+        // Legacy token without a session: give this device a tracked session from now on
+        const sessionId = req.sessionId || await createSession(user._id, req);
+        const token = signToken(user, sessionId);
+        setAuthCookie(res, token);
+        res.json({ success: true, token });
+    } catch (err) {
+        sendServerError(res, err, { context: 'Revoke other sessions' });
+    }
 }
 
 /**
@@ -216,6 +301,7 @@ async function resetPassword(req, res) {
         // Receiving the reset email proves ownership of the address
         user.emailVerified = true;
         await user.save();
+        await Session.updateMany({ userId: user._id, revokedAt: null }, { $set: { revokedAt: new Date() } });
 
         clearAuthCookie(res);
         queueMail(emailTemplates.passwordChangedEmail({ user, language: normalizeLanguage(user.language) }));
@@ -287,7 +373,11 @@ async function changePassword(req, res) {
         user.tokenVersion = (user.tokenVersion || 0) + 1;
         await user.save();
 
-        const token = signToken(user);
+        const others = { userId: user._id, revokedAt: null };
+        if (req.sessionId) others._id = { $ne: req.sessionId };
+        await Session.updateMany(others, { $set: { revokedAt: new Date() } });
+        const sessionId = req.sessionId || await createSession(user._id, req);
+        const token = signToken(user, sessionId);
         setAuthCookie(res, token);
         queueMail(emailTemplates.passwordChangedEmail({ user, language: normalizeLanguage(user.language) }));
 
@@ -343,6 +433,9 @@ module.exports = {
     refreshSession,
     getMe,
     logout,
+    listSessions,
+    revokeSession,
+    revokeOtherSessions,
     forgotPassword,
     resetPassword,
     verifyEmail,
