@@ -40,6 +40,10 @@ const cameraSchema = new mongoose.Schema({
     captureIntervalMinutes: { type: Number, enum: [15, 30, 60, 120], default: 30 },
     // Only capture during daylight hours (06:00-18:00 local time); sticky traps are unreadable at night
     captureDaytimeOnly: { type: Boolean, default: false },
+    // Sticky card: when it was last replaced (latest "card_replaced" maintenance event) and
+    // after how many days to remind (0 = off)
+    cardReplacedAt: { type: Date, default: null },
+    cardReminderDays: { type: Number, default: 7, min: 0, max: 60 },
     // Last automatic or manual capture attempt for this device
     lastCaptureAt: { type: Date, default: null },
     addedAt: { type: Date, default: Date.now },

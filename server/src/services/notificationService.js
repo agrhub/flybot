@@ -16,7 +16,10 @@ const COOLDOWN_MINUTES = {
     ai_failure: 360,
     // Every share is its own event
     camera_shared: 0,
-    dashboard_shared: 0
+    dashboard_shared: 0,
+    // Daily reminder until the card is replaced
+    card_due: 20 * 60,
+    card_change_detected: 0
 };
 
 const SEVERITY = {
@@ -25,11 +28,13 @@ const SEVERITY = {
     camera_online: 'info',
     ai_failure: 'warning',
     camera_shared: 'info',
-    dashboard_shared: 'info'
+    dashboard_shared: 'info',
+    card_due: 'warning',
+    card_change_detected: 'info'
 };
 
 // "Back online" is good news: in-app only
-const EMAIL_TYPES = new Set(['pest_threshold', 'camera_offline', 'ai_failure']);
+const EMAIL_TYPES = new Set(['pest_threshold', 'camera_offline', 'ai_failure', 'card_due']);
 // Phone/browser push: the alerts, plus something new shared with you
 const PUSH_TYPES = new Set([...EMAIL_TYPES, 'camera_shared', 'dashboard_shared']);
 
@@ -177,5 +182,6 @@ module.exports = {
     countPests,
     checkPestThreshold,
     cameraStatusChanged,
+    notifyCameraOwners,
     recordAiResult
 };

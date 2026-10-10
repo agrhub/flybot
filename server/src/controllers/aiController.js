@@ -11,6 +11,7 @@ const { countPests } = require('../services/notificationService');
 const forecastService = require('../services/forecastService');
 const { latestProcessedByCamera } = require('../services/snapshotQueries');
 const dailyStats = require('../services/dailyStats');
+const { cardDueAt } = require('../services/maintenanceService');
 const weatherService = require('../services/weatherService');
 
 /**
@@ -475,7 +476,9 @@ async function getAiOverview(req, res) {
                 alertThreshold,
                 status: cam.status ?? 1,
                 lastScanTime,
-                lastImageUrl
+                lastImageUrl,
+                // Sticky card reminder date (null when reminders are off)
+                cardDueAt: cardDueAt(cam)
             });
         }
 

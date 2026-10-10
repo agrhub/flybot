@@ -5,6 +5,7 @@ const ezvizService = require('../services/ezvizService');
 const { sendServerError } = require('../utils/http');
 const { recordAudit } = require('../services/auditService');
 const { latestSnapshotTimeByCamera } = require('../services/snapshotQueries');
+const { CARD_REMINDER_DAYS, cardDueAt } = require('../services/maintenanceService');
 
 const cameraTarget = (camera) => ({ type: 'camera', id: camera.deviceSerial, label: camera.deviceName });
 const { viewFilter, viewableCameras, findViewableCamera, findManageableCamera, canManageCamera } = require('../utils/ownership');
@@ -25,6 +26,7 @@ function toClientCamera(camera, user) {
     // 'admin' = visible only because the viewer is an admin
     obj.access = isOwner ? 'owner' : (sharedWithMe ? 'shared' : 'admin');
     obj.canManage = canManage;
+    obj.cardDueAt = cardDueAt(obj);
     if (canManage) {
         obj.sharedWith = (obj.sharedWith || []).map(sh => ({
             email: sh.email,
@@ -212,7 +214,7 @@ async function deleteCamera(req, res) {
  */
 async function updateCamera(req, res) {
     const userId = req.user.id;
-    const { deviceSerial, deviceName, validateCode, alertThreshold, captureIntervalMinutes, captureDaytimeOnly } = req.body;
+    const { deviceSerial, deviceName, validateCode, alertThreshold, captureIntervalMinutes, captureDaytimeOnly, cardReminderDays } = req.body;
     if (!deviceSerial) return res.status(400).json({ success: false, message: "Missing deviceSerial." });
     if (typeof alertThreshold !== 'undefined' &&
         (!Number.isInteger(alertThreshold) || alertThreshold < 1 || alertThreshold > 10000)) {
@@ -224,12 +226,15 @@ async function updateCamera(req, res) {
     if (typeof captureDaytimeOnly !== 'undefined' && typeof captureDaytimeOnly !== 'boolean') {
         return res.status(400).json({ success: false, message: "captureDaytimeOnly must be true or false." });
     }
+    if (typeof cardReminderDays !== 'undefined' && !CARD_REMINDER_DAYS.includes(cardReminderDays)) {
+        return res.status(400).json({ success: false, message: `cardReminderDays must be one of ${CARD_REMINDER_DAYS.join(', ')}.` });
+    }
     try {
         const camera = await findManageableCamera(req.user, deviceSerial);
         if (!camera) {
             return res.status(404).json({ success: false, message: "Device not found or permission denied." });
         }
-        const AUDITED_FIELDS = ['deviceName', 'validateCode', 'alertThreshold', 'captureIntervalMinutes', 'captureDaytimeOnly'];
+        const AUDITED_FIELDS = ['deviceName', 'validateCode', 'alertThreshold', 'captureIntervalMinutes', 'captureDaytimeOnly', 'cardReminderDays'];
         const before = Object.fromEntries(AUDITED_FIELDS.map(field => [field, camera[field]]));
         if (typeof deviceName !== 'undefined') {
             camera.deviceName = deviceName.trim();
@@ -246,12 +251,15 @@ async function updateCamera(req, res) {
         if (typeof captureDaytimeOnly !== 'undefined') {
             camera.captureDaytimeOnly = captureDaytimeOnly;
         }
+        if (typeof cardReminderDays !== 'undefined') {
+            camera.cardReminderDays = cardReminderDays;
+        }
         const changed = AUDITED_FIELDS.filter(field => camera[field] !== before[field]);
         await camera.save();
         if (changed.length) {
             // The verification code is a secret: record that it changed, not its value
             const details = { fields: changed };
-            for (const field of ['deviceName', 'alertThreshold', 'captureIntervalMinutes', 'captureDaytimeOnly']) {
+            for (const field of ['deviceName', 'alertThreshold', 'captureIntervalMinutes', 'captureDaytimeOnly', 'cardReminderDays']) {
                 if (changed.includes(field)) details[field] = camera[field];
             }
             recordAudit(req, { action: 'camera.updated', target: cameraTarget(camera), details });

@@ -828,6 +828,14 @@
       "dashboard_shared": {
         "title": "Dashboard shared with you",
         "desc": "{sharer} shared the dashboard {dashboardName} with you."
+      },
+      "card_due": {
+        "title": "Sticky card due",
+        "desc": "{deviceName}: the card has been up for {days} days."
+      },
+      "card_change_detected": {
+        "title": "New sticky card detected",
+        "desc": "{deviceName}: the count dropped from {previous} to {count}, so the card was probably replaced. Delete the entry in the camera if not."
       }
     }
   },
@@ -1151,5 +1159,36 @@
     "blockedHelp": "Allow notifications for this site in the browser settings (the icon next to the address bar), then reload the page.",
     "iosTitle": "On iPhone and iPad, add FlyBot to the Home Screen first",
     "iosSteps": "Open FlyBot in Safari, tap Share, then \"Add to Home Screen\". Open FlyBot from the new icon and turn on notifications here."
+  },
+  "maintenance": {
+    "title": "Trap maintenance",
+    "cardReplaced": "Card replaced",
+    "addOther": "Record",
+    "types": {
+      "card_replaced": "Sticky card replaced",
+      "lure_replaced": "Lure replaced",
+      "lens_cleaned": "Lens cleaned",
+      "other": "Other work"
+    },
+    "cardSince": "Current card since",
+    "cardAge": "Card age",
+    "never": "Not recorded",
+    "days": "{count} days",
+    "reminder": "Remind to replace",
+    "reminderOff": "Off",
+    "everyDays": "After {count} days",
+    "hint": "The trap counts insects on the current card. Press \"Card replaced\" when you change it so counts and reminders start over.",
+    "empty": "No maintenance recorded yet.",
+    "detected": "Automatic",
+    "detectedHint": "Recorded because the count dropped sharply. Delete it if the card was not replaced.",
+    "delete": "Delete entry",
+    "deleteConfirm": "Delete this maintenance entry?",
+    "saved": "Saved.",
+    "when": "When",
+    "note": "Note",
+    "overdue": "Replace card",
+    "dueSoon": "Card due soon",
+    "ok": "Card OK",
+    "chartMarker": "New card"
   }
 }

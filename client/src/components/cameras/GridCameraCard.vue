@@ -200,9 +200,14 @@
     <!-- 3. Card Footer -->
     <div class="grid-cam__footer px-4 py-2.5 flex items-center justify-between gap-2">
       <!-- Device Model / Type Badge -->
-      <span class="grid-cam__meta font-mono truncate min-w-0" :title="camera.model || camera.deviceType">
-        {{ formatModel(camera.model || camera.deviceType) }}
-      </span>
+      <div class="flex items-center gap-2 min-w-0">
+        <span class="grid-cam__meta font-mono truncate min-w-0" :title="camera.model || camera.deviceType">
+          {{ formatModel(camera.model || camera.deviceType) }}
+        </span>
+        <el-tag v-if="cardOverdue" type="warning" effect="light" round size="small" class="shrink-0">
+          {{ t('maintenance.overdue') }}
+        </el-tag>
+      </div>
 
       <!-- Action: View Details Button -->
       <el-button type="primary" link @click="emit('expand', camera)">
@@ -292,6 +297,8 @@ const cameraThumbnail = computed(() => {
   return url ? api.getImageUrl(url) : '';
 });
 
+// Sticky card past its reminder date
+const cardOverdue = computed(() => !!props.camera?.cardDueAt && new Date(props.camera.cardDueAt) <= new Date());
 const codeDialogVisible = ref(false);
 const inputCode = ref('');
 const savingCode = ref(false);

@@ -120,6 +120,9 @@
       </el-card>
     </div>
 
+    <!-- Sticky card and other field work -->
+    <TrapMaintenanceCard v-if="camera" :camera="camera" />
+
     <!-- Playback Controls Section -->
     <div class="w-full">
       <PlaybackControls
@@ -174,6 +177,7 @@ import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { loadEzuikit, loadHlsPlayers } from '@/utils/lazyLibs'
 import api from '@/services/api'
 import PlaybackControls from './PlaybackControls.vue'
+import TrapMaintenanceCard from './TrapMaintenanceCard.vue'
 import { ElNotification } from 'element-plus'
 import { VideoCamera, Key, Lock, EditPen, Camera } from '@element-plus/icons-vue'
 import { useNotifications } from '@/composables/useNotifications'

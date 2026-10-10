@@ -186,17 +186,73 @@ const loadRealtimeMetrics = async () => {
   }
 }
 
+// Card replacements of the selected camera, as period keys matching the chart's dateKey
+const cardMarkerKeys = ref(new Set())
+const markerFormat = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'Asia/Ho_Chi_Minh', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', hourCycle: 'h23'
+})
+const periodKeyOf = (date, mode) => {
+  const parts = Object.fromEntries(markerFormat.formatToParts(new Date(date)).map(p => [p.type, p.value]))
+  const day = `${parts.year}-${parts.month}-${parts.day}`
+  if (mode === 'hour') return `${day} ${parts.hour}:00`
+  return mode === 'month' ? day.slice(0, 7) : day
+}
+const loadCardMarkers = async (serial) => {
+  if (!serial || serial === 'all') {
+    cardMarkerKeys.value = new Set()
+    return
+  }
+  try {
+    const res = await api.getMaintenance(serial, 100)
+    const changes = (res.data.events || []).filter(e => e.type === 'card_replaced')
+    cardMarkerKeys.value = new Set(changes.map(e => periodKeyOf(e.at, currentMode.value)))
+  } catch (e) {
+    cardMarkerKeys.value = new Set()
+  }
+}
+
+// Dashed vertical line at each period where the sticky card was replaced
+const cardMarkerPlugin = {
+  id: 'cardMarkers',
+  afterDatasetsDraw(chart, _args, opts) {
+    const indexes = opts?.indexes || []
+    if (!indexes.length) return
+    const { ctx, chartArea: { top, bottom, right }, scales: { x } } = chart
+    ctx.save()
+    ctx.setLineDash([4, 4])
+    ctx.lineWidth = 1.5
+    ctx.strokeStyle = opts.color
+    ctx.fillStyle = opts.color
+    ctx.font = '11px sans-serif'
+    const labelWidth = ctx.measureText(opts.label).width
+    for (const i of indexes) {
+      const px = x.getPixelForValue(i)
+      ctx.beginPath()
+      ctx.moveTo(px, top)
+      ctx.lineTo(px, bottom)
+      ctx.stroke()
+      // Near the right edge the label goes on the left of the line
+      const textX = px + 4 + labelWidth > right ? px - 4 - labelWidth : px + 4
+      ctx.fillText(opts.label, textX, top + 12)
+    }
+    ctx.restore()
+  }
+}
+
 const fetchStatistics = async () => {
   const serial = props.camera?.deviceSerial || 'all'
 
   loading.value = true
   try {
+    loadCardMarkers(serial)
     const res = await api.getStatistics(serial, currentMode.value, props.startDate, props.endDate)
     if (res.data?.success) {
       statsData.value = res.data.data || []
       processStats(statsData.value)
       await nextTick()
       renderCharts(statsData.value)
+      // Markers may arrive after the chart: redraw with them
+      watchMarkersOnce()
     } else {
       statsData.value = []
       processStats([])
@@ -206,6 +262,16 @@ const fetchStatistics = async () => {
   } finally {
     loading.value = false
   }
+}
+
+let stopMarkerWatch = null
+const watchMarkersOnce = () => {
+  if (stopMarkerWatch) stopMarkerWatch()
+  stopMarkerWatch = watch(cardMarkerKeys, () => {
+    renderCharts(statsData.value)
+    stopMarkerWatch?.()
+    stopMarkerWatch = null
+  })
 }
 
 const processStats = (data) => {
@@ -313,14 +379,21 @@ const renderCharts = (data) => {
       })
     }
 
+    const markerIndexes = data.map((item, i) => (cardMarkerKeys.value.has(item.dateKey) ? i : -1)).filter(i => i >= 0)
     lineChartInstance = new Chart(lineChartRef.value, {
       type: 'line',
       data: { labels, datasets },
+      plugins: [cardMarkerPlugin],
       options: {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { position: 'bottom', labels: { usePointStyle: true, font: { family: 'Quicksand' } } }
+          legend: { position: 'bottom', labels: { usePointStyle: true, font: { family: 'Quicksand' } } },
+          cardMarkers: {
+            indexes: markerIndexes,
+            label: t('maintenance.chartMarker'),
+            color: getComputedStyle(document.documentElement).getPropertyValue('--el-color-warning').trim() || '#e6a23c'
+          }
         },
         scales: {
           y: {

@@ -39,6 +39,10 @@
       "ai_failure": {
         "subject": "🤖 AI analysis failing: {deviceName}",
         "body": "The last {failures} snapshots from camera {deviceName} ({deviceSerial}) could not be analyzed. Insect counts for this trap may be missing."
+      },
+      "card_due": {
+        "subject": "🪤 Time to replace the sticky card: {deviceName}",
+        "body": "The sticky card on camera {deviceName} ({deviceSerial}) has been up for {days} days. Replace it so counts stay accurate, then press \"Card replaced\" in FlyBot."
       }
     },
     "cameraShared": {

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const cameraController = require('../controllers/cameraController');
 const shareController = require('../controllers/shareController');
+const maintenanceController = require('../controllers/maintenanceController');
 const { authenticate, requireRole } = require('../middlewares/auth');
 const { requireStringFields } = require('../middlewares/validate');
 // Manual captures share their quota with the AI assistant's capture tool
@@ -26,6 +27,9 @@ router.get('/user/camera/shares', shareController.listShares);
 router.post('/user/camera/share', shareLimiter, shareController.addShare);
 router.delete('/user/camera/share', shareController.removeShare);
 router.post('/user/camera/capture', captureLimiter, cameraController.captureNow);
+router.get('/user/camera/maintenance', maintenanceController.listEvents);
+router.post('/user/camera/maintenance', maintenanceController.addEvent);
+router.delete('/user/camera/maintenance/:id', maintenanceController.deleteEvent);
 
 // Stream & playback routes
 router.post('/live', cameraController.getLiveStream);

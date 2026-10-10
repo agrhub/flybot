@@ -828,6 +828,14 @@
       "dashboard_shared": {
         "title": "Bảng được chia sẻ với bạn",
         "desc": "{sharer} đã chia sẻ bảng {dashboardName} với bạn."
+      },
+      "card_due": {
+        "title": "Đến hạn thay tấm bẫy",
+        "desc": "{deviceName}: tấm bẫy đã dùng {days} ngày."
+      },
+      "card_change_detected": {
+        "title": "Phát hiện tấm bẫy mới",
+        "desc": "{deviceName}: số côn trùng giảm từ {previous} xuống {count}, có thể vừa thay tấm bẫy. Nếu không phải, hãy xoá mục này trong camera."
       }
     }
   },
@@ -1151,5 +1159,36 @@
     "blockedHelp": "Cho phép thông báo cho trang này trong cài đặt trình duyệt (biểu tượng cạnh thanh địa chỉ), rồi tải lại trang.",
     "iosTitle": "Trên iPhone và iPad, cần thêm FlyBot vào Màn hình chính trước",
     "iosSteps": "Mở FlyBot bằng Safari, chạm nút Chia sẻ, chọn \"Thêm vào MH chính\". Mở FlyBot từ biểu tượng mới rồi bật thông báo tại đây."
+  },
+  "maintenance": {
+    "title": "Bảo trì bẫy",
+    "cardReplaced": "Đã thay tấm bẫy",
+    "addOther": "Ghi nhận",
+    "types": {
+      "card_replaced": "Thay tấm bẫy dính",
+      "lure_replaced": "Thay mồi dẫn dụ",
+      "lens_cleaned": "Lau ống kính",
+      "other": "Việc khác"
+    },
+    "cardSince": "Tấm bẫy hiện tại từ",
+    "cardAge": "Tuổi tấm bẫy",
+    "never": "Chưa ghi nhận",
+    "days": "{count} ngày",
+    "reminder": "Nhắc thay bẫy",
+    "reminderOff": "Tắt",
+    "everyDays": "Sau {count} ngày",
+    "hint": "Bẫy đếm côn trùng trên tấm bẫy hiện tại. Bấm \"Đã thay tấm bẫy\" khi thay để số liệu và lời nhắc bắt đầu lại.",
+    "empty": "Chưa có lần bảo trì nào.",
+    "detected": "Tự động",
+    "detectedHint": "Được ghi vì số côn trùng giảm mạnh. Xoá đi nếu tấm bẫy không được thay.",
+    "delete": "Xoá mục này",
+    "deleteConfirm": "Xoá mục bảo trì này?",
+    "saved": "Đã lưu.",
+    "when": "Thời gian",
+    "note": "Ghi chú",
+    "overdue": "Cần thay bẫy",
+    "dueSoon": "Sắp đến hạn thay",
+    "ok": "Bẫy còn tốt",
+    "chartMarker": "Thay bẫy"
   }
 }

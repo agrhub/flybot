@@ -12,6 +12,7 @@ const TEXT_KEYS = {
     camera_offline: 'email.alerts.camera_offline',
     camera_online: 'email.alerts.camera_online',
     ai_failure: 'email.alerts.ai_failure',
+    card_due: 'email.alerts.card_due',
     camera_shared: 'email.cameraShared',
     dashboard_shared: 'email.dashboardShared'
 };
@@ -21,6 +22,7 @@ const TARGET_PATH = {
     camera_offline: '/cameras',
     camera_online: '/cameras',
     ai_failure: '/analytics',
+    card_due: '/cameras',
     camera_shared: '/cameras'
 };
 const URGENT_TYPES = new Set(['pest_threshold', 'camera_offline']);

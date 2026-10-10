@@ -6,6 +6,7 @@ const ezvizService = require('../services/ezvizService');
 const s3Service = require('../services/s3Service');
 const aiService = require('../services/aiService');
 const notificationService = require('../services/notificationService');
+const maintenanceService = require('../services/maintenanceService');
 const { dueSerials } = require('../services/captureSchedule');
 
 /**
@@ -82,7 +83,9 @@ async function captureAndSaveSnapshot(deviceSerial) {
                 const succeeded = !!analyzed?.aiProcessed;
                 await notificationService.recordAiResult(deviceSerial, succeeded);
                 if (succeeded) {
-                    await notificationService.checkPestThreshold(deviceSerial, notificationService.countPests(analyzed.aiResults?.summary));
+                    const count = notificationService.countPests(analyzed.aiResults?.summary);
+                    await notificationService.checkPestThreshold(deviceSerial, count);
+                    await maintenanceService.detectCardChange(deviceSerial, analyzed, count);
                 }
             } catch (alertErr) {
                 console.error(`⚠️ Alert check failed (${deviceSerial}):`, alertErr.message);

@@ -233,6 +233,16 @@ export default {
   unshareCamera(deviceSerial, email) {
     return apiClient.delete('/user/camera/share', { data: { deviceSerial, email } });
   },
+  // Trap maintenance log (sticky card, lure, lens...)
+  getMaintenance(deviceSerial, limit = 20) {
+    return apiClient.get('/user/camera/maintenance', { params: { deviceSerial, limit } });
+  },
+  addMaintenance(data) {
+    return apiClient.post('/user/camera/maintenance', data);
+  },
+  deleteMaintenance(id) {
+    return apiClient.delete(`/user/camera/maintenance/${id}`);
+  },
   getCamerasHealth() {
     return apiClient.get('/user/cameras/health');
   },

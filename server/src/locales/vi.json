@@ -39,6 +39,10 @@
       "ai_failure": {
         "subject": "🤖 Phân tích AI bị lỗi: {deviceName}",
         "body": "{failures} ảnh gần nhất từ camera {deviceName} ({deviceSerial}) không phân tích được. Số liệu côn trùng của bẫy này có thể bị thiếu."
+      },
+      "card_due": {
+        "subject": "🪤 Đến lúc thay tấm bẫy dính: {deviceName}",
+        "body": "Tấm bẫy dính của camera {deviceName} ({deviceSerial}) đã dùng {days} ngày. Hãy thay để số liệu chính xác, rồi bấm \"Đã thay tấm bẫy\" trong FlyBot."
       }
     },
     "cameraShared": {

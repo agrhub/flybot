@@ -94,9 +94,14 @@
 
             <div class="flex items-center justify-between gap-3 mt-2">
               <span class="meta-text truncate">{{ cam.locationAddress || t('map.noAddress') }}</span>
-              <el-tag :type="levelTagType(cam.riskLevel)" effect="light" round size="small">
-                {{ riskLevelLabel(cam.riskLevel) }}
-              </el-tag>
+              <div class="flex items-center gap-1.5 shrink-0">
+                <el-tag v-if="cam.cardDueAt && new Date(cam.cardDueAt) <= new Date()" type="warning" effect="plain" round size="small">
+                  {{ t('maintenance.overdue') }}
+                </el-tag>
+                <el-tag :type="levelTagType(cam.riskLevel)" effect="light" round size="small">
+                  {{ riskLevelLabel(cam.riskLevel) }}
+                </el-tag>
+              </div>
             </div>
           </div>
 
