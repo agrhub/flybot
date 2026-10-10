@@ -95,8 +95,9 @@ import Chart from 'chart.js/auto'
 import api from '@/services/api'
 import { ElNotification } from 'element-plus'
 import { useI18n } from 'vue-i18n'
+import { FRUIT_FLY, normalizeSpecies, speciesName, speciesShare } from '@/utils/species'
 
-const { t, locale } = useI18n()
+const { t } = useI18n()
 
 const props = defineProps({
   camera: Object,
@@ -106,28 +107,8 @@ const props = defineProps({
   active: { type: Boolean, default: true }
 })
 
-const formatSpeciesName = (species) => {
-  if (!species) return '--';
-  const s = species.toLowerCase();
-  if (s.includes('ruồi vàng') || s.includes('fruit_fly') || s.includes('fruit fly') || s.includes('bactrocera')) {
-    return locale.value === 'en' ? 'Fruit fly' : 'Ruồi vàng';
-  }
-  if (s.includes('bọ')) {
-    return locale.value === 'en' ? 'Bug' : 'Bọ';
-  }
-  if (s.includes('sâu')) {
-    return locale.value === 'en' ? 'Caterpillar' : 'Sâu';
-  }
-  return species;
-};
-
-const formatSpeciesDisplay = (str) => {
-  if (!str || str === '--') return '--';
-  if (locale.value === 'en') {
-    return str.replace(/ruồi vàng/gi, 'Fruit fly').replace(/bọ/gi, 'Bug');
-  }
-  return str;
-};
+const formatSpeciesName = (species) => speciesName(species, t);
+const formatSpeciesDisplay = (str) => speciesShare(str, t);
 
 const modes = computed(() => [
   { label: t('analytics.periodHour'), value: 'hour' },
@@ -210,7 +191,7 @@ const processStats = (data) => {
 
   data.forEach(item => {
     (item.insects || []).forEach(ins => {
-      const norm = (ins.label === 'fruit_fly' || ins.label === 'fruit fly' || ins.label === 'fruit-fly') ? 'ruồi vàng' : ins.label
+      const norm = normalizeSpecies(ins.label)
       if (ins.value > 0) {
         speciesMap[norm] = (speciesMap[norm] || 0) + (ins.value || 0)
       }
@@ -270,7 +251,7 @@ const renderCharts = (data) => {
     const insectMap = new Map()
     data.forEach((item, itemIdx) => {
       (item.insects || []).forEach(ins => {
-        const norm = (ins.label === 'fruit_fly' || ins.label === 'fruit fly' || ins.label === 'fruit-fly') ? 'ruồi vàng' : ins.label
+        const norm = normalizeSpecies(ins.label)
         if (!insectMap.has(norm)) {
           insectMap.set(norm, new Array(data.length).fill(0))
         }
@@ -298,7 +279,7 @@ const renderCharts = (data) => {
 
     if (datasets.length === 0) {
       datasets.push({
-        label: formatSpeciesName('ruồi vàng'),
+        label: formatSpeciesName(FRUIT_FLY),
         data: new Array(data.length).fill(0),
         borderColor: '#10b981',
         backgroundColor: '#10b98120',
@@ -341,7 +322,7 @@ const renderCharts = (data) => {
     let speciesTotals = {}
     data.forEach(item => {
       (item.insects || []).forEach(ins => {
-        const norm = (ins.label === 'fruit_fly' || ins.label === 'fruit fly' || ins.label === 'fruit-fly') ? 'ruồi vàng' : ins.label
+        const norm = normalizeSpecies(ins.label)
         if (ins.value > 0) {
           speciesTotals[norm] = (speciesTotals[norm] || 0) + (ins.value || 0)
         }

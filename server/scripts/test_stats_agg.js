@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const config = require('../src/config/env');
 const { Snapshot } = require('../src/models');
+const { normalizeSpeciesExpr } = require('../src/constants/species');
 
 async function testAggregation() {
   await mongoose.connect(config.MONGO_URI);
@@ -27,13 +28,7 @@ async function testAggregation() {
     { $unwind: "$summaryArray" },
     {
       $addFields: {
-        normalizedInsect: {
-          $cond: [
-            { $in: ["$summaryArray.k", ["fruit_fly", "fruit fly", "fruit-fly", "ruồi vàng", "ruoi vang"]] },
-            "ruồi vàng",
-            "$summaryArray.k"
-          ]
-        }
+        normalizedInsect: normalizeSpeciesExpr("$summaryArray.k")
       }
     },
     // Step 1: Max per camera per day per insect

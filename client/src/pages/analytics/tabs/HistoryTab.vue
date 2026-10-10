@@ -153,23 +153,12 @@ import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { addQuicksandFonts } from '@/utils/pdfFonts'
 import { ElNotification } from 'element-plus'
+import { speciesName, formatSummary } from '@/utils/species'
 
 const { t, locale } = useI18n()
 
-const formatSpeciesName = (species) => {
-  if (!species) return '--';
-  const s = species.toLowerCase();
-  if (s.includes('ruồi vàng') || s.includes('fruit_fly') || s.includes('fruit fly') || s.includes('bactrocera')) {
-    return locale.value === 'en' ? 'Fruit fly' : 'Ruồi vàng';
-  }
-  if (s.includes('bọ')) {
-    return locale.value === 'en' ? 'Bug' : 'Bọ';
-  }
-  if (s.includes('sâu')) {
-    return locale.value === 'en' ? 'Caterpillar' : 'Sâu';
-  }
-  return species;
-};
+const formatSpeciesName = (species) => speciesName(species, t);
+const dateLocale = () => (locale.value === 'vi' ? 'vi-VN' : 'en-US');
 
 const props = defineProps({
   camera: Object,
@@ -206,7 +195,7 @@ const visiblePages = computed(() => {
 
 const formatDate = (isoStr) => {
   if (!isoStr) return '--'
-  return new Date(isoStr).toLocaleString('vi-VN')
+  return new Date(isoStr).toLocaleString(dateLocale())
 }
 
 const getTotalCount = (item) => {
@@ -233,7 +222,7 @@ const fetchHistory = async () => {
       totalRecords.value = 0
     }
   } catch (error) {
-    ElNotification({ title: t('common.error'), message: 'Failed to load detection history.', type: 'error' })
+    ElNotification({ title: t('common.error'), message: t('analytics.historyLoadFailed'), type: 'error' })
   } finally {
     loading.value = false
   }
@@ -285,7 +274,7 @@ const exportToPDF = async () => {
       putOnlyUsedFonts: true
     })
 
-    // Use Quicksand font with Vietnamese Unicode support
+    // Quicksand covers the Vietnamese characters used in localized reports
     addQuicksandFonts(doc)
     try {
       doc.setFont('Quicksand', 'normal')
@@ -300,11 +289,11 @@ const exportToPDF = async () => {
 
     doc.setFontSize(9)
     doc.setTextColor(100)
-    const deviceName = props.camera?.deviceName || 'Tất cả camera giám sát'
+    const deviceName = props.camera?.deviceName || t('analytics.report.allCameras')
     const deviceSerial = props.camera?.deviceSerial || 'all'
-    doc.text(`Thiết bị: ${deviceName}`, 14, 28)
-    doc.text(`Mã thiết bị (Serial): ${deviceSerial === 'all' ? 'Toàn bộ hệ thống' : deviceSerial}`, 14, 33)
-    doc.text(`Thời gian xuất báo cáo: ${new Date().toLocaleString(locale.value === 'vi' ? 'vi-VN' : 'en-US')}`, 14, 38)
+    doc.text(t('analytics.report.device', { name: deviceName }), 14, 28)
+    doc.text(t('analytics.report.serial', { serial: deviceSerial === 'all' ? t('analytics.report.wholeSystem') : deviceSerial }), 14, 33)
+    doc.text(t('analytics.report.exportedAt', { time: new Date().toLocaleString(dateLocale()) }), 14, 38)
 
     // Table Data & Base64 images
     const tableData = []
@@ -315,13 +304,7 @@ const exportToPDF = async () => {
     for (const item of listToExport.slice(0, 30)) {
       const timeStr = formatDate(item.createdAt)
       const total = getTotalCount(item)
-      const summary = item.aiResults?.summary || {}
-      const normalizedSummary = {}
-      for (const [n, c] of Object.entries(summary)) {
-        const normKey = (n === 'fruit_fly' || n === 'fruit fly' || n === 'fruit-fly') ? 'ruồi vàng' : n
-        normalizedSummary[normKey] = (normalizedSummary[normKey] || 0) + (Number(c) || 0)
-      }
-      const speciesStr = Object.entries(normalizedSummary).map(([n, c]) => `${n}: ${c}`).join(', ') || 'Chưa phân loại'
+      const speciesStr = formatSummary(item.aiResults?.summary, t) || t('analytics.report.notIdentified')
       const desc = item.aiResults?.raw_description || '--'
       const imgUrl = api.getImageUrl(item.imageUrl || item.s3Key)
 
@@ -331,7 +314,13 @@ const exportToPDF = async () => {
 
     autoTable(doc, {
       startY: 44,
-      head: [['Thời Gian', 'Ảnh Snapshot', 'Số Lượng', 'Phân Bố Loài', 'Đánh Giá AI']],
+      head: [[
+        t('analytics.report.colTime'),
+        t('analytics.report.colSnapshot'),
+        t('analytics.report.colCount'),
+        t('analytics.report.colSpecies'),
+        t('analytics.report.colAiAssessment')
+      ]],
       body: tableData,
       theme: 'grid',
       styles: {
@@ -367,10 +356,10 @@ const exportToPDF = async () => {
 
     const fileName = `FlyBot_Surveillance_Report_${Date.now()}.pdf`
     doc.save(fileName)
-    ElNotification({ title: t('common.success'), message: 'Đã xuất file PDF thành công!', type: 'success' })
+    ElNotification({ title: t('common.success'), message: t('analytics.pdfSuccess'), type: 'success' })
   } catch (error) {
     console.error('PDF Export Error:', error)
-    ElNotification({ title: t('common.error'), message: 'Lỗi khi xuất PDF: ' + error.message, type: 'error' })
+    ElNotification({ title: t('common.error'), message: t('analytics.report.pdfFailed', { error: error.message }), type: 'error' })
   } finally {
     exporting.value = false
   }

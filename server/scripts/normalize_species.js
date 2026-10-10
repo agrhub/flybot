@@ -1,65 +1,61 @@
 const mongoose = require('mongoose');
 const config = require('../src/config/env');
+const { FRUIT_FLY, FRUIT_FLY_ALIASES } = require('../src/constants/species');
+
+// Usage: node scripts/normalize_species.js [--apply]
+// Rewrites every fruit fly alias in snapshot summaries and insect names to the canonical key.
+// Without --apply it only reports what would change.
+const LEGACY_ALIASES = FRUIT_FLY_ALIASES.filter(alias => alias !== FRUIT_FLY);
 
 async function migrate() {
+  const apply = process.argv.includes('--apply');
   await mongoose.connect(config.MONGO_URI);
-  console.log('Connected to DB for migration');
+  console.log(`Connected to DB (${apply ? 'APPLY' : 'dry run'})`);
   const collection = mongoose.connection.db.collection('snapshots');
 
-  // Find documents where aiResults.summary.fruit_fly exists
   const docs = await collection.find({
     $or: [
-      { 'aiResults.summary.fruit_fly': { $exists: true } },
-      { 'aiResults.summary.fruit fly': { $exists: true } },
-      { 'aiResults.insects.name': { $in: ['fruit_fly', 'fruit fly', 'fruit-fly'] } }
+      ...LEGACY_ALIASES.map(alias => ({ [`aiResults.summary.${alias}`]: { $exists: true } })),
+      { 'aiResults.insects.name': { $in: LEGACY_ALIASES } }
     ]
   }).toArray();
 
-  console.log(`Found ${docs.length} raw docs to normalize`);
+  console.log(`Found ${docs.length} docs with legacy fruit fly labels`);
 
   let updated = 0;
   for (const doc of docs) {
     const summary = doc.aiResults?.summary || {};
     const insects = doc.aiResults?.insects || [];
 
-    const ffCount = (summary['fruit_fly'] !== undefined ? summary['fruit_fly'] : (summary['fruit fly'] !== undefined ? summary['fruit fly'] : 0));
-    const currentRuoiVang = summary['ruồi vàng'] || 0;
-    const finalRuoiVang = currentRuoiVang > 0 ? currentRuoiVang : ffCount;
-
+    // Merge all aliases into one count (the highest, as older code kept the larger of the two)
     const newSummary = {};
+    let fruitFlyCount = 0;
     for (const [k, v] of Object.entries(summary)) {
-      if (k === 'fruit_fly' || k === 'fruit fly') {
-        newSummary['ruồi vàng'] = finalRuoiVang;
+      if (FRUIT_FLY_ALIASES.includes(k)) {
+        fruitFlyCount = Math.max(fruitFlyCount, Number(v) || 0);
       } else {
         newSummary[k] = v;
       }
     }
-    if (!newSummary['ruồi vàng'] && ffCount > 0) {
-      newSummary['ruồi vàng'] = ffCount;
+    if (Object.keys(summary).some(k => FRUIT_FLY_ALIASES.includes(k))) {
+      newSummary[FRUIT_FLY] = fruitFlyCount;
     }
 
-    const newInsects = insects.map(ins => {
-      if (ins.name === 'fruit_fly' || ins.name === 'fruit fly' || ins.name === 'fruit-fly') {
-        return { ...ins, name: 'ruồi vàng' };
-      }
-      return ins;
-    });
-
-    await collection.updateOne(
-      { _id: doc._id },
-      {
-        $set: {
-          'aiResults.summary': newSummary,
-          'aiResults.insects': newInsects
-        }
-      }
+    const newInsects = insects.map(ins =>
+      FRUIT_FLY_ALIASES.includes(ins.name) ? { ...ins, name: FRUIT_FLY } : ins
     );
+
+    if (apply) {
+      await collection.updateOne(
+        { _id: doc._id },
+        { $set: { 'aiResults.summary': newSummary, 'aiResults.insects': newInsects } }
+      );
+    }
     updated++;
   }
 
-  console.log(`Migrated ${updated} docs!`);
+  console.log(apply ? `Migrated ${updated} docs.` : `Would migrate ${updated} docs. Re-run with --apply to write.`);
 
-  // Verify
   const summaryKeys = await collection.aggregate([
     { $match: { aiProcessed: true } },
     { $project: { keys: { $map: { input: { $objectToArray: '$aiResults.summary' }, as: 'kv', in: '$$kv.k' } } } },
@@ -67,7 +63,7 @@ async function migrate() {
     { $group: { _id: '$keys', count: { $sum: 1 } } }
   ]).toArray();
 
-  console.log('Summary keys in DB after migration:', summaryKeys);
+  console.log('Summary keys in DB:', summaryKeys);
 
   await mongoose.disconnect();
 }

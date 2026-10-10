@@ -51,7 +51,7 @@
 
     <!-- Key Metrics Cards (Row 1) -->
     <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-      <!-- Card 1: Điểm Nóng Realtime (Peak Camera) -->
+      <!-- Card 1: Realtime hotspot (peak camera) -->
       <div class="bg-[var(--el-card-bg-color)] border border-[var(--el-border-color)] rounded-3xl p-6 shadow-soft hover:shadow-md transition-all">
         <div class="flex items-center justify-between mb-4">
           <span class="text-[var(--el-text-color-secondary)] text-xs font-bold uppercase tracking-wider">
@@ -72,7 +72,7 @@
         </div>
       </div>
 
-      <!-- Card 2: Tổng Côn Trùng Realtime Toàn Vườn -->
+      <!-- Card 2: Realtime insect total across the orchard -->
       <div class="bg-[var(--el-card-bg-color)] border border-[var(--el-border-color)] rounded-3xl p-6 shadow-soft hover:shadow-md transition-all">
         <div class="flex items-center justify-between mb-4">
           <span class="text-[var(--el-text-color-secondary)] text-xs font-bold uppercase tracking-wider">
@@ -92,7 +92,7 @@
         </div>
       </div>
 
-      <!-- Card 3: Trực Tuyến Camera -->
+      <!-- Card 3: Cameras online -->
       <div class="bg-[var(--el-card-bg-color)] border border-[var(--el-border-color)] rounded-3xl p-6 shadow-soft hover:shadow-md transition-all">
         <div class="flex items-center justify-between mb-4">
           <span class="text-[var(--el-text-color-secondary)] text-xs font-bold uppercase tracking-wider">
@@ -113,7 +113,7 @@
         </div>
       </div>
 
-      <!-- Card 4: Mức Độ Nguy Cơ Bùng Phát (AI Outbreak Risk Index) -->
+      <!-- Card 4: AI outbreak risk index -->
       <div class="bg-[var(--el-card-bg-color)] border border-[var(--el-border-color)] rounded-3xl p-6 shadow-soft hover:shadow-md transition-all">
         <div class="flex items-center justify-between mb-4">
           <span class="text-[var(--el-text-color-secondary)] text-xs font-bold uppercase tracking-wider">
@@ -369,7 +369,7 @@
             >
               <div>
                 <div class="flex items-center justify-between mb-2">
-                  <span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full" :class="(rec.urgency === 'Khẩn cấp' || rec.urgencyEn === 'Urgent') ? 'bg-red-500/15 text-red-400 border border-red-500/30' : 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'">
+                  <span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full" :class="rec.urgency === 'urgent' ? 'bg-red-500/15 text-red-400 border border-red-500/30' : 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'">
                     {{ getUrgencyLabel(rec) }}
                   </span>
                   <span class="text-[10px] font-mono text-slate-400">{{ getMethodLabel(rec) }}</span>
@@ -473,43 +473,21 @@ import { useI18n } from 'vue-i18n';
 import { useCameras } from '@/composables/useCameras';
 import api from '@/services/api';
 import { ElNotification } from 'element-plus';
+import { speciesShare } from '@/utils/species';
 
 const router = useRouter();
-const { t, locale } = useI18n();
+const { t } = useI18n();
 const { cameras, selectCameraAndGoToLive } = useCameras();
 
-const formatSpeciesDisplay = (topSpecies) => {
-  if (!topSpecies || topSpecies === '--') return '--';
-  if (locale.value === 'en') {
-    return topSpecies.replace(/ruồi vàng/gi, 'Fruit fly').replace(/bọ/gi, 'Bug');
-  }
-  return topSpecies;
-};
+const formatSpeciesDisplay = (topSpecies) => speciesShare(topSpecies, t);
 
-const getUrgencyLabel = (rec) => {
-  if (locale.value === 'en') return rec.urgencyEn || rec.urgency || 'Normal';
-  return rec.urgency || 'Bình thường';
-};
-
-const getMethodLabel = (rec) => {
-  if (locale.value === 'en') return rec.methodEn || rec.method || '';
-  return rec.method || '';
-};
-
-const getTitleLabel = (rec) => {
-  if (locale.value === 'en') return rec.titleEn || rec.title || '';
-  return rec.title || '';
-};
-
-const getDescLabel = (rec) => {
-  if (locale.value === 'en') return rec.descEn || rec.desc || '';
-  return rec.desc || '';
-};
-
-const getTargetZoneLabel = (rec) => {
-  if (locale.value === 'en') return rec.targetZoneEn || rec.targetZone || '';
-  return rec.targetZone || '';
-};
+// The diagnosis API returns stable keys; all display text comes from dashboard.diagnosis.*
+const getUrgencyLabel = (rec) => t(`dashboard.diagnosis.urgency.${rec.urgency || 'normal'}`);
+const recText = (rec, field) => (rec.key ? t(`dashboard.diagnosis.recs.${rec.key}.${field}`) : '');
+const getMethodLabel = (rec) => recText(rec, 'method');
+const getTitleLabel = (rec) => recText(rec, 'title');
+const getDescLabel = (rec) => recText(rec, 'desc');
+const getTargetZoneLabel = (rec) => recText(rec, 'zone');
 
 const user = computed(() => {
   try {
@@ -539,7 +517,7 @@ const overviewData = ref({
   },
   totalSnapshots: 0,
   last24hCount: 0,
-  topSpecies: 'ruồi vàng (Bactrocera) (100%)',
+  topSpecies: '--',
   trend7Days: []
 });
 
@@ -557,9 +535,9 @@ const currentPeriodStats = computed(() => {
 
 const riskLabel = computed(() => {
   const risk = overviewData.value.overallRisk;
-  if (risk === 'high') return t('dashboard.outbreakRiskHigh') || 'Cảnh báo: Nguy cơ cao';
-  if (risk === 'moderate') return t('dashboard.outbreakRiskModerate') || 'Trung bình: Cần theo dõi';
-  return t('dashboard.outbreakRiskLow') || 'An toàn: Kiểm soát tốt';
+  if (risk === 'high') return t('dashboard.outbreakRiskHigh');
+  if (risk === 'moderate') return t('dashboard.outbreakRiskModerate');
+  return t('dashboard.outbreakRiskLow');
 });
 
 const riskColorClass = computed(() => {
@@ -581,7 +559,7 @@ const runDeepDiagnosis = async () => {
       diagnosisResult.value = res.data.diagnosis;
       ElNotification({
         title: 'AI Copilot',
-        message: 'Đã hoàn tất phân tích chẩn đoán chuyên sâu và dự báo dịch hại 7 ngày!',
+        message: t('dashboard.diagnosisDone'),
         type: 'success'
       });
     }
@@ -589,7 +567,7 @@ const runDeepDiagnosis = async () => {
     console.error('Diagnosis error:', err);
     ElNotification({
       title: t('common.error'),
-      message: 'Không thể chạy chẩn đoán AI: ' + err.message,
+      message: t('dashboard.diagnosisFailed', { error: err.message }),
       type: 'error'
     });
   } finally {

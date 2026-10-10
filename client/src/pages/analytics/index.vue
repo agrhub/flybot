@@ -154,6 +154,7 @@ import * as XLSX from 'xlsx';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { addQuicksandFonts } from '@/utils/pdfFonts';
+import { formatSummary, normalizeSummary } from '@/utils/species';
 import { ElNotification } from 'element-plus';
 
 const { t, locale } = useI18n();
@@ -214,7 +215,8 @@ const exportToPdf = async () => {
   exportingPdf.value = true;
   try {
     const serial = selectedCamera.value?.deviceSerial || 'all';
-    const deviceName = selectedCamera.value?.deviceName || 'Tất cả camera';
+    const deviceName = selectedCamera.value?.deviceName || t('analytics.report.allCameras');
+    const dateLocale = locale.value === 'vi' ? 'vi-VN' : 'en-US';
 
     // Fetch records to export
     const res = await api.getAiResults(serial, 1, 100, effectiveStartDate.value, effectiveEndDate.value);
@@ -241,29 +243,29 @@ const exportToPdf = async () => {
 
     doc.setFontSize(9);
     doc.setTextColor(100);
-    doc.text(`Thiết bị: ${deviceName}`, 14, 28);
-    doc.text(`Serial Number: ${serial === 'all' ? 'Toàn bộ hệ thống camera' : serial}`, 14, 33);
-    doc.text(`Khoảng thời gian: ${selectedTimeRange.value.toUpperCase()}`, 14, 38);
-    doc.text(`Thời gian xuất: ${new Date().toLocaleString(locale.value === 'vi' ? 'vi-VN' : 'en-US')}`, 14, 43);
+    doc.text(t('analytics.report.device', { name: deviceName }), 14, 28);
+    doc.text(t('analytics.report.serial', { serial: serial === 'all' ? t('analytics.report.wholeSystem') : serial }), 14, 33);
+    doc.text(t('analytics.report.timeRange', { range: selectedTimeRange.value.toUpperCase() }), 14, 38);
+    doc.text(t('analytics.report.exportedAt', { time: new Date().toLocaleString(dateLocale) }), 14, 43);
 
     const tableData = results.map(item => {
-      const summary = item.aiResults?.summary || {};
-      const normalizedSummary = {};
-      for (const [k, v] of Object.entries(summary)) {
-        const normKey = (k === 'fruit_fly' || k === 'fruit fly' || k === 'fruit-fly') ? 'ruồi vàng' : k;
-        normalizedSummary[normKey] = (normalizedSummary[normKey] || 0) + (Number(v) || 0);
-      }
-      const speciesDetail = Object.entries(normalizedSummary).map(([k, v]) => `${k}: ${v}`).join(', ') || 'Chưa nhận dạng';
-      const totalCount = Object.values(normalizedSummary).reduce((a, b) => a + (b || 0), 0);
-      const timeStr = new Date(item.createdAt).toLocaleString('vi-VN');
+      const speciesDetail = formatSummary(item.aiResults?.summary, t) || t('analytics.report.notIdentified');
+      const totalCount = Object.values(normalizeSummary(item.aiResults?.summary)).reduce((a, b) => a + b, 0);
+      const timeStr = new Date(item.createdAt).toLocaleString(dateLocale);
       const desc = item.aiResults?.raw_description || '--';
       return [timeStr, item.deviceSerial, totalCount, speciesDetail, desc];
     });
 
     autoTable(doc, {
       startY: 48,
-      head: [['Thời Gian', 'Serial Camera', 'Số Lượng', 'Chi Tiết Loài', 'Đánh Giá AI']],
-      body: tableData.length > 0 ? tableData : [['--', '--', '0', 'Không có dữ liệu trong khoảng thời gian này', '--']],
+      head: [[
+        t('analytics.report.colTime'),
+        t('analytics.report.colSerial'),
+        t('analytics.report.colCount'),
+        t('analytics.report.colSpecies'),
+        t('analytics.report.colAiAssessment')
+      ]],
+      body: tableData.length > 0 ? tableData : [['--', '--', '0', t('analytics.report.noDataInRange'), '--']],
       theme: 'grid',
       styles: {
         font: 'Quicksand',
@@ -286,10 +288,10 @@ const exportToPdf = async () => {
 
     const fileName = `FlyBot_Report_${serial}_${Date.now()}.pdf`;
     doc.save(fileName);
-    ElNotification({ title: t('common.success'), message: `Đã xuất ${results.length} bản ghi sang file PDF!`, type: 'success' });
+    ElNotification({ title: t('common.success'), message: t('analytics.report.pdfExported', { count: results.length }), type: 'success' });
   } catch (err) {
     console.error('PDF export error:', err);
-    ElNotification({ title: t('common.error'), message: 'Lỗi xuất PDF: ' + err.message, type: 'error' });
+    ElNotification({ title: t('common.error'), message: t('analytics.report.pdfFailed', { error: err.message }), type: 'error' });
   } finally {
     exportingPdf.value = false;
   }
@@ -303,36 +305,32 @@ const exportToExcel = async () => {
     const results = res.data?.results || [];
 
     if (results.length === 0) {
-      ElNotification({ title: 'Thông báo', message: 'Không có dữ liệu nhận dạng trong khoảng thời gian này để xuất Excel!', type: 'info' });
+      ElNotification({ title: t('common.notice'), message: t('analytics.report.noDataToExport'), type: 'info' });
       return;
     }
 
+    const dateLocale = locale.value === 'vi' ? 'vi-VN' : 'en-US';
     const rows = results.map((item, index) => {
-      const summary = item.aiResults?.summary || {};
-      const normalizedSummary = {};
-      for (const [k, v] of Object.entries(summary)) {
-        const normKey = (k === 'fruit_fly' || k === 'fruit fly' || k === 'fruit-fly') ? 'ruồi vàng' : k;
-        normalizedSummary[normKey] = (normalizedSummary[normKey] || 0) + (Number(v) || 0);
-      }
-      const speciesDetail = Object.entries(normalizedSummary).map(([k, v]) => `${k}: ${v}`).join(', ') || 'Chưa ghi nhận';
-      const totalCount = Object.values(normalizedSummary).reduce((a, b) => a + (b || 0), 0);
+      const speciesDetail = formatSummary(item.aiResults?.summary, t) || t('analytics.report.notIdentified');
+      const totalCount = Object.values(normalizeSummary(item.aiResults?.summary)).reduce((a, b) => a + b, 0);
 
+      // Column headers are localized; keys of this object become the sheet header row
       return {
-        'STT': index + 1,
-        'Thiết Bị': selectedCamera.value?.deviceName || item.deviceSerial,
+        [t('analytics.report.colIndex')]: index + 1,
+        [t('analytics.report.colDevice')]: selectedCamera.value?.deviceName || item.deviceSerial,
         'Serial Number': item.deviceSerial,
-        'Thời Gian Quét': new Date(item.createdAt).toLocaleString(locale.value === 'vi' ? 'vi-VN' : 'en-US'),
-        'Số Lượng Côn Trùng': totalCount,
-        'Phân Loại Loài': speciesDetail,
-        'Đánh Giá AI': item.aiResults?.raw_description || '',
-        'Hệ Thống Phân Tích': item.aiProvider || 'Vertex AI Gemini',
-        'Ảnh Snapshot URL': item.imageUrl || ''
+        [t('analytics.report.colScanTime')]: new Date(item.createdAt).toLocaleString(dateLocale),
+        [t('analytics.report.colInsectCount')]: totalCount,
+        [t('analytics.report.colSpecies')]: speciesDetail,
+        [t('analytics.report.colAiAssessment')]: item.aiResults?.raw_description || '',
+        [t('analytics.report.colProvider')]: item.aiProvider || 'Vertex AI Gemini',
+        [t('analytics.report.colImageUrl')]: item.imageUrl || ''
       };
     });
 
     const worksheet = XLSX.utils.json_to_sheet(rows);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Lịch Sử Nhận Dạng');
+    XLSX.utils.book_append_sheet(workbook, worksheet, t('analytics.report.sheetName'));
 
     worksheet['!cols'] = [
       { wch: 6 },
@@ -348,9 +346,9 @@ const exportToExcel = async () => {
 
     const fileName = `FlyBot_Surveillance_${serial}_${Date.now()}.xlsx`;
     XLSX.writeFile(workbook, fileName);
-    ElNotification({ title: t('common.success'), message: `Đã xuất ${results.length} bản ghi sang file Excel (XLSX)!`, type: 'success' });
+    ElNotification({ title: t('common.success'), message: t('analytics.report.excelExported', { count: results.length }), type: 'success' });
   } catch (err) {
-    ElNotification({ title: t('common.error'), message: 'Lỗi xuất file Excel: ' + err.message, type: 'error' });
+    ElNotification({ title: t('common.error'), message: t('analytics.report.excelFailed', { error: err.message }), type: 'error' });
   } finally {
     exportingXlsx.value = false;
   }

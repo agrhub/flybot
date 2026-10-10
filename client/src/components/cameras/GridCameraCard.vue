@@ -233,7 +233,7 @@
     <!-- 4. Quick Verification Code Dialog Modal -->
     <el-dialog
       v-model="codeDialogVisible"
-      :title="t('live.codeDialogTitle')"
+      :title="t('cameras.codeDialogTitle')"
       width="420px"
       append-to-body
       class="rounded-3xl"
@@ -243,7 +243,7 @@
           <svg class="w-4 h-4 text-blue-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <p>{{ t('live.codeDialogDefault') }}</p>
+          <p>{{ t('cameras.codeDialogDefault') }}</p>
         </div>
 
         <div>
@@ -264,7 +264,7 @@
         <div class="flex justify-end gap-2 pt-2">
           <el-button @click="codeDialogVisible = false">{{ t('common.cancel') }}</el-button>
           <el-button type="primary" :loading="savingCode" @click="handleSaveCode">
-            {{ t('live.codeDialogSaveAndPlay') }}
+            {{ t('cameras.codeDialogSaveAndPlay') }}
           </el-button>
         </div>
       </template>

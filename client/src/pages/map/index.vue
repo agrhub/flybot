@@ -6,11 +6,11 @@
         <div class="flex items-center gap-2 mb-1">
           <span class="w-2 h-2 rounded-full bg-[var(--primary-green)] animate-pulse"></span>
           <h3 class="font-bold text-base text-[var(--el-text-color-primary)]">
-            {{ t('dashboard.mapViewTitle') || 'Bản Đồ Phân Bố Bẫy Côn Trùng (Field Map)' }}
+            {{ t('dashboard.mapViewTitle') }}
           </h3>
         </div>
         <p class="text-xs text-[var(--el-text-color-secondary)]">
-          {{ t('dashboard.mapViewSubtitle') || 'Giám sát vị trí tọa độ GPS, cảnh báo mật độ ruồi vàng và kéo thả marker để cập nhật tọa độ bẫy.' }}
+          {{ t('dashboard.mapViewSubtitle') }}
         </p>
       </div>
 
@@ -44,7 +44,7 @@
             @click="toggleBaseLayer"
             type="button"
             class="group relative w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden border-2 border-white/90 shadow-2xl hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer focus:outline-none shrink-0"
-            :title="activeLayerType === 'street' ? (t('map.layerEarth') || 'Chuyển sang Vệ tinh') : (t('map.layerStreet') || 'Chuyển sang Bản đồ')"
+            :title="activeLayerType === 'street' ? (t('map.layerEarth')) : (t('map.layerStreet'))"
           >
             <!-- Thumbnail Image -->
             <img
@@ -58,7 +58,7 @@
               <svg class="w-2.5 h-2.5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M11.99 18.54l-7.37-5.73L3 14.07l9 7 9-7-1.63-1.27-7.38 5.74zM12 16l7.36-5.73L21 9.07l-9-7-9 7 1.64 1.2L12 16zm0-11.47L17.74 9 12 13.47 6.26 9 12 4.53z" />
               </svg>
-              <span class="truncate">{{ activeLayerType === 'street' ? (t('map.satelliteShort') || 'Vệ tinh') : (t('map.streetShort') || 'Bản đồ') }}</span>
+              <span class="truncate">{{ activeLayerType === 'street' ? (t('map.satelliteShort')) : (t('map.streetShort')) }}</span>
             </div>
           </button>
 
@@ -328,12 +328,16 @@ const editDialogVisible = ref(false);
 const editingCam = ref(null);
 const savingLocation = ref(false);
 
+// Same defaults as the Camera model on the server
+const DEFAULT_TRAP_TYPE = 'Yellow Sticky Trap';
+const DEFAULT_CROP_TYPE = 'Mango Orchard';
+
 const editForm = ref({
   locationAddress: '',
   latitude: 11.1345,
   longitude: 106.5052,
-  trapType: 'Bẫy Pheromone thông minh',
-  cropType: 'Xoài Cát Chu'
+  trapType: DEFAULT_TRAP_TYPE,
+  cropType: DEFAULT_CROP_TYPE
 });
 
 // Merge cameras with overview realtime counts
@@ -347,8 +351,8 @@ const enrichedCameras = computed(() => {
       locationAddress: cam.locationAddress || live?.locationAddress || '',
       currentCount: live?.currentCount ?? 0,
       riskLevel: live?.riskLevel || (live?.currentCount >= 20 ? 'high' : (live?.currentCount >= 6 ? 'moderate' : 'low')),
-      trapType: cam.trapType || live?.trapType || 'Bẫy dính Pheromone',
-      cropType: cam.cropType || live?.cropType || 'Cây ăn trái'
+      trapType: cam.trapType || live?.trapType || DEFAULT_TRAP_TYPE,
+      cropType: cam.cropType || live?.cropType || DEFAULT_CROP_TYPE
     };
   });
 });
@@ -390,7 +394,7 @@ const resetMapView = () => {
 
 const locateUserOrchard = () => {
   if (!navigator.geolocation) {
-    ElNotification({ title: t('common.error') || 'Lỗi', message: 'Trình duyệt không hỗ trợ Geolocation.', type: 'warning' });
+    ElNotification({ title: t('common.error'), message: t('map.geolocationUnsupported'), type: 'warning' });
     return;
   }
   navigator.geolocation.getCurrentPosition(
@@ -405,11 +409,11 @@ const locateUserOrchard = () => {
           color: '#ffffff',
           weight: 2,
           fillOpacity: 0.9
-        }).addTo(map).bindPopup(t('map.locateMeTitle') || 'Vị trí thiết bị của bạn').openPopup();
+        }).addTo(map).bindPopup(t('map.locateMeTitle')).openPopup();
       }
     },
     (err) => {
-      ElNotification({ title: 'Định vị GPS', message: 'Không thể lấy tọa độ: ' + err.message, type: 'warning' });
+      ElNotification({ title: t('map.gpsTitle'), message: t('map.gpsFailed', { error: err.message }), type: 'warning' });
     }
   );
 };
@@ -534,7 +538,7 @@ const initMap = () => {
       const locateBtn = L.DomUtil.create('a', 'leaflet-action-btn locate-btn', container);
       locateBtn.href = '#';
       locateBtn.setAttribute('role', 'button');
-      locateBtn.title = t('map.locateMeTitle') || t('map.locateMe') || 'Định vị GPS hiện tại';
+      locateBtn.title = t('map.locateMeTitle');
       locateBtn.innerHTML = `
         <svg class="action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="3" stroke-width="2.5"></circle>
@@ -550,7 +554,7 @@ const initMap = () => {
       const fullViewBtn = L.DomUtil.create('a', 'leaflet-action-btn fullview-btn', container);
       fullViewBtn.href = '#';
       fullViewBtn.setAttribute('role', 'button');
-      fullViewBtn.title = t('map.viewWholeOrchardTitle') || t('map.viewWholeOrchard') || 'Toàn cảnh các bẫy';
+      fullViewBtn.title = t('map.viewWholeOrchardTitle');
       fullViewBtn.innerHTML = `
         <svg class="action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
@@ -611,7 +615,7 @@ const stopPopupPlayer = () => {
     if (overlay) overlay.style.display = 'flex';
     if (loading) loading.style.display = 'none';
     if (btn) {
-      btn.innerHTML = `▶ ${t('dashboard.watchStream') || 'Xem luồng'}`;
+      btn.innerHTML = `▶ ${t('dashboard.watchStream')}`;
       btn.style.background = '#10b981';
       btn.style.color = '#022c22';
     }
@@ -636,8 +640,8 @@ const playPopupStream = async (cam) => {
 
   if (cam.status !== 1) {
     ElNotification({
-      title: t('cameras.deviceOffline') || 'Thiết bị ngoại tuyến',
-      message: t('cameras.deviceOfflineMsg') || 'Camera hiện đang mất kết nối.',
+      title: t('cameras.deviceOffline'),
+      message: t('cameras.deviceOfflineMsg'),
       type: 'warning'
     });
     return;
@@ -652,7 +656,7 @@ const playPopupStream = async (cam) => {
   if (loading) loading.style.display = 'flex';
   if (overlay) overlay.style.display = 'none';
   if (btn) {
-    btn.innerHTML = `<span class="popup-spinner-sm"></span> ${t('cameras.connectingStream') || 'Đang kết nối...'}`;
+    btn.innerHTML = `<span class="popup-spinner-sm"></span> ${t('cameras.connectingStream')}`;
     btn.style.background = '#e2e8f0';
     btn.style.color = '#475569';
   }
@@ -676,7 +680,7 @@ const playPopupStream = async (cam) => {
     }
 
     if (!playUrl) {
-      throw new Error(data.msg || 'Không thể lấy luồng video.');
+      throw new Error(data.msg || t('map.streamUnavailable'));
     }
 
     if (loading) loading.style.display = 'none';
@@ -718,7 +722,7 @@ const playPopupStream = async (cam) => {
     });
 
     if (btn) {
-      btn.innerHTML = `⏹ ${t('cameras.stopStream') || 'Dừng luồng'}`;
+      btn.innerHTML = `⏹ ${t('cameras.stopStream')}`;
       btn.style.background = '#ef4444';
       btn.style.color = '#ffffff';
     }
@@ -727,7 +731,7 @@ const playPopupStream = async (cam) => {
     stopPopupPlayer();
     ElNotification({
       title: t('common.error'),
-      message: err.message || t('cameras.streamError') || 'Lỗi phát luồng',
+      message: err.message || t('cameras.streamError'),
       type: 'error'
     });
   }
@@ -770,13 +774,13 @@ const renderMarkers = () => {
         });
         ElNotification({
           title: t('common.success'),
-          message: `Đã cập nhật tọa độ mới cho ${cam.deviceName}: [${position.lat.toFixed(4)}, ${position.lng.toFixed(4)}]`,
+          message: t('map.coordsUpdated', { name: cam.deviceName, lat: position.lat.toFixed(4), lng: position.lng.toFixed(4) }),
           type: 'success'
         });
       } catch (err) {
         ElNotification({
           title: t('common.error'),
-          message: 'Không thể lưu tọa độ: ' + err.message,
+          message: t('map.coordsSaveFailed', { error: err.message }),
           type: 'error'
         });
       }
@@ -803,7 +807,7 @@ const renderMarkers = () => {
           </div>
           <div id="popup-loading-${cam.deviceSerial}" style="display: none; position: absolute; inset: 0; background: rgba(2,6,23,0.8); backdrop-filter: blur(2px); align-items: center; justify-content: center; flex-direction: column; gap: 6px; color: #34d399; font-size: 11px; font-weight: 700;">
             <div class="popup-spinner"></div>
-            <span>${t('cameras.connectingStream') || 'Đang kết nối...'}</span>
+            <span>${t('cameras.connectingStream')}</span>
           </div>
         </div>
 
@@ -813,7 +817,7 @@ const renderMarkers = () => {
             ${cam.deviceName || cam.deviceSerial}
           </div>
           <span style="font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 9999px; ${cam.status ? 'background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3);' : 'background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3);'}">
-            ${cam.status ? (t('common.online') || 'Online') : (t('common.offline') || 'Offline')}
+            ${cam.status ? (t('common.online')) : (t('common.offline'))}
           </span>
         </div>
 
@@ -892,8 +896,8 @@ const openEditModal = (cam) => {
     locationAddress: cam.locationAddress || '',
     latitude: Number(cam.latitude) || 11.1345,
     longitude: Number(cam.longitude) || 106.5052,
-    trapType: cam.trapType || 'Bẫy Pheromone thông minh',
-    cropType: cam.cropType || 'Xoài Cát Chu'
+    trapType: cam.trapType || DEFAULT_TRAP_TYPE,
+    cropType: cam.cropType || DEFAULT_CROP_TYPE
   };
   editDialogVisible.value = true;
 };
@@ -922,14 +926,14 @@ const handleSaveLocation = async () => {
       editDialogVisible.value = false;
       ElNotification({
         title: t('common.success'),
-        message: 'Đã lưu thông tin vị trí và lô vườn thành công!',
+        message: t('map.locationSaved'),
         type: 'success'
       });
     }
   } catch (err) {
     ElNotification({
       title: t('common.error'),
-      message: 'Lưu thông tin thất bại: ' + err.message,
+      message: t('map.locationSaveFailed', { error: err.message }),
       type: 'error'
     });
   } finally {

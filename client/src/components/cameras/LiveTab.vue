@@ -115,7 +115,7 @@
     <!-- Verification Code Dialog -->
     <el-dialog
       v-model="validateCodeDialogVisible"
-      :title="t('live.codeDialogTitle')"
+      :title="t('cameras.codeDialogTitle')"
       width="440px"
       append-to-body
       class="rounded-3xl"
@@ -126,16 +126,16 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <div>
-            <p class="font-bold mb-1">{{ t('live.codeDialogDesc') }}</p>
-            <p>{{ t('live.codeDialogDefault') }}</p>
+            <p class="font-bold mb-1">{{ t('cameras.codeDialogDesc') }}</p>
+            <p>{{ t('cameras.codeDialogDefault') }}</p>
           </div>
         </div>
 
         <div>
-          <label class="block text-xs font-bold text-slate-600 dark:text-zinc-400 mb-1.5">{{ t('live.codeDialogDeviceLabel') }}: {{ camera?.deviceName }} ({{ camera?.deviceSerial }})</label>
+          <label class="block text-xs font-bold text-slate-600 dark:text-zinc-400 mb-1.5">{{ t('cameras.codeDialogDeviceLabel') }}: {{ camera?.deviceName }} ({{ camera?.deviceSerial }})</label>
           <el-input
             v-model="inputValidateCode"
-            :placeholder="t('live.codeDialogInputPlaceholder')"
+            :placeholder="t('cameras.codeDialogInputPlaceholder')"
             maxlength="32"
             size="large"
             clearable
@@ -154,7 +154,7 @@
         <div class="flex justify-end space-x-2 pt-2">
           <el-button @click="validateCodeDialogVisible = false">{{ t('common.cancel') }}</el-button>
           <el-button type="primary" :loading="updatingCode" @click="handleSaveValidateCode">
-            {{ t('live.codeDialogSaveAndPlay') }}
+            {{ t('cameras.codeDialogSaveAndPlay') }}
           </el-button>
         </div>
       </template>

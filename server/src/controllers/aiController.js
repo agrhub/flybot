@@ -5,6 +5,7 @@ const aiService = require('../services/aiService');
 const s3Service = require('../services/s3Service');
 const { sendServerError } = require('../utils/http');
 const { userOwnsCamera } = require('../utils/ownership');
+const { FRUIT_FLY, NON_PEST_LABELS, normalizeSpeciesExpr } = require('../constants/species');
 
 /**
  * Get AI detection history with pagination (filter by specific camera or all cameras)
@@ -243,14 +244,14 @@ async function getAiStatistics(req, res) {
                     rawSummary: { $objectToArray: { $ifNull: ["$aiResults.summary", {}] } }
                 }
             },
-            // Fallback to fruit fly (ruồi vàng) with count 0 if summary is empty
+            // Fallback to fruit fly with count 0 if summary is empty
             {
                 $addFields: {
                     summaryArray: {
                         $cond: [
                             { $gt: [{ $size: "$rawSummary" }, 0] },
                             "$rawSummary",
-                            [{ k: "ruồi vàng", v: 0 }]
+                            [{ k: FRUIT_FLY, v: 0 }]
                         ]
                     }
                 }
@@ -258,13 +259,7 @@ async function getAiStatistics(req, res) {
             { $unwind: "$summaryArray" },
             {
                 $addFields: {
-                    normalizedInsect: {
-                        $cond: [
-                            { $in: ["$summaryArray.k", ["fruit_fly", "fruit fly", "fruit-fly", "ruồi vàng", "ruoi vang", "bactrocera"]] },
-                            "ruồi vàng",
-                            "$summaryArray.k"
-                        ]
-                    }
+                    normalizedInsect: normalizeSpeciesExpr("$summaryArray.k")
                 }
             },
             // Step 1: Compute peak insect density per camera per time interval
@@ -290,10 +285,10 @@ async function getAiStatistics(req, res) {
                     totalCount: { $sum: "$camMax" }
                 }
             },
-            // Filter non-pest artifacts (keep pests like ruồi vàng, sâu, bướm, bọ trĩ, etc.)
+            // Filter non-pest artifacts (keep pests such as fruit flies, caterpillars, moths, thrips)
             {
                 $match: {
-                    "_id.insect": { $nin: ["car", "bike", "motocycle", "người", "truck", "dog", "cat"] }
+                    "_id.insect": { $nin: NON_PEST_LABELS }
                 }
             },
             // Step 3: Group by time interval
@@ -438,8 +433,8 @@ async function getAiOverview(req, res) {
                 locationAddress: cam.locationAddress || '',
                 latitude: cam.latitude || 11.1345,
                 longitude: cam.longitude || 106.5052,
-                trapType: cam.trapType || 'Bẫy dính thông minh Pheromone',
-                cropType: cam.cropType || 'Xoài Cát Chu',
+                trapType: cam.trapType || 'Yellow Sticky Trap',
+                cropType: cam.cropType || 'Mango Orchard',
                 currentCount,
                 riskLevel,
                 status: cam.status ?? 1,
@@ -478,13 +473,7 @@ async function getAiOverview(req, res) {
             { $unwind: "$summaryArray" },
             {
                 $addFields: {
-                    normalizedName: {
-                        $cond: [
-                            { $in: ["$summaryArray.k", ["fruit_fly", "fruit fly", "fruit-fly", "ruồi vàng", "ruoi vang", "bactrocera"]] },
-                            "ruồi vàng",
-                            "$summaryArray.k"
-                        ]
-                    }
+                    normalizedName: normalizeSpeciesExpr("$summaryArray.k")
                 }
             },
             {
@@ -684,8 +673,10 @@ async function getAiDiagnosis(req, res) {
             riskLevel,
             riskScore: latestCount >= 20 ? 88 : (latestCount >= 6 ? 55 : 22),
             currentPeakCount: latestCount,
-            dominantPest: 'Ruồi vàng đục quả (Bactrocera dorsalis)',
-            weatherFactor: 'Nhiệt độ 28-32°C, độ ẩm cao >75% là điều kiện bùng phát mạnh của ấu trùng.',
+            // Display text for dominantPest, recommendations and urgency lives in the client
+            // i18n files (dashboard.diagnosis.*); the API only returns stable keys
+            dominantPest: FRUIT_FLY,
+            weatherFactor: 'hot_humid', // 28-32°C with humidity above 75% favors rapid larval outbreaks
             forecast: {
                 trajectory: isSurging ? 'surging' : (riskLevel === 'high' ? 'elevated' : 'stable'),
                 confidence: '95.8%',
@@ -693,58 +684,10 @@ async function getAiDiagnosis(req, res) {
                 days: forecastDays
             },
             recommendations: [
-                {
-                    id: 'REC-01',
-                    title: 'Bổ sung mồi dẫn dụ Pheromone (Methyl Eugenol)',
-                    titleEn: 'Replenish Pheromone Lure (Methyl Eugenol)',
-                    desc: 'Mồi dẫn dụ đực sau 15-20 ngày giảm hoạt tính. Bổ sung ngay 2-3ml Methyl Eugenol vào lõi bông bẫy dính để duy trì sức hút.',
-                    descEn: 'Male attractant loses potency after 15-20 days. Add 2-3ml Methyl Eugenol to cotton core to maintain trap attraction.',
-                    urgency: 'Khẩn cấp',
-                    urgencyEn: 'Urgent',
-                    targetZone: 'Vùng bẫy Củ Chi & Bình Dương',
-                    targetZoneEn: 'Cu Chi & Binh Duong Trap Zones',
-                    method: 'Bẫy sinh học',
-                    methodEn: 'Bio Trap'
-                },
-                {
-                    id: 'REC-02',
-                    title: 'Phun bả Protein sinh học (Protein Hydrolysate)',
-                    titleEn: 'Apply Bio-Protein Bait (Protein Hydrolysate)',
-                    desc: 'Phun điểm dạng giọt thô lên 1m² tán lá hướng đông lúc 06:00 - 08:00 sáng. Thu hút cả ruồi đực và cái trước khi giao phối.',
-                    descEn: 'Spot spray coarse droplets onto 1m² eastern canopy between 06:00 - 08:00 AM. Attracts both male and female flies.',
-                    urgency: riskLevel === 'high' ? 'Khẩn cấp' : 'Khuyến nghị',
-                    urgencyEn: riskLevel === 'high' ? 'Urgent' : 'Recommended',
-                    targetZone: 'Vành đai giáp ranh vườn cây ăn trái',
-                    targetZoneEn: 'Perimeter border of fruit tree orchards',
-                    method: 'Bả bẫy sinh học',
-                    methodEn: 'Bio Bait'
-                },
-                {
-                    id: 'REC-03',
-                    title: 'Vệ sinh đồng ruộng & thu gom triệt để quả rụng',
-                    titleEn: 'Sanitize Field & Collect Fallen Fruit',
-                    desc: 'Tiêu hủy quả thối hỏng bị giòi đục bằng cách cho vào túi nilong phơi nắng hoặc ngâm vôi, cắt đứt hoàn toàn chu kỳ hóa nhộng trong đất.',
-                    descEn: 'Dispose of infested rotten fruit by sealing in plastic under sun or liming, cutting off soil pupation completely.',
-                    urgency: 'Thường xuyên',
-                    urgencyEn: 'Routine',
-                    targetZone: 'Toàn bộ diện tích lô vườn',
-                    targetZoneEn: 'Entire orchard plot area',
-                    method: 'Canh tác sinh thái',
-                    methodEn: 'Ecological Practice'
-                },
-                {
-                    id: 'REC-04',
-                    title: 'Bao trái nông sản & củng cố vành đai bảo vệ',
-                    titleEn: 'Bag Developing Fruit & Reinforce Protection',
-                    desc: 'Bao sớm khi quả non đạt 1/3 kích thước trưởng thành bằng túi chuyên dụng chống thấm, ngăn ruồi châm kim trực tiếp.',
-                    descEn: 'Bag fruit early when reaching 1/3 mature size with specialized waterproof bags to prevent stinging.',
-                    urgency: 'Quan trọng',
-                    urgencyEn: 'Important',
-                    targetZone: 'Vườn đang trong giai đoạn phát triển quả',
-                    targetZoneEn: 'Orchards in active fruit development stage',
-                    method: 'Cơ học',
-                    methodEn: 'Mechanical'
-                }
+                { id: 'REC-01', key: 'pheromoneLure', urgency: 'urgent' },
+                { id: 'REC-02', key: 'proteinBait', urgency: riskLevel === 'high' ? 'urgent' : 'recommended' },
+                { id: 'REC-03', key: 'fieldSanitation', urgency: 'routine' },
+                { id: 'REC-04', key: 'fruitBagging', urgency: 'important' }
             ]
         };
 

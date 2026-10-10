@@ -1,6 +1,7 @@
 const axios = require('axios');
 const { GoogleGenAI } = require('@google/genai');
 const { Snapshot } = require('../models');
+const { FRUIT_FLY, isFruitFly } = require('../constants/species');
 const {
     VERTEX_PROJECT_ID,
     VERTEX_LOCATION,
@@ -194,10 +195,8 @@ async function analyzeInsectsRoboflow(base64Image, snapshotId, imageUrl = null) 
                     const xmax = Math.round(pred.x + pred.width / 2);
                     const ymax = Math.round(pred.y + pred.height / 2);
 
-                    let name = "ruồi vàng";
-                    if (pred.class && !pred.class.toLowerCase().includes("fruit_fly") && !pred.class.toLowerCase().includes("fruit fly") && !pred.class.toLowerCase().includes("ruoi")) {
-                        name = pred.class;
-                    }
+                    // The workflow is trained on fruit flies; keep any other class name it reports
+                    const name = (!pred.class || isFruitFly(pred.class)) ? FRUIT_FLY : pred.class;
 
                     return {
                         name: name,
@@ -206,8 +205,8 @@ async function analyzeInsectsRoboflow(base64Image, snapshotId, imageUrl = null) 
                     };
                 });
 
-                const summary = { "ruồi vàng": count };
-                const desc = `Roboflow phát hiện ${count} đối tượng côn trùng.`;
+                const summary = { [FRUIT_FLY]: count };
+                const desc = `Roboflow detected ${count} insect(s).`;
 
                 await Snapshot.findByIdAndUpdate(snapshotId, {
                     aiProcessed: true,

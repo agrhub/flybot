@@ -26,7 +26,8 @@
     "perPage": "Per page",
     "page": "Page",
     "prevPage": "Previous page",
-    "nextPage": "Next page"
+    "nextPage": "Next page",
+    "notice": "Notice"
   },
   "nav": {
     "home": "Home",
@@ -163,7 +164,44 @@
     "appliedZone": "Applied zone:",
     "noCamerasPrompt": "No cameras connected yet. Click '+ Add Camera' to start monitoring.",
     "noCamerasCopilotPrompt": "No cameras added yet. Please add a camera to activate AI agronomic diagnosis and pest forecasting.",
-    "systemSafePrompt": "Pest density is safe. No chemical or bait intervention required at this time."
+    "systemSafePrompt": "Pest density is safe. No chemical or bait intervention required at this time.",
+    "diagnosisDone": "Deep diagnosis and 7-day pest forecast completed.",
+    "diagnosisFailed": "Could not run AI diagnosis: {error}",
+    "diagnosis": {
+      "urgency": {
+        "urgent": "Urgent",
+        "recommended": "Recommended",
+        "routine": "Routine",
+        "important": "Important",
+        "normal": "Normal"
+      },
+      "recs": {
+        "pheromoneLure": {
+          "title": "Replenish Pheromone Lure (Methyl Eugenol)",
+          "desc": "Male attractant loses potency after 15-20 days. Add 2-3ml Methyl Eugenol to the cotton core to maintain trap attraction.",
+          "zone": "Cu Chi & Binh Duong Trap Zones",
+          "method": "Bio Trap"
+        },
+        "proteinBait": {
+          "title": "Apply Bio-Protein Bait (Protein Hydrolysate)",
+          "desc": "Spot spray coarse droplets onto 1m² of eastern canopy between 06:00 and 08:00. Attracts both male and female flies before mating.",
+          "zone": "Perimeter border of fruit tree orchards",
+          "method": "Bio Bait"
+        },
+        "fieldSanitation": {
+          "title": "Sanitize Field & Collect Fallen Fruit",
+          "desc": "Dispose of infested rotten fruit by sealing it in plastic bags in the sun or liming it, cutting off pupation in the soil.",
+          "zone": "Entire orchard plot area",
+          "method": "Ecological Practice"
+        },
+        "fruitBagging": {
+          "title": "Bag Developing Fruit & Reinforce Protection",
+          "desc": "Bag fruit early, once it reaches 1/3 of mature size, with waterproof bags to stop flies from stinging it.",
+          "zone": "Orchards in the fruit development stage",
+          "method": "Mechanical"
+        }
+      }
+    }
   },
   "cameras": {
     "title": "Camera Surveillance & Management",
@@ -226,7 +264,8 @@
     "codeDialogDeviceLabel": "Device",
     "codeDialogInputPlaceholder": "Enter verification code (e.g. QOKYZO, Gravity01...)",
     "codeDialogSaveAndPlay": "Save & Play Stream",
-    "connectPrompt": "Enter Serial Number (found on camera base) and Verification Code to connect device to surveillance system."
+    "connectPrompt": "Enter Serial Number (found on camera base) and Verification Code to connect device to surveillance system.",
+    "selectCamera": "Select camera"
   },
   "analytics": {
     "title": "AI Analytics & Detection History",
@@ -281,7 +320,37 @@
     "exportExcel": "Export Excel",
     "exporting": "Exporting...",
     "excelSuccess": "Excel report exported successfully!",
-    "pdfSuccess": "PDF report exported successfully!"
+    "pdfSuccess": "PDF report exported successfully!",
+    "historyLoadFailed": "Failed to load detection history.",
+    "report": {
+      "device": "Device: {name}",
+      "serial": "Serial number: {serial}",
+      "allCameras": "All cameras",
+      "wholeSystem": "Entire camera system",
+      "timeRange": "Time range: {range}",
+      "exportedAt": "Exported at: {time}",
+      "colIndex": "No.",
+      "colTime": "Time",
+      "colScanTime": "Scan time",
+      "colDevice": "Device",
+      "colSerial": "Camera serial",
+      "colSnapshot": "Snapshot",
+      "colCount": "Count",
+      "colInsectCount": "Insect count",
+      "colSpecies": "Species",
+      "colAiAssessment": "AI assessment",
+      "colProvider": "Analysis system",
+      "colImageUrl": "Snapshot URL",
+      "notIdentified": "Not identified",
+      "noDataInRange": "No data in this time range",
+      "noDataToExport": "No detection data in this time range to export.",
+      "sheetName": "Detection history",
+      "pdfExported": "Exported {count} records to PDF.",
+      "excelExported": "Exported {count} records to Excel (XLSX).",
+      "pdfFailed": "PDF export failed: {error}",
+      "excelFailed": "Excel export failed: {error}"
+    },
+    "selectCamera": "Select camera"
   },
   "settings": {
     "title": "System Settings",
@@ -532,10 +601,18 @@
     "layerStreet": "Google Map (Street)",
     "layerEarth": "Google Earth (Hybrid)",
     "satelliteShort": "Satellite",
-    "streetShort": "Map"
+    "streetShort": "Map",
+    "geolocationUnsupported": "Your browser does not support geolocation.",
+    "gpsTitle": "GPS location",
+    "gpsFailed": "Could not get your location: {error}",
+    "streamUnavailable": "Could not get the video stream.",
+    "coordsUpdated": "Updated coordinates for {name}: [{lat}, {lng}]",
+    "coordsSaveFailed": "Could not save coordinates: {error}",
+    "locationSaved": "Location and plot details saved.",
+    "locationSaveFailed": "Failed to save: {error}"
   },
   "species": {
-    "fruitFly": "Fruit Fly (Ruồi vàng)",
+    "fruitFly": "Fruit Fly",
     "bug": "Bug",
     "caterpillar": "Caterpillar",
     "other": "Other"
