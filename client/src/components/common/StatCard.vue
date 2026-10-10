@@ -1,5 +1,5 @@
 <template>
-  <el-card shadow="never" class="stat-card" :body-style="{ padding: '18px 20px' }">
+  <el-card shadow="never" class="stat-card" body-class="stat-card__body">
     <div class="flex items-start justify-between gap-3">
       <span class="stat-card__label">{{ label }}</span>
       <el-icon v-if="icon" :size="18" class="stat-card__icon" :class="`is-${type}`">
@@ -36,6 +36,9 @@ defineProps({
 .stat-card {
   height: 100%;
 }
+.stat-card :deep(.stat-card__body) {
+  padding: 18px 20px;
+}
 .stat-card__label {
   font-size: 13px;
   color: var(--el-text-color-secondary);
@@ -62,4 +65,16 @@ defineProps({
 .is-success { color: var(--el-color-success); }
 .is-warning { color: var(--el-color-warning); }
 .is-danger { color: var(--el-color-danger); }
+/* Two tiles per row on phones: tighter */
+@media (max-width: 767px) {
+  .stat-card :deep(.stat-card__body) {
+    padding: 12px 14px;
+  }
+  .stat-card__value {
+    font-size: 22px;
+  }
+  .stat-card__label {
+    font-size: 12px;
+  }
+}
 </style>

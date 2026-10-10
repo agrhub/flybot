@@ -56,7 +56,10 @@
     "blog": "Tin tức",
     "helpCenter": "Trợ giúp",
     "apiDocs": "Tài liệu API",
-    "dashboards": "Bảng tùy chỉnh"
+    "dashboards": "Bảng tùy chỉnh",
+    "mainNavigation": "Điều hướng chính",
+    "overviewShort": "Tổng quan",
+    "more": "Thêm"
   },
   "topbar": {
     "notifications": "Thông báo",
@@ -66,7 +69,8 @@
     "darkMode": "Chuyển sang chế độ Tối",
     "changePassword": "Đổi mật khẩu",
     "profileSettings": "Cài đặt tài khoản",
-    "recentAlerts": "Cảnh báo gần đây"
+    "recentAlerts": "Cảnh báo gần đây",
+    "appearance": "Ngôn ngữ & giao diện"
   },
   "auth": {
     "tagline": "Smart Trap & Vision AI Studio",
@@ -470,7 +474,8 @@
       "exportHint": "Các ảnh đã sửa trong 90 ngày (số AI đếm và số đúng), dùng để huấn luyện lại model nhận diện",
       "exportEmpty": "Chưa có ảnh nào được sửa trong 90 ngày qua.",
       "exported": "Đã xuất {count} ảnh đã sửa."
-    }
+    },
+    "exportMenu": "Xuất báo cáo"
   },
   "settings": {
     "title": "Cài Đặt Hệ Thống",

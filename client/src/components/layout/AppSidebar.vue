@@ -1,6 +1,6 @@
 <template>
   <aside
-    class="app-sidebar flex flex-col relative z-20 shrink-0 h-screen justify-between transition-all duration-300 ease-in-out select-none"
+    class="app-sidebar flex flex-col relative z-20 shrink-0 h-[100dvh] justify-between transition-all duration-300 ease-in-out select-none"
     :class="isCollapsed ? 'w-16' : 'w-[240px] lg:w-[256px]'"
   >
     <div class="min-h-0 flex flex-col">
@@ -79,6 +79,7 @@
 import { ref, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAuth } from '@/composables/useAuth';
+import { useBreakpoints } from '@/composables/useBreakpoints';
 import {
   Odometer,
   VideoCamera,
@@ -102,11 +103,19 @@ const emit = defineEmits(['navigate', 'open-add-camera']);
 
 const { t } = useI18n();
 const { canManageCameras } = useAuth();
-const isCollapsed = ref(localStorage.getItem('smart_trap_sidebar_collapsed') === 'true');
+const { isTablet } = useBreakpoints();
+// Desktop: remembered choice. Tablet: icons only by default (not remembered)
+const desktopCollapsed = ref(localStorage.getItem('smart_trap_sidebar_collapsed') === 'true');
+const tabletCollapsed = ref(true);
+const isCollapsed = computed(() => (isTablet.value ? tabletCollapsed.value : desktopCollapsed.value));
 
 const toggleCollapse = () => {
-  isCollapsed.value = !isCollapsed.value;
-  localStorage.setItem('smart_trap_sidebar_collapsed', String(isCollapsed.value));
+  if (isTablet.value) {
+    tabletCollapsed.value = !tabletCollapsed.value;
+    return;
+  }
+  desktopCollapsed.value = !desktopCollapsed.value;
+  localStorage.setItem('smart_trap_sidebar_collapsed', String(desktopCollapsed.value));
 };
 
 const handleSelect = (sectionId) => {

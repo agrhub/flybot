@@ -7,7 +7,7 @@
     />
 
     <!-- Key metrics -->
-    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <section class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
       <!-- Realtime hotspot (peak camera) -->
       <StatCard
         :label="t('dashboard.hotspotPeak')"

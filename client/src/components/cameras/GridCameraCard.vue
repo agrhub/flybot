@@ -36,7 +36,7 @@
 
           <!-- Serial Number with Quick Copy -->
           <div class="flex items-center gap-1 mt-0.5">
-            <span class="grid-cam__meta font-mono">SN: {{ camera.deviceSerial }}</span>
+            <span class="grid-cam__meta font-mono whitespace-nowrap">SN: {{ camera.deviceSerial }}</span>
             <el-tooltip :content="copiedSn ? t('cameras.copied') : t('cameras.copySerial')" placement="top">
               <el-button
                 link
@@ -53,7 +53,7 @@
       <!-- Right: Status Badges -->
       <div class="flex items-center gap-1.5 shrink-0">
         <!-- HD Stream Quality Tag -->
-        <el-tag type="info" effect="plain" size="small">HD</el-tag>
+        <el-tag type="info" effect="plain" size="small" class="!hidden sm:!inline-flex">HD</el-tag>
 
         <!-- Live Status Pill -->
         <el-tag

@@ -6,6 +6,7 @@
         <template #actions>
           <!-- Grid Columns Switcher -->
           <el-segmented
+            v-if="!isMobile"
             :model-value="activeGridCols"
             :options="gridLayouts"
             @change="setGridLayout"
@@ -155,6 +156,7 @@ import { useI18n } from 'vue-i18n';
 import { Plus, Back, ArrowLeft, ArrowRight, VideoCamera } from '@element-plus/icons-vue';
 import { useCameras } from '@/composables/useCameras';
 import { useAuth } from '@/composables/useAuth';
+import { useBreakpoints } from '@/composables/useBreakpoints';
 import PageHeader from '@/components/common/PageHeader.vue';
 import LiveTab from '@/components/cameras/LiveTab.vue';
 import GridCameraCard from '@/components/cameras/GridCameraCard.vue';
@@ -162,6 +164,8 @@ import GridCameraCard from '@/components/cameras/GridCameraCard.vue';
 const { t } = useI18n();
 const { cameras, selectedCamera, selectCamera, openAddCameraModal } = useCameras();
 const { canManageCameras } = useAuth();
+// One camera per row on phones: the 2x2/3x3 switch does not apply
+const { isMobile } = useBreakpoints();
 
 // Sub-page state: 'grid' (default: all cameras grid) or 'detail' (single camera sub-page)
 const subPage = ref('grid');

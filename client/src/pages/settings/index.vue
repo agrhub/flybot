@@ -3,12 +3,19 @@
     <div class="h-full flex flex-col md:flex-row overflow-hidden">
       <!-- Left settings navigation -->
       <aside class="settings-nav w-full md:w-64 shrink-0 flex flex-col overflow-y-auto custom-scrollbar">
-        <div class="px-5 pt-5 pb-3">
+        <div class="px-4 md:px-5 pt-4 md:pt-5 pb-3">
           <h1 class="settings-nav__title">{{ t('settings.title') }}</h1>
-          <p class="settings-nav__desc">{{ t('settings.desc') }}</p>
+          <p v-if="!isMobile" class="settings-nav__desc">{{ t('settings.desc') }}</p>
+          <!-- Phones: the section list is a dropdown, so the page content stays on screen -->
+          <el-select v-if="isMobile" v-model="activeTab" class="w-full mt-3" size="large">
+            <el-option-group v-for="group in mobileSections" :key="group.label" :label="group.label">
+              <el-option v-for="item in group.items" :key="item.value" :label="item.label" :value="item.value" />
+            </el-option-group>
+          </el-select>
         </div>
 
         <el-menu
+          v-if="!isMobile"
           :default-active="activeTab"
           class="settings-menu"
           @select="(key) => (activeTab = key)"
@@ -76,7 +83,7 @@
       </aside>
 
       <!-- Right content area -->
-      <main class="flex-1 min-w-0 p-6 md:p-8 overflow-y-auto custom-scrollbar">
+      <main class="flex-1 min-w-0 p-4 md:p-8 overflow-y-auto custom-scrollbar">
         <!-- 1. Profile -->
         <div v-if="activeTab === 'profile'" class="max-w-2xl">
           <PageHeader :title="t('settings.profileTab')" :subtitle="t('settings.profileSub')" />
@@ -156,7 +163,42 @@
             <el-empty v-if="cameras.length === 0" :description="canManageCameras ? t('settings.noCameras') : t('cameras.noSharedCameras')" />
 
             <template v-else>
-              <el-table :data="paginatedCameras" row-key="deviceSerial" style="width: 100%">
+              <!-- Phones: one card per camera instead of a wide table -->
+              <div v-if="isMobile" class="flex flex-col gap-3">
+                <div v-for="row in paginatedCameras" :key="row.deviceSerial" class="settings-cam-row">
+                  <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                      <p class="settings-label truncate">{{ row.deviceName }}</p>
+                      <p class="settings-meta font-mono">{{ row.deviceSerial }}</p>
+                    </div>
+                    <el-tag :type="row.status === 1 ? 'success' : 'danger'" effect="light" round size="small" class="shrink-0">
+                      {{ row.status === 1 ? t('common.online') : t('common.offline') }}
+                    </el-tag>
+                  </div>
+                  <div class="flex flex-wrap items-center gap-1.5 mt-2">
+                    <el-tag v-if="row.access === 'owner' || !row.access" type="success" effect="light" round size="small">{{ t('share.accessOwner') }}</el-tag>
+                    <el-tag v-else :type="row.access === 'admin' ? 'warning' : 'info'" effect="light" round size="small">
+                      {{ row.access === 'admin' ? t('share.accessAdmin') : t('share.accessShared') }}
+                    </el-tag>
+                    <el-tag v-if="row.canManage && row.sharedWith?.length" type="info" effect="plain" size="small">
+                      {{ t('share.sharedCount', { count: row.sharedWith.length }) }}
+                    </el-tag>
+                    <el-tag v-if="row.isEncrypt === 1" type="warning" effect="light" round size="small">{{ t('settings.encryptedBadge') }}</el-tag>
+                  </div>
+                  <div class="flex items-center justify-between gap-2 mt-3">
+                    <el-button size="small" type="primary" plain :icon="VideoPlay" @click="selectCameraAndGoToLive(row)">
+                      {{ t('settings.viewLiveBtn') }}
+                    </el-button>
+                    <div v-if="row.canManage !== false" class="flex items-center gap-1">
+                      <el-button size="small" circle :icon="Share" :title="t('share.button')" @click="openShareDialog(row)" />
+                      <el-button size="small" circle :icon="Edit" :title="t('settings.editCamera')" @click="openEditCameraModal(row)" />
+                      <el-button size="small" circle type="danger" plain :icon="Delete" :title="t('settings.deleteCamera')" @click="handleDeleteCamera(row)" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <el-table v-else :data="paginatedCameras" row-key="deviceSerial" style="width: 100%">
                 <el-table-column width="76">
                   <template #default="{ row }">
                     <el-image
@@ -625,6 +667,7 @@ import { useCameras } from '@/composables/useCameras';
 import api from '@/services/api';
 import { ElNotification, ElMessageBox } from 'element-plus';
 import { useAuth } from '@/composables/useAuth';
+import { useBreakpoints } from '@/composables/useBreakpoints';
 import { useLanguage } from '@/composables/useLanguage';
 import PageHeader from '@/components/common/PageHeader.vue';
 import CameraShareDialog from '@/components/cameras/CameraShareDialog.vue';
@@ -665,6 +708,28 @@ const { isDark, toggleTheme } = useTheme();
 const { cameras, loadCameras, openAddCameraModal, selectCameraAndGoToLive } = useCameras();
 const { user: authUser, setAuth, refreshUser, logout, isAdmin, canManageCameras } = useAuth();
 const manageableCameras = computed(() => cameras.value.filter(c => c.canManage !== false));
+const { isMobile } = useBreakpoints();
+// Same sections as the side menu, for the phone dropdown
+const mobileSections = computed(() => [
+  { label: t('settings.account'), items: [
+    { value: 'profile', label: t('settings.profileTab') },
+    { value: 'password', label: t('settings.passwordTab') },
+    { value: 'sessions', label: t('settings.sessionsTab') }
+  ] },
+  { label: t('settings.system'), items: [
+    { value: 'cameras', label: t('settings.camerasTab') },
+    { value: 'notifications', label: t('settings.notificationsTab') },
+    { value: 'preferences', label: t('settings.preferencesTab') },
+    { value: 'storage', label: t('settings.storageTab') }
+  ] },
+  ...(isAdmin.value ? [{ label: t('admin.group'), items: [
+    { value: 'adminUsers', label: t('admin.users.tab') },
+    { value: 'adminCameras', label: t('admin.cameras.tab') },
+    { value: 'adminSystem', label: t('admin.system.tab') },
+    { value: 'adminAudit', label: t('audit.tab') }
+  ] }] : []),
+  { label: t('settings.legal'), items: [{ value: 'legal', label: t('settings.termsTab') }] }
+]);
 
 // ---------- Camera sharing ----------
 const shareDialogVisible = ref(false);
@@ -1129,6 +1194,12 @@ const handleDeleteCamera = async (cam) => {
   font-weight: 600;
   background-color: var(--el-color-primary);
   color: var(--el-color-white);
+}
+.settings-cam-row {
+  padding: 12px 14px;
+  border: 1px solid var(--el-border-color);
+  border-radius: var(--el-border-radius-base);
+  background-color: var(--el-bg-color-overlay);
 }
 .settings-thumb {
   width: 48px;

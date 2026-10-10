@@ -2,7 +2,10 @@
   <aside
     v-show="isAssistantOpen"
     id="smart-trap-assistant-sidebar"
-    class="assistant-panel w-[360px] md:w-[400px] lg:w-[420px] flex flex-col h-screen shrink-0 z-30 select-none relative"
+    class="assistant-panel flex flex-col shrink-0 select-none"
+    :class="isDesktop
+      ? 'w-[420px] h-[100dvh] relative z-30'
+      : 'assistant-panel--overlay fixed inset-y-0 right-0 w-full md:w-[420px] h-[100dvh] z-[2000]'"
   >
     <!-- Header -->
     <div class="assistant-header h-16 px-4 flex items-center justify-between gap-2 shrink-0">
@@ -164,6 +167,7 @@
 </template>
 
 <script setup>
+import { useBreakpoints } from '@/composables/useBreakpoints';
 import { ref, computed, nextTick, watch, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
@@ -198,6 +202,8 @@ const emit = defineEmits(['navigate', 'select-camera']);
 
 const { t } = useI18n();
 const { isAssistantOpen, closeAssistant } = useTheme();
+// Desktop: a column next to the page; tablet: panel over it; phone: full screen
+const { isDesktop } = useBreakpoints();
 
 const chatContainer = ref(null);
 const inputQuery = ref('');
@@ -336,6 +342,11 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.assistant-panel--overlay {
+  box-shadow: var(--el-box-shadow-dark);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
 .assistant-panel {
   background-color: var(--el-bg-color-overlay);
   border-left: 1px solid var(--el-border-color);

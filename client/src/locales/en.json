@@ -56,7 +56,10 @@
     "blog": "Blog",
     "helpCenter": "Help Center",
     "apiDocs": "API Docs",
-    "dashboards": "Dashboards"
+    "dashboards": "Dashboards",
+    "mainNavigation": "Main navigation",
+    "overviewShort": "Overview",
+    "more": "More"
   },
   "topbar": {
     "notifications": "Notifications",
@@ -66,7 +69,8 @@
     "darkMode": "Switch to Dark Mode",
     "changePassword": "Change Password",
     "profileSettings": "Profile Settings",
-    "recentAlerts": "Recent Alerts"
+    "recentAlerts": "Recent Alerts",
+    "appearance": "Language & theme"
   },
   "auth": {
     "tagline": "Smart Trap & Vision AI Studio",
@@ -470,7 +474,8 @@
       "exportHint": "Corrected snapshots from the last 90 days (AI vs human counts), for retraining the detection model",
       "exportEmpty": "No corrected snapshots in the last 90 days.",
       "exported": "Exported {count} corrected snapshots."
-    }
+    },
+    "exportMenu": "Export"
   },
   "settings": {
     "title": "System Settings",

@@ -1,24 +1,24 @@
 <template>
-  <header class="topbar h-16 px-6 lg:px-8 flex items-center justify-between shrink-0 z-10 transition-colors select-none">
-    <!-- Left: Context / Title -->
-    <div class="flex items-center gap-3 min-w-0">
+  <header class="topbar h-14 sm:h-16 px-3 sm:px-6 lg:px-8 flex items-center justify-between gap-2 shrink-0 z-10 transition-colors select-none">
+    <!-- Left: logo (phones) and page title -->
+    <div class="flex items-center gap-2 min-w-0">
+      <img v-if="isMobile" src="/logo.png" alt="FlyBot" class="w-7 h-7 rounded-md object-contain shrink-0" />
       <span class="topbar-title truncate">{{ currentSectionTitle }}</span>
     </div>
 
     <!-- Right Controls -->
-    <div class="flex items-center gap-2">
-      <!-- Language Dropdown -->
-      <LanguageSelect />
+    <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+      <!-- Language and theme: under "More" on phones -->
+      <LanguageSelect v-if="!isMobile" />
 
-      <!-- Theme Toggle Button -->
-      <el-tooltip :content="isDark ? t('topbar.lightMode') : t('topbar.darkMode')" placement="bottom">
+      <el-tooltip v-if="!isMobile" :content="isDark ? t('topbar.lightMode') : t('topbar.darkMode')" placement="bottom">
         <el-button circle :icon="isDark ? Sunny : Moon" @click="toggleTheme" />
       </el-tooltip>
 
       <!-- Notifications Popover -->
       <el-popover
         placement="bottom-end"
-        :width="340"
+        :width="isMobile ? 'calc(100vw - 24px)' : 340"
         trigger="click"
         :popper-style="{ padding: 0 }"
       >
@@ -75,9 +75,10 @@
         :plain="isAssistantOpen"
         :icon="MagicStick"
         :title="t('topbar.assistant')"
+        :circle="isMobile"
         @click="toggleAssistant"
       >
-        <span class="hidden sm:inline">{{ t('topbar.assistant') }}</span>
+        <span v-if="!isMobile">{{ t('topbar.assistant') }}</span>
       </el-button>
 
       <!-- Profile menu -->
@@ -123,6 +124,7 @@ import { useTheme } from '@/utils/theme';
 import { useAuth } from '@/composables/useAuth';
 import LanguageSelect from '@/components/shared/LanguageSelect.vue';
 import { useNotifications } from '@/composables/useNotifications';
+import { useBreakpoints } from '@/composables/useBreakpoints';
 
 const props = defineProps({
   currentSection: {
@@ -137,6 +139,7 @@ const router = useRouter();
 const { t, locale } = useI18n();
 const { isDark, isAssistantOpen, toggleTheme, toggleAssistant } = useTheme();
 const { userName, userEmail, userInitial, logout } = useAuth();
+const { isMobile } = useBreakpoints();
 
 const currentSectionTitle = computed(() => {
   const map = {

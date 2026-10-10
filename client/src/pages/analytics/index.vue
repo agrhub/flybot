@@ -2,6 +2,20 @@
   <div class="w-full max-w-7xl mx-auto pb-12">
     <PageHeader :title="t('analytics.title')" :subtitle="t('analytics.subtitle')">
       <template #actions>
+        <!-- Phones: one "Export" menu instead of three buttons -->
+        <el-dropdown v-if="isMobile" trigger="click" @command="(cmd) => exportActions[cmd]()">
+          <el-button type="primary" :icon="Download" :loading="exportingPdf || exportingXlsx || exportingReviews">
+            {{ t('analytics.exportMenu') }}
+          </el-button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="pdf" :icon="Document">{{ t('analytics.exportPdf') }}</el-dropdown-item>
+              <el-dropdown-item command="xlsx" :icon="Download">{{ t('analytics.exportExcel') }}</el-dropdown-item>
+              <el-dropdown-item command="reviews" :icon="Files">{{ t('analytics.review.export') }}</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+        <template v-else>
         <el-tooltip :content="t('analytics.review.exportHint')" placement="bottom">
           <el-button :icon="Files" :loading="exportingReviews" @click="exportCorrections">
             {{ t('analytics.review.export') }}
@@ -24,6 +38,7 @@
         >
           {{ exportingPdf ? t('analytics.exporting') : t('analytics.exportPdf') }}
         </el-button>
+        </template>
       </template>
     </PageHeader>
 
@@ -35,7 +50,7 @@
         :model-value="selectedCamera?.deviceSerial || 'all'"
         @change="handleCameraChange"
         :placeholder="t('analytics.selectCamera')"
-        class="!w-60"
+        class="w-full sm:!w-60"
       >
         <template #prefix>
           <el-icon><VideoCamera /></el-icon>
@@ -53,7 +68,7 @@
       <el-select
         v-model="selectedTimeRange"
         @change="handleTimeRangeChange"
-        class="!w-44"
+        class="w-full sm:!w-44"
       >
         <template #prefix>
           <el-icon><Calendar /></el-icon>
@@ -123,6 +138,7 @@ import StatisticsTab from './tabs/StatisticsTab.vue';
 import HistoryTab from './tabs/HistoryTab.vue';
 import api from '@/services/api';
 import { loadPdf, loadExcelWriter } from '@/utils/lazyLibs';
+import { useBreakpoints } from '@/composables/useBreakpoints';
 import { formatSummary, normalizeSummary } from '@/utils/species';
 import { ElNotification } from 'element-plus';
 import { Calendar, Document, Download, Files, List, TrendCharts, VideoCamera } from '@element-plus/icons-vue';
@@ -293,6 +309,13 @@ const exportToPdf = async () => {
   } finally {
     exportingPdf.value = false;
   }
+};
+
+const { isMobile } = useBreakpoints();
+const exportActions = {
+  pdf: () => exportToPdf(),
+  xlsx: () => exportToExcel(),
+  reviews: () => exportCorrections()
 };
 
 const exportToExcel = async () => {

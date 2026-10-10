@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col gap-4 w-full pb-10">
     <!-- Summary cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+    <div class="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
       <StatCard
         :label="isSingleCamera ? t('analytics.realtimeDensityTrap') : t('analytics.realtimeHotspotMax')"
         :value="realtimeInsectCount"

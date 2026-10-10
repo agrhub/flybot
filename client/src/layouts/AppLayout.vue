@@ -1,14 +1,15 @@
 <template>
   <div id="app-layout" class="bg-[var(--el-bg-color-page)] text-[var(--el-text-color-primary)] font-sans antialiased h-screen w-screen flex overflow-hidden select-none">
-    <!-- Left Sidebar (Collapsible) -->
+    <!-- Left Sidebar: tablet (icons) and desktop; phones use the bottom tab bar -->
     <AppSidebar
+      v-if="!isMobile"
       :active-section="currentSection"
       @navigate="handleNavigate"
       @open-add-camera="openAddCameraModal"
     />
 
     <!-- Center Main Workspace Area -->
-    <div class="flex-1 flex flex-col h-screen overflow-hidden relative min-w-0">
+    <div class="flex-1 flex flex-col h-[100dvh] overflow-hidden relative min-w-0">
       <!-- Topbar Header -->
       <Topbar
         :current-section="currentSection"
@@ -41,9 +42,17 @@
       </el-alert>
 
       <!-- Scrollable Main Content Router View -->
-      <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 custom-scrollbar">
+      <main class="flex-1 overflow-y-auto p-3 sm:p-6 lg:p-8 custom-scrollbar">
         <router-view />
       </main>
+
+      <!-- Phones: native-style bottom navigation -->
+      <MobileTabBar
+        v-if="isMobile"
+        :active-section="currentSection"
+        @navigate="handleNavigate"
+        @open-add-camera="openAddCameraModal"
+      />
     </div>
 
     <!-- Right Sidebar AI Assistant Copilot -->
@@ -69,9 +78,11 @@ import { useAuth } from '@/composables/useAuth';
 import { useRouter, useRoute } from 'vue-router';
 import { useTheme } from '@/utils/theme';
 import { useCameras } from '@/composables/useCameras';
+import { useBreakpoints } from '@/composables/useBreakpoints';
 import { useNotifications } from '@/composables/useNotifications';
 
 import AppSidebar from '@/components/layout/AppSidebar.vue';
+import MobileTabBar from '@/components/layout/MobileTabBar.vue';
 import Topbar from '@/components/layout/Topbar.vue';
 import AiAssistantSidebar from '@/components/assistant/AiAssistantSidebar.vue';
 import AddCameraModal from '@/components/modals/AddCameraModal.vue';
@@ -99,6 +110,7 @@ const resendVerification = async () => {
   }
 };
 const { cameras, selectedCamera, loadCameras, selectCamera, openAddCameraModal } = useCameras();
+const { isMobile } = useBreakpoints();
 
 const currentSection = computed(() => {
   const path = route.path;
@@ -141,7 +153,9 @@ onMounted(() => {
 
 <style scoped>
 #app-layout {
+  /* dvh: the visible height on phones, without the browser's address bar */
   height: 100vh;
+  height: 100dvh;
   width: 100vw;
   overflow: hidden;
 }
