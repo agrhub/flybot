@@ -8,8 +8,7 @@ const {
     VERTEX_LOCATION,
     VERTEX_MODEL,
     ROBOFLOW_API_KEY,
-    ROBOFLOW_WORKFLOW_URL,
-    KOLOSAL_KEY
+    ROBOFLOW_WORKFLOW_URL
 } = require('../config/env');
 
 const vertexAI = new GoogleGenAI({
@@ -236,38 +235,6 @@ async function analyzeInsectsRoboflow(base64Image, snapshotId, imageUrl = null) 
     }
 }
 
-async function detection(base64Image = "", prompts = []) {
-    try {
-        const response = await axios.post('https://api.kolosal.ai/v1/segment/base64', {
-            image: base64Image,
-            prompts: prompts,
-            return_annotated: true,
-            return_masks: true,
-            threshold: 1
-        }, {
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: KOLOSAL_KEY
-            }
-        });
-        console.log("detection", response.status, response.data);
-    } catch (err) {
-        console.error("detection error:", err.message);
-    }
-}
-
-let SamModel = null;
-let SamProcessor = null;
-
-async function sam3(img_url, prompts) {
-    try {
-        console.log("sam3 => ", img_url, prompts);
-        // Placeholder for Transformer SAM3 pipeline if loaded in the future
-    } catch (error) {
-        console.log(error);
-    }
-}
-
 /**
  * AI Copilot assistant for answering questions and smart trap analytics
  */
@@ -369,7 +336,5 @@ module.exports = {
     getImageDimensions,
     analyzeInsects,
     analyzeInsectsRoboflow,
-    detection,
-    sam3,
     generateAssistantChat
 };

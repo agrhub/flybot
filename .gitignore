@@ -1,6 +1,7 @@
 node_modules/
 .env
 .env.*
+!.env.example
 gcp-service-account.json
 *.log
 dist/

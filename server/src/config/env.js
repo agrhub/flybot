@@ -112,7 +112,6 @@ const config = {
         "vi": "https://ivnopen.ezvizlife.com"
     },
     RETENTION_CYCLE: parseInt(process.env.RETENTION_CYCLE || '3', 10),
-    KOLOSAL_KEY: process.env.KOLOSAL_KEY || "",
 
     // S3
     S3_BUCKET: process.env.S3_BUCKET_NAME || "ezviz-manager",
