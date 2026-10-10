@@ -570,7 +570,10 @@ async function getCamerasHealth(req, res) {
                     // null when nothing was captured, so the UI shows "--" instead of a misleading 0%
                     aiSuccessRate: r.total > 0 ? Math.round((r.analyzed / r.total) * 100) : null,
                     captureIntervalMinutes: cam.captureIntervalMinutes,
-                    captureDaytimeOnly: cam.captureDaytimeOnly
+                    captureDaytimeOnly: cam.captureDaytimeOnly,
+                    // Problems in the latest photo (services/imageQuality.js)
+                    imageIssues: cam.imageQuality?.issues || [],
+                    imageCheckedAt: cam.imageQuality?.checkedAt || null
                 };
             })
         });

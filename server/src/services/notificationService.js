@@ -1,8 +1,8 @@
 const { Camera, User, Notification } = require('../models');
 const { NON_PEST_LABELS } = require('../constants/species');
-const { normalizeLanguage } = require('../utils/i18n');
+const { normalizeLanguage, translate } = require('../utils/i18n');
 const sseHub = require('../realtime/sseHub');
-const { queueMail } = require('./mailService');
+const mailService = require('./mailService');
 const emailTemplates = require('./emailTemplates');
 const { appUrl } = require('./authTokenService');
 const telegramService = require('./telegramService');
@@ -25,7 +25,9 @@ const COOLDOWN_MINUTES = {
     farm_shared: 0,
     // At most one "sudden rise" per camera per day
     pest_surge: 24 * 60,
-    weekly_report: 0
+    weekly_report: 0,
+    // A bad photo is reminded once a day while it lasts
+    image_quality: 24 * 60
 };
 
 const SEVERITY = {
@@ -40,11 +42,12 @@ const SEVERITY = {
     plot_threshold: 'critical',
     farm_shared: 'info',
     pest_surge: 'warning',
-    weekly_report: 'info'
+    weekly_report: 'info',
+    image_quality: 'warning'
 };
 
 // "Back online" is good news: in-app only
-const EMAIL_TYPES = new Set(['pest_threshold', 'camera_offline', 'ai_failure', 'card_due', 'plot_threshold', 'pest_surge']);
+const EMAIL_TYPES = new Set(['pest_threshold', 'camera_offline', 'ai_failure', 'card_due', 'plot_threshold', 'pest_surge', 'image_quality']);
 // Phone/browser push: the alerts, plus something new shared with you
 const PUSH_TYPES = new Set([...EMAIL_TYPES, 'camera_shared', 'dashboard_shared', 'farm_shared']);
 
@@ -101,6 +104,7 @@ async function notifyUser({ userId, type, deviceSerial = '', params = {} }) {
 
     // Night hours chosen by the user: nothing that buzzes a phone
     const quiet = inQuietHours(user);
+    params = localizeParams(user.language, params);
 
     // Each subscribed device is opted in by the user on that device
     if (PUSH_TYPES.has(type) && !quiet) {
@@ -120,13 +124,22 @@ async function notifyUser({ userId, type, deviceSerial = '', params = {} }) {
 
         // Only verified addresses get alert emails, so typos never receive farm data
         if (user.emailVerified && user.notificationPrefs?.email !== false) {
-            queueMail(emailTemplates.alertEmail({ user, language, type, params: fullParams, url }));
+            mailService.queueMail(emailTemplates.alertEmail({ user, language, type, params: fullParams, url }));
         }
         if (user.telegram?.chatId && user.notificationPrefs?.telegram !== false && !quiet) {
             telegramService.queueMessage(user.telegram.chatId, telegramService.formatAlert({ language, type, params: fullParams, url }));
         }
     }
     return notification;
+}
+
+/**
+ * Params that are stable keys get their text in the user's language for push, email and
+ * Telegram (the app translates the keys itself).
+ */
+function localizeParams(language, params = {}) {
+    if (!params.issue) return params;
+    return { ...params, issueText: translate(normalizeLanguage(language), `email.imageIssues.${params.issue}`) };
 }
 
 /**

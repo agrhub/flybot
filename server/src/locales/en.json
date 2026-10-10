@@ -51,6 +51,10 @@
       "pest_surge": {
         "subject": "📈 Sudden rise: {deviceName}",
         "body": "Camera {deviceName} ({deviceSerial}) counts {count} insects, up from {previous} {days} days ago (+{pct}%). Check the trap and consider treating early."
+      },
+      "image_quality": {
+        "subject": "📷 Check camera {deviceName}: {issueText}",
+        "body": "The last photos from {deviceName} ({deviceSerial}) show a problem: {issueText}. Insect counts from these photos may be wrong until it is fixed."
       }
     },
     "cameraShared": {
@@ -94,6 +98,13 @@
       "treatments": "Treatments logged this week: {count}.",
       "button": "Open analytics",
       "footer": "You get this every Monday. Turn it off in FlyBot → Settings → Notifications."
+    },
+    "imageIssues": {
+      "dark": "too dark (night, a cover, or the light is off)",
+      "overexposed": "too bright (direct sun or glare)",
+      "blurry": "blurry (out of focus or the camera moved)",
+      "low_contrast": "hazy (dirty lens, condensation or dust)",
+      "card_full": "the sticky card is nearly full, replace it"
     }
   },
   "telegram": {

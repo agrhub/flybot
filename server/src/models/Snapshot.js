@@ -18,6 +18,16 @@ const snapshotSchema = new mongoose.Schema({
         summary: { type: Map, of: Number }, // Statistics summary: { "caterpillar": 2, "fruit fly": 1 }
         raw_description: String
     },
+    // Photo quality (services/imageQuality.js): measurements and the problems found
+    quality: {
+        brightness: { type: Number, default: undefined },
+        contrast: { type: Number, default: undefined },
+        sharpness: { type: Number, default: undefined },
+        clipped: { type: Number, default: undefined },
+        coverage: { type: Number, default: undefined },
+        issues: { type: [String], default: undefined },
+        checkedAt: { type: Date, default: undefined }
+    },
     // Human review of the AI result. When counts are corrected, aiResults.summary holds the
     // corrected counts (so every statistic uses them) and originalSummary keeps the model output
     // for retraining.

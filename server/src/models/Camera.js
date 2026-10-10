@@ -49,6 +49,11 @@ const cameraSchema = new mongoose.Schema({
     // after how many days to remind (0 = off)
     cardReplacedAt: { type: Date, default: null },
     cardReminderDays: { type: Number, default: 7, min: 0, max: 60 },
+    // Problems found in the latest photo (services/imageQuality.js)
+    imageQuality: {
+        issues: { type: [String], default: undefined },
+        checkedAt: { type: Date, default: undefined }
+    },
     // Last automatic or manual capture attempt for this device
     lastCaptureAt: { type: Date, default: null },
     addedAt: { type: Date, default: Date.now },

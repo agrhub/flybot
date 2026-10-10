@@ -8,6 +8,7 @@ const aiService = require('../services/aiService');
 const notificationService = require('../services/notificationService');
 const maintenanceService = require('../services/maintenanceService');
 const { dueSerials } = require('../services/captureSchedule');
+const imageQuality = require('../services/imageQuality');
 
 /**
  * Capture image from camera, upload to S3, and trigger AI analysis
@@ -91,6 +92,15 @@ async function captureAndSaveSnapshot(deviceSerial) {
                 }
             } catch (alertErr) {
                 console.error(`⚠️ Alert check failed (${deviceSerial}):`, alertErr.message);
+            }
+
+            // 6. Photo quality: dark, blurry, dirty lens or a full sticky card
+            try {
+                const analyzed = await Snapshot.findById(savedDoc._id).lean();
+                const count = analyzed?.aiProcessed ? notificationService.countPests(analyzed.aiResults?.summary) : 0;
+                await imageQuality.checkSnapshot(analyzed || savedDoc, buffer, { count });
+            } catch (qualityErr) {
+                console.error(`⚠️ Image quality check failed (${deviceSerial}):`, qualityErr.message);
             }
             return savedDoc;
         }

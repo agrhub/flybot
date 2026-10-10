@@ -51,6 +51,10 @@
       "pest_surge": {
         "subject": "📈 Tăng đột biến: {deviceName}",
         "body": "Camera {deviceName} ({deviceSerial}) đếm được {count} con, tăng từ {previous} con cách đây {days} ngày (+{pct}%). Hãy kiểm tra bẫy và cân nhắc xử lý sớm."
+      },
+      "image_quality": {
+        "subject": "📷 Kiểm tra camera {deviceName}: {issueText}",
+        "body": "Các ảnh gần đây của {deviceName} ({deviceSerial}) có vấn đề: {issueText}. Số côn trùng đếm từ những ảnh này có thể không chính xác cho đến khi khắc phục."
       }
     },
     "cameraShared": {
@@ -94,6 +98,13 @@
       "treatments": "Số lần xử lý ghi nhận trong tuần: {count}.",
       "button": "Mở thống kê",
       "footer": "Bạn nhận báo cáo này mỗi thứ Hai. Tắt trong FlyBot → Cài đặt → Thông báo."
+    },
+    "imageIssues": {
+      "dark": "quá tối (ban đêm, bị che hoặc mất đèn)",
+      "overexposed": "quá sáng (nắng chiếu thẳng hoặc chói)",
+      "blurry": "bị mờ (lệch nét hoặc camera bị xê dịch)",
+      "low_contrast": "bị mờ đục (ống kính bẩn, đọng hơi nước hoặc bụi)",
+      "card_full": "tấm bẫy gần đầy, cần thay tấm mới"
     }
   },
   "telegram": {

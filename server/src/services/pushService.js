@@ -15,6 +15,7 @@ const TEXT_KEYS = {
     card_due: 'email.alerts.card_due',
     plot_threshold: 'email.alerts.plot_threshold',
     pest_surge: 'email.alerts.pest_surge',
+    image_quality: 'email.alerts.image_quality',
     farm_shared: 'email.farmShared',
     camera_shared: 'email.cameraShared',
     dashboard_shared: 'email.dashboardShared'
@@ -28,6 +29,7 @@ const TARGET_PATH = {
     card_due: '/cameras',
     plot_threshold: '/farms',
     pest_surge: '/analytics',
+    image_quality: '/cameras',
     camera_shared: '/cameras'
 };
 const URGENT_TYPES = new Set(['pest_threshold', 'camera_offline']);

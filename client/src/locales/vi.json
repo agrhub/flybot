@@ -359,7 +359,25 @@
       "every": "Mỗi {minutes} phút",
       "daytimeOnly": "chỉ ban ngày"
     },
-    "noSharedCameras": "Chưa có camera nào được chia sẻ với bạn."
+    "noSharedCameras": "Chưa có camera nào được chia sẻ với bạn.",
+    "imageQuality": {
+      "label": "Chất lượng ảnh",
+      "good": "Tốt",
+      "issues": {
+        "dark": "Quá tối",
+        "overexposed": "Quá sáng",
+        "blurry": "Ảnh mờ",
+        "low_contrast": "Ống kính bẩn",
+        "card_full": "Bẫy đầy"
+      },
+      "hints": {
+        "dark": "Ảnh gần nhất quá tối: ban đêm, camera bị che hoặc mất đèn.",
+        "overexposed": "Ảnh gần nhất bị cháy sáng do nắng chiếu thẳng hoặc chói. Che bớt nắng hoặc xoay camera.",
+        "blurry": "Kém nét hơn nhiều so với bình thường: lệch nét, hoặc camera hay tấm bẫy bị xê dịch.",
+        "low_contrast": "Mờ đục hơn bình thường: lau ống kính, lau hơi nước đọng hoặc bụi.",
+        "card_full": "Tấm bẫy gần kín. Hãy thay tấm mới để đếm được côn trùng mới."
+      }
+    }
   },
   "analytics": {
     "title": "Báo Cáo & Lịch Sử Nhận Dạng AI",
@@ -861,6 +879,10 @@
       "weekly_report": {
         "title": "Báo cáo tuần",
         "desc": "Báo cáo tuần của bạn đã sẵn sàng."
+      },
+      "image_quality": {
+        "title": "Ảnh có vấn đề",
+        "desc": "{deviceName}: {issueText}. Số đếm từ các ảnh này có thể sai."
       }
     }
   },

@@ -359,7 +359,25 @@
       "every": "Every {minutes} min",
       "daytimeOnly": "daytime only"
     },
-    "noSharedCameras": "No cameras have been shared with you yet."
+    "noSharedCameras": "No cameras have been shared with you yet.",
+    "imageQuality": {
+      "label": "Photo quality",
+      "good": "Good",
+      "issues": {
+        "dark": "Too dark",
+        "overexposed": "Too bright",
+        "blurry": "Blurry",
+        "low_contrast": "Dirty lens",
+        "card_full": "Card full"
+      },
+      "hints": {
+        "dark": "The last photo is too dark: night, something covering the camera, or the light is off.",
+        "overexposed": "The last photo is washed out by direct sun or glare. Shade the trap or turn the camera.",
+        "blurry": "Much less sharp than usual: out of focus, or the camera or card moved.",
+        "low_contrast": "Hazy compared with usual: clean the lens, or wipe off condensation or dust.",
+        "card_full": "The sticky card is nearly covered. Replace it so new insects can be counted."
+      }
+    }
   },
   "analytics": {
     "title": "AI Analytics & Detection History",
@@ -861,6 +879,10 @@
       "weekly_report": {
         "title": "Weekly report",
         "desc": "Your weekly report is ready."
+      },
+      "image_quality": {
+        "title": "Photo problem",
+        "desc": "{deviceName}: {issueText}. Counts from these photos may be wrong."
       }
     }
   },

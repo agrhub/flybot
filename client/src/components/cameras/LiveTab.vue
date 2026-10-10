@@ -111,6 +111,15 @@
             </el-tag>
             <span v-else class="live-tab__value">--</span>
           </el-descriptions-item>
+          <el-descriptions-item v-if="health" :label="t('cameras.imageQuality.label')">
+            <span v-if="!health.imageCheckedAt" class="live-tab__value">--</span>
+            <el-tag v-else-if="!health.imageIssues?.length" type="success" effect="light" round size="small">{{ t('cameras.imageQuality.good') }}</el-tag>
+            <span v-else class="inline-flex flex-wrap gap-1">
+              <el-tooltip v-for="issue in health.imageIssues" :key="issue" :content="t(`cameras.imageQuality.hints.${issue}`)" placement="top">
+                <el-tag type="warning" effect="light" round size="small">{{ t(`cameras.imageQuality.issues.${issue}`) }}</el-tag>
+              </el-tooltip>
+            </span>
+          </el-descriptions-item>
           <el-descriptions-item v-if="health" :label="t('cameras.health.schedule')">
             <span class="live-tab__value">
               {{ t('cameras.schedule.every', { minutes: health.captureIntervalMinutes || 30 }) }}<template v-if="health.captureDaytimeOnly">, {{ t('cameras.schedule.daytimeOnly') }}</template>

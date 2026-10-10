@@ -24,6 +24,7 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
+    "jpeg-js": "^0.4.4",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.1.1",
     "node-cron": "^4.2.1",

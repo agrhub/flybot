@@ -207,6 +207,11 @@
         <el-tag v-if="cardOverdue" type="warning" effect="light" round size="small" class="shrink-0">
           {{ t('maintenance.overdue') }}
         </el-tag>
+        <el-tooltip v-if="imageIssue" :content="t(`cameras.imageQuality.hints.${imageIssue}`)" placement="top">
+          <el-tag type="warning" effect="light" round size="small" class="shrink-0">
+            {{ t(`cameras.imageQuality.issues.${imageIssue}`) }}
+          </el-tag>
+        </el-tooltip>
       </div>
 
       <!-- Action: View Details Button -->
@@ -299,6 +304,8 @@ const cameraThumbnail = computed(() => {
 
 // Sticky card past its reminder date
 const cardOverdue = computed(() => !!props.camera?.cardDueAt && new Date(props.camera.cardDueAt) <= new Date());
+// Most serious problem in the latest photo
+const imageIssue = computed(() => props.camera?.imageQuality?.issues?.[0] || null);
 const codeDialogVisible = ref(false);
 const inputCode = ref('');
 const savingCode = ref(false);

@@ -20,12 +20,18 @@ let eventSource = null;
 const PAGE_SIZE = 20;
 const TOAST_TYPE = { critical: 'error', warning: 'warning', info: 'success' };
 
+// Params that are stable keys (an image issue) become text in the current language
+function localizeParams(params) {
+  if (!params.issue) return params;
+  return { ...params, issueText: i18n.global.t(`cameras.imageQuality.issues.${params.issue}`) };
+}
+
 function format(notification) {
   const { t } = i18n.global;
   const base = `notifications.types.${notification.type}`;
   return {
     title: t(`${base}.title`),
-    desc: t(`${base}.desc`, notification.params || {})
+    desc: t(`${base}.desc`, localizeParams(notification.params || {}))
   };
 }
 
