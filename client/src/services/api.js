@@ -243,6 +243,22 @@ export default {
   deleteMaintenance(id) {
     return apiClient.delete(`/user/camera/maintenance/${id}`);
   },
+  // Treatment (IPM) log
+  listTreatments(params = {}) {
+    return apiClient.get('/treatments', { params });
+  },
+  createTreatment(data) {
+    return apiClient.post('/treatments', data);
+  },
+  updateTreatment(id, data) {
+    return apiClient.put(`/treatments/${id}`, data);
+  },
+  deleteTreatment(id) {
+    return apiClient.delete(`/treatments/${id}`);
+  },
+  getTreatmentEffect(id) {
+    return apiClient.get(`/treatments/${id}/effect`);
+  },
   getCamerasHealth() {
     return apiClient.get('/user/cameras/health');
   },

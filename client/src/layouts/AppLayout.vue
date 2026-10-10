@@ -116,6 +116,7 @@ const currentSection = computed(() => {
   const path = route.path;
   if (path.startsWith('/cameras')) return 'cameras';
   if (path.startsWith('/dashboards')) return 'dashboards';
+  if (path.startsWith('/logbook')) return 'logbook';
   if (path.startsWith('/analytics')) return 'analytics';
   if (path.startsWith('/map')) return 'map';
   if (path.startsWith('/settings')) return 'settings';

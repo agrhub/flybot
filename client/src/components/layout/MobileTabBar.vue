@@ -30,6 +30,10 @@
         <el-icon><Grid /></el-icon>
         <span>{{ t('nav.dashboards') }}</span>
       </el-menu-item>
+      <el-menu-item index="logbook">
+        <el-icon><Notebook /></el-icon>
+        <span>{{ t('nav.logbook') }}</span>
+      </el-menu-item>
       <el-menu-item index="settings">
         <el-icon><Setting /></el-icon>
         <span>{{ t('nav.settings') }}</span>
@@ -59,7 +63,7 @@ import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import {
-  Odometer, VideoCamera, DataAnalysis, MapLocation, MoreFilled, Grid, Setting, Plus, Reading, Sunny, Moon,
+  Odometer, VideoCamera, DataAnalysis, MapLocation, MoreFilled, Grid, Notebook, Setting, Plus, Reading, Sunny, Moon,
 } from '@element-plus/icons-vue';
 import { useAuth } from '@/composables/useAuth';
 import { useTheme } from '@/utils/theme';
@@ -77,7 +81,7 @@ const { isDark, toggleTheme } = useTheme();
 const moreOpen = ref(false);
 
 // Sections reached through "More" light up that tab
-const MORE_SECTIONS = ['dashboards', 'settings'];
+const MORE_SECTIONS = ['dashboards', 'logbook', 'settings'];
 const isActive = (id) => (id === 'more' ? MORE_SECTIONS.includes(props.activeSection) : props.activeSection === id);
 
 const tabs = computed(() => [

@@ -87,6 +87,7 @@ import {
   MapLocation,
   Setting,
   Grid,
+  Notebook,
   Fold,
   Expand,
   Plus
@@ -127,6 +128,7 @@ const navItems = computed(() => [
   { id: 'cameras', label: t('nav.cameras'), icon: VideoCamera },
   { id: 'dashboards', label: t('nav.dashboards'), icon: Grid },
   { id: 'analytics', label: t('nav.analytics'), icon: DataAnalysis },
+  { id: 'logbook', label: t('nav.logbook'), icon: Notebook },
   { id: 'map', label: t('nav.map'), icon: MapLocation },
   { id: 'settings', label: t('nav.settings'), icon: Setting },
 ]);

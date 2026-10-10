@@ -10,6 +10,7 @@ const AuditLog = require('./AuditLog');
 const PushSubscription = require('./PushSubscription');
 const DailyStat = require('./DailyStat');
 const MaintenanceEvent = require('./MaintenanceEvent');
+const Treatment = require('./Treatment');
 
 module.exports = {
     User,
@@ -23,5 +24,6 @@ module.exports = {
     AuditLog,
     PushSubscription,
     DailyStat,
-    MaintenanceEvent
+    MaintenanceEvent,
+    Treatment
 };

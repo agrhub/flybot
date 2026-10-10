@@ -30,7 +30,8 @@
     "notice": "Notice",
     "defaultUserName": "User",
     "confirm": "Confirm",
-    "done": "Done"
+    "done": "Done",
+    "edit": "Edit"
   },
   "nav": {
     "home": "Home",
@@ -59,7 +60,8 @@
     "dashboards": "Dashboards",
     "mainNavigation": "Main navigation",
     "overviewShort": "Overview",
-    "more": "More"
+    "more": "More",
+    "logbook": "Field log"
   },
   "topbar": {
     "notifications": "Notifications",
@@ -1088,7 +1090,8 @@
       "user": "Accounts",
       "camera": "Cameras",
       "dashboard": "Dashboards",
-      "settings": "System settings"
+      "settings": "System settings",
+      "treatment": "Treatments"
     },
     "actions": {
       "auth": {
@@ -1124,6 +1127,11 @@
       },
       "settings": {
         "updated": "System settings changed"
+      },
+      "treatment": {
+        "created": "Treatment logged",
+        "updated": "Treatment changed",
+        "deleted": "Treatment deleted"
       }
     },
     "reasons": {
@@ -1195,5 +1203,83 @@
     "dueSoon": "Card due soon",
     "ok": "Card OK",
     "chartMarker": "New card"
+  },
+  "logbook": {
+    "title": "Field log",
+    "subtitle": "Sprays, baits and other treatments, with their effect on trap catches. Export it as the VietGAP pesticide-use record.",
+    "add": "Log treatment",
+    "edit": "Edit treatment",
+    "delete": "Delete",
+    "deleteConfirm": "Delete this treatment from the log?",
+    "export": "Export VietGAP log",
+    "empty": "No treatments logged yet.",
+    "allTypes": "All treatments",
+    "saved": "Saved.",
+    "camerasRequired": "Choose the traps in the treated area.",
+    "nothingToExport": "Nothing to export for these filters.",
+    "exported": "Exported {count} treatments.",
+    "sheetName": "Pesticide use",
+    "chartMarker": "Treatment",
+    "date": "Date",
+    "type": "Treatment",
+    "product": "Product",
+    "activeIngredient": "Active ingredient",
+    "dose": "Dose",
+    "dosePlaceholder": "e.g. 10 ml / 16 l",
+    "area": "Area",
+    "areaPlaceholder": "e.g. 0.5 ha, rows 1-12",
+    "operator": "Applied by",
+    "phi": "Harvest",
+    "phiDays": "Pre-harvest interval (days)",
+    "phiPlaceholder": "As on the label",
+    "note": "Note",
+    "cameras": "Traps in the treated area",
+    "camerasPlaceholder": "Choose traps",
+    "effect": "Effect",
+    "harvestFrom": "Harvest from {date}",
+    "harvestOk": "OK to harvest",
+    "types": {
+      "spray": "Spray",
+      "bait": "Protein bait",
+      "lure": "Lure / pheromone",
+      "biological": "Biological control",
+      "sanitation": "Field sanitation",
+      "bagging": "Fruit bagging",
+      "other": "Other"
+    },
+    "effectTitle": "Effect on trap catches",
+    "effectExplain": "Average insects caught per trap per day, {days} days before vs after the treatment day. A sticky card only accumulates, so a day's catch is how much its count rose; card changes are taken into account.",
+    "before": "Before",
+    "after": "After",
+    "change": "Change",
+    "perDay": "/ day",
+    "effectShort": {
+      "pending": "Too early",
+      "no_data": "No data",
+      "effective": "Effective",
+      "partial": "Partial",
+      "not_effective": "No effect"
+    },
+    "effectStatus": {
+      "pending": "Too early to judge: wait at least 2 days after the treatment.",
+      "no_data": "Not enough trap data around the treatment date.",
+      "effective": "Catches dropped by 30% or more after the treatment.",
+      "partial": "Catches dropped, but by less than 30%.",
+      "not_effective": "Catches did not drop after the treatment."
+    },
+    "col": {
+      "index": "No.",
+      "date": "Date",
+      "plot": "Plot / traps",
+      "type": "Treatment",
+      "product": "Product name",
+      "activeIngredient": "Active ingredient",
+      "dose": "Dose",
+      "area": "Area",
+      "operator": "Applied by",
+      "phi": "PHI (days)",
+      "harvestFrom": "Harvest from",
+      "note": "Note"
+    }
   }
 }

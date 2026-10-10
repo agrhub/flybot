@@ -146,6 +146,7 @@ const currentSectionTitle = computed(() => {
     dashboard: t('nav.dashboard'),
     cameras: t('nav.cameras'),
     dashboards: t('nav.dashboards'),
+    logbook: t('nav.logbook'),
     analytics: t('nav.analytics'),
     map: t('nav.map'),
     settings: t('nav.settings')

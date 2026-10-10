@@ -24,7 +24,10 @@ const AUDIT_ACTIONS = [
     'dashboard.published',
     'dashboard.unpublished',
     'dashboard.link_rotated',
-    'settings.updated'
+    'settings.updated',
+    'treatment.created',
+    'treatment.updated',
+    'treatment.deleted'
 ];
 const CATEGORIES = [...new Set(AUDIT_ACTIONS.map(a => a.split('.')[0]))];
 

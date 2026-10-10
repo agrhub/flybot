@@ -30,7 +30,8 @@
     "notice": "Thông báo",
     "defaultUserName": "Người dùng",
     "confirm": "Xác nhận",
-    "done": "Xong"
+    "done": "Xong",
+    "edit": "Sửa"
   },
   "nav": {
     "home": "Trang chủ",
@@ -59,7 +60,8 @@
     "dashboards": "Bảng tùy chỉnh",
     "mainNavigation": "Điều hướng chính",
     "overviewShort": "Tổng quan",
-    "more": "Thêm"
+    "more": "Thêm",
+    "logbook": "Nhật ký vườn"
   },
   "topbar": {
     "notifications": "Thông báo",
@@ -1088,7 +1090,8 @@
       "user": "Tài khoản",
       "camera": "Camera",
       "dashboard": "Bảng tùy chỉnh",
-      "settings": "Cài đặt hệ thống"
+      "settings": "Cài đặt hệ thống",
+      "treatment": "Xử lý dịch hại"
     },
     "actions": {
       "auth": {
@@ -1124,6 +1127,11 @@
       },
       "settings": {
         "updated": "Đổi cài đặt hệ thống"
+      },
+      "treatment": {
+        "created": "Ghi nhận xử lý",
+        "updated": "Sửa lần xử lý",
+        "deleted": "Xoá lần xử lý"
       }
     },
     "reasons": {
@@ -1195,5 +1203,83 @@
     "dueSoon": "Sắp đến hạn thay",
     "ok": "Bẫy còn tốt",
     "chartMarker": "Thay bẫy"
+  },
+  "logbook": {
+    "title": "Nhật ký vườn",
+    "subtitle": "Phun thuốc, đặt bả và các biện pháp xử lý khác, kèm hiệu quả trên số côn trùng vào bẫy. Xuất làm sổ ghi chép sử dụng thuốc BVTV theo VietGAP.",
+    "add": "Ghi nhận xử lý",
+    "edit": "Sửa lần xử lý",
+    "delete": "Xoá",
+    "deleteConfirm": "Xoá lần xử lý này khỏi nhật ký?",
+    "export": "Xuất sổ VietGAP",
+    "empty": "Chưa có lần xử lý nào.",
+    "allTypes": "Tất cả biện pháp",
+    "saved": "Đã lưu.",
+    "camerasRequired": "Chọn các bẫy trong khu vực được xử lý.",
+    "nothingToExport": "Không có dữ liệu để xuất theo bộ lọc này.",
+    "exported": "Đã xuất {count} lần xử lý.",
+    "sheetName": "Sử dụng thuốc BVTV",
+    "chartMarker": "Xử lý",
+    "date": "Ngày",
+    "type": "Biện pháp",
+    "product": "Tên thuốc / vật tư",
+    "activeIngredient": "Hoạt chất",
+    "dose": "Liều lượng",
+    "dosePlaceholder": "VD: 10 ml / bình 16 l",
+    "area": "Diện tích",
+    "areaPlaceholder": "VD: 0,5 ha, hàng 1-12",
+    "operator": "Người thực hiện",
+    "phi": "Thu hoạch",
+    "phiDays": "Thời gian cách ly (ngày)",
+    "phiPlaceholder": "Theo nhãn thuốc",
+    "note": "Ghi chú",
+    "cameras": "Bẫy trong khu vực xử lý",
+    "camerasPlaceholder": "Chọn bẫy",
+    "effect": "Hiệu quả",
+    "harvestFrom": "Thu hoạch từ {date}",
+    "harvestOk": "Đã qua cách ly",
+    "types": {
+      "spray": "Phun thuốc",
+      "bait": "Bả protein",
+      "lure": "Mồi / pheromone",
+      "biological": "Biện pháp sinh học",
+      "sanitation": "Vệ sinh vườn",
+      "bagging": "Bao trái",
+      "other": "Khác"
+    },
+    "effectTitle": "Hiệu quả trên số côn trùng vào bẫy",
+    "effectExplain": "Số côn trùng trung bình vào mỗi bẫy mỗi ngày, {days} ngày trước so với sau ngày xử lý. Tấm bẫy dính chỉ tích luỹ nên số bắt mỗi ngày là mức tăng so với hôm trước; các lần thay bẫy đã được tính đến.",
+    "before": "Trước",
+    "after": "Sau",
+    "change": "Thay đổi",
+    "perDay": "/ ngày",
+    "effectShort": {
+      "pending": "Chưa đủ ngày",
+      "no_data": "Thiếu dữ liệu",
+      "effective": "Hiệu quả",
+      "partial": "Một phần",
+      "not_effective": "Chưa hiệu quả"
+    },
+    "effectStatus": {
+      "pending": "Chưa đủ để đánh giá: cần ít nhất 2 ngày sau khi xử lý.",
+      "no_data": "Không đủ dữ liệu bẫy quanh ngày xử lý.",
+      "effective": "Số côn trùng vào bẫy giảm từ 30% trở lên sau khi xử lý.",
+      "partial": "Số côn trùng vào bẫy có giảm nhưng dưới 30%.",
+      "not_effective": "Số côn trùng vào bẫy không giảm sau khi xử lý."
+    },
+    "col": {
+      "index": "STT",
+      "date": "Ngày",
+      "plot": "Lô / bẫy",
+      "type": "Biện pháp",
+      "product": "Tên thuốc",
+      "activeIngredient": "Hoạt chất",
+      "dose": "Liều lượng",
+      "area": "Diện tích",
+      "operator": "Người thực hiện",
+      "phi": "Thời gian cách ly (ngày)",
+      "harvestFrom": "Ngày được thu hoạch",
+      "note": "Ghi chú"
+    }
   }
 }

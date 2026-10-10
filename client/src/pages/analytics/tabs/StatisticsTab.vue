@@ -188,6 +188,7 @@ const loadRealtimeMetrics = async () => {
 
 // Card replacements of the selected camera, as period keys matching the chart's dateKey
 const cardMarkerKeys = ref(new Set())
+const treatmentMarkerKeys = ref(new Set())
 const markerFormat = new Intl.DateTimeFormat('en-CA', {
   timeZone: 'Asia/Ho_Chi_Minh', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', hourCycle: 'h23'
 })
@@ -200,41 +201,45 @@ const periodKeyOf = (date, mode) => {
 const loadCardMarkers = async (serial) => {
   if (!serial || serial === 'all') {
     cardMarkerKeys.value = new Set()
+    treatmentMarkerKeys.value = new Set()
     return
   }
-  try {
-    const res = await api.getMaintenance(serial, 100)
-    const changes = (res.data.events || []).filter(e => e.type === 'card_replaced')
-    cardMarkerKeys.value = new Set(changes.map(e => periodKeyOf(e.at, currentMode.value)))
-  } catch (e) {
-    cardMarkerKeys.value = new Set()
-  }
+  const [maintenance, treatments] = await Promise.allSettled([
+    api.getMaintenance(serial, 100),
+    api.listTreatments({ deviceSerial: serial, limit: 100 })
+  ])
+  const changes = maintenance.status === 'fulfilled' ? (maintenance.value.data.events || []).filter(e => e.type === 'card_replaced') : []
+  const applied = treatments.status === 'fulfilled' ? (treatments.value.data.treatments || []) : []
+  cardMarkerKeys.value = new Set(changes.map(e => periodKeyOf(e.at, currentMode.value)))
+  treatmentMarkerKeys.value = new Set(applied.map(e => periodKeyOf(e.at, currentMode.value)))
 }
 
 // Dashed vertical line at each period where the sticky card was replaced
 const cardMarkerPlugin = {
   id: 'cardMarkers',
   afterDatasetsDraw(chart, _args, opts) {
-    const indexes = opts?.indexes || []
-    if (!indexes.length) return
+    const sets = (opts?.sets || []).filter(set => set.indexes.length)
+    if (!sets.length) return
     const { ctx, chartArea: { top, bottom, right }, scales: { x } } = chart
     ctx.save()
     ctx.setLineDash([4, 4])
     ctx.lineWidth = 1.5
-    ctx.strokeStyle = opts.color
-    ctx.fillStyle = opts.color
     ctx.font = '11px sans-serif'
-    const labelWidth = ctx.measureText(opts.label).width
-    for (const i of indexes) {
-      const px = x.getPixelForValue(i)
-      ctx.beginPath()
-      ctx.moveTo(px, top)
-      ctx.lineTo(px, bottom)
-      ctx.stroke()
-      // Near the right edge the label goes on the left of the line
-      const textX = px + 4 + labelWidth > right ? px - 4 - labelWidth : px + 4
-      ctx.fillText(opts.label, textX, top + 12)
-    }
+    sets.forEach((set, row) => {
+      ctx.strokeStyle = set.color
+      ctx.fillStyle = set.color
+      const labelWidth = ctx.measureText(set.label).width
+      for (const i of set.indexes) {
+        const px = x.getPixelForValue(i)
+        ctx.beginPath()
+        ctx.moveTo(px, top)
+        ctx.lineTo(px, bottom)
+        ctx.stroke()
+        // Near the right edge the label goes on the left of the line; each set on its own row
+        const textX = px + 4 + labelWidth > right ? px - 4 - labelWidth : px + 4
+        ctx.fillText(set.label, textX, top + 12 + row * 13)
+      }
+    })
     ctx.restore()
   }
 }
@@ -267,7 +272,7 @@ const fetchStatistics = async () => {
 let stopMarkerWatch = null
 const watchMarkersOnce = () => {
   if (stopMarkerWatch) stopMarkerWatch()
-  stopMarkerWatch = watch(cardMarkerKeys, () => {
+  stopMarkerWatch = watch([cardMarkerKeys, treatmentMarkerKeys], () => {
     renderCharts(statsData.value)
     stopMarkerWatch?.()
     stopMarkerWatch = null
@@ -379,7 +384,8 @@ const renderCharts = (data) => {
       })
     }
 
-    const markerIndexes = data.map((item, i) => (cardMarkerKeys.value.has(item.dateKey) ? i : -1)).filter(i => i >= 0)
+    const indexesOf = (keys) => data.map((item, i) => (keys.has(item.dateKey) ? i : -1)).filter(i => i >= 0)
+    const cssColor = (name, fallback) => getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback
     lineChartInstance = new Chart(lineChartRef.value, {
       type: 'line',
       data: { labels, datasets },
@@ -390,9 +396,10 @@ const renderCharts = (data) => {
         plugins: {
           legend: { position: 'bottom', labels: { usePointStyle: true, font: { family: 'Quicksand' } } },
           cardMarkers: {
-            indexes: markerIndexes,
-            label: t('maintenance.chartMarker'),
-            color: getComputedStyle(document.documentElement).getPropertyValue('--el-color-warning').trim() || '#e6a23c'
+            sets: [
+              { indexes: indexesOf(cardMarkerKeys.value), label: t('maintenance.chartMarker'), color: cssColor('--el-color-warning', '#e6a23c') },
+              { indexes: indexesOf(treatmentMarkerKeys.value), label: t('logbook.chartMarker'), color: cssColor('--el-color-danger', '#f56c6c') }
+            ]
           }
         },
         scales: {

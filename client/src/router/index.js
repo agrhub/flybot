@@ -115,6 +115,11 @@ const router = createRouter({
           component: () => import('@/pages/dashboards/View.vue'),
         },
         {
+          path: 'logbook',
+          name: 'logbook',
+          component: () => import('@/pages/logbook/index.vue'),
+        },
+        {
           path: 'analytics',
           name: 'analytics',
           component: () => import('@/pages/analytics/index.vue'),
