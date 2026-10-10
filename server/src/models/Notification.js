@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const NOTIFICATION_TYPES = ['pest_threshold', 'camera_offline', 'camera_online', 'ai_failure'];
+const NOTIFICATION_TYPES = ['pest_threshold', 'camera_offline', 'camera_online', 'ai_failure', 'camera_shared'];
 const RETENTION_DAYS = 90;
 
 /**

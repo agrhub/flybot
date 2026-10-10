@@ -58,6 +58,8 @@ function resetStore() {
             email: `${id}@example.test`,
             password: '',
             name: id === ALICE ? 'Alice' : 'Bob',
+            // Alice owns and manages CAMA; Bob is a viewer
+            role: id === ALICE ? 'manager' : 'user',
             emailVerified: true,
             language: 'en',
             tokenVersion: 0,
@@ -81,6 +83,8 @@ function query(resultFn) {
         select: () => q,
         sort: () => q,
         limit: () => q,
+        skip: () => q,
+        populate: () => q,
         collation: () => q
     };
     return q;
@@ -112,13 +116,21 @@ models.User.updateMany = async (filter, update) => {
     list.forEach(u => applyUserUpdate(u, update));
     return { modifiedCount: list.length };
 };
+models.User.countDocuments = async () => store.users.size;
 models.User.findOne = ({ email }) => query(() =>
     [...store.users.values()].find(u => u.email.toLowerCase() === String(email).toLowerCase()) || null);
 
 // Camera
-const camerasMatching = (filter = {}) => store.cameras.filter(c =>
+// Supports the filters the access rules use: owner, shared-with, $or of those, device serial
+const cameraMatches = (c, filter = {}) =>
+    (filter._id === undefined || (filter._id === null ? false : sameId(c._id, filter._id))) &&
+    (filter.$or === undefined || filter.$or.some(sub => cameraMatches(c, sub))) &&
     (filter.userId === undefined || (typeof filter.userId === 'object' ? c.userId != null : sameId(c.userId, filter.userId))) &&
-    (filter.deviceSerial === undefined || c.deviceSerial === filter.deviceSerial));
+    (filter['sharedWith.userId'] === undefined || (c.sharedWith || []).some(sh => sameId(sh.userId, filter['sharedWith.userId']))) &&
+    (filter.deviceSerial === undefined || (typeof filter.deviceSerial === 'object'
+        ? (filter.deviceSerial.$in || []).includes(c.deviceSerial)
+        : c.deviceSerial === filter.deviceSerial));
+const camerasMatching = (filter = {}) => store.cameras.filter(c => cameraMatches(c, filter));
 models.Camera.exists = async (filter) => (camerasMatching(filter).length ? { _id: 1 } : null);
 models.Camera.findOne = (filter) => query(() => camerasMatching(filter)[0] || null);
 models.Camera.find = (filter) => query(() => camerasMatching(filter));

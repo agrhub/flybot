@@ -1,4 +1,5 @@
-const { Snapshot, Camera } = require('../../models');
+const { Snapshot } = require('../../models');
+const { viewableCameras } = require('../../utils/ownership');
 
 const getInsectStatisticsDeclaration = {
     name: 'get_insect_statistics',
@@ -18,7 +19,7 @@ const getInsectStatisticsDeclaration = {
     }
 };
 
-async function executeGetInsectStatistics({ deviceSerial, mode = 'day', userId }) {
+async function executeGetInsectStatistics({ deviceSerial, mode = 'day', userId, user }) {
     try {
         let startDate = new Date();
         let groupBy = {};
@@ -35,7 +36,7 @@ async function executeGetInsectStatistics({ deviceSerial, mode = 'day', userId }
         }
 
         if (!userId) return { error: 'Not authenticated.' };
-        const userCams = await Camera.find({ userId }).select('deviceSerial');
+        const userCams = await viewableCameras(user).select('deviceSerial');
         const allowedSerials = userCams.map(c => c.deviceSerial);
 
         const matchQuery = {
@@ -107,10 +108,10 @@ const getRecentSnapshotsDeclaration = {
     }
 };
 
-async function executeGetRecentSnapshots({ deviceSerial, limit = 6, userId }) {
+async function executeGetRecentSnapshots({ deviceSerial, limit = 6, userId, user }) {
     try {
         if (!userId) return { error: 'Not authenticated.' };
-        const userCams = await Camera.find({ userId }).select('deviceSerial');
+        const userCams = await viewableCameras(user).select('deviceSerial');
         const allowedSerials = userCams.map(c => c.deviceSerial);
 
         const query = { aiProcessed: true };
@@ -153,10 +154,10 @@ const getOverviewMetricsDeclaration = {
     }
 };
 
-async function executeGetOverviewMetrics({ userId }) {
+async function executeGetOverviewMetrics({ userId, user }) {
     try {
         if (!userId) return { error: 'Not authenticated.' };
-        const userCams = await Camera.find({ userId }).select('deviceSerial');
+        const userCams = await viewableCameras(user).select('deviceSerial');
         const allowedSerials = userCams.map(c => c.deviceSerial);
 
         const baseMatch = { aiProcessed: true };

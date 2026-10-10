@@ -1,6 +1,11 @@
 const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose');
 const { User, Session } = require('../models');
+const { roleOf } = require('../constants/roles');
+
+// Lazy: shareController pulls in notification/mail services
+const claimPendingShares = (user) => require('./shareController').claimPendingShares(user)
+    .catch(err => console.error('⚠️ Claiming shared items failed:', err.message));
 const { ALLOW_REGISTRATION } = require('../config/env');
 const { signToken, setAuthCookie, clearAuthCookie, createSession, readToken, resolveToken } = require('../middlewares/auth');
 const { sendServerError } = require('../utils/http');
@@ -35,6 +40,7 @@ function toPublicUser(user) {
         email: user.email,
         name: user.name || user.email.split('@')[0],
         avatar: user.avatar || '',
+        role: roleOf(user),
         emailVerified: !!user.emailVerified,
         language: normalizeLanguage(user.language),
         notificationPrefs: {
@@ -83,7 +89,14 @@ async function register(req, res) {
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
-        const newUser = new User({ email, password: hashedPassword, language: normalizeLanguage(req.body.language) });
+        // The very first account administers the system; everyone else starts as a viewer
+        const isFirstAccount = (await User.countDocuments({})) === 0;
+        const newUser = new User({
+            email,
+            password: hashedPassword,
+            language: normalizeLanguage(req.body.language),
+            role: isFirstAccount ? 'admin' : 'user'
+        });
         await newUser.save();
 
         // A mail/config problem must not block sign-up; the user can resend from the app
@@ -118,6 +131,9 @@ async function login(req, res) {
         const isMatch = user ? await bcrypt.compare(password, user.password) : false;
         if (!isMatch) {
             return res.status(401).json({ success: false, message: "Invalid email or password." });
+        }
+        if (user.disabled) {
+            return res.status(403).json({ success: false, code: 'ACCOUNT_DISABLED', message: "This account has been disabled. Contact your administrator." });
         }
 
         // Remember the UI language so emails match it
@@ -309,6 +325,7 @@ async function resetPassword(req, res) {
         user.emailVerified = true;
         await user.save();
         await Session.updateMany({ userId: user._id, revokedAt: null }, { $set: { revokedAt: new Date() } });
+        await claimPendingShares(user);
 
         clearAuthCookie(res);
         queueMail(emailTemplates.passwordChangedEmail({ user, language: normalizeLanguage(user.language) }));
@@ -331,6 +348,8 @@ async function verifyEmail(req, res) {
         }
         user.emailVerified = true;
         await user.save();
+        // Invitations sent to this address become real access once it is confirmed
+        await claimPendingShares(user);
         res.json({ success: true, message: "Email verified." });
     } catch (err) {
         sendServerError(res, err, { context: 'Verify email' });

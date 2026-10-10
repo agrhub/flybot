@@ -5,6 +5,11 @@ const userSchema = new mongoose.Schema({
     password: { type: String, required: true },
     name: { type: String, default: '' },
     avatar: { type: String, default: '' },
+    // admin: full control | manager: owns and shares cameras, builds dashboards | user: views shared items
+    // (accounts created before roles existed get one from services/migrations.js at startup)
+    role: { type: String, enum: ['admin', 'manager', 'user'], default: 'user' },
+    // Disabled accounts cannot sign in; set by an admin
+    disabled: { type: Boolean, default: false },
     emailVerified: { type: Boolean, default: false },
     // UI/email language: 'vi' | 'en'
     language: { type: String, default: 'vi' },

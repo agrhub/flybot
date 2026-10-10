@@ -1,7 +1,7 @@
 const { GetObjectCommand } = require('@aws-sdk/client-s3');
 const { s3Client } = require('../config/s3');
 const { S3_BUCKET } = require('../config/env');
-const { userOwnsCamera } = require('../utils/ownership');
+const { canViewSerial } = require('../utils/ownership');
 const { sendServerError } = require('../utils/http');
 
 // Only snapshot images are served: snapshots/<deviceSerial>/<file>
@@ -20,7 +20,7 @@ async function streamS3File(req, res) {
 
     const match = fileKey.match(SNAPSHOT_KEY_REGEX);
     // Same 404 for malformed keys and other users' cameras so keys can't be probed
-    if (!match || !(await userOwnsCamera(req.user.id, match[1]))) {
+    if (!match || !(await canViewSerial(req.user, match[1]))) {
         return res.status(404).json({ success: false, message: "File not found" });
     }
 

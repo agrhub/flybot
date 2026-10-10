@@ -1,8 +1,22 @@
 const mongoose = require('mongoose');
 
+/**
+ * A person a camera is shared with. `userId` is null for an invitation to an email
+ * that has no account yet; it is filled in once that person verifies the address.
+ */
+const shareSchema = new mongoose.Schema({
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    email: { type: String, required: true, lowercase: true, trim: true },
+    sharedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    sharedAt: { type: Date, default: Date.now }
+}, { _id: false });
+
 const cameraSchema = new mongoose.Schema({
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    deviceSerial: { type: String, required: true },
+    // Owner (the account that registered the device)
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', index: true },
+    // A physical device can be registered only once; others get access through sharing
+    deviceSerial: { type: String, required: true, unique: true },
+    sharedWith: { type: [shareSchema], default: [] },
     validateCode: { type: String, default: '' },
     deviceName: { type: String, default: 'Camera' },
     deviceType: { type: String, default: '' },
@@ -20,9 +34,9 @@ const cameraSchema = new mongoose.Schema({
     locationAddress: { type: String, default: '' }, // Orchard address or plot name
     trapType: { type: String, default: 'Yellow Sticky Trap' }, // Trap modality
     cropType: { type: String, default: 'Mango Orchard' }, // Agricultural crop
-    // Pest alert fires when one scan counts at least this many insects (per user, per camera)
+    // Pest alert fires when one scan counts at least this many insects
     alertThreshold: { type: Number, default: 15, min: 1 },
-    // Automatic snapshot schedule (per user; a camera shared by several users uses the most frequent)
+    // Automatic snapshot schedule
     captureIntervalMinutes: { type: Number, enum: [15, 30, 60, 120], default: 30 },
     // Only capture during daylight hours (06:00-18:00 local time); sticky traps are unreadable at night
     captureDaytimeOnly: { type: Boolean, default: false },
@@ -31,6 +45,9 @@ const cameraSchema = new mongoose.Schema({
     addedAt: { type: Date, default: Date.now },
     lastSync: { type: Date, default: Date.now }
 });
+
+cameraSchema.index({ 'sharedWith.userId': 1 });
+cameraSchema.index({ 'sharedWith.email': 1 });
 
 const Camera = mongoose.model('Camera', cameraSchema);
 

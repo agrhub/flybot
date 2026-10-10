@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 const { User, Session } = require('../models');
 const { JWT_SECRET, AUTH_COOKIE_NAME, COOKIE_SECURE } = require('../config/env');
 const { parseCookies } = require('../utils/http');
+const { roleOf } = require('../constants/roles');
 
 const TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 // Write lastSeenAt at most this often per session
@@ -26,7 +27,7 @@ async function resolveToken(token) {
     }
 
     const user = await User.findById(decoded.id).select('-password');
-    if (!user) return null;
+    if (!user || user.disabled) return null;
     // Tokens issued before a password reset/change carry an older version and are rejected
     if ((decoded.v || 0) !== (user.tokenVersion || 0)) return null;
 
@@ -67,7 +68,8 @@ async function authenticate(req, res, next) {
             email: user.email,
             name: user.name || user.email.split('@')[0],
             emailVerified: !!user.emailVerified,
-            language: user.language
+            language: user.language,
+            role: roleOf(user)
         };
         req.sessionId = sessionId;
         req.authToken = token;
@@ -140,8 +142,19 @@ function clearAuthCookie(res) {
     });
 }
 
+/**
+ * Allow only the given roles (use after authenticate).
+ */
+function requireRole(...roles) {
+    return (req, res, next) => {
+        if (roles.includes(req.user?.role)) return next();
+        return res.status(403).json({ success: false, code: 'FORBIDDEN', message: 'You do not have permission to do this.' });
+    };
+}
+
 module.exports = {
     authenticate,
+    requireRole,
     readToken,
     resolveToken,
     signToken,

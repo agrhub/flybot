@@ -3,6 +3,37 @@ const { CAPTURE_INTERVALS } = require('../services/captureSchedule');
 const { countPests } = require('../services/notificationService');
 const ezvizService = require('../services/ezvizService');
 const { sendServerError } = require('../utils/http');
+const { viewFilter, viewableCameras, findViewableCamera, findManageableCamera, canManageCamera } = require('../utils/ownership');
+
+/**
+ * Camera as returned to a given user: viewers never see the verification code or the
+ * share list; everyone sees whether it is theirs, shared with them, or (admin) someone else's.
+ */
+function toClientCamera(camera, user) {
+    const obj = camera.toObject ? camera.toObject() : { ...camera };
+    const owner = obj.userId && typeof obj.userId === 'object' && obj.userId.email ? obj.userId : null;
+    const ownerId = String(owner?._id ?? obj.userId ?? '');
+    const canManage = canManageCamera(user, { userId: ownerId });
+    obj.userId = ownerId;
+    obj.owner = owner ? { id: ownerId, email: owner.email, name: owner.name || owner.email.split('@')[0] } : null;
+    const isOwner = ownerId === String(user.id);
+    const sharedWithMe = (obj.sharedWith || []).some(sh => String(sh.userId) === String(user.id));
+    // 'admin' = visible only because the viewer is an admin
+    obj.access = isOwner ? 'owner' : (sharedWithMe ? 'shared' : 'admin');
+    obj.canManage = canManage;
+    if (canManage) {
+        obj.sharedWith = (obj.sharedWith || []).map(sh => ({
+            email: sh.email,
+            userId: sh.userId ? String(sh.userId) : null,
+            status: sh.userId ? 'active' : 'pending',
+            sharedAt: sh.sharedAt
+        }));
+    } else {
+        delete obj.sharedWith;
+        delete obj.validateCode;
+    }
+    return obj;
+}
 
 // Each viewer's own active stream id per camera ("userId:serial" -> urlId), so switching
 // streams only closes that viewer's previous stream, never someone else's
@@ -26,17 +57,16 @@ async function closePreviousStream(userId, deviceSerial, body) {
  */
 async function getUserCameras(req, res) {
     try {
-        const userId = req.user.id;
         const page = parseInt(req.query.page) || null;
         const limit = parseInt(req.query.limit) || null;
 
         if (page && limit) {
             const skip = (page - 1) * limit;
-            const total = await Camera.countDocuments({ userId });
-            const cameras = await Camera.find({ userId }).sort({ addedAt: -1 }).skip(skip).limit(limit);
+            const total = await Camera.countDocuments(viewFilter(req.user));
+            const cameras = await viewableCameras(req.user).populate('userId', 'email name').sort({ addedAt: -1 }).skip(skip).limit(limit);
             return res.json({
                 success: true,
-                cameras,
+                cameras: cameras.map(c => toClientCamera(c, req.user)),
                 pagination: {
                     total,
                     page,
@@ -46,8 +76,8 @@ async function getUserCameras(req, res) {
             });
         }
 
-        const cameras = await Camera.find({ userId }).sort({ addedAt: -1 });
-        res.json({ success: true, cameras, total: cameras.length });
+        const cameras = await viewableCameras(req.user).populate('userId', 'email name').sort({ addedAt: -1 });
+        res.json({ success: true, cameras: cameras.map(c => toClientCamera(c, req.user)), total: cameras.length });
     } catch (error) {
         sendServerError(res, error);
     }
@@ -64,8 +94,16 @@ async function addCamera(req, res) {
             return res.status(400).json({ success: false, message: "Missing deviceSerial or validateCode." });
         }
 
-        // Check if user already added this camera - if so, update verification code
-        const existing = await Camera.findOne({ userId, deviceSerial });
+        // A device can be registered only once. Re-adding your own camera refreshes its code/name;
+        // anyone else must ask the owner to share it.
+        const existing = await Camera.findOne({ deviceSerial });
+        if (existing && String(existing.userId) !== String(userId)) {
+            return res.status(409).json({
+                success: false,
+                code: 'CAMERA_TAKEN',
+                message: "This camera is already registered to another account. Ask its owner to share it with you."
+            });
+        }
         if (existing) {
             existing.validateCode = validateCode.trim();
             if (customName) existing.deviceName = customName.trim();
@@ -117,13 +155,18 @@ async function addCamera(req, res) {
         });
 
         await newCamera.save();
-        res.json({ success: true, message: "Camera added successfully.", camera: newCamera });
+        res.json({ success: true, message: "Camera added successfully.", camera: toClientCamera(newCamera, req.user) });
 
         // Asynchronously sync camera details in the background
         ezvizService.syncCameraStatus(deviceSerial);
     } catch (error) {
+        // Lost a race with another registration of the same device
         if (error.code === 11000) {
-            return res.status(400).json({ success: false, message: "This device has already been added to the system." });
+            return res.status(409).json({
+                success: false,
+                code: 'CAMERA_TAKEN',
+                message: "This camera is already registered to another account. Ask its owner to share it with you."
+            });
         }
         sendServerError(res, error);
     }
@@ -137,7 +180,8 @@ async function deleteCamera(req, res) {
     const { deviceSerial } = req.body;
     if (!deviceSerial) return res.status(400).json({ success: false, message: "Missing deviceSerial." });
     try {
-        const deleted = await Camera.findOneAndDelete({ userId, deviceSerial });
+        const camera = await findManageableCamera(req.user, deviceSerial);
+        const deleted = camera ? await Camera.findOneAndDelete({ _id: camera._id }) : null;
         if (!deleted) {
             return res.status(404).json({ success: false, message: "Device not found or permission denied." });
         }
@@ -165,7 +209,7 @@ async function updateCamera(req, res) {
         return res.status(400).json({ success: false, message: "captureDaytimeOnly must be true or false." });
     }
     try {
-        const camera = await Camera.findOne({ userId, deviceSerial });
+        const camera = await findManageableCamera(req.user, deviceSerial);
         if (!camera) {
             return res.status(404).json({ success: false, message: "Device not found or permission denied." });
         }
@@ -185,7 +229,7 @@ async function updateCamera(req, res) {
             camera.captureDaytimeOnly = captureDaytimeOnly;
         }
         await camera.save();
-        res.json({ success: true, message: "Camera updated successfully.", camera });
+        res.json({ success: true, message: "Camera updated successfully.", camera: toClientCamera(camera, req.user) });
     } catch (err) {
         sendServerError(res, err);
     }
@@ -202,7 +246,7 @@ async function updateCameraLocation(req, res) {
     }
 
     try {
-        const camera = await Camera.findOne({ userId, deviceSerial });
+        const camera = await findManageableCamera(req.user, deviceSerial);
         if (!camera) {
             return res.status(404).json({ success: false, message: "Camera not found or permission denied." });
         }
@@ -214,7 +258,7 @@ async function updateCameraLocation(req, res) {
         if (cropType !== undefined) camera.cropType = cropType;
 
         await camera.save();
-        res.json({ success: true, message: "Camera location updated successfully.", camera });
+        res.json({ success: true, message: "Camera location updated successfully.", camera: toClientCamera(camera, req.user) });
     } catch (err) {
         sendServerError(res, err);
     }
@@ -231,13 +275,13 @@ async function updateCameraCode(req, res) {
     }
     try {
         const cleanCode = validateCode.trim();
-        const camera = await Camera.findOne({ userId, deviceSerial });
+        const camera = await findManageableCamera(req.user, deviceSerial);
         if (!camera) {
             return res.status(404).json({ success: false, message: "Device not found or permission denied." });
         }
         camera.validateCode = cleanCode;
         await camera.save();
-        res.json({ success: true, message: "Verification code updated successfully.", camera });
+        res.json({ success: true, message: "Verification code updated successfully.", camera: toClientCamera(camera, req.user) });
     } catch (err) {
         sendServerError(res, err);
     }
@@ -252,7 +296,7 @@ async function getLiveStream(req, res) {
     if (!deviceSerial) return res.status(400).json({ code: "400", msg: "Missing Serial Number." });
 
     try {
-        const camera = await Camera.findOne({ userId, deviceSerial });
+        const camera = await findViewableCamera(req.user, deviceSerial);
         if (!camera) {
             return res.status(403).json({ code: "403", msg: "You do not have permission to access this camera." });
         }
@@ -350,7 +394,7 @@ async function getRecords(req, res) {
     if (!deviceSerial) return res.status(400).json({ code: "400", msg: "Missing Serial Number." });
 
     try {
-        const camera = await Camera.findOne({ userId, deviceSerial });
+        const camera = await findViewableCamera(req.user, deviceSerial);
         if (!camera) {
             return res.status(403).json({ code: "403", msg: "You do not have permission to access this camera." });
         }
@@ -371,7 +415,7 @@ async function getPlaybackStream(req, res) {
     if (!deviceSerial) return res.status(400).json({ code: "400", msg: "Missing Serial Number." });
 
     try {
-        const camera = await Camera.findOne({ userId, deviceSerial });
+        const camera = await findViewableCamera(req.user, deviceSerial);
         if (!camera) {
             return res.status(403).json({ code: "403", msg: "You do not have permission to access this camera." });
         }
@@ -413,7 +457,7 @@ async function disableStream(req, res) {
     if (!deviceSerial) return res.status(400).json({ code: "400", msg: "Missing Serial Number." });
 
     try {
-        const camera = await Camera.findOne({ userId, deviceSerial });
+        const camera = await findViewableCamera(req.user, deviceSerial);
         if (!camera) {
             return res.status(403).json({ code: "403", msg: "You do not have permission to access this camera." });
         }
@@ -433,7 +477,7 @@ async function captureNow(req, res) {
     const { deviceSerial } = req.body;
     if (!deviceSerial) return res.status(400).json({ success: false, message: "Missing deviceSerial." });
     try {
-        const camera = await Camera.findOne({ userId, deviceSerial });
+        const camera = await findManageableCamera(req.user, deviceSerial);
         if (!camera) {
             return res.status(404).json({ success: false, message: "Camera not found or permission denied." });
         }
@@ -460,7 +504,7 @@ async function captureNow(req, res) {
 async function getCamerasHealth(req, res) {
     try {
         const userId = req.user.id;
-        const cameras = await Camera.find({ userId });
+        const cameras = await viewableCameras(req.user);
         const serials = [...new Set(cameras.map(c => c.deviceSerial))];
         const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
 

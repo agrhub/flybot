@@ -44,6 +44,7 @@ test('tool UI actions go to the per-request collector', async () => {
         deviceSerial: 'CAMA',
         validateCode: 'ABCDEF',
         userId: ALICE,
+        user: { id: ALICE, role: 'manager' },
         addAction: (type, payload) => actions.push({ type, payload })
     });
     assert.equal(actions.length, 1);

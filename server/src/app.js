@@ -8,6 +8,7 @@ const fs = require('fs');
 const mongoose = require('mongoose');
 const { PORT, JWT_SECRET, CORS_ORIGINS, TRUST_PROXY, ENABLE_CRON } = require('./config/env');
 const { connectDB } = require('./config/db');
+const { runStartupMigrations } = require('./services/migrations');
 const routes = require('./routes');
 const { syncCameraStatus } = require('./services/ezvizService');
 const { autoCaptureDueCameras, backfillCameraThumbnails } = require('./cron/captureJob');
@@ -117,6 +118,7 @@ async function startServer() {
 
     // 1. Connect to Database
     await connectDB();
+    await runStartupMigrations();
 
     // 2. Start Express HTTP Server
     const server = app.listen(PORT, () => {

@@ -33,7 +33,9 @@ async function chatWithAgent({
     sessionId = 'default-session',
     message,
     uiContext = {},
-    userId = null
+    userId = null,
+    // req.user ({ id, role }); tools apply the same camera access rules as the API
+    user = null
 }) {
     if (!userId) {
         throw new Error('chatWithAgent requires an authenticated userId');
@@ -117,7 +119,7 @@ async function chatWithAgent({
                     try {
                         const executor = allExecutors[name];
                         if (executor) {
-                            result = await executor({ ...(args || {}), userId, addAction });
+                            result = await executor({ ...(args || {}), userId, user: user || { id: userId }, addAction });
                             afterTool(name, result);
                         } else {
                             result = { error: `Tool "${name}" does not exist.` };

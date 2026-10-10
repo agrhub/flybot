@@ -2,6 +2,7 @@ const { Camera, Snapshot } = require('../models');
 const { S3_BUCKET, RETENTION_CYCLE, AI_PROVIDER, VERTEX_MODEL, TELEGRAM_BOT_USERNAME } = require('../config/env');
 const telegramService = require('../services/telegramService');
 const { sendServerError } = require('../utils/http');
+const { viewableCameras } = require('../utils/ownership');
 
 /**
  * GET /api/system/info: real storage and AI settings, plus this user's snapshot usage
@@ -9,7 +10,7 @@ const { sendServerError } = require('../utils/http');
  */
 async function getSystemInfo(req, res) {
     try {
-        const cameras = await Camera.find({ userId: req.user.id }).select('deviceSerial');
+        const cameras = await viewableCameras(req.user).select('deviceSerial');
         const serials = [...new Set(cameras.map(c => c.deviceSerial))];
 
         const [usage] = serials.length

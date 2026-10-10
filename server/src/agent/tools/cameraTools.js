@@ -1,4 +1,4 @@
-const { Camera } = require('../../models');
+const { viewableCameras, findManageableCamera } = require('../../utils/ownership');
 
 const getCamerasStatusDeclaration = {
     name: 'get_cameras_status',
@@ -9,10 +9,10 @@ const getCamerasStatusDeclaration = {
     }
 };
 
-async function executeGetCamerasStatus({ userId }) {
+async function executeGetCamerasStatus({ userId, user }) {
     try {
         if (!userId) return { error: 'Not authenticated.' };
-        const cameras = await Camera.find({ userId }).limit(50);
+        const cameras = await viewableCameras(user).limit(50);
         return {
             total: cameras.length,
             onlineCount: cameras.filter(c => c.status === 1).length,
@@ -47,12 +47,13 @@ const triggerCaptureSnapshotDeclaration = {
     }
 };
 
-async function executeTriggerCaptureSnapshot({ deviceSerial, userId, addAction }) {
+async function executeTriggerCaptureSnapshot({ deviceSerial, userId, user, addAction }) {
     try {
         if (!deviceSerial) return { error: 'Missing deviceSerial' };
         
         // Verify camera ownership
-        const cam = userId ? await Camera.findOne({ userId, deviceSerial: String(deviceSerial) }) : null;
+        // Capturing changes data: owners (manager) and admins only
+        const cam = userId ? await findManageableCamera(user, String(deviceSerial)) : null;
         if (!cam) {
             return { error: `You do not have permission to control camera ${deviceSerial} or device not found.` };
         }
@@ -100,12 +101,12 @@ const updateCameraValidateCodeDeclaration = {
     }
 };
 
-async function executeUpdateCameraValidateCode({ deviceSerial, validateCode, userId, addAction }) {
+async function executeUpdateCameraValidateCode({ deviceSerial, validateCode, userId, user, addAction }) {
     try {
         if (!deviceSerial || !validateCode) return { error: 'Missing deviceSerial or validateCode' };
 
         // Verify camera ownership
-        const camera = userId ? await Camera.findOne({ userId, deviceSerial: String(deviceSerial) }) : null;
+        const camera = userId ? await findManageableCamera(user, String(deviceSerial)) : null;
         if (!camera) {
             return { error: `You do not have permission to modify camera ${deviceSerial} or device not found.` };
         }

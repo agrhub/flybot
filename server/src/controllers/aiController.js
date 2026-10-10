@@ -4,7 +4,7 @@ const { Snapshot, Camera } = require('../models');
 const aiService = require('../services/aiService');
 const s3Service = require('../services/s3Service');
 const { sendServerError } = require('../utils/http');
-const { userOwnsCamera } = require('../utils/ownership');
+const { viewableCameras, canManageSerial } = require('../utils/ownership');
 const { FRUIT_FLY, NON_PEST_LABELS, normalizeSpeciesExpr, pestCountExpr, isFruitFly } = require('../constants/species');
 const { thresholdOf, riskLevel, worstRisk } = require('../constants/risk');
 const { countPests } = require('../services/notificationService');
@@ -22,7 +22,7 @@ async function getAiResults(req, res) {
         const limit = parseInt(req.query.limit, 10) || 10;
         const skip = (page - 1) * limit;
 
-        const userCams = await Camera.find({ userId }).select('deviceSerial');
+        const userCams = await viewableCameras(req.user).select('deviceSerial');
         const allowedSerials = userCams.map(c => c.deviceSerial);
 
         // If user has 0 cameras, return empty list
@@ -83,7 +83,7 @@ async function analyzeRoboflowSnapshot(req, res) {
         }
         const snap = await Snapshot.findById(snapshotId);
         // Same 404 for missing and not-owned snapshots
-        if (!snap || !(await userOwnsCamera(req.user.id, snap.deviceSerial))) {
+        if (!snap || !(await canManageSerial(req.user, snap.deviceSerial))) {
             return res.status(404).json({ success: false, message: "Snapshot not found." });
         }
 
@@ -160,7 +160,7 @@ async function getAiStatistics(req, res) {
         const userId = req.user.id;
         const { deviceSerial, mode, startDate: customStart, endDate: customEnd } = req.query;
 
-        const userCams = await Camera.find({ userId }).select('deviceSerial');
+        const userCams = await viewableCameras(req.user).select('deviceSerial');
         const allowedSerials = userCams.map(c => c.deviceSerial);
 
         // If user has 0 cameras, return empty immediately (no fake / unowned data)
@@ -339,7 +339,7 @@ async function getAiStatistics(req, res) {
 async function getAiOverview(req, res) {
     try {
         const userId = req.user.id;
-        const userCameras = await Camera.find({ userId });
+        const userCameras = await viewableCameras(req.user);
 
         const cameraMap = new Map();
         userCameras.forEach(c => {
@@ -611,7 +611,7 @@ async function getAiDiagnosis(req, res) {
         const { deviceSerial } = req.body;
         const userId = req.user.id;
 
-        const userCameras = await Camera.find({ userId });
+        const userCameras = await viewableCameras(req.user);
         const bySerial = new Map();
         userCameras.forEach(c => { if (!bySerial.has(c.deviceSerial)) bySerial.set(c.deviceSerial, c); });
         let cameras = [...bySerial.values()];
@@ -762,7 +762,7 @@ async function reviewSnapshot(req, res) {
 
         const snap = await Snapshot.findById(snapshotId);
         // Same 404 for missing and not-owned snapshots
-        if (!snap || !(await userOwnsCamera(req.user.id, snap.deviceSerial))) {
+        if (!snap || !(await canManageSerial(req.user, snap.deviceSerial))) {
             return res.status(404).json({ success: false, message: "Snapshot not found." });
         }
         if (!snap.aiProcessed) {
@@ -806,7 +806,7 @@ async function reviewSnapshot(req, res) {
 async function exportReviews(req, res) {
     try {
         const days = Math.min(Math.max(parseInt(req.query.days, 10) || 90, 1), 365);
-        const userCameras = await Camera.find({ userId: req.user.id }).select('deviceSerial');
+        const userCameras = await viewableCameras(req.user).select('deviceSerial');
         const serials = [...new Set(userCameras.map(c => c.deviceSerial))];
         const since = new Date(Date.now() - days * 86400000);
 
@@ -855,7 +855,7 @@ async function getAiComparison(req, res) {
             return res.status(400).json({ success: false, message: `days must be one of ${COMPARISON_PERIODS.join(', ')}.` });
         }
         const userId = req.user.id;
-        const userCameras = await Camera.find({ userId });
+        const userCameras = await viewableCameras(req.user);
         const bySerial = new Map();
         userCameras.forEach(c => { if (!bySerial.has(c.deviceSerial)) bySerial.set(c.deviceSerial, c); });
         const cameras = [...bySerial.values()];
@@ -970,7 +970,8 @@ async function chatWithAssistant(req, res) {
             sessionId: String(sessionId),
             message,
             uiContext,
-            userId
+            userId,
+            user: req.user
         });
 
         res.json({

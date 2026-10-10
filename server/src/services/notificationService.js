@@ -12,14 +12,17 @@ const COOLDOWN_MINUTES = {
     pest_threshold: 120,
     camera_offline: 60,
     camera_online: 60,
-    ai_failure: 360
+    ai_failure: 360,
+    // Every share is its own event
+    camera_shared: 0
 };
 
 const SEVERITY = {
     pest_threshold: 'critical',
     camera_offline: 'warning',
     camera_online: 'info',
-    ai_failure: 'warning'
+    ai_failure: 'warning',
+    camera_shared: 'info'
 };
 
 // "Back online" is good news: in-app only
@@ -86,16 +89,22 @@ async function notifyUser({ userId, type, deviceSerial = '', params = {} }) {
 }
 
 /**
- * Notify every user who has this camera, with that user's own camera name/threshold.
+ * Notify everyone who can see this camera: its owner and the people it is shared with
+ * (pending invitations have no account yet and are skipped).
  */
 async function notifyCameraOwners(deviceSerial, type, buildParams) {
-    const cameras = await Camera.find({ deviceSerial, userId: { $ne: null } });
+    const camera = await Camera.findOne({ deviceSerial });
+    if (!camera) return [];
+    const params = buildParams(camera);
+    if (!params) return [];
+
+    const recipients = [camera.userId, ...(camera.sharedWith || []).map(sh => sh.userId)]
+        .filter(Boolean)
+        .map(String);
     const results = [];
-    for (const camera of cameras) {
-        const params = buildParams(camera);
-        if (!params) continue;
+    for (const userId of [...new Set(recipients)]) {
         try {
-            results.push(await notifyUser({ userId: camera.userId, type, deviceSerial, params }));
+            results.push(await notifyUser({ userId, type, deviceSerial, params }));
         } catch (err) {
             console.error(`⚠️ Notification ${type} for ${deviceSerial} failed:`, err.message);
         }

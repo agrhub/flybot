@@ -40,6 +40,16 @@
         "subject": "🤖 Phân tích AI bị lỗi: {deviceName}",
         "body": "{failures} ảnh gần nhất từ camera {deviceName} ({deviceSerial}) không phân tích được. Số liệu côn trùng của bẫy này có thể bị thiếu."
       }
+    },
+    "cameraShared": {
+      "subject": "{sharer} đã chia sẻ camera {deviceName} với bạn",
+      "body": "{sharer} đã cấp cho bạn quyền xem camera bẫy {deviceName}. Bạn có thể xem trực tiếp và xem thống kê côn trùng của camera này trên FlyBot.",
+      "button": "Mở FlyBot"
+    },
+    "invite": {
+      "subject": "{sharer} mời bạn dùng FlyBot",
+      "body": "{sharer} đã chia sẻ camera bẫy {deviceName} với {email} trên FlyBot. Hãy tạo tài khoản bằng địa chỉ email này và xác nhận email để được truy cập.",
+      "button": "Tạo tài khoản"
     }
   },
   "telegram": {

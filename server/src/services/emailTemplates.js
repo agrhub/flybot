@@ -116,7 +116,30 @@ function alertEmail({ user, language, type, params: rawParams, url }) {
     };
 }
 
+// Shared-item emails include names chosen by other users: keep them single-line and short
+const singleLine = (value) => String(value ?? '').replace(/[\r\n\t]+/g, ' ').slice(0, 120);
+
+/**
+ * "X shared <item> with you" for an existing account, or an invitation to sign up
+ * for an email without an account. `kind` is 'cameraShared' | 'invite' | 'dashboardShared' | 'dashboardInvite'.
+ */
+function shareEmail({ kind, to, user, language, sharer, params = {}, url }) {
+    const t = (key, p) => translate(language, key, p);
+    const safe = { sharer: singleLine(sharer), email: singleLine(to), ...Object.fromEntries(Object.entries(params).map(([k, v]) => [k, singleLine(v)])) };
+    return {
+        to,
+        subject: t(`email.${kind}.subject`, safe),
+        ...layout({
+            language,
+            user: user || { email: to },
+            paragraphs: [t(`email.${kind}.body`, safe)],
+            button: url ? { label: t(`email.${kind}.button`), url } : null
+        })
+    };
+}
+
 module.exports = {
+    shareEmail,
     escapeHtml,
     passwordResetEmail,
     passwordChangedEmail,
