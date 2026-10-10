@@ -3,6 +3,9 @@ const { CAPTURE_INTERVALS } = require('../services/captureSchedule');
 const { countPests } = require('../services/notificationService');
 const ezvizService = require('../services/ezvizService');
 const { sendServerError } = require('../utils/http');
+const { recordAudit } = require('../services/auditService');
+
+const cameraTarget = (camera) => ({ type: 'camera', id: camera.deviceSerial, label: camera.deviceName });
 const { viewFilter, viewableCameras, findViewableCamera, findManageableCamera, canManageCamera } = require('../utils/ownership');
 
 /**
@@ -157,6 +160,7 @@ async function addCamera(req, res) {
         });
 
         await newCamera.save();
+        recordAudit(req, { action: 'camera.added', target: cameraTarget(newCamera) });
         res.json({ success: true, message: "Camera added successfully.", camera: toClientCamera(newCamera, req.user) });
 
         // Asynchronously sync camera details in the background
@@ -187,6 +191,11 @@ async function deleteCamera(req, res) {
         if (!deleted) {
             return res.status(404).json({ success: false, message: "Device not found or permission denied." });
         }
+        recordAudit(req, {
+            action: 'camera.deleted',
+            target: cameraTarget(deleted),
+            details: { owner: String(deleted.userId) === String(req.user.id) ? 'self' : String(deleted.userId), sharedWith: (deleted.sharedWith || []).length }
+        });
         res.json({ success: true, message: "Device removed successfully." });
     } catch (err) {
         sendServerError(res, err);
@@ -215,6 +224,8 @@ async function updateCamera(req, res) {
         if (!camera) {
             return res.status(404).json({ success: false, message: "Device not found or permission denied." });
         }
+        const AUDITED_FIELDS = ['deviceName', 'validateCode', 'alertThreshold', 'captureIntervalMinutes', 'captureDaytimeOnly'];
+        const before = Object.fromEntries(AUDITED_FIELDS.map(field => [field, camera[field]]));
         if (typeof deviceName !== 'undefined') {
             camera.deviceName = deviceName.trim();
         }
@@ -230,7 +241,16 @@ async function updateCamera(req, res) {
         if (typeof captureDaytimeOnly !== 'undefined') {
             camera.captureDaytimeOnly = captureDaytimeOnly;
         }
+        const changed = AUDITED_FIELDS.filter(field => camera[field] !== before[field]);
         await camera.save();
+        if (changed.length) {
+            // The verification code is a secret: record that it changed, not its value
+            const details = { fields: changed };
+            for (const field of ['deviceName', 'alertThreshold', 'captureIntervalMinutes', 'captureDaytimeOnly']) {
+                if (changed.includes(field)) details[field] = camera[field];
+            }
+            recordAudit(req, { action: 'camera.updated', target: cameraTarget(camera), details });
+        }
         res.json({ success: true, message: "Camera updated successfully.", camera: toClientCamera(camera, req.user) });
     } catch (err) {
         sendServerError(res, err);
@@ -283,6 +303,7 @@ async function updateCameraCode(req, res) {
         }
         camera.validateCode = cleanCode;
         await camera.save();
+        recordAudit(req, { action: 'camera.updated', target: cameraTarget(camera), details: { fields: ['validateCode'] } });
         res.json({ success: true, message: "Verification code updated successfully.", camera: toClientCamera(camera, req.user) });
     } catch (err) {
         sendServerError(res, err);

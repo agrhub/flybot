@@ -6,6 +6,7 @@ const Notification = require('./Notification');
 const Session = require('./Session');
 const SystemSetting = require('./SystemSetting');
 const Dashboard = require('./Dashboard');
+const AuditLog = require('./AuditLog');
 
 module.exports = {
     User,
@@ -15,5 +16,6 @@ module.exports = {
     Notification,
     Session,
     SystemSetting,
-    Dashboard
+    Dashboard,
+    AuditLog
 };

@@ -6,6 +6,7 @@ const { queueMail } = require('../services/mailService');
 const emailTemplates = require('../services/emailTemplates');
 const { appUrl } = require('../services/authTokenService');
 const notificationService = require('../services/notificationService');
+const { recordAudit } = require('../services/auditService');
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_SHARES_PER_CAMERA = 50;
@@ -73,6 +74,12 @@ async function addShare(req, res) {
         camera.sharedWith.push({ userId: recipient?._id || null, email, sharedBy: req.user.id, sharedAt: new Date() });
         await camera.save();
 
+        recordAudit(req, {
+            action: 'camera.shared',
+            target: { type: 'camera', id: camera.deviceSerial, label: camera.deviceName },
+            details: { email, invited: !recipient }
+        });
+
         const sharer = req.user.name || req.user.email;
         const params = { deviceName: camera.deviceName || camera.deviceSerial };
         if (recipient) {
@@ -122,6 +129,7 @@ async function removeShare(req, res) {
             return res.status(404).json({ success: false, message: "This camera is not shared with that email." });
         }
         await camera.save();
+        recordAudit(req, { action: 'camera.unshared', target: { type: 'camera', id: camera.deviceSerial, label: camera.deviceName }, details: { email } });
         res.json({ success: true, shares: sharesOf(camera) });
     } catch (err) {
         sendServerError(res, err, { context: 'Unshare camera' });

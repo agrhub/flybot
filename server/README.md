@@ -37,6 +37,9 @@ node scripts/merge_duplicate_cameras.js          # preview
 node scripts/merge_duplicate_cameras.js --apply  # merge and build the index
 ```
 
+## Activity log
+Sign-ins (including failed ones), password changes, account changes, camera and dashboard sharing, ownership transfers and system settings changes are recorded with the actor, IP and time. Admins see them in Settings → Activity log and can export CSV. Entries expire after 12 months (MongoDB TTL index). Verification codes and passwords are never recorded.
+
 ## Custom dashboards
 Admins and managers build dashboards (Dashboards in the sidebar) from widgets: key figures, daily trend, species, camera ranking and latest snapshots. A dashboard can be shared by email (read-only) or published with a public link (`/d/<token>`, no sign-in). A public link only shows cameras the owner owns (an admin owner: any camera), and a new link can be created at any time to stop the old one.
 

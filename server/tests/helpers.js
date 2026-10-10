@@ -142,6 +142,9 @@ models.Camera.updateMany = async (filter, update) => {
 // Snapshot
 models.Snapshot.find = () => query(() => []);
 
+// AuditLog: entries are not stored in the stub store
+models.AuditLog.create = async (data) => data;
+
 // SystemSetting: nothing saved, so the environment defaults apply
 models.SystemSetting.findOne = () => query(() => null);
 

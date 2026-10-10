@@ -8,6 +8,7 @@ const claimPendingShares = (user) => require('./shareController').claimPendingSh
     .catch(err => console.error('⚠️ Claiming shared items failed:', err.message));
 const { signToken, setAuthCookie, clearAuthCookie, createSession, readToken, resolveToken } = require('../middlewares/auth');
 const { sendServerError } = require('../utils/http');
+const { recordAudit } = require('../services/auditService');
 const { normalizeLanguage, SUPPORTED_LANGUAGES } = require('../utils/i18n');
 const { queueMail } = require('../services/mailService');
 const emailTemplates = require('../services/emailTemplates');
@@ -99,6 +100,12 @@ async function register(req, res) {
             role: isFirstAccount ? 'admin' : 'user'
         });
         await newUser.save();
+        recordAudit(req, {
+            action: 'auth.register',
+            actor: { id: newUser._id, email: newUser.email },
+            target: { type: 'user', id: String(newUser._id), label: newUser.email },
+            details: { role: newUser.role }
+        });
 
         // A mail/config problem must not block sign-up; the user can resend from the app
         try {
@@ -131,9 +138,15 @@ async function login(req, res) {
         // Same message for unknown email and wrong password so accounts can't be enumerated
         const isMatch = user ? await bcrypt.compare(password, user.password) : false;
         if (!isMatch) {
+            recordAudit(req, {
+                action: 'auth.login_failed',
+                actor: { id: user?._id, email },
+                details: { reason: user ? 'wrong_password' : 'unknown_account' }
+            });
             return res.status(401).json({ success: false, message: "Invalid email or password." });
         }
         if (user.disabled) {
+            recordAudit(req, { action: 'auth.login_failed', actor: { id: user._id, email: user.email }, details: { reason: 'disabled' } });
             return res.status(403).json({ success: false, code: 'ACCOUNT_DISABLED', message: "This account has been disabled. Contact your administrator." });
         }
 
@@ -146,6 +159,7 @@ async function login(req, res) {
         const sessionId = await createSession(user._id, req);
         const token = signToken(user, sessionId);
         setAuthCookie(res, token);
+        recordAudit(req, { action: 'auth.login', actor: { id: user._id, email: user.email } });
 
         res.json({
             success: true,
@@ -276,6 +290,7 @@ async function revokeOtherSessions(req, res) {
         const sessionId = req.sessionId || await createSession(user._id, req);
         const token = signToken(user, sessionId);
         setAuthCookie(res, token);
+        recordAudit(req, { action: 'auth.sessions_revoked' });
         res.json({ success: true, token });
     } catch (err) {
         sendServerError(res, err, { context: 'Revoke other sessions' });
@@ -342,6 +357,7 @@ async function resetPassword(req, res) {
 
         clearAuthCookie(res);
         queueMail(emailTemplates.passwordChangedEmail({ user, language: normalizeLanguage(user.language) }));
+        recordAudit(req, { action: 'auth.password_reset', actor: { id: user._id, email: user.email } });
 
         res.json({ success: true, message: "Password has been reset. Please sign in." });
     } catch (err) {
@@ -419,6 +435,7 @@ async function changePassword(req, res) {
         const token = signToken(user, sessionId);
         setAuthCookie(res, token);
         queueMail(emailTemplates.passwordChangedEmail({ user, language: normalizeLanguage(user.language) }));
+        recordAudit(req, { action: 'auth.password_changed' });
 
         res.json({ success: true, message: "Password changed successfully!", token });
     } catch (err) {

@@ -60,6 +60,10 @@
               <el-icon><Tools /></el-icon>
               <span>{{ t('admin.system.tab') }}</span>
             </el-menu-item>
+            <el-menu-item index="adminAudit">
+              <el-icon><Tickets /></el-icon>
+              <span>{{ t('audit.tab') }}</span>
+            </el-menu-item>
           </el-menu-item-group>
 
           <el-menu-item-group :title="t('settings.legal')">
@@ -534,6 +538,9 @@
         <div v-else-if="activeTab === 'adminSystem' && isAdmin" class="max-w-3xl">
           <SystemSettingsPanel />
         </div>
+        <div v-else-if="activeTab === 'adminAudit' && isAdmin" class="max-w-6xl">
+          <AuditLogPanel />
+        </div>
 
         <div v-else-if="activeTab === 'legal'" class="max-w-2xl">
           <PageHeader :title="t('settings.termsTab')" :subtitle="t('settings.termsSub')" />
@@ -621,6 +628,7 @@ import CameraShareDialog from '@/components/cameras/CameraShareDialog.vue';
 import AdminUsersPanel from '@/components/admin/AdminUsersPanel.vue';
 import AdminCamerasPanel from '@/components/admin/AdminCamerasPanel.vue';
 import SystemSettingsPanel from '@/components/admin/SystemSettingsPanel.vue';
+import AuditLogPanel from '@/components/admin/AuditLogPanel.vue';
 import {
   User,
   Lock,
@@ -642,7 +650,8 @@ import {
   Share,
   UserFilled,
   Camera,
-  Tools
+  Tools,
+  Tickets
 } from '@element-plus/icons-vue';
 import { useNotifications } from '@/composables/useNotifications';
 

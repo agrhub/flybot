@@ -9,6 +9,7 @@ const { queueMail } = require('../services/mailService');
 const emailTemplates = require('../services/emailTemplates');
 const notificationService = require('../services/notificationService');
 const dashboardService = require('../services/dashboardService');
+const { recordAudit } = require('../services/auditService');
 const { SNAPSHOT_KEY_REGEX, pipeSnapshot } = require('./s3Controller');
 const { EMAIL_REGEX, normalizeEmail, findUserByEmail, safeUrl } = require('./shareController');
 
@@ -21,6 +22,7 @@ const WIDGET_ID_REGEX = /^[A-Za-z0-9_-]{1,40}$/;
 const NOT_FOUND = { success: false, message: "Dashboard not found." };
 const newPublicToken = () => crypto.randomBytes(18).toString('base64url');
 const isInt = (v, min, max) => Number.isInteger(v) && v >= min && v <= max;
+const dashboardTarget = (dashboard) => ({ type: 'dashboard', id: String(dashboard._id), label: dashboard.name });
 const text = (value, max) => (typeof value === 'string' ? value.trim().slice(0, max) : '');
 
 function sharesOf(dashboard) {
@@ -200,6 +202,8 @@ async function createDashboard(req, res) {
         const dashboard = new Dashboard({ ...result.value, ownerId: req.user.id });
         if (dashboard.visibility === 'public') dashboard.publicToken = newPublicToken();
         await dashboard.save();
+        recordAudit(req, { action: 'dashboard.created', target: dashboardTarget(dashboard), details: { visibility: dashboard.visibility } });
+        if (dashboard.visibility === 'public') recordAudit(req, { action: 'dashboard.published', target: dashboardTarget(dashboard) });
         await dashboard.populate('ownerId', 'email name role disabled');
         res.status(201).json({ success: true, dashboard: toDetail(dashboard, req.user) });
     } catch (err) {
@@ -244,11 +248,16 @@ async function updateDashboard(req, res) {
         const result = await validateInput(req.body || {}, { editor: req.user, owner: dashboard.ownerId, partial: true, current: dashboard });
         if (result.error) return sendValidationError(res, result);
 
+        const wasPublic = dashboard.visibility === 'public';
         Object.assign(dashboard, result.value);
         if (dashboard.visibility === 'public' && !dashboard.publicToken) dashboard.publicToken = newPublicToken();
         // Going private kills the old link
         if (dashboard.visibility === 'private') dashboard.publicToken = undefined;
         await dashboard.save();
+        const isPublic = dashboard.visibility === 'public';
+        if (isPublic !== wasPublic) {
+            recordAudit(req, { action: isPublic ? 'dashboard.published' : 'dashboard.unpublished', target: dashboardTarget(dashboard) });
+        }
         res.json({ success: true, dashboard: toDetail(dashboard, req.user) });
     } catch (err) {
         sendServerError(res, err, { context: 'Update dashboard' });
@@ -266,6 +275,7 @@ async function deleteDashboard(req, res) {
             return res.status(403).json({ success: false, code: 'FORBIDDEN', message: "You cannot delete this dashboard." });
         }
         await Dashboard.deleteOne({ _id: dashboard._id });
+        recordAudit(req, { action: 'dashboard.deleted', target: dashboardTarget(dashboard), details: { owner: dashboard.ownerId?.email || '' } });
         res.json({ success: true });
     } catch (err) {
         sendServerError(res, err, { context: 'Delete dashboard' });
@@ -304,6 +314,7 @@ async function rotatePublicToken(req, res) {
         }
         dashboard.publicToken = newPublicToken();
         await dashboard.save();
+        recordAudit(req, { action: 'dashboard.link_rotated', target: dashboardTarget(dashboard) });
         res.json({ success: true, publicToken: dashboard.publicToken });
     } catch (err) {
         sendServerError(res, err, { context: 'Rotate dashboard link' });
@@ -337,6 +348,7 @@ async function shareDashboard(req, res) {
         const recipient = await findUserByEmail(email);
         dashboard.sharedWith.push({ userId: recipient?._id || null, email, sharedAt: new Date() });
         await dashboard.save();
+        recordAudit(req, { action: 'dashboard.shared', target: dashboardTarget(dashboard), details: { email, invited: !recipient } });
 
         const sharer = req.user.name || req.user.email;
         const params = { dashboardName: dashboard.name };
@@ -388,6 +400,7 @@ async function unshareDashboard(req, res) {
             return res.status(404).json({ success: false, message: "This dashboard is not shared with that email." });
         }
         await dashboard.save();
+        recordAudit(req, { action: 'dashboard.unshared', target: dashboardTarget(dashboard), details: { email } });
         res.json({ success: true, shares: sharesOf(dashboard) });
     } catch (err) {
         sendServerError(res, err, { context: 'Unshare dashboard' });

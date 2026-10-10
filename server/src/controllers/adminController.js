@@ -1,7 +1,8 @@
 const mongoose = require('mongoose');
-const { User, Camera, Session, Notification, AuthToken, Dashboard } = require('../models');
+const { User, Camera, Session, Notification, AuthToken, Dashboard, AuditLog } = require('../models');
 const { ROLES, roleOf } = require('../constants/roles');
 const { sendServerError } = require('../utils/http');
+const { recordAudit, AUDIT_ACTIONS, CATEGORIES } = require('../services/auditService');
 
 const MAX_PAGE_SIZE = 100;
 const escapeRegex = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -91,6 +92,8 @@ async function updateUser(req, res) {
             return res.status(400).json({ success: false, code: 'LAST_ADMIN', message: "At least one active admin is required." });
         }
 
+        const previousRole = roleOf(target);
+        const wasDisabled = !!target.disabled;
         if (role !== undefined) target.role = role;
         if (disabled !== undefined) {
             target.disabled = disabled;
@@ -101,6 +104,14 @@ async function updateUser(req, res) {
             }
         }
         await target.save();
+
+        const auditTarget = { type: 'user', id: String(target._id), label: target.email };
+        if (role !== undefined && role !== previousRole) {
+            recordAudit(req, { action: 'user.role_changed', target: auditTarget, details: { from: previousRole, to: role } });
+        }
+        if (disabled !== undefined && disabled !== wasDisabled) {
+            recordAudit(req, { action: disabled ? 'user.disabled' : 'user.enabled', target: auditTarget });
+        }
 
         const counts = await cameraCountsFor([target._id]);
         res.json({ success: true, user: toAdminUser(target, counts.get(String(target._id)) || 0) });
@@ -144,6 +155,7 @@ async function deleteUser(req, res) {
             AuthToken.deleteMany({ userId: target._id })
         ]);
         await User.deleteOne({ _id: target._id });
+        recordAudit(req, { action: 'user.deleted', target: { type: 'user', id: String(target._id), label: target.email }, details: { role: roleOf(target) } });
         res.json({ success: true });
     } catch (err) {
         sendServerError(res, err, { context: 'Admin delete user' });
@@ -219,6 +231,11 @@ async function transferCamera(req, res) {
         }
         camera.userId = newOwner._id;
         await camera.save();
+        recordAudit(req, {
+            action: 'camera.transferred',
+            target: { type: 'camera', id: camera.deviceSerial, label: camera.deviceName },
+            details: { from: previousOwner?.email || '', to: newOwner.email, keptAccess: keepAccess }
+        });
 
         res.json({ success: true, owner: { id: String(newOwner._id), email: newOwner.email }, sharedCount: camera.sharedWith.length });
     } catch (err) {
@@ -243,13 +260,95 @@ async function updateSystemSettings(req, res) {
         const { updateSettings } = require('../services/settingsService');
         const result = await updateSettings(req.body, req.user.id);
         if (result.error) return res.status(400).json({ success: false, message: result.error });
+        recordAudit(req, { action: 'settings.updated', target: { type: 'settings', id: 'global', label: 'System settings' }, details: req.body });
         res.json({ success: true, settings: result.settings });
     } catch (err) {
         sendServerError(res, err, { context: 'Admin update settings' });
     }
 }
 
+// ---------- Audit log ----------
+
+const MAX_EXPORT_ROWS = 5000;
+
+function auditFilter(query) {
+    const filter = {};
+    if (CATEGORIES.includes(query.category)) filter.category = query.category;
+    if (AUDIT_ACTIONS.includes(query.action)) filter.action = query.action;
+    if (typeof query.q === 'string' && query.q.trim()) {
+        const pattern = new RegExp(escapeRegex(query.q.trim().slice(0, 100)), 'i');
+        filter.$or = [{ actorEmail: pattern }, { targetLabel: pattern }, { targetId: pattern }, { ip: pattern }];
+    }
+    const from = query.from ? new Date(query.from) : null;
+    const to = query.to ? new Date(query.to) : null;
+    if ((from && !isNaN(from)) || (to && !isNaN(to))) {
+        filter.createdAt = {};
+        if (from && !isNaN(from)) filter.createdAt.$gte = from;
+        if (to && !isNaN(to)) filter.createdAt.$lte = to;
+    }
+    return filter;
+}
+
+const toAuditEntry = (e) => ({
+    id: String(e._id),
+    action: e.action,
+    category: e.category,
+    actor: { id: e.actorId ? String(e.actorId) : null, email: e.actorEmail },
+    target: { type: e.targetType, id: e.targetId, label: e.targetLabel },
+    details: e.details || null,
+    ip: e.ip,
+    userAgent: e.userAgent,
+    createdAt: e.createdAt
+});
+
+/**
+ * GET /api/admin/audit?category=&action=&q=&from=&to=&page=&limit=
+ */
+async function listAuditLog(req, res) {
+    try {
+        const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+        const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 50, 1), MAX_PAGE_SIZE);
+        const filter = auditFilter(req.query);
+        const [total, entries] = await Promise.all([
+            AuditLog.countDocuments(filter),
+            AuditLog.find(filter).sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit).lean()
+        ]);
+        res.json({ success: true, total, page, limit, actions: AUDIT_ACTIONS, entries: entries.map(toAuditEntry) });
+    } catch (err) {
+        sendServerError(res, err, { context: 'Admin audit log' });
+    }
+}
+
+// Spreadsheet apps run cells starting with = + - @ as formulas: prefix them
+const csvCell = (value) => {
+    let text = String(value ?? '');
+    if (/^[=+\-@\t\r]/.test(text)) text = `'${text}`;
+    return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+};
+
+/**
+ * GET /api/admin/audit/export: the same filters, as CSV (newest first, at most 5000 rows)
+ */
+async function exportAuditLog(req, res) {
+    try {
+        const entries = await AuditLog.find(auditFilter(req.query)).sort({ createdAt: -1 }).limit(MAX_EXPORT_ROWS).lean();
+        const header = ['time', 'action', 'actor', 'target_type', 'target_id', 'target', 'details', 'ip'];
+        const rows = entries.map(e => [
+            e.createdAt.toISOString(), e.action, e.actorEmail, e.targetType, e.targetId, e.targetLabel,
+            e.details ? JSON.stringify(e.details) : '', e.ip
+        ].map(csvCell).join(','));
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.attachment(`flybot-audit-${new Date().toISOString().slice(0, 10)}.csv`);
+        // BOM so Excel reads UTF-8 (Vietnamese names) correctly
+        res.send('﻿' + [header.join(','), ...rows].join('\r\n'));
+    } catch (err) {
+        sendServerError(res, err, { context: 'Admin audit export' });
+    }
+}
+
 module.exports = {
+    listAuditLog,
+    exportAuditLog,
     listUsers,
     updateUser,
     deleteUser,

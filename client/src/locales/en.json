@@ -1049,5 +1049,88 @@
       "notFoundDesc": "The dashboard may have been made private, or a new link was created.",
       "home": "Go to FlyBot"
     }
+  },
+  "audit": {
+    "tab": "Activity log",
+    "title": "Activity log",
+    "subtitle": "Sign-ins, account changes, camera and dashboard sharing, and system settings changes.",
+    "export": "Export CSV",
+    "allCategories": "All activity",
+    "search": "Search by email, camera, dashboard or IP",
+    "from": "From",
+    "to": "To",
+    "time": "Time",
+    "action": "Action",
+    "actor": "By",
+    "target": "Object",
+    "details": "Details",
+    "ip": "IP address",
+    "system": "System",
+    "empty": "No activity found.",
+    "retention": "Entries are kept for 12 months.",
+    "invited": "invited",
+    "keptAccess": "previous owner keeps view access",
+    "categories": {
+      "auth": "Sign-in & security",
+      "user": "Accounts",
+      "camera": "Cameras",
+      "dashboard": "Dashboards",
+      "settings": "System settings"
+    },
+    "actions": {
+      "auth": {
+        "register": "Account created",
+        "login": "Signed in",
+        "login_failed": "Failed sign-in",
+        "password_reset": "Password reset by email",
+        "password_changed": "Password changed",
+        "sessions_revoked": "Signed out other devices"
+      },
+      "user": {
+        "role_changed": "Role changed",
+        "disabled": "Account disabled",
+        "enabled": "Account enabled",
+        "deleted": "Account deleted"
+      },
+      "camera": {
+        "added": "Camera added",
+        "updated": "Camera changed",
+        "deleted": "Camera deleted",
+        "shared": "Camera shared",
+        "unshared": "Camera access removed",
+        "transferred": "Camera ownership transferred"
+      },
+      "dashboard": {
+        "created": "Dashboard created",
+        "deleted": "Dashboard deleted",
+        "shared": "Dashboard shared",
+        "unshared": "Dashboard access removed",
+        "published": "Public link turned on",
+        "unpublished": "Public link turned off",
+        "link_rotated": "New public link created"
+      },
+      "settings": {
+        "updated": "System settings changed"
+      }
+    },
+    "reasons": {
+      "wrong_password": "Wrong password",
+      "unknown_account": "No such account",
+      "disabled": "Account disabled"
+    },
+    "fields": {
+      "deviceName": "Name",
+      "validateCode": "Verification code",
+      "alertThreshold": "Alert threshold",
+      "captureIntervalMinutes": "Capture interval",
+      "captureDaytimeOnly": "Daytime only",
+      "allowRegistration": "Allow new accounts",
+      "retentionMonths": "Snapshot retention (months)",
+      "defaultAlertThreshold": "Default alert threshold",
+      "role": "Role",
+      "visibility": "Visibility",
+      "owner": "Owner",
+      "sharedWith": "Shared with"
+    }
   }
 }

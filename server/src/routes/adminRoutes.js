@@ -14,5 +14,7 @@ router.get('/cameras', adminController.listCameras);
 router.put('/cameras/:deviceSerial/owner', adminController.transferCamera);
 router.get('/settings', adminController.getSystemSettings);
 router.put('/settings', adminController.updateSystemSettings);
+router.get('/audit', adminController.listAuditLog);
+router.get('/audit/export', adminController.exportAuditLog);
 
 module.exports = router;

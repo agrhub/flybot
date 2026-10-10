@@ -79,6 +79,13 @@ export default {
   adminTransferCamera(deviceSerial, email, keepPreviousOwnerAccess = true) {
     return apiClient.put(`/admin/cameras/${encodeURIComponent(deviceSerial)}/owner`, { email, keepPreviousOwnerAccess });
   },
+  adminAuditLog(params = {}) {
+    return apiClient.get('/admin/audit', { params });
+  },
+  // CSV file (needs the auth header, so it is fetched as a blob)
+  exportAuditLog(params = {}) {
+    return apiClient.get('/admin/audit/export', { params, responseType: 'blob' });
+  },
   getAdminSettings() {
     return apiClient.get('/admin/settings');
   },

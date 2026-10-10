@@ -1049,5 +1049,88 @@
       "notFoundDesc": "Bảng có thể đã chuyển sang riêng tư hoặc đã có liên kết mới.",
       "home": "Đến FlyBot"
     }
+  },
+  "audit": {
+    "tab": "Nhật ký hoạt động",
+    "title": "Nhật ký hoạt động",
+    "subtitle": "Đăng nhập, thay đổi tài khoản, chia sẻ camera và bảng, thay đổi cài đặt hệ thống.",
+    "export": "Xuất CSV",
+    "allCategories": "Tất cả hoạt động",
+    "search": "Tìm theo email, camera, bảng hoặc IP",
+    "from": "Từ ngày",
+    "to": "Đến ngày",
+    "time": "Thời gian",
+    "action": "Hành động",
+    "actor": "Người thực hiện",
+    "target": "Đối tượng",
+    "details": "Chi tiết",
+    "ip": "Địa chỉ IP",
+    "system": "Hệ thống",
+    "empty": "Không có hoạt động nào.",
+    "retention": "Nhật ký được lưu trong 12 tháng.",
+    "invited": "đã mời",
+    "keptAccess": "chủ cũ vẫn được xem",
+    "categories": {
+      "auth": "Đăng nhập & bảo mật",
+      "user": "Tài khoản",
+      "camera": "Camera",
+      "dashboard": "Bảng tùy chỉnh",
+      "settings": "Cài đặt hệ thống"
+    },
+    "actions": {
+      "auth": {
+        "register": "Tạo tài khoản",
+        "login": "Đăng nhập",
+        "login_failed": "Đăng nhập thất bại",
+        "password_reset": "Đặt lại mật khẩu qua email",
+        "password_changed": "Đổi mật khẩu",
+        "sessions_revoked": "Đăng xuất các thiết bị khác"
+      },
+      "user": {
+        "role_changed": "Đổi vai trò",
+        "disabled": "Vô hiệu hóa tài khoản",
+        "enabled": "Kích hoạt tài khoản",
+        "deleted": "Xóa tài khoản"
+      },
+      "camera": {
+        "added": "Thêm camera",
+        "updated": "Sửa camera",
+        "deleted": "Xóa camera",
+        "shared": "Chia sẻ camera",
+        "unshared": "Gỡ quyền xem camera",
+        "transferred": "Chuyển quyền sở hữu camera"
+      },
+      "dashboard": {
+        "created": "Tạo bảng",
+        "deleted": "Xóa bảng",
+        "shared": "Chia sẻ bảng",
+        "unshared": "Gỡ quyền xem bảng",
+        "published": "Bật liên kết công khai",
+        "unpublished": "Tắt liên kết công khai",
+        "link_rotated": "Tạo liên kết công khai mới"
+      },
+      "settings": {
+        "updated": "Đổi cài đặt hệ thống"
+      }
+    },
+    "reasons": {
+      "wrong_password": "Sai mật khẩu",
+      "unknown_account": "Không có tài khoản",
+      "disabled": "Tài khoản bị vô hiệu hóa"
+    },
+    "fields": {
+      "deviceName": "Tên",
+      "validateCode": "Mã xác thực",
+      "alertThreshold": "Ngưỡng cảnh báo",
+      "captureIntervalMinutes": "Chu kỳ chụp",
+      "captureDaytimeOnly": "Chỉ ban ngày",
+      "allowRegistration": "Cho phép tạo tài khoản",
+      "retentionMonths": "Lưu ảnh (tháng)",
+      "defaultAlertThreshold": "Ngưỡng cảnh báo mặc định",
+      "role": "Vai trò",
+      "visibility": "Chế độ hiển thị",
+      "owner": "Chủ sở hữu",
+      "sharedWith": "Chia sẻ với"
+    }
   }
 }
