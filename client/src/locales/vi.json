@@ -446,6 +446,25 @@
       "camera": "Camera",
       "scans": "Lần quét",
       "change": "Thay đổi"
+    },
+    "review": {
+      "title": "Kiểm tra thủ công",
+      "status": {
+        "pending": "Kết quả AI, chưa kiểm tra",
+        "confirmed": "Đã xác nhận",
+        "corrected": "Đã sửa"
+      },
+      "aiOriginal": "AI đếm được",
+      "confirm": "Xác nhận đúng",
+      "correct": "Sửa số đếm",
+      "species": "Loài",
+      "addSpecies": "Thêm loài",
+      "notePlaceholder": "Ghi chú (không bắt buộc), ví dụ: hai con là lá cây",
+      "saved": "Đã lưu. Thống kê sẽ dùng số đếm này.",
+      "export": "Xuất dữ liệu đã sửa",
+      "exportHint": "Các ảnh đã sửa trong 90 ngày (số AI đếm và số đúng), dùng để huấn luyện lại model nhận diện",
+      "exportEmpty": "Chưa có ảnh nào được sửa trong 90 ngày qua.",
+      "exported": "Đã xuất {count} ảnh đã sửa."
     }
   },
   "settings": {

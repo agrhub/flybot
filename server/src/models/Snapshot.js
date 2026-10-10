@@ -17,6 +17,16 @@ const snapshotSchema = new mongoose.Schema({
         }],
         summary: { type: Map, of: Number }, // Statistics summary: { "caterpillar": 2, "fruit fly": 1 }
         raw_description: String
+    },
+    // Human review of the AI result. When counts are corrected, aiResults.summary holds the
+    // corrected counts (so every statistic uses them) and originalSummary keeps the model output
+    // for retraining.
+    review: {
+        status: { type: String, enum: ['confirmed', 'corrected'], default: undefined },
+        originalSummary: { type: Map, of: Number, default: undefined },
+        note: { type: String, default: undefined },
+        reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: undefined },
+        reviewedAt: { type: Date, default: undefined }
     }
 });
 

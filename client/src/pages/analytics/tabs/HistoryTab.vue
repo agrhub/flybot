@@ -68,6 +68,15 @@
                 {{ formatSpeciesName(name) }}: {{ count }}
               </el-tag>
               <span v-if="!hasSummary(row)" class="meta-text">--</span>
+              <el-tag
+                v-if="row.review?.status"
+                :type="row.review.status === 'corrected' ? 'warning' : 'info'"
+                effect="plain"
+                size="small"
+                round
+              >
+                {{ t(`analytics.review.status.${row.review.status}`) }}
+              </el-tag>
             </div>
           </template>
         </el-table-column>
@@ -111,6 +120,7 @@
       :visible="modalVisible"
       :item="selectedItem"
       @close="closeModal"
+      @updated="onSnapshotUpdated"
     />
   </div>
 </template>
@@ -209,6 +219,12 @@ const goToPage = (page) => {
 const openModal = (item) => {
   selectedItem.value = item
   modalVisible.value = true
+}
+
+// Keep the table and the open modal in sync after a review
+const onSnapshotUpdated = (snapshot) => {
+  records.value = records.value.map(r => (r._id === snapshot._id ? { ...r, ...snapshot } : r))
+  if (selectedItem.value?._id === snapshot._id) selectedItem.value = { ...selectedItem.value, ...snapshot }
 }
 
 const closeModal = () => {

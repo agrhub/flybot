@@ -12,6 +12,8 @@ router.post('/analyze-roboflow/:snapshotId', aiController.analyzeRoboflowSnapsho
 router.get('/statistics', aiController.getAiStatistics);
 router.get('/overview', aiController.getAiOverview);
 router.get('/comparison', aiController.getAiComparison);
+router.put('/snapshots/:snapshotId/review', aiController.reviewSnapshot);
+router.get('/reviews/export', aiController.exportReviews);
 router.post('/diagnose', aiController.getAiDiagnosis);
 router.post('/chat', aiController.chatWithAssistant);
 router.post('/chat/clear', aiController.clearChatSession);

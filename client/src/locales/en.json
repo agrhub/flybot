@@ -446,6 +446,25 @@
       "camera": "Camera",
       "scans": "Scans",
       "change": "Change"
+    },
+    "review": {
+      "title": "Human review",
+      "status": {
+        "pending": "AI result, not reviewed",
+        "confirmed": "Confirmed",
+        "corrected": "Corrected"
+      },
+      "aiOriginal": "AI counted",
+      "confirm": "Confirm result",
+      "correct": "Correct counts",
+      "species": "Species",
+      "addSpecies": "Add species",
+      "notePlaceholder": "Note (optional), e.g. two were leaves",
+      "saved": "Review saved. Statistics now use these counts.",
+      "export": "Export corrections",
+      "exportHint": "Corrected snapshots from the last 90 days (AI vs human counts), for retraining the detection model",
+      "exportEmpty": "No corrected snapshots in the last 90 days.",
+      "exported": "Exported {count} corrected snapshots."
     }
   },
   "settings": {

@@ -38,9 +38,75 @@
                 size="small"
                 round
               >
-                {{ name }}: {{ count }}
+                {{ speciesName(name, t) }}: {{ count }}
               </el-tag>
             </div>
+          </el-descriptions-item>
+
+          <!-- Human review of the AI result -->
+          <el-descriptions-item :label="t('analytics.review.title')">
+            <div v-if="!editing" class="space-y-2">
+              <div class="flex flex-wrap items-center gap-2">
+                <el-tag :type="REVIEW_TAG[reviewStatus]" effect="light" round size="small">
+                  {{ t(`analytics.review.status.${reviewStatus}`) }}
+                </el-tag>
+                <span v-if="item?.review?.reviewedAt" class="meta-text">{{ formatDate(item.review.reviewedAt) }}</span>
+              </div>
+              <p v-if="reviewStatus === 'corrected'" class="meta-text">
+                {{ t('analytics.review.aiOriginal') }}: {{ formatSummary(item.review.originalSummary, t) || '--' }}
+              </p>
+              <p v-if="item?.review?.note" class="desc-text">{{ item.review.note }}</p>
+              <div v-if="item?.aiProcessed !== false" class="flex flex-wrap gap-2 pt-1">
+                <el-button
+                  v-if="reviewStatus === 'pending'"
+                  size="small"
+                  type="success"
+                  plain
+                  :icon="Check"
+                  :loading="savingReview"
+                  @click="confirmResult"
+                >
+                  {{ t('analytics.review.confirm') }}
+                </el-button>
+                <el-button size="small" :icon="EditPen" @click="startEditing">
+                  {{ t('analytics.review.correct') }}
+                </el-button>
+              </div>
+            </div>
+
+            <el-form v-else label-position="top" size="small" @submit.prevent>
+              <div v-for="(row, index) in correctionRows" :key="index" class="flex items-center gap-2 mb-2">
+                <el-select
+                  v-model="row.label"
+                  filterable
+                  allow-create
+                  default-first-option
+                  class="flex-1 min-w-0"
+                  :placeholder="t('analytics.review.species')"
+                >
+                  <el-option v-for="key in KNOWN_SPECIES" :key="key" :value="key" :label="speciesName(key, t)" />
+                </el-select>
+                <el-input-number v-model="row.count" :min="0" :max="10000" :step="1" step-strictly controls-position="right" class="!w-28" />
+                <el-button text circle :icon="Delete" @click="correctionRows.splice(index, 1)" />
+              </div>
+              <el-button size="small" link type="primary" :icon="Plus" @click="correctionRows.push({ label: '', count: 0 })">
+                {{ t('analytics.review.addSpecies') }}
+              </el-button>
+              <el-input
+                v-model="correctionNote"
+                type="textarea"
+                :rows="2"
+                maxlength="500"
+                :placeholder="t('analytics.review.notePlaceholder')"
+                class="mt-2"
+              />
+              <div class="flex justify-end gap-2 mt-3">
+                <el-button size="small" @click="editing = false">{{ t('common.cancel') }}</el-button>
+                <el-button size="small" type="primary" :loading="savingReview" @click="saveCorrection">
+                  {{ t('common.save') }}
+                </el-button>
+              </div>
+            </el-form>
           </el-descriptions-item>
 
           <el-descriptions-item :label="t('analytics.detailedDescription')">
@@ -63,14 +129,67 @@ import { ref, watch, computed, nextTick, onUnmounted } from 'vue'
 import Chart from 'chart.js/auto'
 import api from '@/services/api'
 import { useI18n } from 'vue-i18n'
+import { ElNotification } from 'element-plus'
+import { Check, EditPen, Delete, Plus } from '@element-plus/icons-vue'
+import { FRUIT_FLY, speciesName, normalizeSummary, formatSummary } from '@/utils/species'
 
 const props = defineProps({
   visible: Boolean,
   item: Object
 })
 
-const emit = defineEmits(['close'])
+const emit = defineEmits(['close', 'updated'])
 const { t, locale } = useI18n()
+
+// ---------- Human review ----------
+const REVIEW_TAG = { pending: 'info', confirmed: 'success', corrected: 'warning' }
+const KNOWN_SPECIES = [FRUIT_FLY, 'bug', 'caterpillar']
+
+const editing = ref(false)
+const savingReview = ref(false)
+const correctionRows = ref([])
+const correctionNote = ref('')
+
+const reviewStatus = computed(() => props.item?.review?.status || 'pending')
+
+const formatDate = (value) => new Date(value).toLocaleString(locale.value === 'vi' ? 'vi-VN' : 'en-US')
+
+const startEditing = () => {
+  const current = normalizeSummary(props.item?.aiResults?.summary || {})
+  correctionRows.value = Object.entries(current).map(([label, count]) => ({ label, count }))
+  if (correctionRows.value.length === 0) correctionRows.value.push({ label: FRUIT_FLY, count: 0 })
+  correctionNote.value = props.item?.review?.note || ''
+  editing.value = true
+}
+
+const submitReview = async (body) => {
+  savingReview.value = true
+  try {
+    const res = await api.reviewSnapshot(props.item._id, body)
+    if (res.data?.snapshot) emit('updated', res.data.snapshot)
+    editing.value = false
+    ElNotification({ title: t('common.success'), message: t('analytics.review.saved'), type: 'success' })
+  } catch (err) {
+    ElNotification({ title: t('common.error'), message: err.response?.data?.message || t('settings.saveFailed'), type: 'error' })
+  } finally {
+    savingReview.value = false
+  }
+}
+
+const confirmResult = () => submitReview({ status: 'confirmed' })
+
+const saveCorrection = () => {
+  const summary = {}
+  for (const row of correctionRows.value) {
+    const label = String(row.label || '').trim()
+    if (!label) continue
+    summary[label] = (summary[label] || 0) + (Number(row.count) || 0)
+  }
+  submitReview({ status: 'corrected', summary, note: correctionNote.value.trim() || undefined })
+}
+
+// Leave edit mode when another snapshot is opened
+watch(() => props.item?._id, () => { editing.value = false })
 
 const canvasRef = ref(null)
 const pieChartRef = ref(null)
@@ -166,7 +285,7 @@ const renderChart = () => {
   const entries = Object.entries(summaryData.value)
   if (entries.length === 0) return
 
-  const labels = entries.map(([name]) => name)
+  const labels = entries.map(([name]) => speciesName(name, t))
   const counts = entries.map(([, count]) => count)
   const colors = ['#2563eb', '#dc2626', '#059669', '#d97706', '#7c3aed', '#db2777']
 
@@ -220,6 +339,14 @@ watch(
     }
   }
 )
+
+// Redraw the doughnut after a review changes the counts
+watch(summaryData, async () => {
+  if (props.visible) {
+    await nextTick()
+    renderChart()
+  }
+})
 
 onUnmounted(() => {
   if (chartInstance) chartInstance.destroy()

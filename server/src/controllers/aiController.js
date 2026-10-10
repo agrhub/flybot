@@ -5,7 +5,7 @@ const aiService = require('../services/aiService');
 const s3Service = require('../services/s3Service');
 const { sendServerError } = require('../utils/http');
 const { userOwnsCamera } = require('../utils/ownership');
-const { FRUIT_FLY, NON_PEST_LABELS, normalizeSpeciesExpr, pestCountExpr } = require('../constants/species');
+const { FRUIT_FLY, NON_PEST_LABELS, normalizeSpeciesExpr, pestCountExpr, isFruitFly } = require('../constants/species');
 const { thresholdOf, riskLevel, worstRisk } = require('../constants/risk');
 const { countPests } = require('../services/notificationService');
 const forecastService = require('../services/forecastService');
@@ -719,6 +719,126 @@ async function getAiDiagnosis(req, res) {
     }
 }
 
+const MAX_REVIEW_LABELS = 20;
+const MAX_REVIEW_COUNT = 10000;
+
+/**
+ * Validate and normalize a corrected summary { label: count } from the client.
+ * Returns { summary } or { error }.
+ */
+function parseCorrectedSummary(input) {
+    if (!input || typeof input !== 'object' || Array.isArray(input)) return { error: 'summary must be an object of label: count.' };
+    const entries = Object.entries(input);
+    if (entries.length > MAX_REVIEW_LABELS) return { error: `At most ${MAX_REVIEW_LABELS} labels.` };
+    const summary = {};
+    for (const [rawLabel, count] of entries) {
+        const label = String(rawLabel).trim().toLowerCase();
+        // Labels become Mongo map keys: no dots or leading "$"
+        if (!label || label.length > 40 || /[.$]/.test(label)) return { error: `Invalid label "${rawLabel}".` };
+        if (!Number.isInteger(count) || count < 0 || count > MAX_REVIEW_COUNT) return { error: `Invalid count for "${rawLabel}".` };
+        const key = isFruitFly(label) ? FRUIT_FLY : label;
+        summary[key] = (summary[key] || 0) + count;
+    }
+    return { summary };
+}
+
+/**
+ * PUT /api/ai/snapshots/:snapshotId/review
+ * { status: 'confirmed' } or { status: 'corrected', summary: { fruit_fly: 3 }, note? }
+ */
+async function reviewSnapshot(req, res) {
+    try {
+        const { snapshotId } = req.params;
+        const { status, summary, note } = req.body;
+        if (!mongoose.isValidObjectId(snapshotId)) {
+            return res.status(404).json({ success: false, message: "Snapshot not found." });
+        }
+        if (!['confirmed', 'corrected'].includes(status)) {
+            return res.status(400).json({ success: false, message: "status must be 'confirmed' or 'corrected'." });
+        }
+        if (note !== undefined && (typeof note !== 'string' || note.length > 500)) {
+            return res.status(400).json({ success: false, message: "note must be text up to 500 characters." });
+        }
+
+        const snap = await Snapshot.findById(snapshotId);
+        // Same 404 for missing and not-owned snapshots
+        if (!snap || !(await userOwnsCamera(req.user.id, snap.deviceSerial))) {
+            return res.status(404).json({ success: false, message: "Snapshot not found." });
+        }
+        if (!snap.aiProcessed) {
+            return res.status(400).json({ success: false, message: "This snapshot has not been analyzed yet." });
+        }
+
+        const currentSummary = snap.aiResults?.summary instanceof Map
+            ? Object.fromEntries(snap.aiResults.summary)
+            : (snap.aiResults?.summary || {});
+        // Keep the very first model output, even across repeated corrections
+        const original = snap.review?.originalSummary
+            ? (snap.review.originalSummary instanceof Map ? Object.fromEntries(snap.review.originalSummary) : snap.review.originalSummary)
+            : currentSummary;
+
+        if (status === 'corrected') {
+            const parsed = parseCorrectedSummary(summary);
+            if (parsed.error) return res.status(400).json({ success: false, message: parsed.error });
+            snap.set('aiResults.summary', parsed.summary);
+            snap.set('aiResults.detected', Object.values(parsed.summary).some(v => v > 0));
+        }
+
+        snap.set('review', {
+            status,
+            originalSummary: original,
+            note: note ? note.trim() : undefined,
+            reviewedBy: req.user.id,
+            reviewedAt: new Date()
+        });
+        await snap.save();
+
+        res.json({ success: true, snapshot: snap });
+    } catch (err) {
+        sendServerError(res, err, { context: 'Review snapshot' });
+    }
+}
+
+/**
+ * GET /api/ai/reviews/export?days=90
+ * Corrected snapshots with the model output and the human counts, for retraining the detector.
+ */
+async function exportReviews(req, res) {
+    try {
+        const days = Math.min(Math.max(parseInt(req.query.days, 10) || 90, 1), 365);
+        const userCameras = await Camera.find({ userId: req.user.id }).select('deviceSerial');
+        const serials = [...new Set(userCameras.map(c => c.deviceSerial))];
+        const since = new Date(Date.now() - days * 86400000);
+
+        const snaps = await Snapshot.find({
+            deviceSerial: { $in: serials },
+            'review.status': 'corrected',
+            'review.reviewedAt': { $gte: since }
+        }).sort({ 'review.reviewedAt': -1 }).limit(5000);
+
+        const toObject = (m) => (m instanceof Map ? Object.fromEntries(m) : (m || {}));
+        res.json({
+            success: true,
+            exportedAt: new Date(),
+            days,
+            items: snaps.map(s => ({
+                snapshotId: s._id,
+                deviceSerial: s.deviceSerial,
+                capturedAt: s.createdAt,
+                s3Key: s.s3Key,
+                aiProvider: s.aiProvider,
+                modelSummary: toObject(s.review?.originalSummary),
+                correctedSummary: toObject(s.aiResults?.summary),
+                modelDetections: s.aiResults?.insects || [],
+                note: s.review?.note || '',
+                reviewedAt: s.review?.reviewedAt
+            }))
+        });
+    } catch (err) {
+        sendServerError(res, err, { context: 'Export reviews' });
+    }
+}
+
 const COMPARISON_PERIODS = [7, 14, 30];
 
 const percentChange = (current, previous) =>
@@ -884,6 +1004,8 @@ module.exports = {
     getAiOverview,
     getAiDiagnosis,
     getAiComparison,
+    reviewSnapshot,
+    exportReviews,
     chatWithAssistant,
     clearChatSession
 };

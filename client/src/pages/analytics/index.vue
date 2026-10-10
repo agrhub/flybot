@@ -2,6 +2,11 @@
   <div class="w-full max-w-7xl mx-auto pb-12">
     <PageHeader :title="t('analytics.title')" :subtitle="t('analytics.subtitle')">
       <template #actions>
+        <el-tooltip :content="t('analytics.review.exportHint')" placement="bottom">
+          <el-button :icon="Files" :loading="exportingReviews" @click="exportCorrections">
+            {{ t('analytics.review.export') }}
+          </el-button>
+        </el-tooltip>
         <el-button
           :icon="Download"
           :loading="exportingXlsx"
@@ -123,7 +128,7 @@ import autoTable from 'jspdf-autotable';
 import { addQuicksandFonts } from '@/utils/pdfFonts';
 import { formatSummary, normalizeSummary } from '@/utils/species';
 import { ElNotification } from 'element-plus';
-import { Calendar, Document, Download, List, TrendCharts, VideoCamera } from '@element-plus/icons-vue';
+import { Calendar, Document, Download, Files, List, TrendCharts, VideoCamera } from '@element-plus/icons-vue';
 import PageHeader from '@/components/common/PageHeader.vue';
 
 const { t, locale } = useI18n();
@@ -133,6 +138,32 @@ const selectedTimeRange = ref('30d'); // 'today' | '7d' | '30d' | 'custom'
 const customDateRange = ref(null); // [ 'YYYY-MM-DD', 'YYYY-MM-DD' ]
 
 const exportingXlsx = ref(false);
+const exportingReviews = ref(false);
+
+// Human-corrected snapshots (model output vs corrected counts) as JSON, to retrain the detector
+const exportCorrections = async () => {
+  exportingReviews.value = true;
+  try {
+    const res = await api.exportReviews(90);
+    const items = res.data?.items || [];
+    if (items.length === 0) {
+      ElNotification({ title: t('common.notice'), message: t('analytics.review.exportEmpty'), type: 'info' });
+      return;
+    }
+    const blob = new Blob([JSON.stringify(res.data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `FlyBot_Corrections_${new Date().toISOString().slice(0, 10)}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+    ElNotification({ title: t('common.success'), message: t('analytics.review.exported', { count: items.length }), type: 'success' });
+  } catch (err) {
+    ElNotification({ title: t('common.error'), message: err.response?.data?.message || t('settings.saveFailed'), type: 'error' });
+  } finally {
+    exportingReviews.value = false;
+  }
+};
 const exportingPdf = ref(false);
 const historyTabRef = ref(null);
 

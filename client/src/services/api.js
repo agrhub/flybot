@@ -156,6 +156,14 @@ export default {
   getComparison(days = 7) {
     return apiClient.get('/ai/comparison', { params: { days } });
   },
+  // Human review of an AI result: { status: 'confirmed' } or { status: 'corrected', summary, note }
+  reviewSnapshot(snapshotId, body) {
+    return apiClient.put(`/ai/snapshots/${snapshotId}/review`, body);
+  },
+  // Corrected snapshots (model output vs human counts) for retraining
+  exportReviews(days = 90) {
+    return apiClient.get('/ai/reviews/export', { params: { days } });
+  },
   getAiOverview() {
     return apiClient.get('/ai/overview');
   },
