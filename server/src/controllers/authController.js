@@ -49,7 +49,14 @@ function toPublicUser(user) {
         language: normalizeLanguage(user.language),
         notificationPrefs: {
             email: user.notificationPrefs?.email !== false,
-            telegram: user.notificationPrefs?.telegram !== false
+            telegram: user.notificationPrefs?.telegram !== false,
+            weeklyReport: user.notificationPrefs?.weeklyReport !== false,
+            quietHours: {
+                enabled: !!user.notificationPrefs?.quietHours?.enabled,
+                start: user.notificationPrefs?.quietHours?.start || '21:00',
+                end: user.notificationPrefs?.quietHours?.end || '06:00'
+            },
+            mutedCameras: user.notificationPrefs?.mutedCameras || []
         },
         telegram: {
             connected: !!user.telegram?.chatId,
@@ -66,6 +73,25 @@ async function sendVerificationEmail(user) {
         url: appUrl('/auth/verify-email', { token: raw }),
         hours: EMAIL_VERIFY_TTL_HOURS
     }));
+}
+
+const TIME_REGEX = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+function validNotificationPrefs(prefs) {
+    if (typeof prefs !== 'object' || prefs === null) return false;
+    for (const key of ['email', 'telegram', 'weeklyReport']) {
+        if (prefs[key] !== undefined && typeof prefs[key] !== 'boolean') return false;
+    }
+    const q = prefs.quietHours;
+    if (q !== undefined) {
+        if (typeof q !== 'object' || q === null) return false;
+        if (q.enabled !== undefined && typeof q.enabled !== 'boolean') return false;
+        if (q.start !== undefined && !TIME_REGEX.test(q.start)) return false;
+        if (q.end !== undefined && !TIME_REGEX.test(q.end)) return false;
+    }
+    const muted = prefs.mutedCameras;
+    if (muted !== undefined && (!Array.isArray(muted) || muted.length > 500 || muted.some(m => typeof m !== 'string' || m.length > 40))) return false;
+    return true;
 }
 
 /**
@@ -463,10 +489,7 @@ async function updateProfile(req, res) {
         if (typeof language !== 'undefined' && !SUPPORTED_LANGUAGES.includes(language)) {
             return res.status(400).json({ success: false, message: "Invalid language." });
         }
-        if (typeof notificationPrefs !== 'undefined' &&
-            (typeof notificationPrefs !== 'object' || notificationPrefs === null ||
-             (notificationPrefs.email !== undefined && typeof notificationPrefs.email !== 'boolean') ||
-             (notificationPrefs.telegram !== undefined && typeof notificationPrefs.telegram !== 'boolean'))) {
+        if (typeof notificationPrefs !== 'undefined' && !validNotificationPrefs(notificationPrefs)) {
             return res.status(400).json({ success: false, message: "Invalid notification preferences." });
         }
         const user = await User.findById(userId);
@@ -478,6 +501,13 @@ async function updateProfile(req, res) {
         if (typeof language !== 'undefined') user.language = language;
         if (typeof notificationPrefs?.email === 'boolean') user.set('notificationPrefs.email', notificationPrefs.email);
         if (typeof notificationPrefs?.telegram === 'boolean') user.set('notificationPrefs.telegram', notificationPrefs.telegram);
+        if (typeof notificationPrefs?.weeklyReport === 'boolean') user.set('notificationPrefs.weeklyReport', notificationPrefs.weeklyReport);
+        if (notificationPrefs?.quietHours) {
+            for (const key of ['enabled', 'start', 'end']) {
+                if (notificationPrefs.quietHours[key] !== undefined) user.set(`notificationPrefs.quietHours.${key}`, notificationPrefs.quietHours[key]);
+            }
+        }
+        if (Array.isArray(notificationPrefs?.mutedCameras)) user.set('notificationPrefs.mutedCameras', [...new Set(notificationPrefs.mutedCameras)]);
         await user.save();
         res.json({
             success: true,

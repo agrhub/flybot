@@ -121,6 +121,13 @@ models.User.updateMany = async (filter, update) => {
     return { modifiedCount: list.length };
 };
 models.User.countDocuments = async () => store.users.size;
+// Only the "who muted this camera" lookup uses find in these tests
+models.User.find = (filter = {}) => query(() => [...store.users.values()].filter(u => {
+    const ids = filter._id?.$in?.map(String);
+    if (ids && !ids.includes(String(u._id))) return false;
+    const muted = filter['notificationPrefs.mutedCameras'];
+    return muted === undefined || (u.notificationPrefs?.mutedCameras || []).includes(muted);
+}));
 models.User.findOne = ({ email }) => query(() =>
     [...store.users.values()].find(u => u.email.toLowerCase() === String(email).toLowerCase()) || null);
 

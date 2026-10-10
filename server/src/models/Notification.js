@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const NOTIFICATION_TYPES = ['pest_threshold', 'camera_offline', 'camera_online', 'ai_failure', 'camera_shared', 'dashboard_shared', 'card_due', 'card_change_detected', 'plot_threshold', 'farm_shared'];
+const NOTIFICATION_TYPES = ['pest_threshold', 'camera_offline', 'camera_online', 'ai_failure', 'camera_shared', 'dashboard_shared', 'card_due', 'card_change_detected', 'plot_threshold', 'farm_shared', 'pest_surge', 'weekly_report'];
 const RETENTION_DAYS = 90;
 
 /**

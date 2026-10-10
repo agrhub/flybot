@@ -87,6 +87,7 @@ async function captureAndSaveSnapshot(deviceSerial) {
                     await notificationService.checkPestThreshold(deviceSerial, count);
                     await maintenanceService.detectCardChange(deviceSerial, analyzed, count);
                     await require('../services/farmService').checkPlotThreshold(deviceSerial);
+                    await require('../services/surgeService').checkSurge(deviceSerial);
                 }
             } catch (alertErr) {
                 console.error(`⚠️ Alert check failed (${deviceSerial}):`, alertErr.message);

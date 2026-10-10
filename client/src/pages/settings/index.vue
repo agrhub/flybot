@@ -417,6 +417,9 @@
           <!-- Push notifications on this device (installed app / browser) -->
           <PushNotificationsCard />
 
+          <!-- Weekly report, quiet hours, cameras followed -->
+          <AlertPreferencesCard />
+
           <!-- Per-camera thresholds -->
           <el-card shadow="never">
             <template #header>
@@ -676,6 +679,7 @@ import AdminCamerasPanel from '@/components/admin/AdminCamerasPanel.vue';
 import SystemSettingsPanel from '@/components/admin/SystemSettingsPanel.vue';
 import AuditLogPanel from '@/components/admin/AuditLogPanel.vue';
 import PushNotificationsCard from '@/components/settings/PushNotificationsCard.vue';
+import AlertPreferencesCard from '@/components/settings/AlertPreferencesCard.vue';
 import {
   User,
   Lock,

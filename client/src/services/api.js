@@ -355,6 +355,10 @@ export default {
   getNotifications(params = {}) {
     return apiClient.get('/notifications', { params });
   },
+  // Weekly report: send mine now (email / Telegram / push)
+  sendWeeklyReport() {
+    return apiClient.post('/notifications/weekly-report');
+  },
   markNotificationsRead(ids) {
     return apiClient.post('/notifications/read', ids === 'all' ? { all: true } : { ids });
   },

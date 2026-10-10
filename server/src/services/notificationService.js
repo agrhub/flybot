@@ -6,6 +6,7 @@ const { queueMail } = require('./mailService');
 const emailTemplates = require('./emailTemplates');
 const { appUrl } = require('./authTokenService');
 const telegramService = require('./telegramService');
+const { TIMEZONE } = require('./captureSchedule');
 const pushService = require('./pushService');
 
 // Minimum gap between two notifications of the same type for the same user + camera
@@ -21,7 +22,10 @@ const COOLDOWN_MINUTES = {
     card_due: 20 * 60,
     card_change_detected: 0,
     plot_threshold: 120,
-    farm_shared: 0
+    farm_shared: 0,
+    // At most one "sudden rise" per camera per day
+    pest_surge: 24 * 60,
+    weekly_report: 0
 };
 
 const SEVERITY = {
@@ -34,11 +38,13 @@ const SEVERITY = {
     card_due: 'warning',
     card_change_detected: 'info',
     plot_threshold: 'critical',
-    farm_shared: 'info'
+    farm_shared: 'info',
+    pest_surge: 'warning',
+    weekly_report: 'info'
 };
 
 // "Back online" is good news: in-app only
-const EMAIL_TYPES = new Set(['pest_threshold', 'camera_offline', 'ai_failure', 'card_due', 'plot_threshold']);
+const EMAIL_TYPES = new Set(['pest_threshold', 'camera_offline', 'ai_failure', 'card_due', 'plot_threshold', 'pest_surge']);
 // Phone/browser push: the alerts, plus something new shared with you
 const PUSH_TYPES = new Set([...EMAIL_TYPES, 'camera_shared', 'dashboard_shared', 'farm_shared']);
 
@@ -56,6 +62,18 @@ function toClient(notification) {
         read: notification.read,
         createdAt: notification.createdAt
     };
+}
+
+const QUIET_FORMAT = new Intl.DateTimeFormat('en-GB', { timeZone: TIMEZONE, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+
+/**
+ * Is it the user's quiet time (farm time zone)? Handles ranges across midnight (21:00-06:00).
+ */
+function inQuietHours(user, now = new Date()) {
+    const q = user?.notificationPrefs?.quietHours;
+    if (!q?.enabled || !q.start || !q.end || q.start === q.end) return false;
+    const current = QUIET_FORMAT.format(now);
+    return q.start < q.end ? current >= q.start && current < q.end : current >= q.start || current < q.end;
 }
 
 /**
@@ -81,8 +99,11 @@ async function notifyUser({ userId, type, deviceSerial = '', params = {} }) {
     const user = needsUser ? await User.findById(userId) : null;
     if (!user || user.disabled) return notification;
 
+    // Night hours chosen by the user: nothing that buzzes a phone
+    const quiet = inQuietHours(user);
+
     // Each subscribed device is opted in by the user on that device
-    if (PUSH_TYPES.has(type)) {
+    if (PUSH_TYPES.has(type) && !quiet) {
         pushService.queueNotification(user, { type, params, deviceSerial });
     }
 
@@ -101,7 +122,7 @@ async function notifyUser({ userId, type, deviceSerial = '', params = {} }) {
         if (user.emailVerified && user.notificationPrefs?.email !== false) {
             queueMail(emailTemplates.alertEmail({ user, language, type, params: fullParams, url }));
         }
-        if (user.telegram?.chatId && user.notificationPrefs?.telegram !== false) {
+        if (user.telegram?.chatId && user.notificationPrefs?.telegram !== false && !quiet) {
             telegramService.queueMessage(user.telegram.chatId, telegramService.formatAlert({ language, type, params: fullParams, url }));
         }
     }
@@ -118,9 +139,13 @@ async function notifyCameraOwners(deviceSerial, type, buildParams) {
     const params = buildParams(camera);
     if (!params) return [];
 
-    const recipients = [camera.userId, ...(camera.sharedWith || []).map(sh => sh.userId)]
+    let recipients = [...new Set([camera.userId, ...(camera.sharedWith || []).map(sh => sh.userId)]
         .filter(Boolean)
-        .map(String);
+        .map(String))];
+    // People who muted this camera get nothing from it
+    const muted = await User.find({ _id: { $in: recipients }, 'notificationPrefs.mutedCameras': deviceSerial }).select('_id').lean();
+    const mutedIds = new Set(muted.map(u => String(u._id)));
+    recipients = recipients.filter(id => !mutedIds.has(id));
     const results = [];
     for (const userId of [...new Set(recipients)]) {
         try {
@@ -187,5 +212,6 @@ module.exports = {
     checkPestThreshold,
     cameraStatusChanged,
     notifyCameraOwners,
+    inQuietHours,
     recordAiResult
 };

@@ -14,6 +14,7 @@ const TEXT_KEYS = {
     ai_failure: 'email.alerts.ai_failure',
     card_due: 'email.alerts.card_due',
     plot_threshold: 'email.alerts.plot_threshold',
+    pest_surge: 'email.alerts.pest_surge',
     farm_shared: 'email.farmShared',
     camera_shared: 'email.cameraShared',
     dashboard_shared: 'email.dashboardShared'
@@ -26,6 +27,7 @@ const TARGET_PATH = {
     ai_failure: '/analytics',
     card_due: '/cameras',
     plot_threshold: '/farms',
+    pest_surge: '/analytics',
     camera_shared: '/cameras'
 };
 const URGENT_TYPES = new Set(['pest_threshold', 'camera_offline']);

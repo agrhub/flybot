@@ -853,6 +853,14 @@
       "farm_shared": {
         "title": "Farm shared with you",
         "desc": "{sharer} shared the farm {farmName} with you."
+      },
+      "pest_surge": {
+        "title": "Sudden rise",
+        "desc": "{deviceName}: {count} insects, up from {previous} {days} days ago (+{pct}%)."
+      },
+      "weekly_report": {
+        "title": "Weekly report",
+        "desc": "Your weekly report is ready."
       }
     }
   },
@@ -1351,6 +1359,26 @@
       "undo": "Undo",
       "clear": "Clear",
       "needThree": "A boundary needs at least 3 corners (or clear it)."
+    }
+  },
+  "alertPrefs": {
+    "weekly": {
+      "title": "Weekly report",
+      "desc": "Every Monday morning: insects caught last week vs the week before, fast-rising traps, cards to replace, offline cameras and treatments.",
+      "sendNow": "Send me this week's report now",
+      "summary": "Last 7 days: {count} insects (previous week {previous}).",
+      "sent": "Report sent by {channels}.",
+      "noChannel": "Nothing sent: confirm your email, connect Telegram or turn on push notifications.",
+      "noCameras": "No cameras yet, so no report.",
+      "pushChannel": "push"
+    },
+    "quiet": {
+      "title": "Quiet hours",
+      "desc": "No push notifications or Telegram messages in these hours (farm time). Alerts still appear in the app and by email."
+    },
+    "follow": {
+      "title": "Cameras I follow",
+      "desc": "Turn a camera off to stop all of its notifications for you (other people are not affected)."
     }
   }
 }

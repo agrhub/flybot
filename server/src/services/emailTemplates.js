@@ -138,8 +138,27 @@ function shareEmail({ kind, to, user, language, sharer, params = {}, url }) {
     };
 }
 
+/**
+ * Weekly summary: one paragraph per line of services/reportService.reportLines.
+ */
+function weeklyReportEmail({ user, language, lines, url }) {
+    const t = (key, params) => translate(language, key, params);
+    return {
+        to: user.email,
+        subject: t('email.weeklyReport.subject'),
+        ...layout({
+            language,
+            user,
+            paragraphs: lines,
+            button: url ? { label: t('email.weeklyReport.button'), url } : null,
+            footerKey: 'email.weeklyReport.footer'
+        })
+    };
+}
+
 module.exports = {
     shareEmail,
+    weeklyReportEmail,
     escapeHtml,
     passwordResetEmail,
     passwordChangedEmail,

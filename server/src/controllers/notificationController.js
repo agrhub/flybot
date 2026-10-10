@@ -70,7 +70,27 @@ function stream(req, res) {
     sseHub.addClient(req.user.id, req, res);
 }
 
+/**
+ * GET /api/notifications/weekly-report: this week's report for me (preview)
+ * POST /api/notifications/weekly-report: send it to me now on my channels
+ */
+async function weeklyReport(req, res) {
+    try {
+        const { User } = require('../models');
+        const reportService = require('../services/reportService');
+        const user = await User.findById(req.user.id);
+        const report = await reportService.buildWeeklyReport(user);
+        if (!report) return res.json({ success: true, report: null });
+        let sent = null;
+        if (req.method === 'POST') sent = await reportService.sendReport(user, report);
+        res.json({ success: true, report, sent });
+    } catch (err) {
+        sendServerError(res, err, { context: 'Weekly report' });
+    }
+}
+
 module.exports = {
+    weeklyReport,
     listNotifications,
     markRead,
     stream

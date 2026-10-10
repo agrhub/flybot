@@ -853,6 +853,14 @@
       "farm_shared": {
         "title": "Vườn được chia sẻ với bạn",
         "desc": "{sharer} đã chia sẻ vườn {farmName} với bạn."
+      },
+      "pest_surge": {
+        "title": "Tăng đột biến",
+        "desc": "{deviceName}: {count} con, tăng từ {previous} con cách đây {days} ngày (+{pct}%)."
+      },
+      "weekly_report": {
+        "title": "Báo cáo tuần",
+        "desc": "Báo cáo tuần của bạn đã sẵn sàng."
       }
     }
   },
@@ -1351,6 +1359,26 @@
       "undo": "Hoàn tác",
       "clear": "Xoá hết",
       "needThree": "Ranh giới cần ít nhất 3 góc (hoặc xoá hết)."
+    }
+  },
+  "alertPrefs": {
+    "weekly": {
+      "title": "Báo cáo tuần",
+      "desc": "Mỗi sáng thứ Hai: số côn trùng vào bẫy tuần qua so với tuần trước, bẫy tăng nhanh, bẫy cần thay, camera mất kết nối và các lần xử lý.",
+      "sendNow": "Gửi báo cáo tuần này cho tôi ngay",
+      "summary": "7 ngày qua: {count} con (tuần trước {previous}).",
+      "sent": "Đã gửi báo cáo qua {channels}.",
+      "noChannel": "Chưa gửi được: hãy xác nhận email, kết nối Telegram hoặc bật thông báo đẩy.",
+      "noCameras": "Chưa có camera nên chưa có báo cáo.",
+      "pushChannel": "thông báo đẩy"
+    },
+    "quiet": {
+      "title": "Giờ yên lặng",
+      "desc": "Không gửi thông báo đẩy và tin Telegram trong khung giờ này (giờ ở vườn). Cảnh báo vẫn hiện trong app và qua email."
+    },
+    "follow": {
+      "title": "Camera tôi theo dõi",
+      "desc": "Tắt một camera để không nhận bất kỳ thông báo nào của nó (không ảnh hưởng người khác)."
     }
   }
 }

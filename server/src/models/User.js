@@ -18,7 +18,17 @@ const userSchema = new mongoose.Schema({
     notificationPrefs: {
         // Alert emails are only sent to verified addresses
         email: { type: Boolean, default: true },
-        telegram: { type: Boolean, default: true }
+        telegram: { type: Boolean, default: true },
+        // Monday summary of the past week
+        weeklyReport: { type: Boolean, default: true },
+        // No push / Telegram during these local hours (in-app and email still arrive)
+        quietHours: {
+            enabled: { type: Boolean, default: false },
+            start: { type: String, default: '21:00' },
+            end: { type: String, default: '06:00' }
+        },
+        // Cameras this person does not want any notification from
+        mutedCameras: { type: [String], default: [] }
     },
     // Linked Telegram chat for alerts (set by the bot after the user presses Start)
     telegram: {

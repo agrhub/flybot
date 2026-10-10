@@ -47,6 +47,10 @@
       "plot_threshold": {
         "subject": "⚠️ Cảnh báo lô: {plotName} ({farmName})",
         "body": "Các bẫy trong lô {plotName} của {farmName} có trung bình {average} con ở lần quét gần nhất, bằng hoặc vượt ngưỡng của lô là {threshold}."
+      },
+      "pest_surge": {
+        "subject": "📈 Tăng đột biến: {deviceName}",
+        "body": "Camera {deviceName} ({deviceSerial}) đếm được {count} con, tăng từ {previous} con cách đây {days} ngày (+{pct}%). Hãy kiểm tra bẫy và cân nhắc xử lý sớm."
       }
     },
     "cameraShared": {
@@ -78,6 +82,18 @@
       "subject": "{sharer} mời bạn dùng FlyBot",
       "body": "{sharer} đã chia sẻ vườn {farmName} với {email} trên FlyBot. Hãy tạo tài khoản bằng địa chỉ email này và xác nhận email để được truy cập.",
       "button": "Tạo tài khoản"
+    },
+    "weeklyReport": {
+      "subject": "📰 Báo cáo tuần FlyBot",
+      "period": "Tuần {from} đến {to}, {cameras} bẫy.",
+      "total": "Côn trùng vào bẫy: {count}{change}, tuần trước {previous}.",
+      "top": "Bẫy bắt nhiều nhất: {list}.",
+      "rising": "📈 Tăng nhanh: {list}.",
+      "cardsDue": "🪤 Cần thay tấm bẫy: {list}.",
+      "offline": "📡 Mất kết nối: {list}.",
+      "treatments": "Số lần xử lý ghi nhận trong tuần: {count}.",
+      "button": "Mở thống kê",
+      "footer": "Bạn nhận báo cáo này mỗi thứ Hai. Tắt trong FlyBot → Cài đặt → Thông báo."
     }
   },
   "telegram": {
