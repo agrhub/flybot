@@ -92,7 +92,8 @@ test('build a report and read widget data over its time range', async () => {
     assert.deepEqual([w.d.rows[0].from, w.d.rows[0].total, w.d.rows[0].topSpecies.label], [day(0), 7, 'fruit_fly']);
     assert.equal(w.a.windowDays, 7);
     assert.equal(w.a.cells.length, 7);
-    assert.match(w.l.snapshots[0].imageUrl, /^\/api\/s3\/snapshots\/A1\//);
+    assert.match(w.l.snapshots[0].imageUrl, new RegExp(`^/api/dashboards/${id}/images/snapshots/A1/`));
+    assert.equal((await request(w.l.snapshots[0].imageUrl, { as: owner })).status, 200);
 
     // Another range for this view only
     const month = await json(await request(`/api/dashboards/${id}/data?range=30d`, { as: owner }));
@@ -341,4 +342,31 @@ test('widgets can have their own range, grouping, camera status and threshold fi
 
     const bad = await create(owner, { name: 'Bad', widgets: [{ id: 'x', type: 'kpi', granularity: 'year' }] });
     assert.equal(bad.status, 400);
+});
+
+test('people a report is shared with see its photos; dropped cameras leave its widgets', async () => {
+    const owner = await createUser({ role: 'manager' });
+    const viewer = await createUser({ role: 'user', email: 'viewer@example.test' });
+    await createCamera(owner, { deviceSerial: 'A1' });
+    await createCamera(owner, { deviceSerial: 'B1' });
+    await models.Snapshot.create({
+        deviceSerial: 'A1', imageUrl: 'x', s3Key: `snapshots/A1/A1_${Date.now()}.jpg`,
+        aiProcessed: true, aiResults: { detected: true, summary: { fruit_fly: 3 } }
+    });
+    const { body } = await json(await create(owner, {
+        name: 'Photos', cameraSerials: ['A1', 'B1'],
+        widgets: [{ id: 'l', type: 'latestSnapshot' }, { id: 'k', type: 'kpi', cameraSerials: ['B1'] }]
+    }));
+    const id = body.dashboard.id;
+    await request(`/api/dashboards/${id}/share`, { method: 'POST', as: owner, body: { email: 'viewer@example.test' } });
+
+    const data = await json(await request(`/api/dashboards/${id}/data`, { as: viewer }));
+    const imageUrl = data.body.widgets.l.snapshots.find(sn => sn.deviceSerial === 'A1').imageUrl;
+    assert.equal((await request(imageUrl, { as: viewer })).status, 200, 'through the report');
+    assert.equal((await request(imageUrl.replace(`/api/dashboards/${id}/images/`, '/api/s3/'), { as: viewer })).status, 404, 'not through the camera');
+    const stranger = await createUser({ role: 'user' });
+    assert.equal((await request(imageUrl, { as: stranger })).status, 404);
+
+    const updated = await json(await request(`/api/dashboards/${id}`, { method: 'PUT', as: owner, body: { cameraSerials: ['A1'] } }));
+    assert.deepEqual(updated.body.dashboard.widgets.find(w => w.id === 'k').cameraSerials, []);
 });

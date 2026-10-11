@@ -116,7 +116,7 @@ const router = createRouter({
         },
         // Reports were called dashboards: keep old links working
         { path: 'dashboards', redirect: '/reports' },
-        { path: 'dashboards/:id', redirect: (to) => `/reports/${to.params.id}` },
+        { path: 'dashboards/:id', redirect: (to) => ({ path: `/reports/${to.params.id}`, query: to.query }) },
         {
           path: 'farms',
           name: 'farms',

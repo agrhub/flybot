@@ -1,10 +1,11 @@
 <template>
-  <el-popover v-model:visible="open" placement="bottom-end" :width="320" trigger="click">
+  <!-- Opened and closed here (not by the popover), so lists and date panels can open outside it -->
+  <el-popover :visible="open" placement="bottom-end" :width="320" popper-class="widget-filter__popper">
     <template #reference>
-      <span>
+      <span ref="referenceRef">
         <el-tooltip :content="diverged ? t('filters.ownActive') : t('filters.own')" placement="top">
           <el-badge is-dot :hidden="!diverged" type="primary">
-            <el-button :icon="Filter" :type="diverged ? 'primary' : 'default'" :plain="diverged" circle size="small" :aria-label="t('filters.own')" />
+            <el-button :icon="Filter" :type="diverged ? 'primary' : 'default'" :plain="diverged" circle size="small" :aria-label="t('filters.own')" @click="open = !open" />
           </el-badge>
         </el-tooltip>
       </span>
@@ -13,7 +14,7 @@
     <div class="widget-filter__title">{{ t('filters.own') }}</div>
     <el-form label-position="top" size="small" class="widget-filter__form">
       <el-form-item v-if="fields.includes('camera')" :label="t('filters.camera')">
-        <el-select :teleported="false" :model-value="modelValue.camera || 'all'" filterable class="w-full" @update:model-value="(v) => set('camera', v)">
+        <el-select :model-value="modelValue.camera || 'all'" filterable class="w-full" @update:model-value="(v) => set('camera', v)">
           <el-option :label="t('analytics.allCameras')" value="all" />
           <el-option v-for="cam in cameraOptions" :key="cam.deviceSerial" :label="cam.deviceName" :value="cam.deviceSerial" />
         </el-select>
@@ -34,7 +35,7 @@
         </el-select>
       </el-form-item>
       <el-form-item v-if="fields.includes('range')" :label="t('filters.dateRange')">
-        <DateRangeFilter :model-value="modelValue.range" size="small" :teleported="false" @update:model-value="(v) => set('range', v)" />
+        <DateRangeFilter :model-value="modelValue.range" size="small" @update:model-value="(v) => set('range', v)" />
       </el-form-item>
       <el-form-item v-if="fields.includes('days')" :label="t('filters.dateRange')">
         <el-segmented :model-value="modelValue.days" :options="dayOptions" size="small" @update:model-value="(v) => set('days', v)" />
@@ -43,17 +44,17 @@
         <el-segmented :model-value="modelValue.granularity" :options="granularityOptions" size="small" @update:model-value="(v) => set('granularity', v)" />
       </el-form-item>
       <el-form-item v-if="fields.includes('status')" :label="t('filters.status')">
-        <el-select :teleported="false" :model-value="modelValue.status || 'all'" class="w-full" @update:model-value="(v) => set('status', v)">
+        <el-select :model-value="modelValue.status || 'all'" class="w-full" @update:model-value="(v) => set('status', v)">
           <el-option v-for="s in ['all', 'online', 'offline']" :key="s" :label="t(`filters.statuses.${s}`)" :value="s" />
         </el-select>
       </el-form-item>
       <el-form-item v-if="fields.includes('risk')" :label="t('filters.threshold')">
-        <el-select :teleported="false" :model-value="modelValue.risk || 'all'" class="w-full" @update:model-value="(v) => set('risk', v)">
+        <el-select :model-value="modelValue.risk || 'all'" class="w-full" @update:model-value="(v) => set('risk', v)">
           <el-option v-for="r in ['all', 'high', 'moderate', 'low']" :key="r" :label="t(`filters.risks.${r}`)" :value="r" />
         </el-select>
       </el-form-item>
       <el-form-item v-if="fields.includes('trapKind')" :label="t('trapKind.label')">
-        <el-select :teleported="false" :model-value="modelValue.trapKind || 'all'" class="w-full" @update:model-value="(v) => set('trapKind', v)">
+        <el-select :model-value="modelValue.trapKind || 'all'" class="w-full" @update:model-value="(v) => set('trapKind', v)">
           <el-option :label="t('filters.allKinds')" value="all" />
           <el-option v-for="k in ['sticky', 'lure']" :key="k" :label="t(`trapKind.${k}.short`)" :value="k" />
         </el-select>
@@ -67,7 +68,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Filter, RefreshLeft } from '@element-plus/icons-vue';
 import { useCameras } from '@/composables/useCameras';
@@ -89,6 +90,19 @@ const emit = defineEmits(['update:modelValue']);
 const { t } = useI18n();
 const { cameras } = useCameras();
 const open = ref(false);
+const referenceRef = ref(null);
+
+// Close on a click outside the panel, its button and the lists or date panels it opened
+const KEEP_OPEN = '.widget-filter__popper, .el-select__popper, .el-select-dropdown, .el-picker__popper, .el-picker-panel, .el-popper';
+const onPointerDown = (event) => {
+  if (referenceRef.value?.contains(event.target) || event.target.closest?.(KEEP_OPEN)) return;
+  open.value = false;
+};
+watch(open, (value) => {
+  if (value) document.addEventListener('pointerdown', onPointerDown, true);
+  else document.removeEventListener('pointerdown', onPointerDown, true);
+});
+onBeforeUnmount(() => document.removeEventListener('pointerdown', onPointerDown, true));
 
 const cameraOptions = computed(() => cameras.value.filter(c => c.deviceSerial && c.deviceSerial !== 'all'));
 const dayOptions = computed(() => props.dayChoices.map(d => ({ value: d, label: t('analytics.compare.days', { days: d }) })));

@@ -14,6 +14,7 @@ router.get('/:id', dashboardController.getDashboard);
 router.put('/:id', dashboardController.updateDashboard);
 router.delete('/:id', dashboardController.deleteDashboard);
 router.get('/:id/data', dashboardController.getDashboardData);
+router.get('/:id/images/*key', dashboardController.streamDashboardImage);
 router.post('/:id/public-token', dashboardController.rotatePublicToken);
 router.post('/:id/share', shareLimiter, dashboardController.shareDashboard);
 router.delete('/:id/share', dashboardController.unshareDashboard);

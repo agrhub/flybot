@@ -34,4 +34,33 @@ async function runPool(items, { limit = 4, minStartGapMs = 0 } = {}, worker) {
     return { done, failed };
 }
 
-module.exports = { runPool };
+/**
+ * At most `limit` tasks at a time; later calls wait their turn. When `maxQueue` calls are
+ * already waiting, the call is refused with err.code = 'BUSY' instead of queueing.
+ */
+function createLimiter(limit = 2, { maxQueue = 20 } = {}) {
+    let active = 0;
+    const waiting = [];
+    const next = () => {
+        if (active >= limit || !waiting.length) return;
+        active++;
+        waiting.shift()();
+    };
+    return async function run(task) {
+        if (active >= limit && waiting.length >= maxQueue) {
+            throw Object.assign(new Error('Busy'), { code: 'BUSY' });
+        }
+        await new Promise(resolve => {
+            waiting.push(resolve);
+            next();
+        });
+        try {
+            return await task();
+        } finally {
+            active--;
+            next();
+        }
+    };
+}
+
+module.exports = { runPool, createLimiter };

@@ -131,7 +131,9 @@
       </p>
       <el-pagination
         background
-        layout="sizes, prev, pager, next"
+        :layout="isMobile ? 'prev, pager, next' : 'sizes, prev, pager, next'"
+        :pager-count="isMobile ? 5 : 7"
+        :size="isMobile ? 'small' : 'default'"
         :page-sizes="[10, 20, 50, 100]"
         :current-page="page"
         :page-size="pageSize"
@@ -153,6 +155,7 @@ import { ElMessageBox, ElNotification } from 'element-plus';
 import { Bell, Document, Download, Files, Grid, RefreshLeft, VideoCamera, View } from '@element-plus/icons-vue';
 import api from '@/services/api';
 import { useCameras } from '@/composables/useCameras';
+import { useBreakpoints } from '@/composables/useBreakpoints';
 import DetectionModal from '@/components/modals/DetectionModal.vue';
 import DateRangeFilter from '@/components/common/DateRangeFilter.vue';
 import { speciesName } from '@/utils/species';
@@ -182,6 +185,7 @@ const LARGE_EXPORT = 300;
 
 const { t, locale } = useI18n();
 const { cameras } = useCameras();
+const { isMobile } = useBreakpoints();
 
 const camerasFromDefault = () => (props.defaultCamera && props.defaultCamera !== 'all' ? [props.defaultCamera] : []);
 const filters = reactive({
@@ -208,15 +212,17 @@ const resetToDefaults = () => {
   filters.risk = '';
   filters.review = '';
 };
-// The page filters changed: follow them
-watch(() => [props.defaultCamera, props.defaultRange], resetToDefaults, { deep: true });
+// The page filters changed (by value, not just a new object from the parent): follow them
+watch(() => [props.defaultCamera, props.defaultRange?.preset, props.defaultRange?.from, props.defaultRange?.to].join('|'), resetToDefaults);
 
-const query = computed(() => ({
+// The request, as a string: refetch only when a filter really changes
+const queryKey = computed(() => JSON.stringify([scopeSerials.value, filters.range, filters.risk, filters.review]));
+const buildQuery = () => ({
   deviceSerials: scopeSerials.value,
   ...rangeDates(filters.range),
   risk: filters.risk || null,
   review: filters.review || null,
-}));
+});
 
 const records = ref([]);
 const loading = ref(false);
@@ -226,25 +232,30 @@ const pageSize = ref(10);
 
 const formatDate = (iso) => (iso ? new Date(iso).toLocaleString(locale.value === 'vi' ? 'vi-VN' : 'en-US') : '--');
 
+// Only the latest request may fill the table (an older, slower one is ignored)
+let requestId = 0;
 const fetchHistory = async () => {
+  const id = ++requestId;
   loading.value = true;
   try {
-    const res = await api.getHistory({ ...query.value, page: page.value, limit: pageSize.value });
+    const res = await api.getHistory({ ...buildQuery(), page: page.value, limit: pageSize.value });
+    if (id !== requestId) return;
     records.value = res.data?.results || [];
     total.value = res.data?.total || 0;
   } catch {
+    if (id !== requestId) return;
     records.value = [];
     total.value = 0;
     ElNotification({ title: t('common.error'), message: t('analytics.historyLoadFailed'), type: 'error' });
   } finally {
-    loading.value = false;
+    if (id === requestId) loading.value = false;
   }
 };
 
-watch(query, () => {
+watch(queryKey, () => {
   page.value = 1;
   fetchHistory();
-}, { deep: true });
+});
 
 const goToPage = (value) => {
   page.value = value;
@@ -292,7 +303,7 @@ const filterLines = () => [
 /** Everything matching the filters, for this table's exports and the full analytics PDF. */
 const loadAll = async () => {
   Object.assign(progress, { step: 'records', done: 0, total: total.value });
-  return fetchAllHistory(query.value, (done, all) => Object.assign(progress, { done, total: all }));
+  return fetchAllHistory(buildQuery(), (done, all) => Object.assign(progress, { done, total: all }));
 };
 
 const runExport = async (kind) => {
@@ -349,7 +360,7 @@ const runExport = async (kind) => {
 
 onMounted(fetchHistory);
 
-defineExpose({ loadAll, filterLines, fetchHistory });
+defineExpose({ loadAll, filterLines, fetchHistory, total, LARGE_EXPORT });
 </script>
 
 <style scoped>

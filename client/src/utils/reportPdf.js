@@ -1,6 +1,7 @@
 import { loadPdf } from '@/utils/lazyLibs';
 import { speciesName } from '@/utils/species';
 import { formatDayKey, formatPeriod, formatNumber, formatChange, rangeLabel } from '@/utils/dashboards';
+import { chartImage, PRINT } from '@/utils/pdfCharts';
 
 // PDF colors (the PDF is always printed on white)
 const BRAND = [16, 185, 129];
@@ -10,24 +11,61 @@ const MARGIN = 14;
 
 const fullDay = (key) => (key ? key.split('-').reverse().join('/') : '');
 
-// A chart canvas on a white background (charts are drawn on a transparent one)
-function chartImage(canvas) {
-  const out = document.createElement('canvas');
-  out.width = canvas.width;
-  out.height = canvas.height;
-  const ctx = out.getContext('2d');
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, out.width, out.height);
-  ctx.drawImage(canvas, 0, 0);
-  return out.toDataURL('image/png');
+/**
+ * A widget's chart drawn for paper from its data (the page's charts follow the light/dark theme).
+ * Returns a Chart.js config, or null when there is nothing to draw.
+ */
+function chartConfigOf(t, type, d) {
+  const axis = { y: { beginAtZero: true, ticks: { precision: 0 } }, x: { grid: { display: false } } };
+  const legend = { position: 'bottom', labels: { boxWidth: 12 } };
+  if (type === 'trend') {
+    const points = d?.points || [];
+    if (!points.some(p => p.value || p.previous)) return null;
+    const unit = d.unit === 'month' ? 'month' : 'day';
+    const hasPrevious = points.some(p => p.previous !== null && p.previous !== undefined);
+    return {
+      type: 'line',
+      data: {
+        labels: points.map(p => formatDayKey(p.date, unit)),
+        datasets: [
+          { label: t('dashboards.thisPeriod'), data: points.map(p => p.value), borderColor: PRINT.series[0], backgroundColor: `${PRINT.series[0]}22`, fill: true, tension: 0.35, spanGaps: true, pointRadius: points.length > 45 ? 0 : 2 },
+          ...(hasPrevious ? [{ label: t('dashboards.previousPeriod'), data: points.map(p => p.previous), borderColor: PRINT.series[3], borderDash: [5, 4], tension: 0.35, spanGaps: true, pointRadius: 0 }] : []),
+        ],
+      },
+      options: { plugins: { legend }, scales: axis },
+    };
+  }
+  if (type === 'species') {
+    const species = d?.species || [];
+    if (!species.length) return null;
+    return {
+      type: 'bar',
+      data: { labels: species.map(sp => speciesName(sp.label, t)), datasets: [{ data: species.map(sp => sp.value), backgroundColor: species.map((_, i) => PRINT.series[i % PRINT.series.length]) }] },
+      options: { indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 } }, y: { grid: { display: false } } } },
+    };
+  }
+  if (type === 'catchesByTrap') {
+    const series = d?.series || [];
+    if (!series.some(sr => sr.data.some(v => v))) return null;
+    const unit = d.unit === 'month' ? 'month' : 'day';
+    return {
+      type: 'bar',
+      data: {
+        labels: (d.labels || []).map(key => formatDayKey(key, unit)),
+        datasets: series.map((sr, i) => ({ label: sr.deviceName, data: sr.data, backgroundColor: PRINT.series[i % PRINT.series.length], stack: 'catches' })),
+      },
+      options: { plugins: { legend }, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, beginAtZero: true, ticks: { precision: 0 } } } },
+    };
+  }
+  return null;
 }
 
 /**
  * Save a report as an A4 PDF: title, time range, then each widget in page order.
- * Charts are copied from the page (`root` holds the rendered widgets); tables and figures are
- * written from the data, so they stay sharp and searchable.
+ * Charts are drawn again for paper and tables written from the data, so they stay sharp,
+ * readable whatever the screen theme, and searchable.
  */
-export async function exportReportPdf({ t, locale, report, range, widgets, data, generatedAt, root }) {
+export async function exportReportPdf({ t, locale, report, range, widgets, data, generatedAt }) {
   const { jsPDF, autoTable, addQuicksandFonts } = await loadPdf();
   const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4', putOnlyUsedFonts: true });
   addQuicksandFonts(doc);
@@ -70,12 +108,13 @@ export async function exportReportPdf({ t, locale, report, range, widgets, data,
     });
     y = doc.lastAutoTable.finalY + 8;
   };
-  // A widget's chart as drawn on the page, scaled to the page width (narrow charts: at most 75 mm high)
-  const chartOf = (widgetId) => {
-    const canvas = root?.querySelector(`[data-widget-id="${widgetId}"] canvas`);
-    if (!canvas || !canvas.width || !canvas.height || canvas.offsetParent === null) return null;
-    const height = Math.min(75, (width * canvas.height) / canvas.width);
-    return { canvas, height, width: (height * canvas.width) / canvas.height };
+  // A chart image the width of the page; a species chart is half as wide
+  const chartOf = async (widget) => {
+    const config = chartConfigOf(t, widget.type, data?.[widget.id]);
+    if (!config) return null;
+    const size = widget.type === 'species' ? { width: 700, height: 420 } : { width: 1100, height: 440 };
+    const height = Math.min(75, (width * size.height) / size.width);
+    return { image: await chartImage(config, size), height, width: (height * size.width) / size.height };
   };
   const chart = (found) => {
     if (!found) {
@@ -84,7 +123,7 @@ export async function exportReportPdf({ t, locale, report, range, widgets, data,
       return;
     }
     ensure(found.height + 4);
-    doc.addImage(chartImage(found.canvas), 'PNG', MARGIN, y, found.width, found.height);
+    doc.addImage(found.image, 'PNG', MARGIN, y, found.width, found.height);
     y += found.height + 8;
   };
 
@@ -98,7 +137,7 @@ export async function exportReportPdf({ t, locale, report, range, widgets, data,
 
   for (const widget of widgets) {
     const d = data?.[widget.id];
-    const found = ['trend', 'species', 'catchesByTrap'].includes(widget.type) ? chartOf(widget.id) : null;
+    const found = ['trend', 'species', 'catchesByTrap'].includes(widget.type) ? await chartOf(widget) : null;
     // Keep a title with the start of what follows it
     ensure(found ? found.height + 12 : 28);
     write(widget.title || t(`dashboards.widgetTypes.${widget.type}`), { size: 12, color: TEXT, bold: true, gap: 7 });

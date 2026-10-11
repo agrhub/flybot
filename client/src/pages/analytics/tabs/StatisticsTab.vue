@@ -94,6 +94,7 @@ import { normalizeSpecies, speciesName, speciesShare } from '@/utils/species';
 import { rangeDates, dateRangeLabel } from '@/utils/dateRange';
 import { PRINT } from '@/utils/pdfCharts';
 import { useCameras } from '@/composables/useCameras';
+import { latestOnly } from '@/utils/latestOnly';
 
 const { t } = useI18n();
 const { cameras } = useCameras();
@@ -153,14 +154,17 @@ const speciesTotalsOf = (data) => {
   return Object.entries(totals).sort((a, b) => b[1] - a[1]);
 };
 
+const summaryRequest = latestOnly();
 const loadSummary = async () => {
   const serial = pageDefaults.value.camera;
   const { startDate, endDate } = rangeDates(props.range);
+  const isLatest = summaryRequest();
   try {
     const [overview, catches] = await Promise.all([
       api.getAiOverview().catch(() => null),
       api.getStatistics(serial, 'day', startDate, endDate, 'catches').catch(() => null),
     ]);
+    if (!isLatest()) return;
     const ov = overview?.data?.overview;
     if (ov) {
       const found = isSingleCamera.value ? (ov.cameraRealtimeList || []).find(c => c.deviceSerial === serial) : null;
@@ -206,7 +210,7 @@ const periodKeyOf = (date, mode) => {
   if (mode === 'hour') return `${day} ${parts.hour}:00`;
   return mode === 'month' ? day.slice(0, 7) : day;
 };
-const loadCardMarkers = async (serial, mode) => {
+const loadCardMarkers = async (serial, mode, isLatest = () => true) => {
   if (!serial || serial === 'all') {
     cardMarkerKeys.value = new Set();
     treatmentMarkerKeys.value = new Set();
@@ -216,6 +220,7 @@ const loadCardMarkers = async (serial, mode) => {
     api.getMaintenance(serial, 100),
     api.listTreatments({ deviceSerial: serial, limit: 100 }),
   ]);
+  if (!isLatest()) return;
   const changes = maintenance.status === 'fulfilled' ? (maintenance.value.data.events || []).filter(e => e.type === 'card_replaced') : [];
   const applied = treatments.status === 'fulfilled' ? (treatments.value.data.treatments || []) : [];
   cardMarkerKeys.value = new Set(changes.map(e => periodKeyOf(e.at, mode)));
@@ -306,19 +311,25 @@ const renderLine = async () => {
   if (lineChartRef.value && statsData.value.length) lineChartInstance = new Chart(lineChartRef.value, lineConfig(statsData.value));
 };
 
+const chartRequest = latestOnly();
 const fetchChart = async () => {
   const { camera, range, granularity } = chartFilter.value;
   const { startDate, endDate } = rangeDates(range);
+  const isLatest = chartRequest();
   loading.value = true;
+  let data = [];
   try {
-    await loadCardMarkers(camera, granularity);
-    const res = await api.getStatistics(camera, granularity, startDate, endDate, useCatches.value ? 'catches' : null);
-    statsData.value = res.data?.success ? res.data.data || [] : [];
+    const [, res] = await Promise.all([
+      loadCardMarkers(camera, granularity, isLatest),
+      api.getStatistics(camera, granularity, startDate, endDate, useCatches.value ? 'catches' : null),
+    ]);
+    data = res.data?.success ? res.data.data || [] : [];
   } catch {
-    statsData.value = [];
-  } finally {
-    loading.value = false;
+    data = [];
   }
+  if (!isLatest()) return;
+  statsData.value = data;
+  loading.value = false;
   renderLine();
 };
 
@@ -349,18 +360,22 @@ const renderPie = async () => {
   if (pieChartRef.value && ratioTotals.value.length) pieChartInstance = new Chart(pieChartRef.value, pieConfig(ratioTotals.value));
 };
 
+const ratioRequest = latestOnly();
 const fetchRatio = async () => {
   const { camera, range } = ratioFilter.value;
   const { startDate, endDate } = rangeDates(range);
+  const isLatest = ratioRequest();
   ratioLoading.value = true;
+  let totals = [];
   try {
     const res = await api.getStatistics(camera, 'day', startDate, endDate, 'catches');
-    ratioTotals.value = speciesTotalsOf(res.data?.data || []);
+    totals = speciesTotalsOf(res.data?.data || []);
   } catch {
-    ratioTotals.value = [];
-  } finally {
-    ratioLoading.value = false;
+    totals = [];
   }
+  if (!isLatest()) return;
+  ratioTotals.value = totals;
+  ratioLoading.value = false;
   renderPie();
 };
 

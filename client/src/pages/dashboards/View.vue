@@ -99,7 +99,7 @@
         </el-empty>
       </el-card>
 
-      <DashboardGrid v-else ref="gridRef" :widgets="currentWidgets" :data="widgetData" :loading="loadingData" :range-days="dataRange?.days || 0">
+      <DashboardGrid v-else :widgets="currentWidgets" :data="widgetData" :loading="loadingData" :range-days="dataRange?.days || 0">
         <template v-if="editing" #actions="{ widget }">
           <el-tooltip :content="t('dashboards.moveUp')" placement="top">
             <el-button text circle size="small" :icon="Top" :disabled="indexOf(widget) === 0" @click="move(widget, -1)" />
@@ -194,6 +194,7 @@ import {
   WIDGET_TYPES, WIDGET_WIDTHS, WIDGET_HEIGHTS, newWidget, dashboardErrorText, rangeQuery, sameRange,
 } from '@/utils/dashboards';
 import { exportReportPdf } from '@/utils/reportPdf';
+import { latestOnly } from '@/utils/latestOnly';
 
 const REFRESH_MS = 5 * 60 * 1000;
 
@@ -215,7 +216,6 @@ const viewRange = ref({ preset: '7d' });
 const dataRange = ref(null);
 const savingRange = ref(false);
 const exporting = ref(false);
-const gridRef = ref(null);
 
 const dateLocale = computed(() => (locale.value === 'vi' ? 'vi-VN' : 'en-US'));
 const formatTime = (value) => new Date(value).toLocaleTimeString(dateLocale.value, { hour: '2-digit', minute: '2-digit' });
@@ -241,12 +241,15 @@ const load = async () => {
   }
 };
 
+const dataRequest = latestOnly();
 const loadData = async () => {
   if (!dashboard.value) return;
+  const isLatest = dataRequest();
   loadingData.value = true;
   try {
     const query = sameRange(viewRange.value, dashboard.value.range) ? null : rangeQuery(viewRange.value);
     const res = await api.getDashboardData(dashboard.value.id, query);
+    if (!isLatest()) return;
     widgetData.value = res.data.widgets || {};
     dataRange.value = res.data.range || null;
     generatedAt.value = res.data.generatedAt;
@@ -285,7 +288,6 @@ const exportPdf = async () => {
       widgets: [...dashboard.value.widgets].sort((a, b) => a.layout.y - b.layout.y || a.layout.x - b.layout.x),
       data: widgetData.value,
       generatedAt: generatedAt.value,
-      root: gridRef.value?.$el,
     });
   } catch (err) {
     console.error('Report PDF failed:', err);

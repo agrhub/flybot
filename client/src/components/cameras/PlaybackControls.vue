@@ -82,6 +82,7 @@ import { useI18n } from 'vue-i18n';
 import { ElNotification } from 'element-plus';
 import { ArrowLeft, ArrowRight, Film, Refresh, VideoCamera, VideoPlay, ZoomIn, ZoomOut } from '@element-plus/icons-vue';
 import api from '@/services/api';
+import { latestOnly } from '@/utils/latestOnly';
 
 /**
  * Recordings of one day as a horizontal strip of clips (with the nearest AI photo as a thumbnail)
@@ -160,33 +161,38 @@ const formatDuration = (clip) => {
 const loadPhotos = async () => {
   try {
     const res = await api.getHistory({ deviceSerials: [props.camera.deviceSerial], startDate: dayStart.value.toISOString(), endDate: dayText(dayStart.value), limit: 500 });
-    photos.value = (res.data?.results || [])
+    return (res.data?.results || [])
       .map(r => ({ at: new Date(r.createdAt), url: api.getImageUrl(r.imageUrl || r.s3Key) }))
       .sort((a, b) => a.at - b.at);
   } catch {
-    photos.value = [];
+    return [];
   }
 };
 
+// The clips of the last day asked for (quick day changes can answer out of order)
+const recordsRequest = latestOnly();
 const searchRecords = async () => {
   if (!props.camera?.deviceSerial) return;
+  const isLatest = recordsRequest();
   loading.value = true;
   records.value = [];
   const day = dayText(dayStart.value);
   try {
-    const [response] = await Promise.all([
+    const [response, dayPhotos] = await Promise.all([
       api.getRecords(props.camera.deviceSerial, `${day} 00:00:00`, `${day} 23:59:59`),
       loadPhotos(),
     ]);
+    if (!isLatest()) return;
+    photos.value = dayPhotos;
     const result = response.data;
     const list = Array.isArray(result.data) ? result.data
       : Array.isArray(result.data?.list) ? result.data.list
         : Array.isArray(result.list) ? result.list : [];
     records.value = list;
   } catch (error) {
-    ElNotification({ title: t('common.error'), message: error.response?.data?.message || error.message, type: 'error' });
+    if (isLatest()) ElNotification({ title: t('common.error'), message: error.response?.data?.message || error.message, type: 'error' });
   } finally {
-    loading.value = false;
+    if (isLatest()) loading.value = false;
   }
 };
 

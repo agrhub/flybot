@@ -100,8 +100,12 @@ const progressText = computed(() => (progress.value.total
   : t('common.exporting')));
 
 const exportToPdf = async () => {
+  const photos = historyRef.value?.photoCount() || 0;
+  const message = photos > (historyRef.value?.largeExport() || 300)
+    ? `${t('analytics.exportAllHint')} ${t('history.largeExport', { count: photos })}`
+    : t('analytics.exportAllHint');
   try {
-    await ElMessageBox.confirm(t('analytics.exportAllHint'), t('analytics.exportAllPdf'), {
+    await ElMessageBox.confirm(message, t('analytics.exportAllPdf'), {
       type: 'info',
       confirmButtonText: t('analytics.exportAllPdf'),
       cancelButtonText: t('common.cancel'),

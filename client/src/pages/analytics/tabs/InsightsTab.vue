@@ -1,6 +1,8 @@
 <template>
   <div class="flex flex-col gap-4 w-full pb-10">
     <el-alert :title="t('insights.howToRead')" type="info" :closable="false" show-icon />
+    <!-- Insights cover the last 7, 14 or 30 days, not any chosen dates -->
+    <el-alert v-if="!coversPageRange" :title="t('insights.lastDaysNote', { days: pageDays })" type="warning" :closable="false" show-icon />
 
     <!-- Daily catches per trap -->
     <el-card shadow="never">
@@ -146,6 +148,7 @@ import ActivityHeatmap from '@/components/charts/ActivityHeatmap.vue';
 import WidgetFilter from '@/components/common/WidgetFilter.vue';
 import { rangeDays } from '@/utils/dateRange';
 import { PRINT } from '@/utils/pdfCharts';
+import { latestOnly } from '@/utils/latestOnly';
 
 const props = defineProps({
   camera: { type: Object, default: null },
@@ -164,6 +167,7 @@ const pageDays = computed(() => {
   const days = rangeDays(props.range);
   return DAY_CHOICES.find(d => d >= days) || 30;
 });
+const coversPageRange = computed(() => props.range?.preset !== 'custom' && DAY_CHOICES.includes(rangeDays(props.range)));
 const pageCamera = computed(() => props.camera?.deviceSerial || 'all');
 const pageDefaults = computed(() => ({ camera: pageCamera.value, days: pageDays.value }));
 const pageDefaultsMulti = computed(() => ({ cameras: pageCamera.value === 'all' ? [] : [pageCamera.value], days: pageDays.value }));
@@ -197,15 +201,21 @@ const weather = reactive({ loading: false, data: null });
 const activity = reactive({ loading: false, data: null });
 const table = reactive({ loading: false, data: null });
 
+const trackers = new Map([daily, weather, activity, table].map(target => [target, latestOnly()]));
+
+// A widget keeps the answer to its latest request only
 const loadInto = async (target, serial, days, apply) => {
+  const isLatest = trackers.get(target)();
   target.loading = true;
+  let data;
   try {
-    apply(await fetchInsights(serial, days));
+    data = await fetchInsights(serial, days);
   } catch {
-    apply({});
-  } finally {
-    target.loading = false;
+    data = {};
   }
+  if (!isLatest()) return;
+  apply(data);
+  target.loading = false;
 };
 const loadDaily = () => loadInto(daily, serialFor(dailyFilter.value.cameras), dailyFilter.value.days, (data) => {
   daily.days = data.days || [];

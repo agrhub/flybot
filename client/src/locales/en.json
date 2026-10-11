@@ -1912,7 +1912,8 @@
       "trend": "14 days",
       "card": "Card age",
       "photo": "Photo"
-    }
+    },
+    "lastDaysNote": "Insights cover the last {days} days, not the exact dates chosen."
   },
   "filters": {
     "dateRange": "Dates",

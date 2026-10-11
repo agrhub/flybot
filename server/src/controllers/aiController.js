@@ -17,6 +17,11 @@ const degreeDayService = require('../services/degreeDayService');
 const catchStats = require('../services/catchStats');
 const { trapKindOf, isSticky } = require('../constants/trap');
 
+// A day key (YYYY-MM-DD) is a farm day (Asia/Ho_Chi_Minh, UTC+7); anything else is a moment
+const DAY_KEY = /^d{4}-d{2}-d{2}$/;
+const dayStart = (value) => new Date(DAY_KEY.test(value) ? `${value}T00:00:00+07:00` : value);
+const dayEnd = (value) => (DAY_KEY.test(value) ? new Date(`${value}T23:59:59.999+07:00`) : new Date(new Date(value).setHours(23, 59, 59, 999)));
+
 const RISK_LEVELS = ['high', 'moderate', 'low'];
 const REVIEW_FILTERS = ['confirmed', 'corrected', 'none'];
 
@@ -59,16 +64,9 @@ async function getAiResults(req, res) {
         const review = REVIEW_FILTERS.includes(req.query.review) ? req.query.review : null;
 
         const matchQuery = { aiProcessed: true, deviceSerial: serials.length === 1 ? serials[0] : { $in: serials } };
-        if (req.query.startDate && req.query.endDate) {
-            matchQuery.createdAt = {
-                $gte: new Date(req.query.startDate),
-                $lte: new Date(new Date(req.query.endDate).setHours(23, 59, 59, 999))
-            };
-        } else if (req.query.startDate) {
-            matchQuery.createdAt = { $gte: new Date(req.query.startDate) };
-        } else if (req.query.endDate) {
-            matchQuery.createdAt = { $lte: new Date(new Date(req.query.endDate).setHours(23, 59, 59, 999)) };
-        }
+        const from = req.query.startDate ? dayStart(req.query.startDate) : null;
+        const to = req.query.endDate ? dayEnd(req.query.endDate) : null;
+        if (from || to) matchQuery.createdAt = { ...(from ? { $gte: from } : {}), ...(to ? { $lte: to } : {}) };
         if (review === 'none') matchQuery['review.status'] = { $exists: false };
         else if (review) matchQuery['review.status'] = review;
 
@@ -104,14 +102,12 @@ async function getAiResults(req, res) {
                     }
                 }
             };
-            const [result] = await Snapshot.aggregate([
-                { $match: matchQuery },
-                { $sort: { createdAt: -1 } },
-                { $match: { $expr: { $eq: [levelExpr, risk] } } },
-                { $facet: { total: [{ $count: 'n' }], page: [{ $skip: skip }, { $limit: limit }] } }
+            // find + countDocuments rather than $facet: a page of full snapshots can pass 16 MB
+            const filter = { ...matchQuery, $expr: { $eq: [levelExpr, risk] } };
+            [total, docs] = await Promise.all([
+                Snapshot.countDocuments(filter),
+                Snapshot.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).lean()
             ]);
-            total = result?.total?.[0]?.n || 0;
-            docs = result?.page || [];
         }
 
         res.json({ success: true, total, page, limit, results: docs.map(describe) });
@@ -258,11 +254,8 @@ async function getAiStatistics(req, res) {
         let endDate = null;
 
         if (customStart) {
-            startDate = new Date(customStart);
-            if (customEnd) {
-                endDate = new Date(customEnd);
-                endDate.setHours(23, 59, 59, 999);
-            }
+            startDate = dayStart(customStart);
+            if (customEnd) endDate = dayEnd(customEnd);
             // If user requests 'hour' mode without a specific endDate, cap to past 24-48h
             // to avoid rendering an overwhelming number of hourly points
             if (mode === 'hour' && !customEnd) {

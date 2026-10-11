@@ -129,7 +129,7 @@ const load = async () => {
 }
 
 onMounted(load)
-watch(() => filter.value.cameras, load, { deep: true })
+watch(() => (filter.value.cameras || []).join(','), load)
 
 /** The card as PDF sections (utils/analyticsPdf.js). */
 const pdfSections = () => [{

@@ -20,6 +20,7 @@ import { ref, computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Picture } from '@element-plus/icons-vue';
 import { annotatedImage } from '@/utils/detectionImage';
+import { latestOnly } from '@/utils/latestOnly';
 
 /**
  * A snapshot with its AI detections drawn on it (a box and the species around each insect),
@@ -45,13 +46,16 @@ const subtitle = computed(() => {
   return props.count === null ? time : `${t('dashboard.snapshotCount', { count: props.count })} · ${time}`;
 });
 
+const renderRequest = latestOnly();
 const render = async () => {
+  const isLatest = renderRequest();
   if (!props.item) {
     src.value = '';
     return;
   }
   loading.value = true;
   const image = await annotatedImage(props.item, { t, maxWidth: 720, quality: 0.82 });
+  if (!isLatest()) return;
   src.value = image?.dataUrl || '';
   loading.value = false;
 };

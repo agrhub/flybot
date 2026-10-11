@@ -31,16 +31,22 @@ async function catchesBySerial(serials, days, now = new Date()) {
     // One day more, for the first day's rise
     const rows = await dailyStats.rows(serials, addDays(fromKey, -1), today);
     const cardEvents = await MaintenanceEvent.find({
-        deviceSerial: { $in: serials }, type: 'card_replaced', at: { $gte: new Date(now.getTime() - (days + 2) * DAY_MS) }
+        deviceSerial: { $in: serials }, type: 'card_replaced', at: { $gte: new Date(now.getTime() - (days + 2) * DAY_MS), $lte: now }
     }).select('deviceSerial at').lean();
 
     const kinds = new Map((await Camera.find({ deviceSerial: { $in: serials } }).select('deviceSerial trapKind').lean()).map(c => [c.deviceSerial, trapKindOf(c)]));
     const dayKeys = [];
     for (let d = fromKey; d <= today; d = addDays(d, 1)) dayKeys.push(d);
 
+    // Rows by camera once (a long range of many cameras has tens of thousands of rows)
+    const rowsBySerial = new Map();
+    for (const r of rows) {
+        if (!rowsBySerial.has(r.deviceSerial)) rowsBySerial.set(r.deviceSerial, []);
+        rowsBySerial.get(r.deviceSerial).push(r);
+    }
     const cameras = new Map();
     for (const serial of serials) {
-        const own = rows.filter(r => r.deviceSerial === serial);
+        const own = rowsBySerial.get(serial) || [];
         const cardDays = new Set(cardEvents.filter(e => e.deviceSerial === serial).map(e => dailyStats.dayKeyOf(e.at)));
         const kind = kinds.get(serial) || 'sticky';
         const total = dailyValues(own, cardDays, fromKey, today, kind);
@@ -176,11 +182,12 @@ function speciesCatchSeries({ dayKeys, cameras }, mode = 'day') {
  */
 async function activityByHour(serials, days = 14, now = new Date()) {
     const since = new Date(now.getTime() - days * DAY_MS);
-    const snaps = await Snapshot.find({ deviceSerial: { $in: serials }, aiProcessed: true, createdAt: { $gte: since } })
+    // Bounded on both sides: a report range can end in the past
+    const snaps = await Snapshot.find({ deviceSerial: { $in: serials }, aiProcessed: true, createdAt: { $gte: since, $lte: now } })
         .sort({ deviceSerial: 1, createdAt: 1 })
         .select('deviceSerial createdAt aiResults.summary')
         .lean();
-    const cardEvents = await MaintenanceEvent.find({ deviceSerial: { $in: serials }, type: 'card_replaced', at: { $gte: since } })
+    const cardEvents = await MaintenanceEvent.find({ deviceSerial: { $in: serials }, type: 'card_replaced', at: { $gte: since, $lte: now } })
         .select('deviceSerial at').lean();
     const hourOf = new Intl.DateTimeFormat('en-GB', { timeZone: TIMEZONE, hour: '2-digit', hourCycle: 'h23' });
 
@@ -220,7 +227,8 @@ async function activityByHour(serials, days = 14, now = new Date()) {
     const today = dailyStats.dayKeyOf(now);
     const dayList = [];
     for (let i = days - 1; i >= 0; i--) dayList.push(addDays(today, -i));
-    const hoursSeen = [...cells.keys()].map(k => Number(k.split('|')[1]));
+    const inRange = new Set(dayList);
+    const hoursSeen = [...cells.keys()].filter(k => inRange.has(k.split('|')[0])).map(k => Number(k.split('|')[1]));
     const minHour = Math.min(6, ...hoursSeen);
     const maxHour = Math.max(18, ...hoursSeen);
     const hours = [];

@@ -24,5 +24,9 @@ const pdfSections = async () => {
   return [{ part: t('analytics.tabHistory'), title: t('analytics.tabHistory'), lines: historyRef.value.filterLines(), history: items }];
 };
 
-defineExpose({ pdfSections });
+// Photos the PDF would include, and above how many to warn first
+const photoCount = () => historyRef.value?.total ?? 0;
+const largeExport = () => historyRef.value?.LARGE_EXPORT ?? 300;
+
+defineExpose({ pdfSections, photoCount, largeExport });
 </script>

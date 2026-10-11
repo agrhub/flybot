@@ -146,8 +146,8 @@
         <DetectionHistory
           v-if="currentDetailCamera?.deviceSerial"
           :key="currentDetailCamera.deviceSerial"
-          :camera-serials="[currentDetailCamera.deviceSerial]"
-          :default-range="{ preset: '7d' }"
+          :camera-serials="historySerials"
+          :default-range="HISTORY_RANGE"
           :title="t('history.cameraTitle')"
         />
       </div>
@@ -176,6 +176,9 @@ const { isMobile } = useBreakpoints();
 // Sub-page state: 'grid' (default: all cameras grid) or 'detail' (single camera sub-page)
 const subPage = ref('grid');
 const currentDetailCamera = ref(selectedCamera.value || null);
+// Stable props for the camera's history table (new arrays on every render would reset its filters)
+const HISTORY_RANGE = { preset: '7d' };
+const historySerials = computed(() => (currentDetailCamera.value?.deviceSerial ? [currentDetailCamera.value.deviceSerial] : []));
 const activeGridCols = ref('3'); // '2' | '3' | 'auto'
 
 const gridLayouts = computed(() => [

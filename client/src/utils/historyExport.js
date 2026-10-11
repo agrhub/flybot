@@ -205,7 +205,7 @@ export async function exportHistoryXlsx({ t, locale, items, fileName, onProgress
     t('analytics.report.colSnapshot'),
   ].map(value => ({ value, fontWeight: 'bold' }));
   const IMAGE_COLUMN = header.length;
-  const ROW_HEIGHT = 84;
+  const rowHeightOf = (image) => Math.ceil((image.height + 6) * 0.75);
 
   const sheets = [...groups.values()].map((group, g) => {
     const sheetImages = [];
@@ -225,7 +225,7 @@ export async function exportHistoryXlsx({ t, locale, items, fileName, onProgress
         });
       }
       return [
-        { value: i + 1, height: image ? ROW_HEIGHT : undefined },
+        { value: i + 1, height: image ? rowHeightOf(image) : undefined },
         { value: new Date(item.createdAt).toLocaleString(dateLocale) },
         { value: item.deviceName || item.deviceSerial },
         { value: item.deviceSerial },

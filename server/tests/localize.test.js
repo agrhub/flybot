@@ -40,7 +40,8 @@ test('no untranslated messages in the server code', () => {
     walk(path.join(__dirname, '../src'));
 
     const missing = [];
-    const literal = /(?:message: |\{ error: |return )("([^"\n]+[.!])"|'([^'\n]+[.!])'|`([^`\n]+[.!])`)/g;
+    // "error:" may also start its own line inside a returned object
+    const literal = /(?:message: |\{ error: |^\s*error: |return )("([^"\n]+[.!])"|'([^'\n]+[.!])'|`([^`\n]+[.!])`)/gm;
     for (const file of files) {
         const source = fs.readFileSync(file, 'utf8');
         for (const m of source.matchAll(literal)) {

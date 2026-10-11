@@ -49,7 +49,7 @@
         <el-card v-if="!dashboard.widgets.length" shadow="never">
           <el-empty :description="t('dashboards.noWidgets')" />
         </el-card>
-        <DashboardGrid v-else ref="gridRef" :widgets="dashboard.widgets" :data="widgetData" :loading="loading" :range-days="dataRange?.days || 0" />
+        <DashboardGrid v-else :widgets="dashboard.widgets" :data="widgetData" :loading="loading" :range-days="dataRange?.days || 0" />
       </template>
     </main>
   </div>
@@ -69,6 +69,9 @@ import DashboardGrid from '@/components/dashboards/DashboardGrid.vue';
 import ReportRangePicker from '@/components/dashboards/ReportRangePicker.vue';
 import { rangeQuery, sameRange } from '@/utils/dashboards';
 import { exportReportPdf } from '@/utils/reportPdf';
+import { latestOnly } from '@/utils/latestOnly';
+
+const loadRequest = latestOnly();
 
 const REFRESH_MS = 5 * 60 * 1000;
 
@@ -87,7 +90,6 @@ const expired = ref(false);
 const viewRange = ref(null);
 const dataRange = ref(null);
 const exporting = ref(false);
-const gridRef = ref(null);
 
 const dateLocale = computed(() => (locale.value === 'vi' ? 'vi-VN' : 'en-US'));
 const formatTime = (value) => new Date(value).toLocaleTimeString(dateLocale.value, { hour: '2-digit', minute: '2-digit' });
@@ -97,7 +99,9 @@ const load = async () => {
   loading.value = true;
   try {
     const query = viewRange.value && dashboard.value && !sameRange(viewRange.value, dashboard.value.range) ? rangeQuery(viewRange.value) : null;
+    const isLatest = loadRequest();
     const res = await api.getPublicDashboard(route.params.token, query);
+    if (!isLatest()) return;
     dashboard.value = res.data.dashboard;
     widgetData.value = res.data.widgets || {};
     dataRange.value = res.data.range || null;
@@ -129,7 +133,6 @@ const exportPdf = async () => {
       widgets: [...dashboard.value.widgets].sort((a, b) => a.layout.y - b.layout.y || a.layout.x - b.layout.x),
       data: widgetData.value,
       generatedAt: generatedAt.value,
-      root: gridRef.value?.$el,
     });
   } catch (err) {
     console.error('Report PDF failed:', err);

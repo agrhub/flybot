@@ -1912,7 +1912,8 @@
       "trend": "14 ngày",
       "card": "Tuổi tấm keo",
       "photo": "Ảnh"
-    }
+    },
+    "lastDaysNote": "Phân tích chuyên sâu tính theo {days} ngày gần nhất, không theo đúng khoảng ngày đã chọn."
   },
   "filters": {
     "dateRange": "Thời gian",

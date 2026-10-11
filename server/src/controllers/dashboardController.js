@@ -11,6 +11,7 @@ const notificationService = require('../services/notificationService');
 const dashboardService = require('../services/dashboardService');
 const { recordAudit } = require('../services/auditService');
 const { createTtlCache } = require('../utils/ttlCache');
+const { createLimiter } = require('../utils/concurrency');
 const { SNAPSHOT_KEY_REGEX, pipeSnapshot } = require('./s3Controller');
 const { EMAIL_REGEX, normalizeEmail, findUserByEmail, safeUrl } = require('./shareController');
 
@@ -207,7 +208,7 @@ async function validateInput(body, { editor, owner, partial = false, current = n
         const foreign = serials.filter(s => !publishable.has(s));
         if (foreign.length) {
             return {
-                error: "A public dashboard can only include cameras you own.",
+                error: "A public report can only include cameras you own.",
                 code: 'PUBLIC_FOREIGN_CAMERA',
                 cameras: foreign
             };
@@ -299,6 +300,11 @@ async function updateDashboard(req, res) {
         const wasPublic = dashboard.visibility === 'public';
         const previousExpiry = dashboard.expiresAt ? new Date(dashboard.expiresAt).getTime() : null;
         Object.assign(dashboard, result.value);
+        // Cameras taken off the report also leave its widgets
+        if (result.value.cameraSerials && result.value.widgets === undefined) {
+            const kept = new Set(result.value.cameraSerials);
+            for (const widget of dashboard.widgets) widget.cameraSerials = (widget.cameraSerials || []).filter(serial => kept.has(serial));
+        }
         if (dashboard.visibility === 'public' && !dashboard.publicToken) dashboard.publicToken = newPublicToken();
         // Going private kills the old link
         if (dashboard.visibility === 'private') dashboard.publicToken = undefined;
@@ -352,7 +358,7 @@ async function getDashboardData(req, res) {
         if (wanted.error) return res.status(400).json({ success: false, message: wanted.error });
         const serials = await dashboardService.effectiveSerials(dashboard, req.user);
         const { range, widgets } = await dashboardService.computeWidgetData(dashboard, serials, {
-            imageUrl: (key) => `/api/s3/${key}`,
+            imageUrl: (key) => `/api/dashboards/${dashboard._id}/images/${key}`,
             range: wanted.range
         });
         res.json({ success: true, generatedAt: new Date(), range, widgets });
@@ -487,6 +493,8 @@ const TOKEN_REGEX = /^[A-Za-z0-9_-]{16,64}$/;
 // Public pages can be opened by many people at once: compute each dashboard at most once a minute.
 // Keyed by updatedAt, so an edit shows up immediately.
 const publicDataCache = createTtlCache({ ttlMs: 60 * 1000, maxEntries: 200 });
+// Anyone with a link can ask for any range: compute a few public reports at a time
+const publicCompute = createLimiter(2, { maxQueue: 20 });
 
 async function findPublicDashboard(token) {
     if (typeof token !== 'string' || !TOKEN_REGEX.test(token)) return null;
@@ -510,7 +518,7 @@ async function getPublicDashboard(req, res) {
         if (wanted.error) return res.status(400).json({ success: false, message: wanted.error });
         const rangeKey = wanted.range ? `${wanted.range.preset}:${wanted.range.from || ''}:${wanted.range.to || ''}` : 'default';
         const cacheKey = `${dashboard._id}:${dashboard.publicToken}:${new Date(dashboard.updatedAt).getTime()}:${rangeKey}`;
-        const { widgets, range, cameras, generatedAt } = await publicDataCache.wrap(cacheKey, async () => {
+        const { widgets, range, cameras, generatedAt } = await publicDataCache.wrap(cacheKey, () => publicCompute(async () => {
             const serials = await dashboardService.effectiveSerials(dashboard, null);
             const base = `/api/public/dashboards/${encodeURIComponent(req.params.token)}/images/`;
             const [computed, cameraDocs] = await Promise.all([
@@ -518,7 +526,7 @@ async function getPublicDashboard(req, res) {
                 serials.length ? Camera.find({ deviceSerial: { $in: serials } }).select('deviceSerial deviceName status').lean() : []
             ]);
             return { ...computed, cameras: cameraDocs, generatedAt: new Date() };
-        });
+        }));
         const owner = dashboard.ownerId;
         res.json({
             success: true,
@@ -538,6 +546,7 @@ async function getPublicDashboard(req, res) {
             widgets
         });
     } catch (err) {
+        if (err.code === 'BUSY') return res.status(429).json({ success: false, message: "Too many requests. Please try again in a moment." });
         sendServerError(res, err, { context: 'Public dashboard' });
     }
 }
@@ -558,6 +567,25 @@ async function streamPublicImage(req, res) {
         return pipeSnapshot(res, key, { cacheControl: 'private, max-age=3600' });
     } catch (err) {
         sendServerError(res, err, { context: 'Public dashboard image' });
+    }
+}
+
+/**
+ * GET /api/dashboards/:id/images/*key: snapshot of a camera on a report this person may view.
+ * A shared viewer sees the owner's cameras through the report, not through the camera itself.
+ */
+async function streamDashboardImage(req, res) {
+    try {
+        const key = Array.isArray(req.params.key) ? req.params.key.join('/') : String(req.params.key || '');
+        const match = key.match(SNAPSHOT_KEY_REGEX);
+        const dashboard = match ? await findDashboard(req.params.id) : null;
+        const serials = dashboardService.canViewDashboard(req.user, dashboard) ? await dashboardService.effectiveSerials(dashboard, req.user) : [];
+        if (!match || !serials.includes(match[1])) {
+            return res.status(404).json({ success: false, message: "File not found" });
+        }
+        return pipeSnapshot(res, key, { cacheControl: 'private, max-age=3600' });
+    } catch (err) {
+        sendServerError(res, err, { context: 'Dashboard image' });
     }
 }
 
@@ -587,5 +615,6 @@ module.exports = {
     unshareDashboard,
     getPublicDashboard,
     streamPublicImage,
+    streamDashboardImage,
     claimPendingDashboardShares
 };

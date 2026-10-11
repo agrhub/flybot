@@ -76,6 +76,10 @@ export async function exportAnalyticsPdf({ t, locale, title, lines, sections, fi
       });
       y = doc.lastAutoTable.finalY + 8;
     }
+    if (!image && !section.table && !section.history) {
+      write(t('analytics.noStatsData'));
+      y += 2;
+    }
     if (section.history) {
       y = await addHistoryTable(doc, autoTable, { t, locale, items: section.history, startY: y, onProgress });
     }
