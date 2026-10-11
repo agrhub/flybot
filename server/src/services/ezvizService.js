@@ -3,6 +3,9 @@ const { APP_KEY, SECRET_KEY, APP_DOMAIN, DOMAIN_AREAS } = require('../config/env
 const { Camera } = require('../models');
 const notificationService = require('./notificationService');
 
+// A request EZVIZ never answers would otherwise hold up a capture run for good
+const EZVIZ_TIMEOUT_MS = 20000;
+
 // lastSync is rewritten at least this often even when nothing else changed
 const LAST_SYNC_REFRESH_MS = 10 * 60 * 1000;
 
@@ -35,6 +38,7 @@ async function updateAccessToken() {
         });
 
         const response = await axios.post(APP_DOMAIN + '/api/lapp/token/get', params, {
+            timeout: EZVIZ_TIMEOUT_MS,
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
         });
 
@@ -92,6 +96,7 @@ async function syncCameraStatus(deviceSerial) {
                 });
 
                 const response = await axios.post(cachedToken.areaDomain + '/api/lapp/device/list', params, {
+                    timeout: EZVIZ_TIMEOUT_MS,
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
                 });
 
@@ -175,6 +180,7 @@ async function syncCameraStatus(deviceSerial) {
             });
 
             const response = await axios.post(cachedToken.areaDomain + '/api/lapp/device/info', params, {
+                timeout: EZVIZ_TIMEOUT_MS,
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
             });
 
@@ -220,6 +226,7 @@ async function getDeviceInfo(deviceSerial) {
         });
 
         const response = await axios.post(cachedToken.areaDomain + '/api/lapp/device/info', params, {
+            timeout: EZVIZ_TIMEOUT_MS,
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
         });
 
@@ -248,6 +255,7 @@ async function addCameraToEzviz(deviceSerial, validateCode) {
     });
 
     const infoResponse = await axios.post(cachedToken.areaDomain + '/api/lapp/device/add', params, {
+        timeout: EZVIZ_TIMEOUT_MS,
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
     });
 
@@ -280,6 +288,7 @@ async function getLiveAddress({ deviceSerial, code = '', protocol = 2, quality =
 
     const params = toFormData(payload);
     const response = await axios.post(cachedToken.areaDomain + '/api/lapp/v2/live/address/get', params, {
+        timeout: EZVIZ_TIMEOUT_MS,
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
     });
 
@@ -298,6 +307,7 @@ async function getLocalRecords({ deviceSerial, startTime, endTime }) {
     });
 
     const response = await axios.get(cachedToken.areaDomain + '/api/v3/das/device/local/video/query?' + params, {
+        timeout: EZVIZ_TIMEOUT_MS,
         headers: {
             accessToken: token,
             deviceSerial: deviceSerial
@@ -327,6 +337,7 @@ async function getPlaybackAddress({ deviceSerial, code = '', startTime, stopTime
 
 
     const response = await axios.post(cachedToken.areaDomain + '/api/lapp/v2/live/address/get', params, {
+        timeout: EZVIZ_TIMEOUT_MS,
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
     });
 
@@ -341,6 +352,7 @@ async function captureDevice(deviceSerial) {
     const params = toFormData({ accessToken: token, deviceSerial: deviceSerial, channelNo: 1 });
 
     const response = await axios.post(cachedToken.areaDomain + '/api/lapp/device/capture', params, {
+        timeout: EZVIZ_TIMEOUT_MS,
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
     });
 
@@ -366,6 +378,7 @@ async function disableLiveAddress({ deviceSerial, channelNo = 1, urlId = '' }) {
 
         let params = toFormData(baseParams);
         let response = await axios.post(cachedToken.areaDomain + '/api/lapp/v2/live/address/disable', params, {
+            timeout: EZVIZ_TIMEOUT_MS,
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
         });
 
@@ -373,6 +386,7 @@ async function disableLiveAddress({ deviceSerial, channelNo = 1, urlId = '' }) {
         if (response.data && response.data.code === '10001' && urlId && urlId.length > 18) {
             baseParams.urlId = urlId.slice(0, 18);
             response = await axios.post(cachedToken.areaDomain + '/api/lapp/v2/live/address/disable', toFormData(baseParams), {
+                timeout: EZVIZ_TIMEOUT_MS,
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
             });
         }

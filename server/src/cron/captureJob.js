@@ -29,7 +29,7 @@ async function captureAndSaveSnapshot(deviceSerial) {
             const picUrl = captureRes.data.picUrl;
 
             // 1. Download image
-            const imageRes = await axios.get(picUrl, { responseType: 'arraybuffer' });
+            const imageRes = await axios.get(picUrl, { responseType: 'arraybuffer', timeout: 30000, maxContentLength: 20 * 1024 * 1024 });
             const buffer = Buffer.from(imageRes.data, 'binary');
             const base64Image = buffer.toString('base64');
 

@@ -9,6 +9,8 @@ const s3Client = new S3Client({
         secretAccessKey: S3_SECRET_KEY,
     },
     forcePathStyle: true,
+    // No request may hang a capture or the cleanup indefinitely
+    requestHandler: { connectionTimeout: 10000, requestTimeout: 60000 }
 });
 
 // Automatically compute Content-MD5 for MinIO/S3 when invoking DeleteObjectsCommand

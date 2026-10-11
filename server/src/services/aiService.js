@@ -96,7 +96,8 @@ MANDATORY COORDINATE RULES:
                 ],
                 config: {
                     systemInstruction: systemPrompt,
-                    responseMimeType: "application/json"
+                    responseMimeType: "application/json",
+                    httpOptions: { timeout: 60000 }
                 }
             });
 
@@ -181,6 +182,7 @@ async function analyzeInsectsRoboflow(base64Image, snapshotId, imageUrl = null) 
                     image: imageInput
                 }
             }, {
+                timeout: 60000,
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${ROBOFLOW_API_KEY}`
@@ -229,6 +231,12 @@ async function analyzeInsectsRoboflow(base64Image, snapshotId, imageUrl = null) 
             }
         } catch (error) {
             retries++;
+            // A refused request (bad key, bad input) fails the same way again: only retry the rest
+            const status = error.response?.status;
+            if (status >= 400 && status < 500 && status !== 408 && status !== 429) {
+                console.error(`❌ Roboflow refused snapshot ${snapshotId} (${status}):`, error.message);
+                return;
+            }
             if (retries === 3) {
                 console.error(`❌ Roboflow Error after 3 attempts for ${snapshotId}:`, error.message);
             } else {

@@ -39,55 +39,86 @@ async function getS3Object(key) {
     return await s3Client.send(command);
 }
 
+// Photos removed per batch: S3 DeleteObjects takes at most 1000 keys
+const CLEANUP_BATCH = 1000;
+// Per hourly run, so a large backlog (e.g. after shortening the retention) is spread over several
+// runs instead of one long burst against the database and S3
+const CLEANUP_MAX_PER_RUN = 50000;
+const CLEANUP_PAUSE_MS = 200;
+const CLEANUP_MAX_KEPT = 5000;
+// Daily statistics are one small row per camera per day. They are kept long enough for a
+// 12-month report compared with the 12 months before, whatever the photo retention is
+const ROLLUP_MIN_MONTHS = 25;
+
+const monthsAgo = (months, now) => {
+    const date = new Date(now);
+    date.setMonth(date.getMonth() - months);
+    return date;
+};
+
 /**
- * Remove data older than the retention period (admin setting) from S3 and Database
+ * Remove photos older than the retention period (admin setting) from S3 and the database, and
+ * daily statistics older than both the retention and ROLLUP_MIN_MONTHS. A photo's row is only
+ * removed once its file is gone from S3, so a failed delete is retried on the next run instead of
+ * leaving a file nothing points to. Reviewed photos still waiting for the training upload stay.
+ * Returns { photos, files, failed, more }.
  */
-async function cleanupOldData() {
-    console.log(`[${new Date().toISOString()}] 🧹 Starting periodic cleanup process...`);
-
-    const cutoffDate = new Date();
+async function cleanupOldData({ now = new Date(), maxPerRun = CLEANUP_MAX_PER_RUN, pauseMs = CLEANUP_PAUSE_MS } = {}) {
+    const { DailyStat } = require('../models');
+    const { dayKeyOf } = require('./dailyStats');
     const { retentionMonths } = await require('./settingsService').getSettings();
-    cutoffDate.setMonth(cutoffDate.getMonth() - retentionMonths);
+    const cutoff = monthsAgo(retentionMonths, now);
+    const rollupMonths = Math.max(retentionMonths, ROLLUP_MIN_MONTHS);
 
-    try {
-        const { DailyStat } = require('../models');
-        const { dayKeyOf } = require('./dailyStats');
-        await DailyStat.deleteMany({ day: { $lt: dayKeyOf(cutoffDate) } });
+    const stats = await DailyStat.deleteMany({ day: { $lt: dayKeyOf(monthsAgo(rollupMonths, now)) } });
+    const result = { photos: 0, files: 0, failed: 0, more: false };
+    // Photos kept back in this run (failed deletes), so they are not read again
+    const kept = [];
+    for (;;) {
+        // A run stops at its quota, or when S3 keeps refusing (tried again next run)
+        if (result.photos >= maxPerRun || kept.length >= CLEANUP_MAX_KEPT) {
+            result.more = true;
+            break;
+        }
+        const filter = { createdAt: { $lt: cutoff }, 'trainingSync.status': { $ne: 'pending' } };
+        if (kept.length) filter._id = { $nin: kept };
+        // Oldest first along the { createdAt } index: removed rows drop out of the next batch
+        const size = Math.min(CLEANUP_BATCH, maxPerRun - result.photos);
+        const batch = await Snapshot.find(filter).sort({ createdAt: 1 }).hint({ createdAt: 1 })
+            .select('_id s3Key').limit(size).lean();
+        if (!batch.length) break;
 
-        let oldRecords = [];
-        do {
-            oldRecords = await Snapshot.find({
-                createdAt: { $lt: cutoffDate }
-            }).select('_id s3Key').limit(1000).lean();
-
-            if (oldRecords.length === 0) {
-                console.log("✨ No expired data to clean up.");
-                break;
+        const keys = [...new Set(batch.map(r => r.s3Key).filter(Boolean))];
+        const failedKeys = new Set();
+        if (keys.length) {
+            const res = await s3Client.send(new DeleteObjectsCommand({
+                Bucket: S3_BUCKET,
+                // Quiet: the response lists only the keys that could not be deleted
+                Delete: { Objects: keys.map(Key => ({ Key })), Quiet: true }
+            }));
+            const errors = (res?.Errors || []).filter(e => e.Code !== 'NoSuchKey'); // already gone is fine
+            errors.forEach(e => failedKeys.add(e.Key));
+            if (errors.length) {
+                console.warn(`⚠️ Cleanup: ${errors.length} file(s) could not be deleted from S3 (${errors[0].Code}: ${errors[0].Message}); kept for the next run.`);
             }
-
-            const s3KeysToDelete = oldRecords
-                .filter(r => r.s3Key)
-                .map(r => ({ Key: r.s3Key }));
-
-            if (s3KeysToDelete.length > 0) {
-                const deleteParams = {
-                    Bucket: S3_BUCKET,
-                    Delete: { Objects: s3KeysToDelete }
-                };
-                await s3Client.send(new DeleteObjectsCommand(deleteParams));
-                console.log(`🗑️ Deleted ${s3KeysToDelete.length} images from S3.`);
-            }
-
-            const recordIds = oldRecords.map(r => r._id);
-            const dbResult = await Snapshot.deleteMany({
-                _id: { $in: recordIds }
-            });
-
-            console.log(`✅ Cleaned up ${dbResult.deletedCount} records from Database.`);
-        } while (oldRecords.length > 0);
-    } catch (error) {
-        console.error("❌ Cleanup error:", error.message);
+            result.files += keys.length - failedKeys.size;
+        }
+        const removable = [];
+        for (const r of batch) (failedKeys.has(r.s3Key) ? kept : removable).push(r._id);
+        result.failed = kept.length;
+        if (removable.length) result.photos += (await Snapshot.deleteMany({ _id: { $in: removable } })).deletedCount;
+        if (batch.length < size) break;
+        // Let captures and requests use the database between batches
+        await new Promise(resolve => setTimeout(resolve, pauseMs));
     }
+
+    if (stats.deletedCount || result.photos || result.failed) {
+        const parts = [`${result.photos} photo(s) and ${result.files} file(s) older than ${retentionMonths} month(s) removed`];
+        if (result.failed) parts.push(`${result.failed} kept (S3 delete failed)`);
+        if (stats.deletedCount) parts.push(`${stats.deletedCount} daily statistic row(s) older than ${rollupMonths} months removed`);
+        console.log(`🧹 Cleanup: ${parts.join(', ')}${result.more ? '; more on the next run' : ''}.`);
+    }
+    return result;
 }
 
 module.exports = {

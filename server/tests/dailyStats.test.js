@@ -84,13 +84,57 @@ test('Statistics (day mode) reads the rollup: per-camera daily peaks summed over
     assert.equal(month.body.data.at(-1).insects[0].value, 13);
 });
 
-test('retention cleanup removes old days with their snapshots', async () => {
-    await scan('CAM1', { fruit_fly: 1 }, HOUR);
-    await scan('CAM1', { fruit_fly: 1 }, 400 * DAY);
-    assert.equal(await models.DailyStat.countDocuments(), 2);
-    await cleanupOldData();
-    assert.equal(await models.DailyStat.countDocuments(), 1);
-    assert.equal(await models.Snapshot.countDocuments(), 1);
+test('retention cleanup removes old photos and their files, keeps daily statistics for two years', async () => {
+    const { s3Client } = require('../src/config/s3');
+    const original = s3Client.send;
+    const deleted = [];
+    s3Client.send = async (command) => {
+        deleted.push(...command.input.Delete.Objects.map(o => o.Key));
+        return {};
+    };
+    try {
+        await scan('CAM1', { fruit_fly: 1 }, HOUR);
+        const old = await scan('CAM1', { fruit_fly: 1 }, 400 * DAY);
+        await scan('CAM1', { fruit_fly: 1 }, 800 * DAY);
+        assert.equal(await models.DailyStat.countDocuments(), 3);
+        const result = await cleanupOldData({ pauseMs: 0 });
+        assert.equal(result.photos, 2);
+        assert.equal(await models.Snapshot.countDocuments(), 1);
+        assert.ok(deleted.includes(old.s3Key));
+        // Photo retention is 3 months; the 400-day-old statistics stay for long reports
+        assert.equal(await models.DailyStat.countDocuments(), 2);
+    } finally {
+        s3Client.send = original;
+    }
+});
+
+test('retention cleanup keeps photos whose file S3 could not delete, and runs in bounded passes', async () => {
+    const { s3Client } = require('../src/config/s3');
+    const original = s3Client.send;
+    const docs = [];
+    for (let i = 0; i < 4; i++) docs.push(await scan('CAM1', { fruit_fly: 1 }, (200 + i) * DAY));
+    // Waiting for the training upload: never removed by the cleanup
+    await models.Snapshot.updateOne({ _id: docs[3]._id }, { $set: { 'trainingSync.status': 'pending' } });
+    s3Client.send = async () => ({
+        Errors: [
+            { Key: docs[0].s3Key, Code: 'AccessDenied', Message: 'Access Denied' },
+            { Key: docs[1].s3Key, Code: 'NoSuchKey', Message: 'already gone' }
+        ]
+    });
+    try {
+        const result = await cleanupOldData({ pauseMs: 0 });
+        assert.deepEqual({ photos: result.photos, failed: result.failed }, { photos: 2, failed: 1 });
+        const left = (await models.Snapshot.find().select('_id').lean()).map(d => String(d._id)).sort();
+        assert.deepEqual(left, [docs[0]._id, docs[3]._id].map(String).sort(), 'the refused file and the pending upload stay');
+
+        // A quota per run: the rest waits for the next run
+        for (let i = 0; i < 3; i++) await scan('CAM2', { fruit_fly: 1 }, (300 + i) * DAY);
+        s3Client.send = async () => ({});
+        const capped = await cleanupOldData({ pauseMs: 0, maxPerRun: 1 });
+        assert.equal(capped.more, true);
+    } finally {
+        s3Client.send = original;
+    }
 });
 
 test('backfill runs only when the rollup has never been built', async () => {
