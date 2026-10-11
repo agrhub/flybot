@@ -115,6 +115,12 @@
       "subject": "{sharer} invites you to FlyBot",
       "body": "{sharer} added {email} to the organization {orgName} on FlyBot. Create an account with this email address and confirm it to get access.",
       "button": "Create account"
+    },
+    "contactForm": {
+      "subject": "FlyBot contact: {subject}",
+      "from": "From {name} <{email}>.",
+      "topic": "Subject: {subject}",
+      "footer": "Sent from the FlyBot contact form. Reply to this email to answer the sender."
     }
   },
   "telegram": {
@@ -287,6 +293,8 @@
     "since_must_be_an_iso_date": "since must be an ISO date.",
     "rate_limit_120_requests_per_minute_per_key": "Rate limit: 120 requests per minute per key.",
     "only_the_farm_owner_can_share_it": "Only the farm owner can share it.",
+    "please_enter_your_name_and_a_message": "Please enter your name and a message.",
+    "the_contact_form_is_not_available_right_now": "The contact form is not available right now.",
     "a_camera_can_be_shared_with_at_most": "A camera can be shared with at most {max} people.",
     "a_dashboard_can_be_shared_with_at_most": "A dashboard can be shared with at most {max} people.",
     "a_farm_can_be_shared_with_at_most": "A farm can be shared with at most {max} people.",

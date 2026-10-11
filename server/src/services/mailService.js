@@ -33,7 +33,7 @@ function isMailConfigured() {
  * Without SMTP configured: development logs the message (so reset links can be tested),
  * production drops it with a warning that does not include the content.
  */
-async function sendMail({ to, subject, html, text }) {
+async function sendMail({ to, subject, html, text, replyTo }) {
     const transport = getTransporter();
     if (!transport) {
         if (IS_PRODUCTION) {
@@ -43,7 +43,7 @@ async function sendMail({ to, subject, html, text }) {
         }
         return { skipped: true };
     }
-    return transport.sendMail({ from: MAIL_FROM, to, subject, html, text });
+    return transport.sendMail({ from: MAIL_FROM, to, subject, html, text, ...(replyTo ? { replyTo } : {}) });
 }
 
 /**

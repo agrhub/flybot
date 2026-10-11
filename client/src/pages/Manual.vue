@@ -1,48 +1,21 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 
-const { t } = useI18n();
-const activeSection = ref('gettingStarted');
+const { t, tm } = useI18n();
+const route = useRoute();
+const router = useRouter();
 
-const sections = computed(() => [
-  {
-    id: 'gettingStarted',
-    title: t('manual.gettingStarted'),
-    steps: [
-      { titleKey: 'manual.stepAccountTitle', descKey: 'manual.stepAccountDesc' },
-      { titleKey: 'manual.stepPairingTitle', descKey: 'manual.stepPairingDesc' },
-      { titleKey: 'manual.stepSettingsTitle', descKey: 'manual.stepSettingsDesc' }
-    ]
-  },
-  {
-    id: 'surveillanceGrid',
-    title: t('manual.surveillanceGrid'),
-    steps: [
-      { titleKey: 'manual.stepGridTitle', descKey: 'manual.stepGridDesc' },
-      { titleKey: 'manual.stepLiveControlsTitle', descKey: 'manual.stepLiveControlsDesc' },
-      { titleKey: 'manual.stepHeartbeatTitle', descKey: 'manual.stepHeartbeatDesc' }
-    ]
-  },
-  {
-    id: 'visionAi',
-    title: t('manual.visionAi'),
-    steps: [
-      { titleKey: 'manual.stepAiModelTitle', descKey: 'manual.stepAiModelDesc' },
-      { titleKey: 'manual.stepConfidenceTitle', descKey: 'manual.stepConfidenceDesc' },
-      { titleKey: 'manual.stepHeatmapTitle', descKey: 'manual.stepHeatmapDesc' }
-    ]
-  },
-  {
-    id: 'reporting',
-    title: t('manual.reporting'),
-    steps: [
-      { titleKey: 'manual.stepTrendTitle', descKey: 'manual.stepTrendDesc' },
-      { titleKey: 'manual.stepExportTitle', descKey: 'manual.stepExportDesc' },
-      { titleKey: 'manual.stepAlertTitle', descKey: 'manual.stepAlertDesc' }
-    ]
-  }
-]);
+// Sections and their steps come from manual.sections in the locale files
+const sections = computed(() => Object.entries(tm('manual.sections') || {}).map(([id, section]) => ({
+  id,
+  steps: Object.keys(section.steps || {})
+})));
+
+// ?tab=integrations opens that section directly (e.g. from the footer)
+const activeSection = ref(sections.value.some(s => s.id === route.query.tab) ? route.query.tab : 'start');
+watch(activeSection, (tab) => router.replace({ query: { ...route.query, tab } }));
 </script>
 
 <template>
@@ -53,18 +26,17 @@ const sections = computed(() => [
       <p class="text-sm text-[var(--el-text-color-secondary)] mt-2 max-w-2xl leading-relaxed">{{ t('manual.subtitle') }}</p>
     </div>
 
-    <!-- Element Plus Tabs -->
-    <el-tabs v-model="activeSection" class="demo-tabs">
+    <el-tabs v-model="activeSection">
       <el-tab-pane
         v-for="sec in sections"
         :key="sec.id"
-        :label="sec.title"
+        :label="t(`manual.sections.${sec.id}.title`)"
         :name="sec.id"
       >
         <div class="space-y-4 pt-4">
           <el-card
             v-for="(step, idx) in sec.steps"
-            :key="step.titleKey"
+            :key="step"
             shadow="hover"
             class="!border !border-[var(--el-border-color)] !bg-[var(--el-card-bg-color)] !rounded-2xl transition-all hover:!border-[#3ecf8e]/50"
           >
@@ -73,8 +45,8 @@ const sections = computed(() => [
                 {{ idx + 1 }}
               </div>
               <div class="space-y-1">
-                <h3 class="font-bold text-base text-[var(--el-text-color-primary)]">{{ t(step.titleKey) }}</h3>
-                <p class="text-xs sm:text-sm text-[var(--el-text-color-secondary)] leading-relaxed">{{ t(step.descKey) }}</p>
+                <h3 class="font-bold text-base text-[var(--el-text-color-primary)]">{{ t(`manual.sections.${sec.id}.steps.${step}.title`) }}</h3>
+                <p class="text-xs sm:text-sm text-[var(--el-text-color-secondary)] leading-relaxed">{{ t(`manual.sections.${sec.id}.steps.${step}.desc`) }}</p>
               </div>
             </div>
           </el-card>

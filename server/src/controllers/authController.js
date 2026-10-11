@@ -216,7 +216,8 @@ async function refreshSession(req, res) {
 async function getAuthConfig(req, res) {
     try {
         const { getSettings } = require('../services/settingsService');
-        res.json({ success: true, allowRegistration: (await getSettings()).allowRegistration });
+        const contactEmail = (require('../config/env').CONTACT_EMAIL || '').split(',')[0].trim() || null;
+        res.json({ success: true, allowRegistration: (await getSettings()).allowRegistration, contactEmail });
     } catch (err) {
         sendServerError(res, err, { context: 'Auth config' });
     }

@@ -79,6 +79,9 @@ const config = {
     SMTP_USER: process.env.SMTP_USER || "",
     SMTP_PASS: process.env.SMTP_PASS || "",
     MAIL_FROM: process.env.MAIL_FROM || "FlyBot <no-reply@localhost>",
+    // Public contact address: shown on the legal pages and receives the contact form
+    // (comma-separated for several). Empty = the form goes to the admins.
+    CONTACT_EMAIL: (process.env.CONTACT_EMAIL || "").trim(),
 
     // Telegram alerts: bot token from @BotFather and the bot username (without @). Unset = feature off.
     TELEGRAM_BOT_TOKEN: (process.env.TELEGRAM_BOT_TOKEN || "").trim(),

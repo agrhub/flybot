@@ -40,9 +40,9 @@
     "analytics": "Analytics",
     "map": "Field Map",
     "settings": "Settings",
-    "engine": "Engine",
-    "gallery": "Showcase",
-    "pricing": "Pricing",
+    "engine": "Features",
+    "gallery": "Use cases",
+    "pricing": "Who it is for",
     "manual": "Manual",
     "privacy": "Privacy",
     "terms": "Terms",
@@ -50,8 +50,8 @@
     "signIn": "Sign In",
     "getStarted": "Get Started",
     "launchStudio": "Launch Studio",
-    "capabilities": "Capabilities",
-    "showcase": "Showcase",
+    "capabilities": "Features",
+    "showcase": "Use cases",
     "about": "About",
     "careers": "Careers",
     "blog": "Blog",
@@ -601,9 +601,9 @@
       "title": "Telegram alerts",
       "desc": "Get the same alerts as email in a Telegram chat with the FlyBot bot.",
       "connected": "Connected",
-      "connectedAs": "Connected as @{username}",
+      "connectedAs": "Connected as {'@'}{username}",
       "connect": "Connect Telegram",
-      "waiting": "Press \"Start\" in the chat with @{bot} that just opened. This page updates by itself.",
+      "waiting": "Press \"Start\" in the chat with {'@'}{bot} that just opened. This page updates by itself.",
       "checkNow": "I pressed Start",
       "linked": "Telegram connected.",
       "sendTest": "Send test message",
@@ -629,145 +629,306 @@
     "unavailable": "The AI Copilot is unavailable right now. Please try again in a moment."
   },
   "home": {
-    "tagline": "SMART TRAP & VISION AI STUDIO",
-    "heroTitlePart1": "Autonomous",
-    "heroTitlePart2": "Pest Surveillance",
-    "heroTitleWithAi": "with Vision AI",
-    "heroSubtitle": "Real-time EZVIZ stream ingestion, edge-accelerated insect counting, and automated density alerts. FlyBot transforms ordinary orchard traps into precision agricultural sensors.",
-    "launchAgent": "Launch Studio",
-    "howItWorks": "Explore Engine",
+    "tagline": "SMART STICKY TRAPS & AI INSECT COUNTING",
+    "heroTitlePart1": "Count insects",
+    "heroTitlePart2": "on sticky traps",
+    "heroTitleWithAi": "automatically with AI",
+    "heroSubtitle": "FlyBot photographs your sticky traps through EZVIZ cameras on a schedule, AI counts the fruit flies in every photo, and you are alerted when a threshold is crossed. Follow every trap on every farm from one screen, without counting by hand.",
+    "launchAgent": "Open the app",
+    "howItWorks": "See the features",
+    "kineticCaption1": "COUNTED: 14 INSECTS",
+    "kineticCaption2": "ON THE CAPTURE SCHEDULE",
+    "theShineAgent": "How FlyBot works",
+    "introHeading": "Traps that count themselves.<br>You make the decisions.",
+    "introCol1": "An EZVIZ camera facing the sticky card takes photos on a schedule, from every 15 minutes to every 2 hours, daytime only if you like. Photos are stored privately and only people with access can see them.",
+    "introCol2": "AI counts the insects in each photo, works out the new catches per day and checks photo quality (blur, darkness, dirty lens, full card). Technicians can confirm or correct the counts.",
+    "introCol3": "Threshold crossings, sudden rises and offline cameras are reported in the app, by email, Telegram, push notification or webhook, along with a weekly report and a forecast of the next fly wave.",
+    "bento1Title": "AI insect counting",
+    "bento1Desc": "Counts fruit flies in every trap photo, marks each one, and lets technicians confirm or correct the count.",
+    "generatingBeats": "Reviewed",
+    "bento2Title": "Live view of many cameras",
+    "bento2Desc": "Multi-camera grid, live view and SD-card playback, capture on demand, connection status for every camera.",
+    "bento3Title": "Forecast & diagnosis",
+    "bento4Title": "Alerts & reports",
+    "bento4Desc": "Alerts on several channels, weekly reports, a treatment log in VietGAP format, and PDF/Excel export.",
+    "galleryTag": "Use cases",
+    "galleryHeading": "One app for a single orchard or a whole cooperative.",
+    "viewAllExports": "Read the guide",
+    "pricingHeading": "For farms<br>of every size",
+    "getStartedBtn": "Get started",
+    "contactSalesBtn": "Talk to us",
+    "copyrightText": "© 2026 AgrHub. All rights reserved.",
+    "mockLabel": "Fruit fly",
+    "mockHudCount": "AI: 14 per trap",
+    "mockHudPhoto": "Photo: good",
+    "mockPhoto": "PHOTO 07:30 • MANGO PLOT A",
+    "mockAnalyzed": "Analyzed",
+    "mockRow1": "Fruit fly",
+    "mockRow1Value": "14",
+    "mockRow2": "Other insects",
+    "mockRow2Value": "2",
+    "mockRow3": "New today",
+    "mockRow3Value": "+5",
+    "bento3Desc": "7-day trend, degree-day forecast of the next wave of adult flies, and integrated pest management suggestions.",
+    "mockForecastLabel": "Next fly wave",
+    "mockForecastValue": "in about 15 days",
+    "mockForecastProgress": "130 / 350 degree-days",
+    "mockForecastWeather": "Weather favorable for breeding",
+    "mockAlertTitle": "THRESHOLD REACHED: MANGO PLOT A",
+    "mockAlertTime": "Just now",
+    "mockAlertBody": "18 insects on the trap (threshold 15). Check the trap and consider treating soon.",
+    "mockExportPdf": "Export PDF",
+    "mockExportExcel": "Export Excel",
+    "mockExportLog": "VietGAP log",
+    "use1Stat": "Fruit orchards",
+    "use1Title": "Early fruit fly warning",
+    "use1Subtitle": "Mango, pomelo, dragon fruit: know as soon as flies on the traps increase, before the fruit is damaged.",
+    "use2Stat": "Field log",
+    "use2Title": "See whether treatments work",
+    "use2Subtitle": "Log each spray or release of natural enemies; FlyBot compares catches before and after.",
+    "use3Stat": "Cooperatives & companies",
+    "use3Title": "Manage many farms",
+    "use3Subtitle": "Farms and plots on the map, organizations with roles, a weekly report for each person.",
+    "audience1": "Growers",
+    "audience1Desc": "One farm, a few traps.",
+    "audience1Feat1": "See daily fly counts without walking the field",
+    "audience1Feat2": "Phone alerts when a threshold is crossed",
+    "audience1Feat3": "Reminders to replace sticky cards",
+    "audience2": "Cooperatives & companies",
+    "audience2Desc": "Many farms, many people.",
+    "audience2Feat1": "Farms and plots with boundaries on the map",
+    "audience2Feat2": "Organizations with owners, managers and members",
+    "audience2Feat3": "Weekly reports and a VietGAP treatment log",
+    "audience2Feat4": "Custom dashboards, shareable by link",
+    "audience3": "Technicians & integrators",
+    "audience3Desc": "Expert review and your own systems.",
+    "audience3Feat1": "Review and correct AI counts",
+    "audience3Feat2": "Read-only API and signed webhooks",
+    "audience3Feat3": "Retrain the AI with reviewed photos",
     "liveEngine": "Live Engine",
-    "startBtn": "Start",
-    "kineticCaption1": "PEST DETECTION",
-    "kineticCaption2": "98.4% ACCURACY",
-    "theShineAgent": "The FlyBot Engine",
-    "introHeading": "Automated surveillance.<br>Precision agriculture.",
-    "introCol1": "Edge-driven camera pipeline with EZOpen and low-bandwidth HLS streams continuously monitors insect sticky traps without manual scouting visits.",
-    "introCol2": "Proprietary Vision AI models classify agricultural pests (Fruit Fly, Armyworm, Planthopper) in milliseconds with high-confidence bounding boxes.",
-    "introCol3": "Automated MinIO S3 snapshot retention and multi-channel alerting keep agronomists informed of pest surges before damage occurs.",
-    "bento1Title": "Vision AI Detection Engine",
-    "bento1Desc": "Continuous edge insect counting, multi-species classification, and confidence scoring.",
-    "generatingBeats": "Detecting Pests...",
-    "bento2Title": "Multi-Camera Grid",
-    "bento2Desc": "Adaptive SD/HD streaming mode with instant live switcher and camera heartbeat.",
-    "bento3Title": "MinIO S3 Storage",
-    "bento3Desc": "Encrypted snapshot archives with configurable retention windows.",
-    "bento4Title": "One-Click Audit & Alerts",
-    "bento4Desc": "Instant PDF/Excel export and automated Telegram / Webhook density alerts.",
-    "galleryTag": "Field Deployments",
-    "galleryHeading": "Trusted across high-tech orchards and smart greenhouses.",
-    "viewAllExports": "View documentation",
-    "showcase1Title": "Cu Chi Mango Orchard",
-    "showcase1Subtitle": "Fruit Fly (Bactrocera) Early Warning",
-    "showcase1Stat": "12 Cameras Active",
-    "showcase2Title": "Binh Thuan Dragon Fruit",
-    "showcase2Subtitle": "Night-shift Moth & Pest Surveillance",
-    "showcase2Stat": "8 Bio-Traps Synced",
-    "showcase3Title": "Da Lat Greenhouse Bio-Shield",
-    "showcase3Subtitle": "Zero-Residue Pest Threshold Control",
-    "showcase3Stat": "99.2% Uptime",
-    "pricingHeading": "Precision plans for<br>every orchard",
-    "creatorPlan": "Starter Farm",
-    "studioPlan": "Pro Agro",
-    "recommended": "Recommended",
-    "enterprise": "Enterprise Agro",
-    "perMonth": "/month",
-    "customPrice": "Custom",
-    "planCreatorFeat1": "Up to 5 Smart Trap Cameras",
-    "planCreatorFeat2": "Real-time EZOpen/HLS Grid",
-    "planCreatorFeat3": "7-day MinIO S3 Snapshot History",
-    "planStudioFeat1": "Up to 25 Smart Trap Cameras",
-    "planStudioFeat2": "Continuous Vision AI Insect Inference",
-    "planStudioFeat3": "30-day Retention & PDF/Excel Export",
-    "planStudioFeat4": "Automated Telegram Density Alerts",
-    "planEntFeat1": "Unlimited Camera Streams",
-    "planEntFeat2": "Custom Insect Classification Models",
-    "planEntFeat3": "Private Edge MinIO Cluster & SLA 99.9%",
-    "getStartedBtn": "Get Started",
-    "contactSalesBtn": "Contact Sales",
-    "copyrightText": "© 2026 FlyBot Studio. All rights reserved."
+    "startBtn": "Start"
   },
   "manual": {
-    "title": "User Manual",
-    "subtitle": "Complete guide to setting up and operating your FlyBot Smart Trap Studio",
-    "gettingStarted": "Getting Started",
-    "surveillanceGrid": "Surveillance Grid",
-    "visionAi": "Vision AI Inspection",
-    "reporting": "Reports & Alerts",
-    "stepAccountTitle": "1. Account & Permissions",
-    "stepAccountDesc": "Sign in to the FlyBot Studio console with your authorized agronomist or technician credentials.",
-    "stepPairingTitle": "2. Camera Device Pairing",
-    "stepPairingDesc": "Enter your camera Serial Number (SN) and 6-letter verification code from the device label to link with EZVIZ Open Platform.",
-    "stepSettingsTitle": "3. Configure Farm Settings",
-    "stepSettingsDesc": "Set orchard coordinates, trap inspection schedules, and preferred streaming quality modes.",
-    "stepGridTitle": "1. Adaptive Grid Surveillance",
-    "stepGridDesc": "Switch between 1x1, 2x2, and multi-camera overview. FlyBot uses low-bandwidth SD streams for grids to conserve cellular data.",
-    "stepLiveControlsTitle": "2. HD Switch & Snapshots",
-    "stepLiveControlsDesc": "Click into any camera card to automatically request high-definition 1080p stream and capture manual high-res evidence.",
-    "stepHeartbeatTitle": "3. Connectivity & Health Check",
-    "stepHeartbeatDesc": "Real-time heartbeat indicators immediately report device connectivity interruptions or Wi-Fi dropouts.",
-    "stepAiModelTitle": "1. Pest Species Models",
-    "stepAiModelDesc": "Select pest classification models targeting Fruit Flies (Bactrocera), Armyworms, Brown Planthoppers, or Beetles.",
-    "stepConfidenceTitle": "2. Confidence Filtering",
-    "stepConfidenceDesc": "Tune confidence thresholds (default 85%) to eliminate false positives caused by dust, water droplets, or leaves.",
-    "stepHeatmapTitle": "3. Sticky Sheet Density Map",
-    "stepHeatmapDesc": "Examine spatial insect distribution on the sticky trap to evaluate pheromone lure effectiveness.",
-    "stepTrendTitle": "1. 24h & 7-Day Surge Analytics",
-    "stepTrendDesc": "Observe exponential pest population surges plotted automatically against temperature and humidity variables.",
-    "stepExportTitle": "2. PDF & Excel Farm Audits",
-    "stepExportDesc": "Generate standardized pest surveillance inspection sheets with timestamps, device serials, and detection tables.",
-    "stepAlertTitle": "3. Automated Instant Alerts",
-    "stepAlertDesc": "Configure threshold rules to instantly trigger Telegram push notifications when pest count exceeds critical economic levels."
+    "title": "User guide",
+    "subtitle": "From your first camera to alerts, reports and integrations.",
+    "sections": {
+      "start": {
+        "title": "Getting started",
+        "steps": {
+          "account": {
+            "title": "Account & roles",
+            "desc": "Sign up with your email and confirm it. Admins run the whole system; managers add and manage their cameras; viewers see what is shared with them."
+          },
+          "camera": {
+            "title": "Add a camera",
+            "desc": "In Cameras, choose Add camera and enter the serial number (SN) and the 6-character verification code printed on the EZVIZ camera label. New cameras go into the first organization you own."
+          },
+          "schedule": {
+            "title": "Schedule, threshold & location",
+            "desc": "In Settings, Camera management: choose the capture interval, daytime only if needed, the alert threshold and the GPS location. The location is needed for weather and the degree-day forecast."
+          }
+        }
+      },
+      "cameras": {
+        "title": "Cameras & traps",
+        "steps": {
+          "live": {
+            "title": "Live view & playback",
+            "desc": "The Cameras page shows a grid of cameras. Open one for live view, SD-card playback, or capture a photo now for the AI to count."
+          },
+          "health": {
+            "title": "Camera status & photo quality",
+            "desc": "Camera details show the latest photo, photos in the last 24 hours, the AI success rate and photo quality: too dark, too bright, blurry, dirty lens, full card."
+          },
+          "card": {
+            "title": "Sticky card upkeep",
+            "desc": "Log each card replacement and set the reminder interval. FlyBot also records it when the count drops sharply (a new card) and tells you; delete the entry if it was a mistake."
+          }
+        }
+      },
+      "ai": {
+        "title": "AI & analytics",
+        "steps": {
+          "count": {
+            "title": "AI insect counting",
+            "desc": "Every photo is counted by the AI. A sticky card keeps what it catches, so the daily catch is the rise over the day before."
+          },
+          "review": {
+            "title": "Review & correct counts",
+            "desc": "In the photo history, confirm a count or correct it. Corrected counts are used in all statistics and can be used to retrain the AI."
+          },
+          "analytics": {
+            "title": "Analytics & comparison",
+            "desc": "The Analytics page has charts by day and species, comparisons between traps and periods, and PDF or Excel export."
+          },
+          "forecast": {
+            "title": "Diagnosis & forecast",
+            "desc": "On the Overview, run the diagnosis for the risk level, the 7-day trend, the degree-day forecast of the next wave of adult flies and suggested actions. These are estimates to guide you."
+          }
+        }
+      },
+      "farms": {
+        "title": "Farms, organizations & log",
+        "steps": {
+          "plots": {
+            "title": "Farms & plots",
+            "desc": "Create a farm, draw each plot on the map, put cameras in plots and set a threshold per plot."
+          },
+          "sharing": {
+            "title": "Sharing & organizations",
+            "desc": "Share cameras or farms by email. For a team, create an organization in Settings and add members as owner, manager or member."
+          },
+          "log": {
+            "title": "Treatment log",
+            "desc": "Record each spray, release of natural enemies or other action. FlyBot compares catches before and after, and exports the log in VietGAP format."
+          }
+        }
+      },
+      "alerts": {
+        "title": "Alerts & reports",
+        "steps": {
+          "channels": {
+            "title": "Alert channels",
+            "desc": "In Settings, Notifications: turn on email, connect Telegram, enable push notifications on your phone or computer."
+          },
+          "smart": {
+            "title": "Smart alerts",
+            "desc": "Threshold reached, sudden rise, camera offline, photo problems, card due. Set quiet hours for the night or mute a single camera."
+          },
+          "reports": {
+            "title": "Reports",
+            "desc": "A weekly report arrives every Monday morning. Build custom dashboards and share them with a public link when needed."
+          }
+        }
+      },
+      "integrations": {
+        "title": "Integrations",
+        "steps": {
+          "api": {
+            "title": "API keys",
+            "desc": "In Settings, API & Webhooks, create a read-only key so other systems can read cameras, daily counts and alerts at /api/v1."
+          },
+          "webhook": {
+            "title": "Webhooks",
+            "desc": "Receive alerts as they happen at your HTTPS address. Each request is signed so you can check it; use Test to send a sample event."
+          },
+          "training": {
+            "title": "Retraining the AI",
+            "desc": "Admins can upload reviewed photos to a Roboflow project, so the model learns from your own farm photos."
+          }
+        }
+      }
+    }
   },
   "privacy": {
-    "title": "Privacy Policy",
+    "title": "Privacy policy",
     "lastUpdated": "Last updated: October 2026",
-    "sec1Title": "1. Video Streams & Device Authentication",
-    "sec1Body": "All camera RTSP and EZOpen video streams are secured with per-device verification tokens. FlyBot never broadcasts private video feeds publicly without explicit farm manager permission.",
-    "sec2Title": "2. Vision AI Processing & Field Data",
-    "sec2Body": "Field trap snapshots analyzed by our Vision AI engine are processed strictly for pest classification and density tracking. Crop yields, geographic coordinates, and property details remain strictly confidential.",
-    "sec3Title": "3. MinIO S3 Encrypted Storage",
-    "sec3Body": "Snapshots and detection bounding boxes are persisted in private MinIO S3 object storage with AES-256 encryption. Retention policies can be set to 7, 30, or 90 days with automatic expiration.",
-    "sec4Title": "4. Farm Manager Control & Data Deletion",
-    "sec4Body": "You retain full ownership of all field surveillance data. At any time, administrators can permanently delete camera associations, archived snapshots, and historical pest reports."
+    "intro": "FlyBot is operated by AgrHub. This policy explains what data is collected when you use FlyBot, what it is used for and who can see it.",
+    "sections": {
+      "collect": {
+        "title": "1. Data we collect",
+        "body": "Account: email, name, avatar, password (stored only as a hash), language and notification settings.\nCameras and farms: serial number, camera verification code, name, GPS location, farm and plot boundaries you enter.\nTrap photos and AI results: counts, detection boxes, photo quality, daily totals.\nRecords you keep: card replacements, treatments, review notes.\nTechnical data: sign-in sessions (device, browser, IP address), activity log, push subscriptions, Telegram link."
+      },
+      "purpose": {
+        "title": "2. How we use it",
+        "body": "To run the features: insect counts, alerts, reports, forecasts and sharing; to protect accounts (session management, activity log); and to send the notifications you turned on. Data is not sold and not used for advertising."
+      },
+      "processors": {
+        "title": "3. Third-party services",
+        "body": "EZVIZ: camera connection, live view and photos.\nS3-compatible storage: photos in a private bucket, served only through FlyBot after an access check.\nRoboflow and Google Vertex AI: analysis of trap photos and the AI assistant.\nOpen-Meteo: receives camera coordinates to return the weather.\nGoogle Maps: map tiles.\nEmail provider, Telegram and browser push services: the alerts you turned on.\nWhen an admin turns on AI retraining, reviewed photos are uploaded to the operator Roboflow project."
+      },
+      "access": {
+        "title": "4. Who can see your data",
+        "body": "You; the people you share cameras, farms or dashboards with; members of organizations that hold your cameras; anyone with a dashboard public link, if you create one; systems using your API keys and webhook addresses; and system administrators."
+      },
+      "retention": {
+        "title": "5. Retention & deletion",
+        "body": "Photos and related data are kept for the period set by the administrator (in months) and then deleted automatically. To delete your account, contact the administrator; deleting it also removes your shares, sessions, notifications, API keys and webhooks."
+      },
+      "security": {
+        "title": "6. Security",
+        "body": "Passwords are hashed; sessions can be reviewed and revoked; photos are in private storage; every request is checked for access; webhooks are signed; admin actions are logged. Note: viewers of a camera with video encryption need its verification code to decrypt video in the browser, so change the code on the device when you stop sharing that camera."
+      },
+      "storage": {
+        "title": "7. Browser storage",
+        "body": "FlyBot uses a sign-in cookie (httpOnly) and browser storage for your session, language and light/dark theme. FlyBot uses no advertising or tracking cookies."
+      },
+      "contact": {
+        "title": "8. Contact & changes",
+        "body": "For questions about your data, write to {email}. When this policy changes, the date at the top of the page is updated."
+      }
+    }
   },
   "terms": {
-    "title": "Terms of Service",
+    "title": "Terms of service",
     "lastUpdated": "Last updated: October 2026",
-    "sec1Title": "1. Acceptance of Terms",
-    "sec1Body": "By accessing and utilizing FlyBot Smart Trap Studio, you agree to comply with these terms, governing intelligent trap monitoring, camera integration, and agricultural analytics.",
-    "sec2Title": "2. Vision AI Detection Advisory",
-    "sec2Body": "Vision AI pest counts and density classifications are predictive agricultural aids designed to support decision-making. Agronomists should corroborate high-alert anomalies with ground truth field inspections.",
-    "sec3Title": "3. Hardware & Bandwidth Usage",
-    "sec3Body": "Users are responsible for maintaining stable orchard connectivity for IoT cameras. Multi-camera grid streaming incorporates bandwidth-saving SD protocols to prevent cellular data overages.",
-    "sec4Title": "4. Prohibited Uses",
-    "sec4Body": "You may not utilize the platform for unlawful surveillance beyond your agricultural premises, or attempt unauthorized reverse engineering of the Vision AI model APIs.",
-    "sec5Title": "5. Technical Support & Inquiries",
-    "sec5Body": "For hardware deployment assistance, API integration, or enterprise cooperative SLA inquiries, contact support at contact@flybot.studio."
+    "intro": "FlyBot is a camera and AI sticky-trap monitoring service operated by AgrHub.",
+    "sections": {
+      "accept": {
+        "title": "1. Acceptance",
+        "body": "By creating an account or using FlyBot you agree to these terms and the privacy policy."
+      },
+      "accounts": {
+        "title": "2. Accounts & roles",
+        "body": "Keep your password secret and sign out of devices you do not own. You are responsible for activity under your account and for the people you share cameras or farms with or invite to organizations."
+      },
+      "devices": {
+        "title": "3. Cameras & devices",
+        "body": "Only add cameras you own or are allowed to use, and keep their verification codes private. You provide power and network at the farm. Use of EZVIZ cameras and services is also subject to the EZVIZ terms."
+      },
+      "ai": {
+        "title": "4. AI results & forecasts",
+        "body": "AI counts can be wrong, for example with blurry photos, overlapping insects or debris on the card. Trend and degree-day forecasts are estimates and suggested actions are guidance only. Check the field before deciding on a treatment."
+      },
+      "pesticides": {
+        "title": "5. Pesticides & records",
+        "body": "You are responsible for following product labels, doses, pre-harvest intervals and applicable rules. The treatment log and VietGAP export are based on what you enter; FlyBot does not certify it."
+      },
+      "use": {
+        "title": "6. Acceptable use",
+        "body": "Use FlyBot only for agricultural monitoring. Do not use the cameras to watch people unlawfully; do not access, scan or disrupt the system without permission; do not use sharing to send spam; stay within the API rate limits."
+      },
+      "data": {
+        "title": "7. Data & sharing",
+        "body": "You keep the rights to your farm data. A dashboard public link can be viewed by anyone who has it. You manage your API keys and webhooks; revoke them when no longer needed."
+      },
+      "service": {
+        "title": "8. Service & changes",
+        "body": "FlyBot is provided as is and may be interrupted for maintenance or by third-party outages. Features may change over time. Accounts that break these terms may be disabled."
+      },
+      "contact": {
+        "title": "9. Contact",
+        "body": "Deployment, integration or questions about these terms: {email}."
+      }
+    }
   },
   "contact": {
-    "title": "Contact Us",
-    "subtitle": "Have questions about deploying FlyBot smart traps in your orchards? We are here to help.",
+    "title": "Contact",
+    "subtitle": "Need advice on deploying smart traps, an integration or help using FlyBot? Leave a message and we will answer by email.",
     "nameLabel": "Your Name",
     "namePlaceholder": "e.g. John Doe",
     "emailLabel": "Email Address",
-    "emailPlaceholder": "you@orchard.com",
+    "emailPlaceholder": "you{'@'}orchard.com",
     "subjectLabel": "Subject",
-    "subjectPlaceholder": "Hardware deployment, API integration, or pricing",
+    "subjectPlaceholder": "Deployment advice, integration, support...",
     "messageLabel": "Message",
-    "messagePlaceholder": "Describe your orchard scale, camera count, or technical requirements...",
-    "sendBtn": "Send Message",
-    "successTitle": "Inquiry Sent Successfully!",
-    "successMsg": "Thank you for reaching out. Our agricultural technology team will review your message and respond within 24 hours."
+    "messagePlaceholder": "Crop, farm size, number of traps or your question...",
+    "sendBtn": "Send message",
+    "successTitle": "Message sent",
+    "successMsg": "Thank you. We have received your message and will reply to the email you gave.",
+    "sendAnother": "Send another message",
+    "required": "Please enter your name, email and message.",
+    "failed": "The message could not be sent. Please try again later.",
+    "directEmail": "Or email us directly at {email}."
   },
   "footer": {
     "appName": "FlyBot",
     "brandName": "FlyBot",
-    "tagline": "Smart bio-trap surveillance & Vision AI studio for modern precision agriculture.",
+    "tagline": "Smart sticky traps and AI insect counting, for early pest detection and evidence-based pest management.",
     "product": "Product",
     "company": "Company",
     "legal": "Legal",
-    "copyright": "© 2026 FlyBot Studio. All rights reserved.",
+    "copyright": "© 2026 AgrHub. FlyBot is developed and operated by AgrHub.",
     "resources": "Resources"
   },
   "map": {
@@ -1532,5 +1693,8 @@
       "noDelivery": "Nothing sent yet.",
       "docs": "Check the X-FlyBot-Signature header with your secret before trusting a request. After 15 failures in a row a webhook is switched off."
     }
+  },
+  "legal": {
+    "contactFallback": "the Contact page"
   }
 }

@@ -6,12 +6,15 @@ import { useTheme } from '@/utils/theme';
 import {
   Aim,
   VideoCamera,
-  FolderOpened,
   Bell,
   Check,
   DataAnalysis,
-  Monitor,
-  Document
+  Document,
+  TrendCharts,
+  Sunny,
+  Notebook,
+  Warning,
+  MapLocation
 } from '@element-plus/icons-vue';
 
 const { t } = useI18n();
@@ -25,6 +28,23 @@ function handleScroll(targetId, e) {
     history.pushState(null, '', targetId);
   }
 }
+
+// Bento 1 mock: one analyzed trap photo
+const mockRows = [
+  { label: 'home.mockRow1', value: 'home.mockRow1Value' },
+  { label: 'home.mockRow2', value: 'home.mockRow2Value' },
+  { label: 'home.mockRow3', value: 'home.mockRow3Value' }
+];
+const useCases = [
+  { key: 'use1', icon: Warning },
+  { key: 'use2', icon: Notebook },
+  { key: 'use3', icon: MapLocation }
+];
+const audiences = [
+  { key: 'audience1', features: [1, 2, 3] },
+  { key: 'audience2', features: [1, 2, 3, 4] },
+  { key: 'audience3', features: [1, 2, 3], contact: true }
+];
 
 const isAuthenticated = computed(() => {
   return !!localStorage.getItem('user');
@@ -107,7 +127,7 @@ const isAuthenticated = computed(() => {
                 <!-- Detection Bounding Box 1 -->
                 <div class="absolute top-10 left-8 border-2 border-[#3ecf8e] bg-[#3ecf8e]/15 rounded p-1 shadow-lg transform -rotate-3 transition-transform group-hover:scale-105">
                   <span class="block text-[8px] font-bold text-white bg-[#3ecf8e] px-1 rounded-sm leading-tight text-[#002112]">
-                    Bactrocera • 98.4%
+                    {{ t('home.mockLabel') }}
                   </span>
                   <div class="w-12 h-10 flex items-center justify-center">
                     <span class="text-xl">🪰</span>
@@ -117,10 +137,10 @@ const isAuthenticated = computed(() => {
                 <!-- Detection Bounding Box 2 -->
                 <div class="absolute bottom-16 right-6 border-2 border-amber-400 bg-amber-400/15 rounded p-1 shadow-lg transform rotate-2 transition-transform group-hover:scale-105">
                   <span class="block text-[8px] font-bold text-black bg-amber-400 px-1 rounded-sm leading-tight">
-                    Spodoptera • 94.2%
+                    {{ t('home.mockLabel') }}
                   </span>
                   <div class="w-14 h-12 flex items-center justify-center">
-                    <span class="text-2xl">🐛</span>
+                    <span class="text-2xl">🪰</span>
                   </div>
                 </div>
 
@@ -138,8 +158,8 @@ const isAuthenticated = computed(() => {
               <!-- Bottom Stream Controls HUD -->
               <div class="bg-black/70 backdrop-blur-md rounded-xl p-2.5 border border-white/10 z-20 space-y-2">
                 <div class="flex items-center justify-between text-[10px] text-white/70">
-                  <span class="font-bold text-[#3ecf8e]">AI DENSITY: 14/TRAP</span>
-                  <span>S3 SNAPSHOT: OK</span>
+                  <span class="font-bold text-[#3ecf8e]">{{ t('home.mockHudCount') }}</span>
+                  <span>{{ t('home.mockHudPhoto') }}</span>
                 </div>
                 <div class="h-1.5 w-full bg-white/20 rounded-full overflow-hidden">
                   <div class="h-full bg-[#3ecf8e] w-3/4 animate-pulse"></div>
@@ -218,23 +238,15 @@ const isAuthenticated = computed(() => {
                 <div class="flex items-center justify-between pb-3 border-b border-[var(--el-border-color)]">
                   <div class="flex items-center gap-2">
                     <span class="w-2.5 h-2.5 rounded-full bg-[#3ecf8e] animate-pulse"></span>
-                    <span class="text-xs font-mono font-bold text-[var(--el-text-color-primary)]">MODEL: YOLO-PEST-V8-CUSTOM</span>
+                    <span class="text-xs font-mono font-bold text-[var(--el-text-color-primary)]">{{ t('home.mockPhoto') }}</span>
                   </div>
-                  <span class="text-[10px] text-[var(--el-text-color-secondary)] uppercase">Inference: 14ms</span>
+                  <span class="text-[10px] text-[var(--el-text-color-secondary)] uppercase">{{ t('home.mockAnalyzed') }}</span>
                 </div>
 
                 <div class="space-y-2.5">
-                  <div class="flex items-center justify-between p-2.5 rounded-lg bg-[var(--el-card-bg-color)] border border-[var(--el-border-color)]">
-                    <span class="text-xs font-medium text-[var(--el-text-color-primary)]">Fruit Fly (Bactrocera dorsalis)</span>
-                    <span class="text-xs font-bold text-[#3ecf8e]">98.4% Confidence</span>
-                  </div>
-                  <div class="flex items-center justify-between p-2.5 rounded-lg bg-[var(--el-card-bg-color)] border border-[var(--el-border-color)]">
-                    <span class="text-xs font-medium text-[var(--el-text-color-primary)]">Fall Armyworm (Spodoptera)</span>
-                    <span class="text-xs font-bold text-amber-500">94.2% Confidence</span>
-                  </div>
-                  <div class="flex items-center justify-between p-2.5 rounded-lg bg-[var(--el-card-bg-color)] border border-[var(--el-border-color)]">
-                    <span class="text-xs font-medium text-[var(--el-text-color-primary)]">Brown Planthopper (Nilaparvata)</span>
-                    <span class="text-xs font-bold text-[#3ecf8e]">91.8% Confidence</span>
+                  <div v-for="row in mockRows" :key="row.label" class="flex items-center justify-between p-2.5 rounded-lg bg-[var(--el-card-bg-color)] border border-[var(--el-border-color)]">
+                    <span class="text-xs font-medium text-[var(--el-text-color-primary)]">{{ t(row.label) }}</span>
+                    <span class="text-xs font-bold text-[#3ecf8e]">{{ t(row.value) }}</span>
                   </div>
                 </div>
               </div>
@@ -301,7 +313,7 @@ const isAuthenticated = computed(() => {
             </div>
           </div>
 
-          <!-- Card 3: MinIO S3 Snapshot Storage (Col 4) -->
+          <!-- Card 3: Forecast & diagnosis (Col 4) -->
           <div class="md:col-span-4 bg-[var(--el-card-bg-color)] rounded-2xl p-8 flex flex-col justify-between min-h-[460px] group border border-[var(--el-border-color)] hover:border-[#3ecf8e]/60 transition-all duration-300 shadow-sm">
             <div class="flex justify-between items-start">
               <div class="space-y-2">
@@ -311,28 +323,25 @@ const isAuthenticated = computed(() => {
                 </p>
               </div>
               <div class="w-12 h-12 rounded-2xl bg-[var(--el-fill-color-light)] flex items-center justify-center shrink-0">
-                <el-icon class="text-2xl text-[var(--el-text-color-primary)] opacity-70"><FolderOpened /></el-icon>
+                <el-icon class="text-2xl text-[var(--el-text-color-primary)] opacity-70"><TrendCharts /></el-icon>
               </div>
             </div>
 
-            <!-- Skeleton UI: S3 Cloud Storage Storage Timeline -->
+            <!-- Skeleton UI: next fly wave -->
             <div class="mt-8 flex-1 bg-[var(--el-bg-color)] rounded-xl p-5 border border-[var(--el-border-color)] flex flex-col justify-center space-y-4 shadow-inner">
-              <div class="flex items-center justify-between text-xs font-mono">
-                <span class="text-[var(--el-text-color-secondary)]">Bucket: smart-trap-snaps</span>
-                <span class="text-[#3ecf8e] font-bold">AES-256</span>
+              <div class="flex items-center justify-between text-xs">
+                <span class="text-[var(--el-text-color-secondary)]">{{ t('home.mockForecastLabel') }}</span>
+                <span class="text-[#3ecf8e] font-bold">{{ t('home.mockForecastValue') }}</span>
               </div>
               <div class="space-y-2">
                 <div class="h-2 w-full bg-[var(--el-border-color)] rounded-full overflow-hidden">
-                  <div class="h-full bg-[#3ecf8e] w-2/3"></div>
+                  <div class="h-full bg-[#3ecf8e] w-[37%]"></div>
                 </div>
-                <div class="flex justify-between text-[10px] text-[var(--el-text-color-secondary)]">
-                  <span>30-Day Auto Retention</span>
-                  <span>14.2 GB / 50 GB</span>
-                </div>
+                <div class="text-[10px] text-[var(--el-text-color-secondary)]">{{ t('home.mockForecastProgress') }}</div>
               </div>
               <div class="pt-2 border-t border-[var(--el-border-color)] flex items-center gap-2 text-[11px] text-[var(--el-text-color-primary)]">
-                <el-icon class="text-[#3ecf8e]"><Check /></el-icon>
-                <span>Automated hourly sync active</span>
+                <el-icon class="text-[#3ecf8e]"><Sunny /></el-icon>
+                <span>{{ t('home.mockForecastWeather') }}</span>
               </div>
             </div>
           </div>
@@ -360,11 +369,11 @@ const isAuthenticated = computed(() => {
                 </div>
                 <div class="space-y-1">
                   <div class="flex items-center gap-2">
-                    <span class="text-xs font-bold text-[var(--el-text-color-primary)]">TELEGRAM ALERT: CRITICAL PEST SURGE</span>
-                    <span class="text-[9px] text-[var(--el-text-color-secondary)]">Just now</span>
+                    <span class="text-xs font-bold text-[var(--el-text-color-primary)]">{{ t('home.mockAlertTitle') }}</span>
+                    <span class="text-[9px] text-[var(--el-text-color-secondary)]">{{ t('home.mockAlertTime') }}</span>
                   </div>
                   <p class="text-xs text-[var(--el-text-color-secondary)]">
-                    Sector A3 Cu Chi Orchard exceeded 15 Fruit Flies / trap within 2 hours. Biological intervention recommended.
+                    {{ t('home.mockAlertBody') }}
                   </p>
                 </div>
               </div>
@@ -373,11 +382,15 @@ const isAuthenticated = computed(() => {
               <div class="flex flex-wrap items-center gap-3 pt-4">
                 <div class="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--el-card-bg-color)] border border-[var(--el-border-color)] text-xs font-semibold text-[var(--el-text-color-primary)]">
                   <el-icon class="text-red-400"><Document /></el-icon>
-                  <span>Export Pest Audit (PDF)</span>
+                  <span>{{ t('home.mockExportPdf') }}</span>
                 </div>
                 <div class="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--el-card-bg-color)] border border-[var(--el-border-color)] text-xs font-semibold text-[var(--el-text-color-primary)]">
                   <el-icon class="text-emerald-400"><DataAnalysis /></el-icon>
-                  <span>Export Historical Timeseries (Excel)</span>
+                  <span>{{ t('home.mockExportExcel') }}</span>
+                </div>
+                <div class="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--el-card-bg-color)] border border-[var(--el-border-color)] text-xs font-semibold text-[var(--el-text-color-primary)]">
+                  <el-icon class="text-[#3ecf8e]"><Notebook /></el-icon>
+                  <span>{{ t('home.mockExportLog') }}</span>
                 </div>
               </div>
             </div>
@@ -386,7 +399,7 @@ const isAuthenticated = computed(() => {
       </div>
     </section>
 
-    <!-- Field Deployments Showcase Section -->
+    <!-- Use cases -->
     <section id="gallery" class="py-32 bg-[var(--el-bg-color)] border-y border-[var(--el-border-color)] scroll-mt-20">
       <div class="container mx-auto max-w-[1440px] px-6">
         <div class="flex flex-col md:flex-row justify-between items-end mb-16">
@@ -406,48 +419,26 @@ const isAuthenticated = computed(() => {
           </div>
         </div>
 
-        <!-- 3 Showcase Deployment Cards -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <!-- Deployment 1 -->
-          <div class="rounded-2xl overflow-hidden bg-[var(--el-card-bg-color)] border border-[var(--el-border-color)] p-6 space-y-4 hover:border-[#3ecf8e]/50 transition-all shadow-sm">
-            <div class="h-44 rounded-xl bg-gradient-to-tr from-emerald-950/60 to-emerald-800/30 flex items-center justify-center text-4xl border border-[var(--el-border-color)]">
-              🥭
+          <div
+            v-for="use in useCases"
+            :key="use.key"
+            class="rounded-2xl overflow-hidden bg-[var(--el-card-bg-color)] border border-[var(--el-border-color)] p-6 space-y-4 hover:border-[#3ecf8e]/50 transition-all shadow-sm"
+          >
+            <div class="w-12 h-12 rounded-2xl bg-[#3ecf8e]/15 flex items-center justify-center">
+              <el-icon class="text-2xl text-[#3ecf8e]"><component :is="use.icon" /></el-icon>
             </div>
             <div class="space-y-1">
-              <span class="text-[10px] font-bold uppercase tracking-widest text-[#3ecf8e]">{{ t('home.showcase1Stat') }}</span>
-              <h3 class="text-lg font-bold text-[var(--el-text-color-primary)]">{{ t('home.showcase1Title') }}</h3>
-              <p class="text-xs text-[var(--el-text-color-secondary)]">{{ t('home.showcase1Subtitle') }}</p>
-            </div>
-          </div>
-
-          <!-- Deployment 2 -->
-          <div class="rounded-2xl overflow-hidden bg-[var(--el-card-bg-color)] border border-[var(--el-border-color)] p-6 space-y-4 hover:border-[#3ecf8e]/50 transition-all shadow-sm">
-            <div class="h-44 rounded-xl bg-gradient-to-tr from-pink-950/60 to-rose-800/30 flex items-center justify-center text-4xl border border-[var(--el-border-color)]">
-              🐉
-            </div>
-            <div class="space-y-1">
-              <span class="text-[10px] font-bold uppercase tracking-widest text-[#3ecf8e]">{{ t('home.showcase2Stat') }}</span>
-              <h3 class="text-lg font-bold text-[var(--el-text-color-primary)]">{{ t('home.showcase2Title') }}</h3>
-              <p class="text-xs text-[var(--el-text-color-secondary)]">{{ t('home.showcase2Subtitle') }}</p>
-            </div>
-          </div>
-
-          <!-- Deployment 3 -->
-          <div class="rounded-2xl overflow-hidden bg-[var(--el-card-bg-color)] border border-[var(--el-border-color)] p-6 space-y-4 hover:border-[#3ecf8e]/50 transition-all shadow-sm">
-            <div class="h-44 rounded-xl bg-gradient-to-tr from-teal-950/60 to-cyan-800/30 flex items-center justify-center text-4xl border border-[var(--el-border-color)]">
-              🏡
-            </div>
-            <div class="space-y-1">
-              <span class="text-[10px] font-bold uppercase tracking-widest text-[#3ecf8e]">{{ t('home.showcase3Stat') }}</span>
-              <h3 class="text-lg font-bold text-[var(--el-text-color-primary)]">{{ t('home.showcase3Title') }}</h3>
-              <p class="text-xs text-[var(--el-text-color-secondary)]">{{ t('home.showcase3Subtitle') }}</p>
+              <span class="text-[10px] font-bold uppercase tracking-widest text-[#3ecf8e]">{{ t(`home.${use.key}Stat`) }}</span>
+              <h3 class="text-lg font-bold text-[var(--el-text-color-primary)]">{{ t(`home.${use.key}Title`) }}</h3>
+              <p class="text-sm text-[var(--el-text-color-secondary)] leading-relaxed">{{ t(`home.${use.key}Subtitle`) }}</p>
             </div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Pricing Section -->
+    <!-- Who it is for (anchor kept as #pricing for old links) -->
     <section id="pricing" class="py-32 px-6 bg-[var(--el-bg-color-page)] scroll-mt-20">
       <div class="container mx-auto max-w-[1440px]">
         <div class="text-center mb-20 space-y-3">
@@ -457,94 +448,24 @@ const isAuthenticated = computed(() => {
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <!-- Tier 1: Starter Farm -->
-          <div class="p-8 sm:p-10 border border-[var(--el-border-color)] bg-[var(--el-card-bg-color)] rounded-2xl flex flex-col hover:border-[#3ecf8e]/50 transition-colors shadow-sm">
-            <h3 class="text-2xl font-bold mb-2 text-[var(--el-text-color-primary)]">{{ t('home.creatorPlan') }}</h3>
-            <div class="text-4xl font-extrabold mb-8 text-[var(--el-text-color-primary)]">
-              $19<span class="text-sm text-[var(--el-text-color-secondary)] font-normal">{{ t('home.perMonth') }}</span>
-            </div>
+          <div
+            v-for="group in audiences"
+            :key="group.key"
+            class="p-8 rounded-2xl bg-[var(--el-card-bg-color)] border border-[var(--el-border-color)] flex flex-col hover:border-[#3ecf8e]/50 transition-all shadow-sm"
+          >
+            <h3 class="text-2xl font-bold mb-1 text-[var(--el-text-color-primary)]">{{ t(`home.${group.key}`) }}</h3>
+            <p class="text-sm text-[var(--el-text-color-secondary)] mb-8">{{ t(`home.${group.key}Desc`) }}</p>
             <ul class="space-y-4 mb-10 flex-grow">
-              <li class="flex items-center space-x-3 text-sm text-[var(--el-text-color-regular)]">
-                <el-icon class="text-[#3ecf8e]"><Check /></el-icon>
-                <span>{{ t('home.planCreatorFeat1') }}</span>
-              </li>
-              <li class="flex items-center space-x-3 text-sm text-[var(--el-text-color-regular)]">
-                <el-icon class="text-[#3ecf8e]"><Check /></el-icon>
-                <span>{{ t('home.planCreatorFeat2') }}</span>
-              </li>
-              <li class="flex items-center space-x-3 text-sm text-[var(--el-text-color-regular)]">
-                <el-icon class="text-[#3ecf8e]"><Check /></el-icon>
-                <span>{{ t('home.planCreatorFeat3') }}</span>
+              <li v-for="n in group.features" :key="n" class="flex items-start gap-3 text-sm text-[var(--el-text-color-regular)]">
+                <el-icon class="text-[#3ecf8e] mt-0.5 shrink-0"><Check /></el-icon>
+                <span>{{ t(`home.${group.key}Feat${n}`) }}</span>
               </li>
             </ul>
             <RouterLink
-              :to="isAuthenticated ? '/dashboard' : '/login'"
+              :to="group.contact ? '/contact' : (isAuthenticated ? '/dashboard' : '/login')"
               class="block w-full py-3.5 border border-[var(--el-border-color)] rounded-xl text-center text-xs font-bold uppercase tracking-widest hover:bg-[#3ecf8e] hover:text-[#002112] hover:border-[#3ecf8e] transition-all text-[var(--el-text-color-primary)] cursor-pointer"
             >
-              {{ t('home.getStartedBtn') }}
-            </RouterLink>
-          </div>
-
-          <!-- Tier 2: Pro Agro (Recommended) -->
-          <div class="p-8 sm:p-10 border-2 border-[#3ecf8e] bg-[var(--el-card-bg-color)] rounded-2xl flex flex-col relative shadow-[0_0_40px_rgba(62,207,142,0.18)]">
-            <span class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#3ecf8e] text-[#002112] px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest whitespace-nowrap shadow-sm">
-              {{ t('home.recommended') }}
-            </span>
-            <h3 class="text-2xl font-bold mb-2 text-[var(--el-text-color-primary)]">{{ t('home.studioPlan') }}</h3>
-            <div class="text-4xl font-extrabold mb-8 text-[var(--el-text-color-primary)]">
-              $49<span class="text-sm text-[var(--el-text-color-secondary)] font-normal">{{ t('home.perMonth') }}</span>
-            </div>
-            <ul class="space-y-4 mb-10 flex-grow">
-              <li class="flex items-center space-x-3 text-sm text-[var(--el-text-color-regular)]">
-                <el-icon class="text-[#3ecf8e]"><Check /></el-icon>
-                <span>{{ t('home.planStudioFeat1') }}</span>
-              </li>
-              <li class="flex items-center space-x-3 text-sm text-[var(--el-text-color-regular)]">
-                <el-icon class="text-[#3ecf8e]"><Check /></el-icon>
-                <span>{{ t('home.planStudioFeat2') }}</span>
-              </li>
-              <li class="flex items-center space-x-3 text-sm text-[var(--el-text-color-regular)]">
-                <el-icon class="text-[#3ecf8e]"><Check /></el-icon>
-                <span>{{ t('home.planStudioFeat3') }}</span>
-              </li>
-              <li class="flex items-center space-x-3 text-sm text-[var(--el-text-color-regular)]">
-                <el-icon class="text-[#3ecf8e]"><Check /></el-icon>
-                <span>{{ t('home.planStudioFeat4') }}</span>
-              </li>
-            </ul>
-            <RouterLink
-              :to="isAuthenticated ? '/dashboard' : '/login'"
-              class="block w-full py-3.5 bg-[#3ecf8e] text-[#002112] rounded-xl text-center text-xs font-bold uppercase tracking-widest hover:bg-white hover:text-black transition-all shadow-md cursor-pointer"
-            >
-              {{ t('home.getStartedBtn') }}
-            </RouterLink>
-          </div>
-
-          <!-- Tier 3: Enterprise Agro -->
-          <div class="p-8 sm:p-10 border border-[var(--el-border-color)] bg-[var(--el-card-bg-color)] rounded-2xl flex flex-col hover:border-[#3ecf8e]/50 transition-colors shadow-sm">
-            <h3 class="text-2xl font-bold mb-2 text-[var(--el-text-color-primary)]">{{ t('home.enterprise') }}</h3>
-            <div class="text-4xl font-extrabold mb-8 text-[var(--el-text-color-primary)]">
-              {{ t('home.customPrice') }}
-            </div>
-            <ul class="space-y-4 mb-10 flex-grow">
-              <li class="flex items-center space-x-3 text-sm text-[var(--el-text-color-regular)]">
-                <el-icon class="text-[#3ecf8e]"><Check /></el-icon>
-                <span>{{ t('home.planEntFeat1') }}</span>
-              </li>
-              <li class="flex items-center space-x-3 text-sm text-[var(--el-text-color-regular)]">
-                <el-icon class="text-[#3ecf8e]"><Check /></el-icon>
-                <span>{{ t('home.planEntFeat2') }}</span>
-              </li>
-              <li class="flex items-center space-x-3 text-sm text-[var(--el-text-color-regular)]">
-                <el-icon class="text-[#3ecf8e]"><Check /></el-icon>
-                <span>{{ t('home.planEntFeat3') }}</span>
-              </li>
-            </ul>
-            <RouterLink
-              to="/contact"
-              class="block w-full py-3.5 border border-[var(--el-border-color)] rounded-xl text-center text-xs font-bold uppercase tracking-widest hover:bg-[#3ecf8e] hover:text-[#002112] hover:border-[#3ecf8e] transition-all text-[var(--el-text-color-primary)] cursor-pointer"
-            >
-              {{ t('home.contactSalesBtn') }}
+              {{ group.contact ? t('home.contactSalesBtn') : (isAuthenticated ? t('nav.dashboard') : t('home.getStartedBtn')) }}
             </RouterLink>
           </div>
         </div>

@@ -167,7 +167,7 @@ function handleNavClick(href, e) {
             <ul class="space-y-3 text-sm text-[var(--el-text-color-secondary)]">
               <li><router-link to="/manual" class="hover:text-[#3ecf8e] transition-colors">{{ t('nav.helpCenter') }}</router-link></li>
               <li><router-link to="/contact" class="hover:text-[#3ecf8e] transition-colors">{{ t('nav.contact') }}</router-link></li>
-              <li><a href="#" class="hover:text-[#3ecf8e] transition-colors">{{ t('nav.apiDocs') }}</a></li>
+              <li><router-link to="/manual?tab=integrations" class="hover:text-[#3ecf8e] transition-colors">{{ t('nav.apiDocs') }}</router-link></li>
             </ul>
           </div>
 
@@ -175,20 +175,12 @@ function handleNavClick(href, e) {
           <div class="md:col-span-2">
             <h4 class="text-[10px] font-bold uppercase tracking-widest mb-6 text-[#3ecf8e]/80">{{ t('footer.company') }}</h4>
             <ul class="space-y-3 text-sm text-[var(--el-text-color-secondary)]">
-              <li><router-link to="/manual" class="hover:text-[#3ecf8e] transition-colors">{{ t('nav.about') }}</router-link></li>
+              <li><a href="/#engine" @click="(e) => handleNavClick('/#engine', e)" class="hover:text-[#3ecf8e] transition-colors cursor-pointer">{{ t('nav.about') }}</a></li>
               <li><router-link to="/privacy" class="hover:text-[#3ecf8e] transition-colors">{{ t('footer.legal') }}</router-link></li>
               <li><router-link to="/terms" class="hover:text-[#3ecf8e] transition-colors">{{ t('nav.terms') }}</router-link></li>
             </ul>
           </div>
 
-          <!-- Social Links -->
-          <div class="md:col-span-2 flex flex-col justify-end md:items-end">
-            <div class="flex space-x-3 text-lg text-[var(--el-text-color-secondary)]">
-              <a href="#" aria-label="Twitter" class="w-8 h-8 rounded-full bg-[var(--el-border-color)]/30 flex items-center justify-center font-bold text-xs hover:bg-[#3ecf8e] hover:text-[#002112] transition-all">𝕏</a>
-              <a href="#" aria-label="Github" class="w-8 h-8 rounded-full bg-[var(--el-border-color)]/30 flex items-center justify-center font-bold text-xs hover:bg-[#3ecf8e] hover:text-[#002112] transition-all">🐙</a>
-              <a href="#" aria-label="LinkedIn" class="w-8 h-8 rounded-full bg-[var(--el-border-color)]/30 flex items-center justify-center font-bold text-xs hover:bg-[#3ecf8e] hover:text-[#002112] transition-all">🔗</a>
-            </div>
-          </div>
         </div>
 
         <!-- Copyright & Bottom Links -->

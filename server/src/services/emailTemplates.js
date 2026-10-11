@@ -156,7 +156,26 @@ function weeklyReportEmail({ user, language, lines, url }) {
     };
 }
 
+/**
+ * A message from the public contact form, for the operator. Replying answers the sender.
+ */
+function contactEmail({ to, language, name, email, subject, message }) {
+    const t = (key, params) => translate(language, key, params);
+    const lines = [
+        t('email.contactForm.from', { name, email }),
+        ...(subject ? [t('email.contactForm.topic', { subject })] : []),
+        ...String(message).split(/\r?\n/).filter(line => line.trim())
+    ];
+    return {
+        to,
+        replyTo: email,
+        subject: t('email.contactForm.subject', { subject: singleLine(subject || name) }),
+        ...layout({ language, user: { email: to }, paragraphs: lines, footerKey: 'email.contactForm.footer' })
+    };
+}
+
 module.exports = {
+    contactEmail,
     shareEmail,
     weeklyReportEmail,
     escapeHtml,

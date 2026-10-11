@@ -1,8 +1,9 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { ElMessage } from 'element-plus';
 import { CircleCheck, Promotion, User, Message, PriceTag } from '@element-plus/icons-vue';
+import api from '@/services/api';
 
 const { t } = useI18n();
 
@@ -10,22 +11,38 @@ const form = ref({
   name: '',
   email: '',
   subject: '',
-  message: ''
+  message: '',
+  // Hidden from people; bots fill it in
+  website: ''
+});
+const contactEmail = ref(null);
+
+onMounted(async () => {
+  try {
+    contactEmail.value = (await api.getAuthConfig()).data?.contactEmail || null;
+  } catch {
+    contactEmail.value = null;
+  }
 });
 
 const isSent = ref(false);
 const isLoading = ref(false);
 
 const handleSubmit = async () => {
-  if (!form.value.name || !form.value.email || !form.value.message) {
-    ElMessage.error(t('common.error') + ': Please fill all required fields');
+  if (!form.value.name.trim() || !form.value.email.trim() || !form.value.message.trim()) {
+    ElMessage.error(t('contact.required'));
     return;
   }
   isLoading.value = true;
-  await new Promise(r => setTimeout(r, 700));
-  isLoading.value = false;
-  isSent.value = true;
-  ElMessage.success(t('contact.successTitle'));
+  try {
+    await api.sendContact({ ...form.value });
+    isSent.value = true;
+    form.value = { name: '', email: '', subject: '', message: '', website: '' };
+  } catch (err) {
+    ElMessage.error(err.response?.data?.message || t('contact.failed'));
+  } finally {
+    isLoading.value = false;
+  }
 };
 </script>
 
@@ -48,7 +65,7 @@ const handleSubmit = async () => {
             @click="isSent = false"
             class="px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider bg-[var(--el-bg-color)] hover:bg-[#3ecf8e] hover:text-[#002112] text-[var(--el-text-color-primary)] transition-all cursor-pointer border border-[var(--el-border-color)]"
           >
-            Send Another Inquiry
+            {{ t('contact.sendAnother') }}
           </button>
         </div>
       </el-card>
@@ -100,6 +117,9 @@ const handleSubmit = async () => {
           />
         </el-form-item>
 
+        <!-- Honeypot: off-screen, skipped by keyboard and screen readers -->
+        <input v-model="form.website" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" class="absolute -left-[9999px] w-px h-px opacity-0" />
+
         <button
           id="contact-submit-btn"
           type="button"
@@ -111,6 +131,10 @@ const handleSubmit = async () => {
           <span>{{ isLoading ? t('common.loading') : t('contact.sendBtn') }}</span>
         </button>
       </el-form>
+
+      <p v-if="contactEmail" class="text-xs text-center text-[var(--el-text-color-secondary)]">
+        {{ t('contact.directEmail', { email: contactEmail }) }}
+      </p>
     </div>
   </div>
 </template>

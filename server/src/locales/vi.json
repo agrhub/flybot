@@ -115,6 +115,12 @@
       "subject": "{sharer} mời bạn dùng FlyBot",
       "body": "{sharer} đã thêm {email} vào tổ chức {orgName} trên FlyBot. Hãy tạo tài khoản bằng địa chỉ email này và xác nhận email để được truy cập.",
       "button": "Tạo tài khoản"
+    },
+    "contactForm": {
+      "subject": "Liên hệ FlyBot: {subject}",
+      "from": "Từ {name} <{email}>.",
+      "topic": "Chủ đề: {subject}",
+      "footer": "Gửi từ form Liên hệ của FlyBot. Trả lời email này để phản hồi người gửi."
     }
   },
   "telegram": {
@@ -287,6 +293,8 @@
     "since_must_be_an_iso_date": "since phải là ngày theo chuẩn ISO.",
     "rate_limit_120_requests_per_minute_per_key": "Vượt giới hạn: tối đa 120 yêu cầu mỗi phút cho mỗi key.",
     "only_the_farm_owner_can_share_it": "Chỉ chủ vườn mới chia sẻ được vườn.",
+    "please_enter_your_name_and_a_message": "Vui lòng nhập họ tên và nội dung.",
+    "the_contact_form_is_not_available_right_now": "Form liên hệ tạm thời chưa sẵn sàng.",
     "a_camera_can_be_shared_with_at_most": "Mỗi camera chỉ chia sẻ được với tối đa {max} người.",
     "a_dashboard_can_be_shared_with_at_most": "Mỗi bảng tùy chỉnh chỉ chia sẻ được với tối đa {max} người.",
     "a_farm_can_be_shared_with_at_most": "Mỗi vườn chỉ chia sẻ được với tối đa {max} người.",

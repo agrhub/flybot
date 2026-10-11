@@ -63,6 +63,10 @@ export default {
     return apiClient.post('/telegram/test');
   },
   // Public sign-in page settings (e.g. whether registration is open)
+  // Public contact form
+  sendContact(data) {
+    return apiClient.post('/public/contact', data);
+  },
   getAuthConfig() {
     return apiClient.get('/auth/config');
   },

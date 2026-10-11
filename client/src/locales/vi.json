@@ -40,9 +40,9 @@
     "analytics": "Analytics",
     "map": "Bản đồ",
     "settings": "Cài đặt",
-    "engine": "Công nghệ",
-    "gallery": "Mô hình",
-    "pricing": "Bảng giá",
+    "engine": "Tính năng",
+    "gallery": "Ứng dụng",
+    "pricing": "Dành cho ai",
     "manual": "Hướng dẫn",
     "privacy": "Bảo mật",
     "terms": "Điều khoản",
@@ -51,7 +51,7 @@
     "getStarted": "Bắt đầu",
     "launchStudio": "Vào Studio",
     "capabilities": "Tính năng",
-    "showcase": "Triển khai",
+    "showcase": "Ứng dụng",
     "about": "Giới thiệu",
     "careers": "Tuyển dụng",
     "blog": "Tin tức",
@@ -601,9 +601,9 @@
       "title": "Cảnh báo qua Telegram",
       "desc": "Nhận các cảnh báo giống email trong cuộc trò chuyện Telegram với bot FlyBot.",
       "connected": "Đã kết nối",
-      "connectedAs": "Đã kết nối: @{username}",
+      "connectedAs": "Đã kết nối: {'@'}{username}",
       "connect": "Kết nối Telegram",
-      "waiting": "Hãy bấm \"Start\" trong cuộc trò chuyện với @{bot} vừa mở. Trang này sẽ tự cập nhật.",
+      "waiting": "Hãy bấm \"Start\" trong cuộc trò chuyện với {'@'}{bot} vừa mở. Trang này sẽ tự cập nhật.",
       "checkNow": "Tôi đã bấm Start",
       "linked": "Đã kết nối Telegram.",
       "sendTest": "Gửi tin nhắn thử",
@@ -629,145 +629,306 @@
     "unavailable": "Trợ lý AI hiện không khả dụng. Vui lòng thử lại sau ít phút."
   },
   "home": {
-    "tagline": "STUDIO BẪY THÔNG MINH & THỊ GIÁC AI",
-    "heroTitlePart1": "Giám Sát Bẫy",
-    "heroTitlePart2": "Tự Động Thông Minh",
-    "heroTitleWithAi": "với Thị Giác AI",
-    "heroSubtitle": "Thu nhận luồng video EZVIZ thời gian thực, đếm nhận diện côn trùng tốc độ cao và phát cảnh báo mật độ tức thời. FlyBot biến các bẫy sinh học nông nghiệp thành trạm cảm biến thị giác thông minh.",
-    "launchAgent": "Khởi Chạy Studio",
-    "howItWorks": "Khám Phá Công Nghệ",
+    "tagline": "BẪY DÍNH THÔNG MINH & AI ĐẾM CÔN TRÙNG",
+    "heroTitlePart1": "Đếm côn trùng",
+    "heroTitlePart2": "trên bẫy dính",
+    "heroTitleWithAi": "tự động bằng AI",
+    "heroSubtitle": "FlyBot chụp ảnh tấm bẫy dính qua camera EZVIZ theo lịch, AI đếm ruồi đục quả trên từng ảnh và báo cho bạn khi vượt ngưỡng. Theo dõi mọi bẫy, mọi vườn trên một màn hình mà không cần ra vườn đếm tay.",
+    "launchAgent": "Vào ứng dụng",
+    "howItWorks": "Xem tính năng",
+    "kineticCaption1": "ĐÃ ĐẾM: 14 CON",
+    "kineticCaption2": "TỰ ĐỘNG THEO LỊCH CHỤP",
+    "theShineAgent": "Cách FlyBot làm việc",
+    "introHeading": "Bẫy tự đếm.<br>Bạn tập trung quyết định.",
+    "introCol1": "Camera EZVIZ đặt trước tấm bẫy dính được chụp tự động theo lịch, từ 15 phút đến 2 giờ một lần, có thể chỉ chụp ban ngày. Ảnh được lưu riêng tư, chỉ người có quyền mới xem được.",
+    "introCol2": "AI đếm côn trùng trên từng ảnh, tính số bắt mới mỗi ngày và kiểm tra chất lượng ảnh (mờ, tối, bẩn ống kính, tấm bẫy đầy). Kỹ thuật viên có thể xác nhận hoặc sửa số đếm.",
+    "introCol3": "Vượt ngưỡng, tăng đột biến hay camera mất kết nối đều được báo qua app, email, Telegram, thông báo đẩy hoặc webhook, kèm báo cáo tuần và dự báo đợt ruồi tiếp theo.",
+    "bento1Title": "AI đếm côn trùng",
+    "bento1Desc": "Đếm ruồi đục quả trên từng ảnh bẫy, đánh dấu từng con, và để kỹ thuật viên xác nhận hoặc sửa lại số đếm.",
+    "generatingBeats": "Đã duyệt",
+    "bento2Title": "Xem trực tiếp nhiều camera",
+    "bento2Desc": "Lưới nhiều camera, xem trực tiếp và xem lại thẻ nhớ, chụp ảnh ngay, theo dõi kết nối của từng camera.",
+    "bento3Title": "Dự báo & chẩn đoán",
+    "bento4Title": "Cảnh báo & báo cáo",
+    "bento4Desc": "Cảnh báo đa kênh, báo cáo tuần, nhật ký xử lý theo VietGAP và xuất PDF/Excel.",
+    "galleryTag": "Ứng dụng",
+    "galleryHeading": "Một ứng dụng cho cả vườn lẫn hợp tác xã.",
+    "viewAllExports": "Xem hướng dẫn",
+    "pricingHeading": "Dành cho<br>mọi quy mô",
+    "getStartedBtn": "Dùng ngay",
+    "contactSalesBtn": "Liên hệ tư vấn",
+    "copyrightText": "© 2026 AgrHub. Bảo lưu mọi quyền.",
+    "mockLabel": "Ruồi đục quả",
+    "mockHudCount": "AI: 14 con / bẫy",
+    "mockHudPhoto": "Ảnh: tốt",
+    "mockPhoto": "ẢNH 07:30 • LÔ XOÀI A",
+    "mockAnalyzed": "Đã phân tích",
+    "mockRow1": "Ruồi đục quả",
+    "mockRow1Value": "14 con",
+    "mockRow2": "Côn trùng khác",
+    "mockRow2Value": "2 con",
+    "mockRow3": "Bắt mới hôm nay",
+    "mockRow3Value": "+5 con",
+    "bento3Desc": "Xu hướng 7 ngày, dự báo đợt ruồi trưởng thành tiếp theo theo độ-ngày và gợi ý biện pháp quản lý dịch hại tổng hợp.",
+    "mockForecastLabel": "Đợt ruồi tiếp theo",
+    "mockForecastValue": "khoảng 15 ngày",
+    "mockForecastProgress": "130 / 350 độ-ngày",
+    "mockForecastWeather": "Thời tiết thuận lợi cho ruồi sinh sản",
+    "mockAlertTitle": "VƯỢT NGƯỠNG: LÔ XOÀI A",
+    "mockAlertTime": "Vừa xong",
+    "mockAlertBody": "18 con trên bẫy (ngưỡng 15). Hãy kiểm tra bẫy và cân nhắc xử lý sớm.",
+    "mockExportPdf": "Xuất PDF",
+    "mockExportExcel": "Xuất Excel",
+    "mockExportLog": "Nhật ký VietGAP",
+    "use1Stat": "Cây ăn quả",
+    "use1Title": "Cảnh báo sớm ruồi đục quả",
+    "use1Subtitle": "Vườn xoài, bưởi, thanh long: biết ngay khi số ruồi trên bẫy tăng, trước khi trái bị hại.",
+    "use2Stat": "Nhật ký vườn",
+    "use2Title": "Đánh giá hiệu quả xử lý",
+    "use2Subtitle": "Ghi lại mỗi lần phun hoặc thả thiên địch; FlyBot so sánh số bắt trước và sau để biết biện pháp có hiệu quả không.",
+    "use3Stat": "Hợp tác xã & doanh nghiệp",
+    "use3Title": "Quản lý nhiều vườn",
+    "use3Subtitle": "Vườn và lô trên bản đồ, tổ chức nhiều thành viên có phân quyền, báo cáo tuần gửi cho từng người.",
+    "audience1": "Chủ vườn",
+    "audience1Desc": "Một vườn, vài bẫy.",
+    "audience1Feat1": "Xem số ruồi mỗi ngày không cần ra vườn",
+    "audience1Feat2": "Cảnh báo qua điện thoại khi vượt ngưỡng",
+    "audience1Feat3": "Nhắc thay tấm bẫy đúng hạn",
+    "audience2": "Hợp tác xã & doanh nghiệp",
+    "audience2Desc": "Nhiều vườn, nhiều người.",
+    "audience2Feat1": "Vườn và lô có ranh giới trên bản đồ",
+    "audience2Feat2": "Tổ chức với chủ sở hữu, quản lý, thành viên",
+    "audience2Feat3": "Báo cáo tuần và nhật ký xử lý theo VietGAP",
+    "audience2Feat4": "Bảng tùy chỉnh, chia sẻ bằng liên kết",
+    "audience3": "Kỹ thuật viên & tích hợp",
+    "audience3Desc": "Chuyên môn và hệ thống riêng.",
+    "audience3Feat1": "Duyệt và sửa số đếm của AI",
+    "audience3Feat2": "API chỉ đọc và webhook có chữ ký",
+    "audience3Feat3": "Huấn luyện lại AI bằng ảnh đã duyệt",
     "liveEngine": "Hệ Thống Trực Tuyến",
-    "startBtn": "Bắt đầu",
-    "kineticCaption1": "PHÁT HIỆN SÂU HẠI",
-    "kineticCaption2": "ĐỘ CHÍNH XÁC 98.4%",
-    "theShineAgent": "Công Nghệ FlyBot",
-    "introHeading": "Giám sát tự động.<br>Nông nghiệp chính xác.",
-    "introCol1": "Hạ tầng kết nối camera EZOpen và HLS băng thông tối ưu liên tục theo dõi bẫy dính côn trùng mà không cần khảo sát thủ công tại vườn.",
-    "introCol2": "Mô hình Thị giác AI chuyên sâu phân loại sâu rầy nông nghiệp (Ruồi vàng, Sâu keo, Rầy nâu) tính bằng mili-giây với hộp nhận diện chuẩn xác.",
-    "introCol3": "Lưu trữ ảnh chụp MinIO S3 tự động và cảnh báo đa kênh giúp chuyên gia nông nghiệp phát hiện dịch hại trước khi bùng phát lan rộng.",
-    "bento1Title": "Động Cơ Nhận Diện Thị Giác AI",
-    "bento1Desc": "Tự động đếm côn trùng, phân loại đa loài sâu hại và chấm điểm độ tin cậy thời gian thực.",
-    "generatingBeats": "Đang Nhận Diện...",
-    "bento2Title": "Lưới Giám Sát Đa Camera",
-    "bento2Desc": "Chế độ truyền phát SD/HD thích ứng với trình chuyển đổi tức thời và giám sát kết nối.",
-    "bento3Title": "Lưu Trữ Ảnh Chụp MinIO S3",
-    "bento3Desc": "Kho lưu trữ ảnh chụp mã hóa với chu kỳ bảo lưu dữ liệu linh hoạt.",
-    "bento4Title": "Báo Cáo & Cảnh Báo 1-Chạm",
-    "bento4Desc": "Xuất báo cáo PDF/Excel tức thời và kích hoạt cảnh báo mật độ qua Telegram / Webhook.",
-    "galleryTag": "Mô Hình Triển Khai Thực Tế",
-    "galleryHeading": "Được tin cậy tại các nông trường công nghệ cao và nhà kính thông minh.",
-    "viewAllExports": "Xem tài liệu hướng dẫn",
-    "showcase1Title": "Vườn Xoài Công Nghệ Cao Củ Chi",
-    "showcase1Subtitle": "Cảnh Báo Sớm Ruồi Vàng Đục Quả",
-    "showcase1Stat": "12 Camera Hoạt Động",
-    "showcase2Title": "Vùng Trồng Thanh Long Bình Thuận",
-    "showcase2Subtitle": "Giám Sát Bướm Đêm & Côn Trùng Bẫy Đèn",
-    "showcase2Stat": "8 Bẫy Sinh Học Đồng Bộ",
-    "showcase3Title": "Nhà Kính Sinh Học Đà Lạt",
-    "showcase3Subtitle": "Kiểm Soát Ngưỡng Sâu Hại Không Dư Lượng",
-    "showcase3Stat": "Thời Gian Hoạt Động 99.2%",
-    "pricingHeading": "Gói triển khai cho<br>mọi nông trại",
-    "creatorPlan": "Nông Trại Khởi Đầu",
-    "studioPlan": "Nông Nghiệp Chuyên Nghiệp",
-    "recommended": "Khuyên Dùng",
-    "enterprise": "Hợp Tác Xã & Doanh Nghiệp",
-    "perMonth": "/tháng",
-    "customPrice": "Liên Hệ",
-    "planCreatorFeat1": "Tối đa 5 Camera Bẫy Thông Minh",
-    "planCreatorFeat2": "Lưới xem trực tiếp EZOpen/HLS",
-    "planCreatorFeat3": "Lưu trữ ảnh chụp MinIO S3 7 ngày",
-    "planStudioFeat1": "Tối đa 25 Camera Bẫy Thông Minh",
-    "planStudioFeat2": "Nhận diện sâu hại liên tục với AI",
-    "planStudioFeat3": "Lưu trữ 30 ngày & Xuất báo cáo PDF/Excel",
-    "planStudioFeat4": "Cảnh báo mật độ sâu hại qua Telegram",
-    "planEntFeat1": "Không giới hạn camera theo dõi",
-    "planEntFeat2": "Huấn luyện mô hình côn trùng riêng biệt",
-    "planEntFeat3": "Cụm máy chủ MinIO riêng biệt & SLA 99.9%",
-    "getStartedBtn": "Bắt Đầu Ngay",
-    "contactSalesBtn": "Liên Hệ Tư Vấn",
-    "copyrightText": "© 2026 FlyBot Studio. Bảo lưu mọi quyền."
+    "startBtn": "Bắt đầu"
   },
   "manual": {
-    "title": "Sách Hướng Dẫn Sử Dụng",
-    "subtitle": "Hướng dẫn thiết lập và khai thác Smart Trap Studio cùng FlyBot",
-    "gettingStarted": "Bắt Đầu",
-    "surveillanceGrid": "Lưới Giám Sát",
-    "visionAi": "Thị Giác AI",
-    "reporting": "Báo Cáo & Cảnh Báo",
-    "stepAccountTitle": "1. Tài Khoản & Phân Quyền",
-    "stepAccountDesc": "Đăng nhập vào bảng điều khiển FlyBot Studio bằng tài khoản kỹ thuật viên hoặc chuyên gia nông nghiệp.",
-    "stepPairingTitle": "2. Ghép Nối Thiết Bị Camera",
-    "stepPairingDesc": "Nhập Số Seri (SN) và mã xác thực 6 ký tự trên tem camera để liên kết với nền tảng EZVIZ Open Platform.",
-    "stepSettingsTitle": "3. Cấu Hình Nông Trường",
-    "stepSettingsDesc": "Thiết lập tọa độ vườn, lịch quét ảnh định kỳ của bẫy và chế độ chất lượng luồng xem mặc định.",
-    "stepGridTitle": "1. Lưới Giám Sát Thích Ứng",
-    "stepGridDesc": "Chuyển đổi giữa chế độ 1x1, 2x2 và lưới tổng quan. FlyBot sử dụng luồng SD tối ưu băng thông cho dạng lưới để tiết kiệm dữ liệu di động.",
-    "stepLiveControlsTitle": "2. Chuyển Đổi HD & Chụp Ảnh",
-    "stepLiveControlsDesc": "Nhấp vào thẻ camera bất kỳ để tự động nâng cấp luồng lên chuẩn Full HD 1080p và chụp ảnh lưu bằng chứng chất lượng cao.",
-    "stepHeartbeatTitle": "3. Kiểm Tra Kết Nối & Sức Khỏe",
-    "stepHeartbeatDesc": "Đèn báo nhịp tim kết nối hiển thị tình trạng trực tuyến tức thời, phát hiện mất tín hiệu mạng tại vườn.",
-    "stepAiModelTitle": "1. Mô Hình Nhận Diện Sâu Hại",
-    "stepAiModelDesc": "Lựa chọn mô hình nhận diện mục tiêu: Ruồi vàng đục quả, Sâu keo mùa thu, Rầy nâu hại lúa hoặc Bọ cánh cứng.",
-    "stepConfidenceTitle": "2. Bộ Lọc Ngưỡng Tin Cậy",
-    "stepConfidenceDesc": "Tinh chỉnh ngưỡng tin cậy (mặc định 85%) để loại bỏ kết quả sai lệch do bụi bẩn, giọt sương hoặc lá cây rơi vào bẫy.",
-    "stepHeatmapTitle": "3. Bản Đồ Mật Độ Tấm Dính",
-    "stepHeatmapDesc": "Xem phân bố không gian côn trùng trên bề mặt tấm dính để đánh giá hiệu lực phát tán chất dẫn dụ sinh học.",
-    "stepTrendTitle": "1. Phân Tích Đột Biến 24h & 7 Ngày",
-    "stepTrendDesc": "Theo dõi biểu đồ gia tăng đột biến mật độ sâu hại tương quan với nhiệt độ và độ ẩm môi trường.",
-    "stepExportTitle": "2. Xuất Báo Cáo PDF & Excel",
-    "stepExportDesc": "Tạo biên bản giám sát kiểm định dịch hại chuẩn hóa với mốc thời gian, số seri thiết bị và bảng số liệu côn trùng.",
-    "stepAlertTitle": "3. Cảnh Báo Tự Động Tức Thời",
-    "stepAlertDesc": "Cấu hình quy tắc ngưỡng để nhận thông báo khẩn qua Telegram ngay khi số lượng côn trùng vượt ngưỡng gây hại kinh tế."
+    "title": "Hướng dẫn sử dụng",
+    "subtitle": "Từ thêm camera đầu tiên đến cảnh báo, báo cáo và tích hợp.",
+    "sections": {
+      "start": {
+        "title": "Bắt đầu",
+        "steps": {
+          "account": {
+            "title": "Tài khoản & vai trò",
+            "desc": "Đăng ký bằng email rồi xác nhận email. Quản trị viên quản lý toàn hệ thống; quản lý thêm và quản lý camera của mình; người xem chỉ thấy những gì được chia sẻ."
+          },
+          "camera": {
+            "title": "Thêm camera",
+            "desc": "Vào Camera, chọn Thêm camera, nhập số serial (SN) và mã xác thực 6 ký tự in trên tem camera EZVIZ. Camera mới tự vào tổ chức đầu tiên bạn sở hữu."
+          },
+          "schedule": {
+            "title": "Lịch chụp, ngưỡng & vị trí",
+            "desc": "Trong Cài đặt, mục Quản lý camera: chọn chu kỳ chụp, chỉ chụp ban ngày nếu cần, ngưỡng cảnh báo và vị trí GPS. Vị trí cần cho thời tiết và dự báo độ-ngày."
+          }
+        }
+      },
+      "cameras": {
+        "title": "Camera & bẫy",
+        "steps": {
+          "live": {
+            "title": "Xem trực tiếp & xem lại",
+            "desc": "Trang Camera hiển thị lưới nhiều camera. Mở một camera để xem trực tiếp, xem lại video trên thẻ nhớ, hoặc chụp ảnh ngay để AI đếm."
+          },
+          "health": {
+            "title": "Tình trạng camera & chất lượng ảnh",
+            "desc": "Phần chi tiết camera cho biết ảnh gần nhất, số ảnh trong 24 giờ, tỷ lệ AI phân tích thành công và chất lượng ảnh: quá tối, quá sáng, mờ, bẩn ống kính, tấm bẫy đầy."
+          },
+          "card": {
+            "title": "Bảo trì tấm bẫy",
+            "desc": "Ghi nhận mỗi lần thay tấm bẫy và đặt số ngày nhắc thay. FlyBot cũng tự ghi nhận khi số đếm giảm mạnh (tấm mới) và báo cho bạn; nếu nhận nhầm, bạn có thể xoá lần ghi nhận đó."
+          }
+        }
+      },
+      "ai": {
+        "title": "AI & phân tích",
+        "steps": {
+          "count": {
+            "title": "AI đếm côn trùng",
+            "desc": "Mỗi ảnh được AI đếm. Tấm bẫy tích lũy côn trùng, nên số bắt mỗi ngày là phần tăng thêm so với hôm trước."
+          },
+          "review": {
+            "title": "Duyệt & sửa số đếm",
+            "desc": "Trong lịch sử ảnh, xác nhận số đếm đúng hoặc sửa lại. Số đã sửa được dùng cho mọi thống kê và có thể được dùng để huấn luyện lại AI."
+          },
+          "analytics": {
+            "title": "Phân tích & so sánh",
+            "desc": "Trang Analytics có biểu đồ theo ngày, theo loài, so sánh giữa các bẫy và giữa các kỳ; xuất PDF hoặc Excel."
+          },
+          "forecast": {
+            "title": "Chẩn đoán & dự báo",
+            "desc": "Ở Tổng quan, bấm chẩn đoán để xem mức nguy cơ, xu hướng 7 ngày, đợt ruồi trưởng thành tiếp theo theo độ-ngày và các biện pháp gợi ý. Đây là ước tính để tham khảo."
+          }
+        }
+      },
+      "farms": {
+        "title": "Vườn, tổ chức & nhật ký",
+        "steps": {
+          "plots": {
+            "title": "Vườn & lô",
+            "desc": "Tạo vườn, vẽ ranh giới từng lô trên bản đồ, gán camera vào lô và đặt ngưỡng cảnh báo theo lô."
+          },
+          "sharing": {
+            "title": "Chia sẻ & tổ chức",
+            "desc": "Chia sẻ camera hoặc vườn qua email. Với nhóm làm việc, tạo tổ chức trong Cài đặt và thêm thành viên với vai trò chủ sở hữu, quản lý hoặc thành viên."
+          },
+          "log": {
+            "title": "Nhật ký xử lý",
+            "desc": "Ghi lại mỗi lần phun thuốc, thả thiên địch hay biện pháp khác. FlyBot so sánh số bắt trước và sau để đánh giá hiệu quả, và xuất nhật ký theo mẫu VietGAP."
+          }
+        }
+      },
+      "alerts": {
+        "title": "Cảnh báo & báo cáo",
+        "steps": {
+          "channels": {
+            "title": "Kênh nhận cảnh báo",
+            "desc": "Trong Cài đặt, mục Thông báo: bật email, kết nối Telegram, bật thông báo đẩy trên điện thoại hoặc máy tính."
+          },
+          "smart": {
+            "title": "Cảnh báo thông minh",
+            "desc": "Vượt ngưỡng, tăng đột biến, camera mất kết nối, ảnh có vấn đề, đến hạn thay tấm bẫy. Đặt giờ yên lặng ban đêm hoặc tắt cảnh báo của từng camera."
+          },
+          "reports": {
+            "title": "Báo cáo",
+            "desc": "Báo cáo tuần gửi mỗi sáng thứ Hai. Tạo bảng tùy chỉnh và chia sẻ bằng liên kết công khai khi cần."
+          }
+        }
+      },
+      "integrations": {
+        "title": "Tích hợp",
+        "steps": {
+          "api": {
+            "title": "API key",
+            "desc": "Trong Cài đặt, mục API & Webhook, tạo key chỉ đọc để hệ thống khác lấy danh sách camera, số đếm theo ngày và cảnh báo qua địa chỉ /api/v1."
+          },
+          "webhook": {
+            "title": "Webhook",
+            "desc": "Nhận cảnh báo ngay khi xảy ra tại địa chỉ HTTPS của bạn. Mỗi yêu cầu có chữ ký để kiểm tra; dùng nút Thử để gửi một sự kiện mẫu."
+          },
+          "training": {
+            "title": "Huấn luyện lại AI",
+            "desc": "Quản trị viên có thể bật tải ảnh đã duyệt lên project Roboflow, giúp mô hình nhận diện tốt hơn với ảnh của chính vườn bạn."
+          }
+        }
+      }
+    }
   },
   "privacy": {
-    "title": "Chính Sách Bảo Mật",
-    "lastUpdated": "Cập nhật lần cuối: Tháng 10, 2026",
-    "sec1Title": "1. Luồng Video & Xác Thực Thiết Bị",
-    "sec1Body": "Tất cả luồng video RTSP và EZOpen đều được bảo vệ bằng mã xác thực thiết bị riêng biệt. FlyBot không bao giờ phát công khai hình ảnh giám sát trang trại nếu không có sự đồng ý của quản lý.",
-    "sec2Title": "2. Xử Lý Thị Giác AI & Dữ Liệu Nông Trường",
-    "sec2Body": "Ảnh chụp bề mặt bẫy được phân tích bởi hệ thống Thị giác AI chỉ phục vụ mục đích phân loại sâu rầy và theo dõi mật độ. Thông tin sản lượng, vị trí và quyền sở hữu trang trại được bảo mật tuyệt đối.",
-    "sec3Title": "3. Lưu Trữ Mã Hóa MinIO S3",
-    "sec3Body": "Dữ liệu ảnh chụp và tọa độ hộp nhận diện được lưu trữ trên cụm MinIO S3 bảo mật với mã hóa AES-256. Chính sách lưu trữ có thể cấu hình từ 7 đến 90 ngày với cơ chế tự động xóa dữ liệu cũ.",
-    "sec4Title": "4. Quyền Quản Lý & Xóa Dữ Liệu",
-    "sec4Body": "Người dùng giữ toàn quyền sở hữu dữ liệu giám sát nông trường. Quản trị viên có thể xóa vĩnh viễn liên kết thiết bị camera, ảnh chụp lưu trữ và lịch sử báo cáo bất kỳ lúc nào."
+    "title": "Chính sách bảo mật",
+    "lastUpdated": "Cập nhật lần cuối: tháng 10 năm 2026",
+    "intro": "FlyBot do AgrHub vận hành. Chính sách này giải thích dữ liệu nào được thu thập khi bạn dùng FlyBot, được dùng để làm gì và ai có thể xem.",
+    "sections": {
+      "collect": {
+        "title": "1. Dữ liệu được thu thập",
+        "body": "Tài khoản: email, họ tên, ảnh đại diện, mật khẩu (chỉ lưu dạng mã băm), ngôn ngữ và cài đặt thông báo.\nCamera và vườn: số serial, mã xác thực camera, tên, vị trí GPS, ranh giới vườn và lô do bạn nhập.\nẢnh chụp tấm bẫy và kết quả AI: số đếm, khung nhận diện, chất lượng ảnh, số liệu tổng hợp theo ngày.\nNhật ký bạn ghi: thay tấm bẫy, xử lý dịch hại, ghi chú khi duyệt ảnh.\nDữ liệu kỹ thuật: phiên đăng nhập (thiết bị, trình duyệt, địa chỉ IP), nhật ký hoạt động, đăng ký thông báo đẩy, liên kết Telegram."
+      },
+      "purpose": {
+        "title": "2. Mục đích sử dụng",
+        "body": "Dữ liệu được dùng để vận hành các tính năng: đếm côn trùng, cảnh báo, báo cáo, dự báo và chia sẻ; để bảo vệ tài khoản (quản lý phiên đăng nhập, nhật ký hoạt động); và để gửi các thông báo bạn đã bật. Dữ liệu không được bán và không được dùng cho quảng cáo."
+      },
+      "processors": {
+        "title": "3. Dịch vụ bên thứ ba",
+        "body": "EZVIZ: kết nối camera, xem trực tiếp và chụp ảnh.\nDịch vụ lưu trữ tương thích S3: lưu ảnh chụp trong kho riêng tư, chỉ truy cập qua FlyBot sau khi kiểm tra quyền.\nRoboflow và Google Vertex AI: phân tích ảnh bẫy và trả lời trợ lý AI.\nOpen-Meteo: nhận tọa độ camera để lấy dữ liệu thời tiết.\nGoogle Maps: bản đồ nền.\nNhà cung cấp email, Telegram và dịch vụ thông báo đẩy của trình duyệt: gửi các cảnh báo bạn đã bật.\nKhi quản trị viên bật tính năng huấn luyện lại AI, ảnh đã được duyệt sẽ được tải lên project Roboflow của đơn vị vận hành."
+      },
+      "access": {
+        "title": "4. Ai có thể xem dữ liệu",
+        "body": "Bạn; những người bạn chia sẻ camera, vườn hoặc bảng tùy chỉnh; thành viên các tổ chức có camera của bạn; bất kỳ ai có liên kết công khai của bảng tùy chỉnh nếu bạn bật liên kết đó; hệ thống dùng API key và địa chỉ webhook bạn cấu hình; và quản trị viên hệ thống."
+      },
+      "retention": {
+        "title": "5. Thời gian lưu & xoá dữ liệu",
+        "body": "Ảnh chụp và dữ liệu đi kèm được lưu theo thời hạn quản trị viên cài đặt (tính theo tháng), sau đó tự động xoá. Để xoá tài khoản, hãy liên hệ quản trị viên; khi tài khoản bị xoá, các quyền được chia sẻ, phiên đăng nhập, thông báo, API key và webhook của tài khoản cũng bị xoá."
+      },
+      "security": {
+        "title": "6. Bảo mật",
+        "body": "Mật khẩu được băm; phiên đăng nhập có thể xem và thu hồi; ảnh nằm trong kho riêng tư; mọi yêu cầu đều được kiểm tra quyền; webhook có chữ ký; các thao tác quản trị được ghi nhật ký. Lưu ý: người xem camera có bật mã hoá video cần mã xác thực để giải mã trên trình duyệt, vì vậy hãy đổi mã trên thiết bị khi ngừng chia sẻ camera đó."
+      },
+      "storage": {
+        "title": "7. Lưu trữ trên trình duyệt",
+        "body": "FlyBot dùng cookie đăng nhập (httpOnly) và bộ nhớ của trình duyệt để giữ phiên đăng nhập, ngôn ngữ và giao diện sáng/tối. FlyBot không dùng cookie quảng cáo hay theo dõi."
+      },
+      "contact": {
+        "title": "8. Liên hệ & thay đổi",
+        "body": "Mọi câu hỏi về dữ liệu, vui lòng gửi tới {email}. Khi chính sách thay đổi, ngày cập nhật ở đầu trang sẽ được sửa."
+      }
+    }
   },
   "terms": {
-    "title": "Điều Khoản Dịch Vụ",
-    "lastUpdated": "Cập nhật lần cuối: Tháng 10, 2026",
-    "sec1Title": "1. Chấp Nhận Điều Khoản",
-    "sec1Body": "Bằng việc sử dụng FlyBot Smart Trap Studio, bạn đồng ý tuân thủ các điều khoản này về việc giám sát bẫy thông minh, tích hợp camera và phân tích dữ liệu nông nghiệp.",
-    "sec2Title": "2. Khuyến Cáo Nhận Diện Thị Giác AI",
-    "sec2Body": "Số lượng và phân loại sâu hại do Thị giác AI cung cấp là công cụ hỗ trợ dự báo nông nghiệp. Các chuyên gia nên kết hợp kiểm tra thực tế tại vườn trước khi đưa ra quyết định phun thuốc bảo vệ thực vật.",
-    "sec3Title": "3. Sử Dụng Thiết Bị & Băng Thông Mạng",
-    "sec3Body": "Người dùng chịu trách nhiệm duy trì kết nối mạng ổn định cho camera tại vườn. Hệ thống tích hợp chế độ SD tiết kiệm băng thông khi xem dạng lưới nhằm tránh phát sinh cước 4G/5G quá mức.",
-    "sec4Title": "4. Hành Vi Bị Nghiêm Cấm",
-    "sec4Body": "Nghiêm cấm sử dụng hệ thống vào mục đích giám sát bất hợp pháp ngoài phạm vi nông nghiệp, hoặc cố ý can thiệp phá hoại, đảo ngược mã nguồn mô hình Thị giác AI.",
-    "sec5Title": "5. Hỗ Trợ Kỹ Thuật & Liên Hệ",
-    "sec5Body": "Mọi yêu cầu hỗ trợ triển khai phần cứng, tích hợp API hoặc dịch vụ hợp tác xã quy mô lớn, vui lòng liên hệ contact@flybot.studio."
+    "title": "Điều khoản dịch vụ",
+    "lastUpdated": "Cập nhật lần cuối: tháng 10 năm 2026",
+    "intro": "FlyBot là dịch vụ giám sát bẫy dính bằng camera và AI do AgrHub vận hành.",
+    "sections": {
+      "accept": {
+        "title": "1. Chấp nhận điều khoản",
+        "body": "Khi tạo tài khoản hoặc sử dụng FlyBot, bạn đồng ý với các điều khoản này và Chính sách bảo mật."
+      },
+      "accounts": {
+        "title": "2. Tài khoản & vai trò",
+        "body": "Hãy giữ bí mật mật khẩu và đăng xuất khỏi thiết bị lạ. Bạn chịu trách nhiệm về hoạt động dưới tài khoản của mình, cũng như về những người bạn chia sẻ camera, vườn hoặc mời vào tổ chức."
+      },
+      "devices": {
+        "title": "3. Camera & thiết bị",
+        "body": "Chỉ thêm camera bạn sở hữu hoặc được phép sử dụng, và giữ kín mã xác thực của camera. Bạn tự bảo đảm nguồn điện và kết nối mạng tại vườn. Việc dùng camera và dịch vụ EZVIZ còn tuân theo điều khoản của EZVIZ."
+      },
+      "ai": {
+        "title": "4. Kết quả AI & dự báo",
+        "body": "Số đếm của AI có thể sai, ví dụ khi ảnh mờ, côn trùng chồng lên nhau hoặc có vật lạ trên bẫy. Dự báo xu hướng và độ-ngày là ước tính; các biện pháp gợi ý chỉ để tham khảo. Hãy kiểm tra thực tế tại vườn trước khi quyết định xử lý."
+      },
+      "pesticides": {
+        "title": "5. Thuốc bảo vệ thực vật & nhật ký",
+        "body": "Bạn chịu trách nhiệm tuân thủ nhãn thuốc, liều lượng, thời gian cách ly và các quy định hiện hành. Nhật ký xử lý và bản xuất theo VietGAP dựa trên dữ liệu bạn nhập; FlyBot không xác nhận tính chính xác của dữ liệu đó."
+      },
+      "use": {
+        "title": "6. Sử dụng được phép",
+        "body": "Chỉ dùng FlyBot cho mục đích giám sát nông nghiệp. Không dùng camera để giám sát người trái phép; không truy cập trái phép, dò quét hay phá hoại hệ thống; không dùng tính năng chia sẻ để gửi thư rác; không vượt quá giới hạn tần suất của API."
+      },
+      "data": {
+        "title": "7. Dữ liệu & chia sẻ",
+        "body": "Bạn giữ quyền đối với dữ liệu vườn của mình. Liên kết công khai của bảng tùy chỉnh cho phép bất kỳ ai có liên kết xem được. API key và webhook do bạn quản lý; hãy thu hồi khi không còn dùng."
+      },
+      "service": {
+        "title": "8. Dịch vụ & thay đổi",
+        "body": "FlyBot được cung cấp theo hiện trạng, có thể tạm gián đoạn khi bảo trì hoặc khi dịch vụ bên thứ ba gặp sự cố. Tính năng có thể thay đổi theo thời gian. Tài khoản vi phạm các điều khoản này có thể bị vô hiệu hoá."
+      },
+      "contact": {
+        "title": "9. Liên hệ",
+        "body": "Hỗ trợ triển khai, tích hợp hoặc câu hỏi về điều khoản: {email}."
+      }
+    }
   },
   "contact": {
-    "title": "Liên Hệ Với Chúng Tôi",
-    "subtitle": "Bạn có câu hỏi về việc triển khai bẫy thông minh FlyBot tại nông trường? Chúng tôi luôn sẵn sàng hỗ trợ.",
+    "title": "Liên hệ",
+    "subtitle": "Bạn cần tư vấn triển khai bẫy thông minh, tích hợp hệ thống hay hỗ trợ sử dụng? Hãy để lại lời nhắn, chúng tôi sẽ trả lời qua email.",
     "nameLabel": "Họ và tên của bạn",
     "namePlaceholder": "Ví dụ: Nguyễn Văn A",
     "emailLabel": "Địa chỉ Email",
-    "emailPlaceholder": "email@nongtruong.vn",
+    "emailPlaceholder": "email{'@'}nongtruong.vn",
     "subjectLabel": "Chủ đề",
-    "subjectPlaceholder": "Triển khai bẫy thông minh, tích hợp hệ thống, báo giá...",
+    "subjectPlaceholder": "Tư vấn triển khai, tích hợp, hỗ trợ...",
     "messageLabel": "Nội dung tin nhắn",
-    "messagePlaceholder": "Mô tả diện tích vườn, số lượng camera hoặc nhu cầu kỹ thuật...",
-    "sendBtn": "Gửi Tin Nhắn",
-    "successTitle": "Đã Gửi Tin Nhắn Thành Công!",
-    "successMsg": "Cảm ơn bạn đã liên hệ. Đội ngũ kỹ thuật nông nghiệp công nghệ cao của chúng tôi sẽ phản hồi trong vòng 24 giờ."
+    "messagePlaceholder": "Cây trồng, diện tích vườn, số bẫy dự kiến hoặc câu hỏi của bạn...",
+    "sendBtn": "Gửi tin nhắn",
+    "successTitle": "Đã gửi tin nhắn",
+    "successMsg": "Cảm ơn bạn. Chúng tôi đã nhận được lời nhắn và sẽ trả lời qua email bạn cung cấp.",
+    "sendAnother": "Gửi tin nhắn khác",
+    "required": "Vui lòng nhập họ tên, email và nội dung.",
+    "failed": "Chưa gửi được tin nhắn. Vui lòng thử lại sau.",
+    "directEmail": "Hoặc gửi email trực tiếp tới {email}."
   },
   "footer": {
     "appName": "FlyBot",
     "brandName": "FlyBot",
-    "tagline": "Nền tảng giám sát bẫy sinh học thông minh & Thị giác AI cho nông nghiệp chính xác hiện đại.",
+    "tagline": "Bẫy dính thông minh và AI đếm côn trùng, giúp phát hiện sâu hại sớm và quản lý dịch hại có căn cứ.",
     "product": "Sản Phẩm",
     "company": "Công Ty",
     "legal": "Pháp Lý",
-    "copyright": "© 2026 FlyBot Studio. Bảo lưu mọi quyền.",
+    "copyright": "© 2026 AgrHub. FlyBot được phát triển và vận hành bởi AgrHub.",
     "resources": "Tài Nguyên"
   },
   "map": {
@@ -1532,5 +1693,8 @@
       "noDelivery": "Chưa gửi lần nào.",
       "docs": "Hãy kiểm tra header X-FlyBot-Signature bằng secret trước khi tin một yêu cầu. Sau 15 lần gửi lỗi liên tiếp, webhook sẽ tự tắt."
     }
+  },
+  "legal": {
+    "contactFallback": "trang Liên hệ"
   }
 }
