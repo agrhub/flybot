@@ -1,6 +1,6 @@
 const axios = require('axios');
 const { Camera, Snapshot } = require('../models');
-const { AI_PROVIDER, S3_PUBLIC_URL, CAPTURE_CONCURRENCY } = require('../config/env');
+const { S3_PUBLIC_URL, CAPTURE_CONCURRENCY } = require('../config/env');
 const { runPool } = require('../utils/concurrency');
 const ezvizService = require('../services/ezvizService');
 const s3Service = require('../services/s3Service');
@@ -9,6 +9,27 @@ const notificationService = require('../services/notificationService');
 const maintenanceService = require('../services/maintenanceService');
 const { dueSerials } = require('../services/captureSchedule');
 const imageQuality = require('../services/imageQuality');
+
+/**
+ * After a snapshot's AI analysis: pest threshold, card change, plot and surge alerts, and the
+ * repeated AI failure alert. Never throws.
+ */
+async function checkAlerts(deviceSerial, snapshotId) {
+    try {
+        const analyzed = await Snapshot.findById(snapshotId);
+        const succeeded = !!analyzed?.aiProcessed;
+        await notificationService.recordAiResult(deviceSerial, succeeded);
+        if (succeeded) {
+            const count = notificationService.countPests(analyzed.aiResults?.summary);
+            await notificationService.checkPestThreshold(deviceSerial, count);
+            await maintenanceService.detectCardChange(deviceSerial, analyzed, count);
+            await require('../services/farmService').checkPlotThreshold(deviceSerial);
+            await require('../services/surgeService').checkSurge(deviceSerial);
+        }
+    } catch (alertErr) {
+        console.error(`⚠️ Alert check failed (${deviceSerial}):`, alertErr.message);
+    }
+}
 
 /**
  * Capture image from camera, upload to S3, and trigger AI analysis
@@ -47,7 +68,16 @@ async function captureAndSaveSnapshot(deviceSerial) {
                 imageUrl: finalUrl,
                 s3Key: s3Key
             });
-            const savedDoc = await newSnapshot.save();
+            let savedDoc;
+            try {
+                savedDoc = await newSnapshot.save();
+            } catch (saveErr) {
+                // Nothing would point to the file: remove it rather than leave it in the bucket
+                await s3Service.deleteS3Object(s3Key).catch((delErr) => {
+                    console.warn(`⚠️ Could not remove unsaved photo ${s3Key}:`, delErr.message);
+                });
+                throw saveErr;
+            }
 
             // 3.1. Save thumbnail image to Camera for display across cameras and settings pages
             try {
@@ -67,32 +97,12 @@ async function captureAndSaveSnapshot(deviceSerial) {
             }
 
             // 4. Send to AI for processing
-            if (AI_PROVIDER === 'roboflow') {
-                await aiService.analyzeInsectsRoboflow(base64Image, savedDoc._id, picUrl);
-            } else if (AI_PROVIDER === 'both') {
-                await aiService.analyzeInsects(base64Image, savedDoc._id);
-                await aiService.analyzeInsectsRoboflow(base64Image, savedDoc._id, picUrl);
-            } else {
-                await aiService.analyzeInsects(base64Image, savedDoc._id);
-            }
+            await aiService.analyzeSnapshot(base64Image, savedDoc._id, picUrl);
 
             console.log(`📸 Snapshot saved & sent to AI: ${deviceSerial}`);
 
             // 5. Alerts: pest threshold reached, or AI analysis failing repeatedly
-            try {
-                const analyzed = await Snapshot.findById(savedDoc._id);
-                const succeeded = !!analyzed?.aiProcessed;
-                await notificationService.recordAiResult(deviceSerial, succeeded);
-                if (succeeded) {
-                    const count = notificationService.countPests(analyzed.aiResults?.summary);
-                    await notificationService.checkPestThreshold(deviceSerial, count);
-                    await maintenanceService.detectCardChange(deviceSerial, analyzed, count);
-                    await require('../services/farmService').checkPlotThreshold(deviceSerial);
-                    await require('../services/surgeService').checkSurge(deviceSerial);
-                }
-            } catch (alertErr) {
-                console.error(`⚠️ Alert check failed (${deviceSerial}):`, alertErr.message);
-            }
+            await checkAlerts(deviceSerial, savedDoc._id);
 
             // 6. Photo quality: dark, blurry, dirty lens or a full sticky card
             try {
@@ -169,7 +179,50 @@ async function autoCaptureDueCameras() {
     }
 }
 
+// Photos whose AI analysis failed at capture are tried again for a while
+const AI_RETRY_WINDOW_MS = 6 * 60 * 60 * 1000;
+// Not before this, so a capture still analyzing its photo is left alone
+const AI_RETRY_MIN_AGE_MS = 10 * 60 * 1000;
+const AI_RETRY_MAX = 3;
+const AI_RETRY_BATCH = 20;
+
+/**
+ * Analyze again the recent photos the AI failed on (image read back from S3), oldest first.
+ * Alerts run only for a photo that is still its camera's latest: an older one would raise a
+ * stale alert. Returns { retried, succeeded }.
+ */
+async function retryFailedAnalyses(now = new Date()) {
+    const due = await Snapshot.find({
+        aiProcessed: false,
+        createdAt: { $gte: new Date(now.getTime() - AI_RETRY_WINDOW_MS), $lte: new Date(now.getTime() - AI_RETRY_MIN_AGE_MS) },
+        aiRetries: { $not: { $gte: AI_RETRY_MAX } }
+    }).sort({ createdAt: 1 }).limit(AI_RETRY_BATCH).select('_id deviceSerial s3Key createdAt aiRetries').lean();
+
+    const result = { retried: 0, succeeded: 0 };
+    for (const snap of due) {
+        // Claimed first: the attempt counts even if this run stops half way
+        const claimed = await Snapshot.updateOne(
+            { _id: snap._id, aiProcessed: false, aiRetries: snap.aiRetries ?? { $exists: false } },
+            { $inc: { aiRetries: 1 } }
+        );
+        if (!claimed.modifiedCount) continue;
+        result.retried++;
+        try {
+            const buffer = await s3Service.readS3Buffer(snap.s3Key);
+            if (!(await aiService.analyzeSnapshot(buffer.toString('base64'), snap._id))) continue;
+            result.succeeded++;
+            const newer = await Snapshot.exists({ deviceSerial: snap.deviceSerial, createdAt: { $gt: snap.createdAt } });
+            if (!newer) await checkAlerts(snap.deviceSerial, snap._id);
+        } catch (err) {
+            console.error(`❌ AI retry failed (${snap.deviceSerial}, ${snap._id}):`, err.message);
+        }
+    }
+    if (result.retried) console.log(`🔁 AI analysis retried on ${result.retried} photo(s), ${result.succeeded} succeeded.`);
+    return result;
+}
+
 module.exports = {
+    retryFailedAnalyses,
     captureAndSaveSnapshot,
     autoCaptureDueCameras,
     backfillCameraThumbnails

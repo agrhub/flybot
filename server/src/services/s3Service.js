@@ -1,4 +1,4 @@
-const { PutObjectCommand, DeleteObjectsCommand, GetObjectCommand } = require('@aws-sdk/client-s3');
+const { PutObjectCommand, DeleteObjectCommand, DeleteObjectsCommand, GetObjectCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 const { s3Client } = require('../config/s3');
 const { S3_BUCKET } = require('../config/env');
@@ -37,6 +37,19 @@ async function getS3Object(key) {
         Key: key
     });
     return await s3Client.send(command);
+}
+
+/** A stored file's content as a Buffer. */
+async function readS3Buffer(key) {
+    const object = await getS3Object(key);
+    if (object.Body?.transformToByteArray) return Buffer.from(await object.Body.transformToByteArray());
+    const chunks = [];
+    for await (const chunk of object.Body) chunks.push(Buffer.from(chunk));
+    return Buffer.concat(chunks);
+}
+
+async function deleteS3Object(key) {
+    return s3Client.send(new DeleteObjectCommand({ Bucket: S3_BUCKET, Key: key }));
 }
 
 // Photos removed per batch: S3 DeleteObjects takes at most 1000 keys
@@ -125,5 +138,7 @@ module.exports = {
     getSignedDownloadUrl,
     uploadSnapshot,
     getS3Object,
+    readS3Buffer,
+    deleteS3Object,
     cleanupOldData
 };

@@ -9,7 +9,8 @@ const {
     VERTEX_LOCATION,
     VERTEX_MODEL,
     ROBOFLOW_API_KEY,
-    ROBOFLOW_WORKFLOW_URL
+    ROBOFLOW_WORKFLOW_URL,
+    AI_PROVIDER
 } = require('../config/env');
 
 const vertexAI = new GoogleGenAI({
@@ -247,6 +248,23 @@ async function analyzeInsectsRoboflow(base64Image, snapshotId, imageUrl = null) 
 }
 
 /**
+ * Analyze a stored snapshot with the configured provider(s). `imageUrl`: a link Roboflow can
+ * fetch the image from (the camera's fresh picture link); without it the image is sent inline.
+ * Returns true when the snapshot now has an AI result.
+ */
+async function analyzeSnapshot(base64Image, snapshotId, imageUrl = null) {
+    if (AI_PROVIDER === 'roboflow') {
+        await analyzeInsectsRoboflow(base64Image, snapshotId, imageUrl);
+    } else if (AI_PROVIDER === 'both') {
+        await analyzeInsects(base64Image, snapshotId);
+        await analyzeInsectsRoboflow(base64Image, snapshotId, imageUrl);
+    } else {
+        await analyzeInsects(base64Image, snapshotId);
+    }
+    return !!(await Snapshot.exists({ _id: snapshotId, aiProcessed: true }));
+}
+
+/**
  * AI Copilot assistant for answering questions and smart trap analytics
  */
 async function generateAssistantChat(userMessage, history = [], contextData = {}) {
@@ -347,5 +365,6 @@ module.exports = {
     getImageDimensions,
     analyzeInsects,
     analyzeInsectsRoboflow,
+    analyzeSnapshot,
     generateAssistantChat
 };

@@ -1,7 +1,7 @@
 const cron = require('node-cron');
 const { cleanupOldData } = require('../services/s3Service');
 const { syncCameraStatus } = require('../services/ezvizService');
-const { autoCaptureDueCameras } = require('./captureJob');
+const { autoCaptureDueCameras, retryFailedAnalyses } = require('./captureJob');
 const { sendCardReminders } = require('../services/maintenanceService');
 const { sendWeeklyReports } = require('../services/reportService');
 const { sendDueReports } = require('../services/reportScheduleService');
@@ -38,6 +38,7 @@ const weeklyReportJob = exclusive('Weekly reports', sendWeeklyReports);
 const scheduledReportJob = exclusive('Scheduled reports', () => sendDueReports());
 const pestCountJob = exclusive('Pest count backfill', () => require('../services/migrations').backfillPestCounts({ since: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) }));
 const trainingSyncJob = exclusive('Training sync', () => syncTrainingData());
+const aiRetryJob = exclusive('AI analysis retry', () => retryFailedAnalyses());
 const ezvizPolicyJob = exclusive('EZVIZ sub-account policies', resyncEzvizPolicies);
 
 /**
@@ -83,6 +84,11 @@ function startCronJobs() {
     // Reviewed photos to Roboflow (no-op unless configured and turned on)
     cron.schedule('*/15 * * * *', () => {
         trainingSyncJob();
+    });
+
+    // Photos the AI failed on at capture: analyzed again, every 15 minutes (off the capture minute)
+    cron.schedule('7,22,37,52 * * * *', () => {
+        aiRetryJob();
     });
 
     // Removed camera access leaves the EZVIZ sub-accounts within the hour (no-op unless EZVIZ_RAM_TOKENS)

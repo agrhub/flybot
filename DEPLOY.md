@@ -185,6 +185,7 @@ Cloud Run gives you HTTPS automatically; the VM does not. Either put a Google Cl
 - The logs show `⏰ Periodic Cron jobs initialized.` on exactly one deployment.
 - After upgrading an existing database: if the logs warn about duplicate camera serials, run `node scripts/merge_duplicate_cameras.js --apply` once (see `server/README.md`, Roles and sharing).
 - After upgrading: the old single-field index `deviceSerial_1` on `snapshots` is no longer used (replaced by `{deviceSerial, createdAt}`). It can be dropped to save space and write time: `db.snapshots.dropIndex("deviceSerial_1")`.
+- Optional, once: `node scripts/find_orphan_files.js --out orphans.txt` (from `server/`) lists photo files in S3 that no snapshot points to, from captures whose database save failed before this was handled. It only reports; nothing is deleted.
 
 ## Known risks (accepted for now)
 - **EZVIZ account token reaches viewers unless `EZVIZ_RAM_TOKENS=true`.** The EZUIKit player in the browser needs an EZVIZ access token. By default, live view and playback (`POST /api/live`, `/api/playback`) hand out the app account's token. Anyone who can watch any camera can read it and call the EZVIZ Open API directly, with access to **every** device in the account (list, live, settings, delete).

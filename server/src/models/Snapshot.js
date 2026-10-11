@@ -29,8 +29,10 @@ const snapshotSchema = new mongoose.Schema({
         raw_description: String
     },
     // Pest total of aiResults.summary, kept in step with it, so filters by count (alarm status)
-    // need not add up the summary of every photo. Older photos get it from a startup migration.
+    // need not add up the summary of every photo. Older photos get it in the background after start-up.
     pestCount: { type: Number, default: undefined },
+    // Later attempts at the AI analysis after the one at capture failed (cron/captureJob.js)
+    aiRetries: { type: Number, default: undefined },
     // Photo quality (services/imageQuality.js): measurements and the problems found
     quality: {
         brightness: { type: Number, default: undefined },

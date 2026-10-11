@@ -1,7 +1,7 @@
 const axios = require('axios');
 const { Snapshot } = require('../models');
 const env = require('../config/env');
-const { getS3Object } = require('./s3Service');
+const { readS3Buffer } = require('./s3Service');
 const settingsService = require('./settingsService');
 const { getImageDimensions } = require('./aiService');
 const { countPests } = require('./notificationService');
@@ -26,14 +26,6 @@ const isConfigured = () => !!(env.ROBOFLOW_UPLOAD_PROJECT && uploadKey());
 
 const toObject = (m) => (m instanceof Map ? Object.fromEntries(m) : (m || {}));
 
-async function readImage(s3Key) {
-    const object = await getS3Object(s3Key);
-    if (object.Body?.transformToByteArray) return Buffer.from(await object.Body.transformToByteArray());
-    const chunks = [];
-    for await (const chunk of object.Body) chunks.push(Buffer.from(chunk));
-    return Buffer.concat(chunks);
-}
-
 /** Roboflow "CreateML" JSON for the AI boxes (pixel [xmin, ymin, xmax, ymax]). */
 function createMlAnnotation(name, insects) {
     return [{
@@ -53,7 +45,7 @@ function createMlAnnotation(name, insects) {
 async function uploadSnapshot(snapshot) {
     const status = snapshot.review.status;
     const name = `${snapshot._id}.jpg`;
-    const image = await readImage(snapshot.s3Key);
+    const image = await readS3Buffer(snapshot.s3Key);
     const count = countPests(toObject(snapshot.aiResults?.summary));
     const original = countPests(toObject(snapshot.review.originalSummary));
 

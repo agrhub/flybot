@@ -95,16 +95,27 @@ async function rebuildRange(deviceSerial, fromDate, toDate) {
     return inRange.length;
 }
 
+// One refresh at a time per camera: two run side by side could each read the day before the
+// other's photo was saved, and the one written last would leave the day short
+const refreshQueues = new Map();
+
 /**
  * After a snapshot's AI result changed. Never throws (statistics must not break captures).
  */
-async function refreshForSnapshot(snapshot) {
-    try {
-        if (!snapshot?.deviceSerial || !snapshot.createdAt) return;
-        await rebuildRange(snapshot.deviceSerial, snapshot.createdAt, snapshot.createdAt);
-    } catch (err) {
-        console.error(`⚠️ Daily stats refresh failed (${snapshot?.deviceSerial}):`, err.message);
-    }
+function refreshForSnapshot(snapshot) {
+    if (!snapshot?.deviceSerial || !snapshot.createdAt) return Promise.resolve();
+    const serial = snapshot.deviceSerial;
+    const run = (refreshQueues.get(serial) || Promise.resolve())
+        .then(() => rebuildRange(serial, snapshot.createdAt, snapshot.createdAt))
+        .catch((err) => {
+            console.error(`⚠️ Daily stats refresh failed (${serial}):`, err.message);
+        });
+    refreshQueues.set(serial, run);
+    // Forget the camera once its queue is empty
+    run.then(() => {
+        if (refreshQueues.get(serial) === run) refreshQueues.delete(serial);
+    });
+    return run;
 }
 
 /**
