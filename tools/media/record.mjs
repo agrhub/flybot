@@ -26,6 +26,8 @@ const TEXT = {
             map: 'Vườn và lô trên bản đồ, màu theo mức nguy cơ',
             logbook: 'Nhật ký xử lý: so sánh trước và sau, xuất sổ VietGAP',
             organizations: 'Tổ chức nhiều thành viên với phân quyền',
+            'report-schedule': 'Gửi báo cáo kèm PDF qua email và Telegram theo lịch',
+            'app-tour': 'Hướng dẫn nhanh ngay khi mở ứng dụng lần đầu',
             mobile: 'Dùng trên điện thoại như một ứng dụng'
         }
     },
@@ -49,12 +51,14 @@ const TEXT = {
             map: 'Farms and plots on the map, colored by risk',
             logbook: 'Treatment log: before and after, VietGAP export',
             organizations: 'Organizations with members and roles',
+            'report-schedule': 'Reports with their PDF by email and Telegram on a schedule',
+            'app-tour': 'A quick tour the first time you open the app',
             mobile: 'Works on the phone like an app'
         }
     }
 }[LANG];
 
-const ORDER = ['dashboard', 'dashboard-cameras', 'catch-chart', 'playback', 'detection', 'history-export', 'analytics', 'insights', 'reports', 'diagnosis', 'notifications', 'map', 'logbook', 'organizations'];
+const ORDER = ['app-tour', 'dashboard', 'dashboard-cameras', 'catch-chart', 'playback', 'detection', 'history-export', 'analytics', 'insights', 'reports', 'report-schedule', 'diagnosis', 'notifications', 'map', 'logbook'];
 const dataUrl = (name) => `data:image/webp;base64,${fs.readFileSync(path.join(SHOTS, `${name}.webp`)).toString('base64')}`;
 const scenes = ORDER.map(name => ({ kind: 'shot', img: dataUrl(name), caption: TEXT.scenes[name] }));
 scenes.push({ kind: 'phones', imgs: [dataUrl('mobile-dashboard'), dataUrl('mobile-cameras'), dataUrl('mobile-more')], caption: TEXT.scenes.mobile });
