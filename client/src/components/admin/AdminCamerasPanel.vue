@@ -48,7 +48,7 @@
           </template>
         </el-table-column>
 
-        <el-table-column width="220" align="right">
+        <el-table-column width="220" align="right" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" :icon="Share" @click="openShare(row)">{{ t('share.button') }}</el-button>
             <el-button link :icon="Switch" @click="openTransfer(row)">{{ t('admin.cameras.transfer') }}</el-button>

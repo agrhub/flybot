@@ -20,7 +20,7 @@
       </div>
 
       <el-table v-loading="loading" :data="users" row-key="id" style="width: 100%">
-        <el-table-column :label="t('admin.users.account')" min-width="220">
+        <el-table-column :label="t('admin.users.account')" min-width="200">
           <template #default="{ row }">
             <div class="min-w-0">
               <div class="flex items-center gap-2 min-w-0">
@@ -32,7 +32,7 @@
           </template>
         </el-table-column>
 
-        <el-table-column :label="t('admin.users.role')" width="170">
+        <el-table-column :label="t('admin.users.role')" width="150">
           <template #default="{ row }">
             <el-select
               :model-value="row.role"
@@ -45,7 +45,7 @@
           </template>
         </el-table-column>
 
-        <el-table-column :label="t('admin.users.cameras')" width="100" align="center" prop="cameraCount" />
+        <el-table-column :label="t('admin.users.cameras')" width="90" align="center" prop="cameraCount" />
 
         <el-table-column :label="t('admin.users.status')" width="150">
           <template #default="{ row }">
@@ -63,7 +63,7 @@
           </template>
         </el-table-column>
 
-        <el-table-column width="170" align="right">
+        <el-table-column width="160" align="right" fixed="right">
           <template #default="{ row }">
             <el-tooltip v-if="!row.emailVerified" :content="t('admin.users.verifyEmail')" placement="top">
               <el-button link type="primary" :icon="CircleCheck" :loading="saving === row.id" @click="verifyEmail(row)" />
