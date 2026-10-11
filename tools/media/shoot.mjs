@@ -40,6 +40,27 @@ const LIVE_STILL = `
   }
   document.querySelectorAll('.live-tab__value').forEach(e => { if (/Mất kết nối|Disconnected/.test(e.innerText)) e.innerText = ${JSON.stringify(LANG === 'en' ? 'Live' : 'Trực tiếp')}; });`;
 
+// Assistant: a fresh conversation, one question, the answer scrolled into view (the demo's
+// stand-in model picks the tool from the question)
+const ASK = (question, wait = 6000) => `
+  const panel = () => document.getElementById('smart-trap-assistant-sidebar');
+  if (!panel() || getComputedStyle(panel()).display === 'none') { [...document.querySelectorAll('button')].find(b => b.innerText.includes('Assistant')).click(); await sleep(1200); }
+  panel().querySelector('.assistant-header button').click(); await sleep(800);
+  const input = panel().querySelector('form input');
+  input.value = ${JSON.stringify(question)}; input.dispatchEvent(new Event('input', { bubbles: true })); await sleep(300);
+  input.closest('form').requestSubmit(); await sleep(${wait});
+  const box = panel().querySelector('.overflow-y-auto'); box.scrollTop = box.scrollHeight; await sleep(600);
+  document.querySelectorAll('.el-notification').forEach(n => n.remove());`;
+
+// "Ask the assistant about this photo" from the history's photo window
+const PHOTO_ASK = `
+        const panel = document.getElementById('smart-trap-assistant-sidebar');
+        if (panel && getComputedStyle(panel).display !== 'none') { panel.querySelector('.assistant-header button').click(); await sleep(800); }
+        document.querySelector('.el-table__body .el-button').click(); await sleep(1500);
+        await click('.el-dialog button', ${JSON.stringify(W('Hỏi trợ lý', 'Ask the assistant'))}, 7000);
+        const box = document.getElementById('smart-trap-assistant-sidebar').querySelector('.overflow-y-auto'); box.scrollTop = box.scrollHeight; await sleep(600);
+        document.querySelectorAll('.el-notification').forEach(n => n.remove());`;
+
 const DESKTOP = [1440, 900];
 const MOBILE = [390, 844];
 
@@ -114,6 +135,15 @@ const shots = [
         document.querySelector('[data-tour="profile"]').click(); await sleep(800);
         await click('.el-dropdown-menu__item', ${JSON.stringify(W('Hướng dẫn nhanh', 'Quick tour'))}, 1500);
         for (let i = 0; i < 5; i++) { [...document.querySelectorAll('.el-tour button')].find(b => b.className.includes('primary') || /Tiếp|Next/.test(b.innerText)).click(); await sleep(700); }` },
+    { name: 'assistant', url: '/dashboard', settle: 4000, action: ASK(W('Ảnh mới nhất của các bẫy?', 'Latest photos of the traps?')) },
+    { name: 'assistant-chart', url: '/dashboard', settle: 4000, action: ASK(W('24 giờ qua thế nào?', 'How were the last 24 hours?')) },
+    { name: 'assistant-confirm', url: '/dashboard', settle: 4000, action: ASK(W('Tôi đã thay tấm keo bẫy xoài A1', 'I replaced the card on mango trap A1')) },
+    { name: 'assistant-photo', url: '/analytics?tab=history', settle: 4000, action: PHOTO_ASK },
+    // The chat panel alone, for slides (same scenes as above)
+    { name: 'chat-photos', url: '/dashboard', settle: 4000, clip: [1021, 100, 419, 620], action: ASK(W('Ảnh mới nhất của các bẫy?', 'Latest photos of the traps?')) },
+    { name: 'chat-chart', url: '/dashboard', settle: 4000, clip: [1021, 210, 419, 470], action: ASK(W('24 giờ qua thế nào?', 'How were the last 24 hours?')) },
+    { name: 'chat-photo', url: '/analytics?tab=history', settle: 4000, clip: [1021, 110, 419, 580], action: PHOTO_ASK },
+    { name: 'chat-confirm', url: '/dashboard', settle: 4000, clip: [1021, 210, 419, 362], action: ASK(W('Tôi đã thay tấm keo bẫy xoài A1', 'I replaced the card on mango trap A1')) },
     { name: 'farms', url: '/farms', settle: 3000 },
     { name: 'farm-map', url: '/farms', action: `
         const link = [...document.querySelectorAll('a, .el-card')].find(e => e.innerText && e.innerText.includes(${JSON.stringify(W('Vườn Hòa Lộc', 'Hoa Loc Orchard'))}));
@@ -155,7 +185,7 @@ try {
             if (s.action) await page.eval(H + s.action);
             await page.eval("document.querySelectorAll('.el-notification, .el-message').forEach(n => n.remove()); return true;");
             await sleep(400);
-            const size = await page.shot(path.join(OUT, `${s.name}.webp`));
+            const size = await page.shot(path.join(OUT, `${s.name}.webp`), { clip: s.clip || null });
             console.log(`✓ ${s.name} ${Math.round(size / 1024)} KB`);
         } catch (err) {
             console.log(`✗ ${s.name}: ${err.message.split('\n')[0]}`);

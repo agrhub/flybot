@@ -69,8 +69,9 @@ export async function launch() {
             if (r.exceptionDetails) throw new Error(r.exceptionDetails.exception?.description || r.exceptionDetails.text);
             return r.result?.value;
         },
-        async shot(file, { format = 'webp', quality = 82 } = {}) {
-            const { data } = await send('Page.captureScreenshot', { format, quality });
+        // clip: [x, y, width, height] in CSS pixels, for a part of the page
+        async shot(file, { format = 'webp', quality = 82, clip = null } = {}) {
+            const { data } = await send('Page.captureScreenshot', { format, quality, ...(clip ? { clip: { x: clip[0], y: clip[1], width: clip[2], height: clip[3], scale: 1 } } : {}) });
             fs.writeFileSync(file, Buffer.from(data, 'base64'));
             return fs.statSync(file).size;
         },
