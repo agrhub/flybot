@@ -72,6 +72,50 @@ ezvizService.getLocalRecords = async ({ startTime }) => {
 };
 ezvizService.getPlaybackAddress = async () => ({ responseData: { code: '500', msg: 'Demo: no recording stream' } });
 
+// Assistant without Vertex: picks a real tool from the question, then writes a short answer from
+// its result, streamed in small pieces like the model does
+const QUESTION_TOOLS = [
+    [/ảnh|photo|picture/i, 'get_recent_snapshots', { limit: 4 }],
+    [/tuần|week|so sánh|compare/i, 'compare_periods', { days: 7 }],
+    [/giờ|hour|24/i, 'get_insect_statistics', { mode: 'hour' }],
+    [/báo cáo|report/i, 'list_reports', {}],
+    [/cảnh báo|alert|tấm keo|card/i, 'get_alerts', { days: 7 }]
+];
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+const textChunks = (text) => (async function* () {
+    for (const piece of text.match(/.{1,12}(\s|$)|.{1,12}/g)) {
+        await sleep(60);
+        yield { candidates: [{ content: { role: 'model', parts: [{ text: piece }] } }] };
+    }
+})();
+function demoAnswer(name, result) {
+    if (result?.error) return result.error;
+    if (name === 'get_recent_snapshots') return L(`Đây là ${result.totalReturned} ảnh nhận dạng mới nhất. Ảnh gần nhất có **${result.snapshots[0]?.pestsOnTrap ?? 0} con** trên bẫy.`, `Here are the ${result.totalReturned} latest photos. The newest shows **${result.snapshots[0]?.pestsOnTrap ?? 0} insects** on the trap.`);
+    if (name === 'compare_periods') return L(`7 ngày qua có **${result.current.caught} con** vào bẫy, so với ${result.previous.caught ?? '--'} con tuần trước (${result.changePct > 0 ? '+' : ''}${result.changePct ?? '--'}%).`, `The last 7 days caught **${result.current.caught} insects**, against ${result.previous.caught ?? '--'} the week before (${result.changePct > 0 ? '+' : ''}${result.changePct ?? '--'}%).`);
+    if (name === 'get_insect_statistics') return L(`Trong 24 giờ qua có **${round(result.records.reduce((s, r) => s + r.caught, 0))} con** vào bẫy, nhiều nhất vào buổi trưa.`, `**${round(result.records.reduce((s, r) => s + r.caught, 0))} insects** were caught over the last 24 hours, most around midday.`);
+    if (name === 'list_reports') return L(`Bạn có ${result.total} báo cáo: ${result.reports.map(r => `**${r.name}**`).join(', ')}.`, `You have ${result.total} report(s): ${result.reports.map(r => `**${r.name}**`).join(', ')}.`);
+    if (name === 'get_alerts') return L(`Có ${result.alerts.length} cảnh báo trong 7 ngày qua; ${result.cardsDue.length} tấm keo đến hạn thay.`, `${result.alerts.length} alert(s) over the last 7 days; ${result.cardsDue.length} sticky card(s) due.`);
+    const worst = result.traps?.[0];
+    return worst
+        ? L(`Bẫy nặng nhất là **${worst.name}**: ${worst.fliesPerTrapPerDay7 ?? '--'} con/bẫy/ngày trong 7 ngày, mức ${worst.risk}.`, `The worst trap is **${worst.name}**: ${worst.fliesPerTrapPerDay7 ?? '--'} flies per trap per day over 7 days, ${worst.risk} risk.`)
+        : L('Chưa có số liệu.', 'No data yet.');
+}
+const round = (n) => Math.round(n * 10) / 10;
+req('src/agent/agent').setModelClient({
+    stream: async ({ contents }) => {
+        const last = contents.at(-1);
+        const response = last.parts?.find(p => p.functionResponse)?.functionResponse;
+        if (response) {
+            const suggestions = L('["📈 Tuần này so với tuần trước", "📸 Ảnh mới nhất", "🔔 Có cảnh báo gì?"]', '["📈 This week vs last week", "📸 Latest photos", "🔔 Any alerts?"]');
+            return textChunks(`${demoAnswer(response.name, response.response)}\n[SUGGESTIONS]${suggestions}[/SUGGESTIONS]`);
+        }
+        const question = last.parts?.[0]?.text || '';
+        const [, name, args] = QUESTION_TOOLS.find(([re]) => re.test(question)) || [null, 'get_catch_summary', {}];
+        await sleep(300);
+        return (async function* () { yield { candidates: [{ content: { role: 'model', parts: [{ functionCall: { name, args } }] } }] }; })();
+    }
+});
+
 
 const HOUR_MS = 3600 * 1000;
 const { app } = req('src/app');

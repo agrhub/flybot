@@ -1123,55 +1123,116 @@ const agent = require('../agent/agent');
 const MAX_CHAT_MESSAGE = 4000;
 const MAX_UI_CONTEXT = 8000;
 
+// Chat session ids come from the browser: short, plain
+const SESSION_ID_REGEX = /^[A-Za-z0-9_-]{1,100}$/;
+
 /**
- * AI Agent Chatbot with Function Tools, Context Injection, and Action Execution
+ * Check a chat request body. Returns { message, sessionId, uiContext } or { error }.
+ */
+function readChatRequest(body = {}) {
+    const { message, sessionId = 'default-session', uiContext = {} } = body;
+    if (typeof message !== 'string' || !message.trim()) return { error: "Message cannot be empty." };
+    // Everything here goes into the model prompt: keep it small
+    if (message.length > MAX_CHAT_MESSAGE) return { error: `Message is too long (at most ${MAX_CHAT_MESSAGE} characters).` };
+    if (JSON.stringify(uiContext ?? {}).length > MAX_UI_CONTEXT) return { error: "Page context is too large." };
+    if (!SESSION_ID_REGEX.test(String(sessionId))) return { error: "Invalid chat session." };
+    return { message, sessionId: String(sessionId), uiContext: uiContext && typeof uiContext === 'object' ? uiContext : {} };
+}
+
+// The answer as the panel gets it (tool data stays on the server)
+const chatPayload = (result) => ({
+    reply: result.reply,
+    suggestions: result.suggestions,
+    navigate: result.navigate,
+    actions: result.actions,
+    cards: result.cards || [],
+    messageId: result.messageId,
+    toolExecutions: (result.toolExecutions || []).map(run => ({ name: run.name, status: run.status, result: { message: run.message } }))
+});
+
+/**
+ * POST /api/ai/chat: AI agent with function tools; the whole answer at once
  */
 async function chatWithAssistant(req, res) {
     try {
-        const userId = req.user.id;
-        const { message, sessionId = 'default-session', uiContext = {} } = req.body;
-        if (typeof message !== 'string' || !message.trim()) {
-            return res.status(400).json({ success: false, message: "Message cannot be empty." });
-        }
-        // Everything here goes into the model prompt: keep it small
-        if (message.length > MAX_CHAT_MESSAGE) {
-            return res.status(400).json({ success: false, message: `Message is too long (at most ${MAX_CHAT_MESSAGE} characters).` });
-        }
-        if (JSON.stringify(uiContext ?? {}).length > MAX_UI_CONTEXT) {
-            return res.status(400).json({ success: false, message: "Page context is too large." });
-        }
-
-        const result = await agent.chatWithAgent({
-            sessionId: String(sessionId),
-            message,
-            uiContext,
-            userId,
-            user: req.user
-        });
-
-        res.json({
-            success: true,
-            reply: result.reply,
-            suggestions: result.suggestions,
-            navigate: result.navigate,
-            actions: result.actions,
-            // What the panel shows of each tool run; the data itself stays on the server
-            toolExecutions: (result.toolExecutions || []).map(run => ({
-                name: run.name,
-                status: run.status,
-                result: { message: typeof run.result?.message === 'string' ? run.result.message : undefined }
-            }))
-        });
+        const input = readChatRequest(req.body);
+        if (input.error) return res.status(400).json({ success: false, message: input.error });
+        const result = await agent.chatWithAgent({ ...input, userId: req.user.id, user: req.user });
+        res.json({ success: true, ...chatPayload(result) });
     } catch (err) {
         console.error("❌ AI Agent chat error:", err);
         sendServerError(res, err);
     }
 }
 
+/**
+ * POST /api/ai/chat/stream: the same, as server-sent events while it is written:
+ * turn, delta { text }, tool { name, phase, status?, message? }, then done { ...answer } or error
+ */
+async function chatWithAssistantStream(req, res) {
+    const input = readChatRequest(req.body);
+    if (input.error) return res.status(400).json({ success: false, message: input.error });
+    res.status(200).set({
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache, no-transform',
+        Connection: 'keep-alive',
+        'X-Accel-Buffering': 'no'
+    });
+    res.flushHeaders();
+    let open = true;
+    req.on('close', () => { open = false; });
+    const send = (event, data) => {
+        if (open) res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+    };
+    // Proxies close quiet connections: a comment line now and then while tools run
+    const heartbeat = setInterval(() => { if (open) res.write(': keep-alive\n\n'); }, 15000);
+    try {
+        const result = await agent.chatWithAgent({ ...input, userId: req.user.id, user: req.user, onEvent: send });
+        send('done', chatPayload(result));
+    } catch (err) {
+        console.error("❌ AI Agent chat error:", err.message);
+        send('error', { message: require('../utils/i18n').translate(req.user?.language, 'assistant.error') });
+    } finally {
+        clearInterval(heartbeat);
+        res.end();
+    }
+}
+
+/**
+ * GET /api/ai/chat/history?sessionId=: the conversation, to show again after a reload
+ */
+async function getChatHistory(req, res) {
+    try {
+        const sessionId = String(req.query.sessionId || '');
+        if (!SESSION_ID_REGEX.test(sessionId)) return res.status(400).json({ success: false, message: "Invalid chat session." });
+        res.json({ success: true, messages: await agent.getChatHistory(req.user.id, sessionId) });
+    } catch (err) {
+        sendServerError(res, err);
+    }
+}
+
+/**
+ * POST /api/ai/chat/feedback { sessionId, messageId, rating: 'up' | 'down' | null }
+ */
+async function rateChatMessage(req, res) {
+    try {
+        const { sessionId, messageId, rating = null } = req.body || {};
+        if (!SESSION_ID_REGEX.test(String(sessionId || '')) || typeof messageId !== 'string' || ![null, 'up', 'down'].includes(rating)) {
+            return res.status(400).json({ success: false, message: "Invalid rating." });
+        }
+        const found = await agent.rateMessage(req.user.id, String(sessionId), messageId.slice(0, 100), rating);
+        if (!found) return res.status(404).json({ success: false, message: "Message not found." });
+        res.json({ success: true, rating });
+    } catch (err) {
+        sendServerError(res, err);
+    }
+}
+
 async function clearChatSession(req, res) {
     try {
-        const { sessionId = 'default-session' } = req.body;
-        agent.clearChatHistory(req.user.id, String(sessionId));
+        const { sessionId = 'default-session' } = req.body || {};
+        if (!SESSION_ID_REGEX.test(String(sessionId))) return res.status(400).json({ success: false, message: "Invalid chat session." });
+        await agent.clearChatHistory(req.user.id, String(sessionId));
         res.json({ success: true, message: "Chat session refreshed successfully." });
     } catch (err) {
         sendServerError(res, err);
@@ -1189,5 +1250,8 @@ module.exports = {
     reviewSnapshot,
     exportReviews,
     chatWithAssistant,
+    chatWithAssistantStream,
+    getChatHistory,
+    rateChatMessage,
     clearChatSession
 };

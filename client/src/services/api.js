@@ -449,6 +449,67 @@ export default {
   clearChatSession(sessionId = 'default-session') {
     return apiClient.post('/ai/chat/clear', { sessionId });
   },
+  /**
+   * The assistant's answer as it is written (server-sent events over fetch, since EventSource
+   * cannot POST). onEvent(type, data) gets turn, delta, tool; resolves with the done payload.
+   * Rejects with err.streamUnavailable when nothing could be read, so the caller can fall back.
+   */
+  async chatWithAssistantStream(message, sessionId, uiContext, onEvent) {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`${API_URL}/ai/chat/stream`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Language': i18n.global.locale.value,
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      },
+      body: JSON.stringify({ message, sessionId, uiContext })
+    });
+    if (!res.ok || !res.body || !(res.headers.get('content-type') || '').includes('text/event-stream')) {
+      const err = new Error(`Chat stream failed (${res.status})`);
+      err.streamUnavailable = true;
+      err.status = res.status;
+      throw err;
+    }
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let result = null;
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      let end;
+      while ((end = buffer.indexOf('\n\n')) >= 0) {
+        const block = buffer.slice(0, end);
+        buffer = buffer.slice(end + 2);
+        let event = 'message';
+        let data = '';
+        for (const line of block.split('\n')) {
+          if (line.startsWith('event: ')) event = line.slice(7);
+          else if (line.startsWith('data: ')) data += line.slice(6);
+        }
+        if (!data) continue;
+        const payload = JSON.parse(data);
+        if (event === 'done') result = payload;
+        else if (event === 'error') {
+          // A message from the server, in the user's language
+          const err = new Error(payload.message || 'Chat failed');
+          err.fromServer = true;
+          throw err;
+        }
+        else onEvent(event, payload);
+      }
+    }
+    if (!result) throw new Error('The answer was cut off');
+    return result;
+  },
+  getChatHistory(sessionId) {
+    return apiClient.get('/ai/chat/history', { params: { sessionId } });
+  },
+  rateChatMessage(sessionId, messageId, rating) {
+    return apiClient.post('/ai/chat/feedback', { sessionId, messageId, rating });
+  },
   getNotifications(params = {}) {
     return apiClient.get('/notifications', { params });
   },

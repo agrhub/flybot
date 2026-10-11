@@ -355,7 +355,10 @@
     "a_public_report_can_only_include_cameras_you_own": "A public report can only include cameras you own.",
     "invalid_report_schedule": "Invalid report schedule.",
     "confirm_your_email_address_first": "Confirm your email address first.",
-    "only_people_a_report_is_shared_with_can_change_this": "Only people a report is shared with can change this."
+    "only_people_a_report_is_shared_with_can_change_this": "Only people a report is shared with can change this.",
+    "message_not_found": "Message not found.",
+    "invalid_chat_session": "Invalid chat session.",
+    "invalid_rating": "Invalid rating."
   },
   "reportPdf": {
     "range": "Period: {from} - {to} ({days} days)",

@@ -14,6 +14,12 @@ const FARM_OFFSET_MS = 7 * HOUR_MS;
 const round1 = (n) => Math.round(n * 10) / 10;
 const plain = (summary) => (summary instanceof Map ? Object.fromEntries(summary) : (summary || {}));
 
+async function cameraNames(serials) {
+    const { Camera } = require('../../models');
+    const cams = await Camera.find({ deviceSerial: { $in: [...new Set(serials)] } }).select('deviceSerial deviceName').lean();
+    return new Map(cams.map(c => [c.deviceSerial, c.deviceName || c.deviceSerial]));
+}
+
 /**
  * Cameras this user may see, narrowed to one when `deviceSerial` names one.
  * Returns { serials } or { error }.
@@ -47,7 +53,7 @@ const getInsectStatisticsDeclaration = {
     }
 };
 
-async function executeGetInsectStatistics({ deviceSerial, mode = 'day', userId, user }) {
+async function executeGetInsectStatistics({ deviceSerial, mode = 'day', userId, user, addCard = () => {} }) {
     try {
         if (!userId) return { error: 'Not authenticated.' };
         const scope = await serialsFor(user, deviceSerial);
@@ -68,6 +74,7 @@ async function executeGetInsectStatistics({ deviceSerial, mode = 'day', userId, 
                 const h = activity.hours.indexOf(hour);
                 records.push({ day, hour: `${String(hour).padStart(2, '0')}:00`, caught: d >= 0 && h >= 0 ? round1(activity.cells[d][h]) : 0 });
             }
+            addCard({ type: 'chart', mode: 'hour', deviceSerial: deviceSerial || 'all', labels: records.map(r => r.hour), series: [{ label: null, data: records.map(r => r.caught) }] });
             return {
                 mode,
                 deviceSerial: deviceSerial || 'all',
@@ -79,6 +86,19 @@ async function executeGetInsectStatistics({ deviceSerial, mode = 'day', userId, 
         const data = await catchStats.catchesBySerial(serials, mode === 'month' ? 365 : 30, now);
         const records = catchStats.speciesCatchSeries(data, mode === 'month' ? 'month' : 'day')
             .map(p => ({ period: p._id, insects: p.insects.map(i => ({ label: i.label, caught: round1(i.value) })) }));
+        // Chart card: the main species, stacked per period
+        const totals = new Map();
+        for (const r of records) for (const i of r.insects) totals.set(i.label, (totals.get(i.label) || 0) + i.caught);
+        const species = [...totals.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4).map(([label]) => label);
+        if (records.length) {
+            addCard({
+                type: 'chart',
+                mode: mode === 'month' ? 'month' : 'day',
+                deviceSerial: deviceSerial || 'all',
+                labels: records.map(r => r.period),
+                series: species.map(label => ({ label, data: records.map(r => r.insects.find(i => i.label === label)?.caught ?? 0) }))
+            });
+        }
         return {
             mode: mode === 'month' ? 'month' : 'day',
             deviceSerial: deviceSerial || 'all',
@@ -108,7 +128,7 @@ const getRecentSnapshotsDeclaration = {
     }
 };
 
-async function executeGetRecentSnapshots({ deviceSerial, limit = 6, userId, user }) {
+async function executeGetRecentSnapshots({ deviceSerial, limit = 6, userId, user, addCard = () => {} }) {
     try {
         if (!userId) return { error: 'Not authenticated.' };
         const scope = await serialsFor(user, deviceSerial);
@@ -118,8 +138,22 @@ async function executeGetRecentSnapshots({ deviceSerial, limit = 6, userId, user
         const snapshots = await Snapshot.find({ aiProcessed: true, deviceSerial: { $in: scope.serials } })
             .sort({ createdAt: -1 })
             .limit(Math.max(1, Math.min(Number(limit) || 6, 20)))
-            .select('deviceSerial createdAt pestCount aiResults.summary review.status')
+            .select('deviceSerial createdAt pestCount aiResults.summary review.status s3Key')
             .lean();
+        const names = await cameraNames(snapshots.map(s => s.deviceSerial));
+        if (snapshots.length) {
+            addCard({
+                type: 'photos',
+                items: snapshots.slice(0, 4).map(s => ({
+                    id: String(s._id),
+                    deviceSerial: s.deviceSerial,
+                    name: names.get(s.deviceSerial) || s.deviceSerial,
+                    at: s.createdAt,
+                    count: s.pestCount ?? countPests(plain(s.aiResults?.summary)),
+                    imageKey: s.s3Key
+                }))
+            });
+        }
 
         return {
             totalReturned: snapshots.length,

@@ -61,7 +61,7 @@ const getReportSummaryDeclaration = {
     }
 };
 
-async function executeGetReportSummary({ reportId, range, userId, user }) {
+async function executeGetReportSummary({ reportId, range, userId, user, addCard = () => {} }) {
     if (!userId) return { error: 'Not authenticated.' };
     const dashboard = await findReport(user, String(reportId || ''));
     if (!dashboard) return { error: 'Report not found.' };
@@ -71,6 +71,7 @@ async function executeGetReportSummary({ reportId, range, userId, user }) {
     const wanted = range ? dashboardService.parseRange({ preset: range }).range : null;
     const { range: covered, widgets } = await dashboardService.computeWidgetData(figures, serials, { imageUrl: () => '', range: wanted });
     const k = widgets.kpi || {};
+    addCard({ type: 'report', id: String(dashboard._id), name: dashboard.name, from: covered.from, to: covered.to, caught: k.catches ?? null, ftd: k.ftd ?? null, changePct: k.changePct ?? null, overThreshold: k.alertCameras ?? 0 });
     return {
         id: String(dashboard._id),
         name: dashboard.name,
@@ -207,7 +208,7 @@ const comparePeriodsDeclaration = {
     }
 };
 
-async function executeComparePeriods({ days = 7, deviceSerial, userId, user }) {
+async function executeComparePeriods({ days = 7, deviceSerial, userId, user, addCard = () => {} }) {
     if (!userId) return { error: 'Not authenticated.' };
     const span = Math.max(1, Math.min(Number(days) || 7, 90));
     const cameras = await visibleCameras(user);
@@ -240,11 +241,19 @@ async function executeComparePeriods({ days = 7, deviceSerial, userId, user }) {
         const b = catchStats.summarize([entry], previous);
         return { trap: names.get(serial), caughtNow: round1(a.total), caughtBefore: b.trapDays ? round1(b.total) : null, changePct: a.trapDays && b.trapDays ? catchStats.percentChange(a.total, b.total) : null };
     }).filter(t => t.changePct !== null).sort((x, y) => Math.abs(y.changePct) - Math.abs(x.changePct)).slice(0, 5);
+    const changePct = now.trapDays && before.trapDays ? catchStats.percentChange(now.total, before.total) : null;
+    addCard({
+        type: 'compare',
+        days: span,
+        current: { from: current[0], to: current.at(-1), caught: round1(now.total), ftd: now.ftd },
+        previous: { from: previous[0], to: previous.at(-1), caught: before.trapDays ? round1(before.total) : null, ftd: before.ftd },
+        changePct
+    });
     return {
         days: span,
         current: { from: current[0], to: current.at(-1), caught: round1(now.total), fliesPerTrapPerDay: now.ftd },
         previous: { from: previous[0], to: previous.at(-1), caught: before.trapDays ? round1(before.total) : null, fliesPerTrapPerDay: before.ftd },
-        changePct: now.trapDays && before.trapDays ? catchStats.percentChange(now.total, before.total) : null,
+        changePct,
         bySpecies: Object.keys({ ...nowSpecies, ...beforeSpecies }).map(name => ({ species: name, now: round1(nowSpecies[name] || 0), before: round1(beforeSpecies[name] || 0) })),
         biggestChanges: traps
     };

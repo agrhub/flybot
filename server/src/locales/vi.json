@@ -355,7 +355,10 @@
     "a_public_report_can_only_include_cameras_you_own": "Báo cáo công khai chỉ dùng được camera bạn sở hữu.",
     "invalid_report_schedule": "Lịch gửi báo cáo không hợp lệ.",
     "confirm_your_email_address_first": "Hãy xác nhận địa chỉ email trước.",
-    "only_people_a_report_is_shared_with_can_change_this": "Chỉ người được chia sẻ báo cáo mới đổi được mục này."
+    "only_people_a_report_is_shared_with_can_change_this": "Chỉ người được chia sẻ báo cáo mới đổi được mục này.",
+    "message_not_found": "Không tìm thấy tin nhắn.",
+    "invalid_chat_session": "Cuộc trò chuyện không hợp lệ.",
+    "invalid_rating": "Đánh giá không hợp lệ."
   },
   "reportPdf": {
     "range": "Khoảng thời gian: {from} - {to} ({days} ngày)",

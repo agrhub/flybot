@@ -48,10 +48,11 @@ test('tool UI actions go to the per-request collector', async () => {
     assert.equal(actions[0].type, 'NAVIGATE');
 });
 
-test('chat history is keyed per user', () => {
-    assert.deepEqual(agent.getChatHistory(ALICE, 'default-session'), []);
-    agent.clearChatHistory(BOB, 'default-session');
-    assert.deepEqual(agent.getChatHistory(ALICE, 'default-session'), []);
+test('a streaming answer never shows the suggestion or navigation blocks, even half-written', () => {
+    assert.equal(agent.visibleText('Trap A is worst.'), 'Trap A is worst.');
+    assert.equal(agent.visibleText('Trap A is worst.[SUGG'), 'Trap A is worst.');
+    assert.equal(agent.visibleText('Trap A is worst.\n[SUGGESTIONS]["x"]'), 'Trap A is worst.\n');
+    assert.equal(agent.visibleText('Use [1] and [2]'), 'Use [1] and [2]');
 });
 
 test('navigate_ui opens only known pages, with their own sub-tabs', async () => {

@@ -670,7 +670,50 @@
     "thinking": "Trợ lý AI đang phân tích dữ liệu...",
     "reset": "Làm mới cuộc trò chuyện",
     "toolExecutions": "Công cụ đã thực thi ({count})",
-    "unavailable": "Trợ lý AI hiện không khả dụng. Vui lòng thử lại sau ít phút."
+    "unavailable": "Trợ lý AI hiện không khả dụng. Vui lòng thử lại sau ít phút.",
+    "usingTool": "Đang {tool}...",
+    "tooMany": "Bạn đã hỏi nhiều câu liên tiếp. Vui lòng đợi một chút rồi hỏi tiếp.",
+    "feedback": {
+      "up": "Hữu ích",
+      "down": "Chưa đúng",
+      "upHint": "Câu trả lời này đúng và hữu ích",
+      "downHint": "Câu trả lời này sai hoặc chưa đủ"
+    },
+    "tools": {
+      "get_cameras_status": "xem trạng thái camera",
+      "trigger_capture_snapshot": "chụp ảnh từ camera",
+      "get_catch_summary": "đọc số liệu từng bẫy",
+      "get_insect_statistics": "thống kê ruồi vào bẫy",
+      "get_recent_snapshots": "xem ảnh nhận dạng mới nhất",
+      "get_overview_metrics": "tổng hợp số liệu",
+      "list_reports": "liệt kê báo cáo",
+      "get_report_summary": "tóm tắt báo cáo",
+      "send_report_to_me": "gửi báo cáo qua email",
+      "get_alerts": "xem cảnh báo",
+      "get_treatments": "đọc nhật ký vườn",
+      "compare_periods": "so sánh hai kỳ",
+      "get_pipeline_health": "kiểm tra luồng chụp ảnh",
+      "navigate_ui": "mở trang"
+    },
+    "cards": {
+      "count": "{n} con",
+      "caught": "Ruồi vào bẫy",
+      "ftd": "{n} con/bẫy/ngày",
+      "ftdShort": "Ruồi/bẫy/ngày",
+      "overThreshold": "Bẫy vượt ngưỡng",
+      "noData": "Chưa có số liệu",
+      "compare": "So sánh {days} ngày",
+      "current": "Kỳ này",
+      "previous": "Kỳ trước",
+      "up": "Tăng {pct}%",
+      "down": "Giảm {pct}%",
+      "openReport": "Mở báo cáo",
+      "chart": {
+        "hour": "Ruồi vào bẫy theo giờ, 24 giờ qua",
+        "day": "Ruồi vào bẫy theo ngày, 30 ngày qua",
+        "month": "Ruồi vào bẫy theo tháng, 12 tháng qua"
+      }
+    }
   },
   "home": {
     "tagline": "BẪY DÍNH THÔNG MINH & AI ĐẾM CÔN TRÙNG",

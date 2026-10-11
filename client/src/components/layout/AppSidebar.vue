@@ -77,10 +77,11 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAuth } from '@/composables/useAuth';
 import { useBreakpoints } from '@/composables/useBreakpoints';
+import { useTheme } from '@/utils/theme';
 import {
   Odometer,
   VideoCamera,
@@ -110,12 +111,24 @@ const { isTablet } = useBreakpoints();
 // Desktop: remembered choice. Tablet: icons only by default (not remembered)
 const desktopCollapsed = ref(localStorage.getItem('smart_trap_sidebar_collapsed') === 'true');
 const tabletCollapsed = ref(true);
-const isCollapsed = computed(() => (isTablet.value ? tabletCollapsed.value : desktopCollapsed.value));
+// The assistant column takes room from the page: the menu folds while it is open, and the
+// remembered choice comes back when it closes
+const { isAssistantOpen } = useTheme();
+const foldedForAssistant = ref(isAssistantOpen.value);
+watch(isAssistantOpen, (open) => { foldedForAssistant.value = open; });
+const isCollapsed = computed(() => (isTablet.value
+  ? tabletCollapsed.value
+  : desktopCollapsed.value || foldedForAssistant.value));
 
 const toggleCollapse = () => {
   if (isTablet.value) {
     tabletCollapsed.value = !tabletCollapsed.value;
     return;
+  }
+  // Opening the menu again beside the assistant: only for now
+  if (foldedForAssistant.value) {
+    foldedForAssistant.value = false;
+    if (!desktopCollapsed.value) return;
   }
   desktopCollapsed.value = !desktopCollapsed.value;
   localStorage.setItem('smart_trap_sidebar_collapsed', String(desktopCollapsed.value));

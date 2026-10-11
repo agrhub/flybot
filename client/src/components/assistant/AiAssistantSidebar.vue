@@ -59,7 +59,7 @@
 
           <!-- Tool executions (if the agent ran tools) -->
           <el-collapse
-            v-if="msg.toolExecutions && msg.toolExecutions.length > 0"
+            v-if="msg.toolExecutions && msg.toolExecutions.length > 0 && !msg.streaming"
             class="tool-collapse select-none"
           >
             <el-collapse-item name="tools">
@@ -76,7 +76,7 @@
                   class="tool-item"
                 >
                   <div class="flex items-center justify-between gap-2">
-                    <span class="tool-name font-mono truncate">{{ tool.name }}</span>
+                    <span class="tool-name truncate">{{ toolLabel(tool.name) }}</span>
                     <el-tag
                       :type="tool.status === 'success' ? 'success' : 'danger'"
                       effect="light"
@@ -94,14 +94,41 @@
             </el-collapse-item>
           </el-collapse>
 
-          <!-- Message text bubble -->
-          <div class="bubble bubble--assistant">
+          <!-- Message text bubble (filled in as the answer streams) -->
+          <div v-if="msg.content" class="bubble bubble--assistant">
             <div class="md-content" v-html="renderFormattedText(msg.content)"></div>
           </div>
 
-          <!-- Dynamic suggestions from the agent -->
+          <!-- Result cards: photos, chart, comparison, report -->
+          <div v-if="msg.cards && msg.cards.length" class="space-y-2">
+            <AssistantCard v-for="(card, cIdx) in msg.cards" :key="cIdx" :card="card" @open="onCardOpen" />
+          </div>
+
+          <!-- Was this answer right? -->
+          <div v-if="msg.id && !msg.streaming" class="feedback-row flex items-center gap-1">
+            <el-tooltip :content="t('assistant.feedback.upHint')" placement="top">
+              <el-button
+                text
+                size="small"
+                :icon="CircleCheck"
+                :type="msg.feedback?.rating === 'up' ? 'success' : undefined"
+                @click="rate(msg, 'up')"
+              >{{ t('assistant.feedback.up') }}</el-button>
+            </el-tooltip>
+            <el-tooltip :content="t('assistant.feedback.downHint')" placement="top">
+              <el-button
+                text
+                size="small"
+                :icon="CircleClose"
+                :type="msg.feedback?.rating === 'down' ? 'danger' : undefined"
+                @click="rate(msg, 'down')"
+              >{{ t('assistant.feedback.down') }}</el-button>
+            </el-tooltip>
+          </div>
+
+          <!-- Dynamic suggestions from the agent (latest answer only) -->
           <div
-            v-if="msg.suggestions && msg.suggestions.length > 0"
+            v-if="msg.suggestions && msg.suggestions.length > 0 && idx === lastAssistantIndex && !isThinking"
             class="chip-row flex flex-wrap gap-1.5 pt-1"
           >
             <el-button
@@ -122,9 +149,9 @@
       </div>
 
       <!-- Thinking indicator -->
-      <div v-if="isThinking" class="thinking flex items-center gap-2 pl-2">
+      <div v-if="isThinking && (activeTool || !streamingMessage?.content)" class="thinking flex items-center gap-2 pl-2">
         <el-icon class="is-loading"><Loading /></el-icon>
-        <span>{{ t('assistant.thinking') }}</span>
+        <span>{{ activeTool ? t('assistant.usingTool', { tool: toolLabel(activeTool) }) : t('assistant.thinking') }}</span>
       </div>
     </div>
 
@@ -178,8 +205,11 @@ import {
   Operation,
   MagicStick,
   Loading,
-  Promotion
+  Promotion,
+  CircleCheck,
+  CircleClose
 } from '@element-plus/icons-vue';
+import AssistantCard from './AssistantCard.vue';
 import { useTheme } from '@/utils/theme';
 import api from '@/services/api';
 
@@ -200,7 +230,7 @@ const props = defineProps({
 
 const emit = defineEmits(['navigate', 'select-camera']);
 
-const { t } = useI18n();
+const { t, te } = useI18n();
 const { isAssistantOpen, closeAssistant } = useTheme();
 // Desktop: a column next to the page; tablet: panel over it; phone: full screen
 const { isDesktop } = useBreakpoints();
@@ -208,14 +238,30 @@ const { isDesktop } = useBreakpoints();
 const chatContainer = ref(null);
 const inputQuery = ref('');
 const isThinking = ref(false);
-const sessionId = ref(`session_${Date.now()}`);
+// One conversation per signed-in user, kept across reloads (stored on the server for 7 days)
+const storedUser = () => {
+  try { return JSON.parse(localStorage.getItem('user')) || null; } catch { return null; }
+};
+const sessionKey = () => `flybot_chat_session:${storedUser()?.id || 'anon'}`;
+const newSessionId = () => `session_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+const readSessionId = () => {
+  try { return localStorage.getItem(sessionKey()) || null; } catch { return null; }
+};
+const saveSessionId = (id) => {
+  try { localStorage.setItem(sessionKey(), id); } catch { /* private mode: this tab only */ }
+};
+const sessionId = ref(readSessionId() || newSessionId());
+saveSessionId(sessionId.value);
+const activeTool = ref(null);
+const streamingMessage = ref(null);
+const toolLabel = (name) => (te(`assistant.tools.${name}`) ? t(`assistant.tools.${name}`) : name);
+const lastAssistantIndex = computed(() => {
+  for (let i = messages.value.length - 1; i >= 0; i--) if (messages.value[i].role === 'assistant') return i;
+  return -1;
+});
 
-const messages = ref([
-  {
-    role: 'assistant',
-    content: t('assistant.greeting')
-  }
-]);
+const greeting = () => ({ role: 'assistant', content: t('assistant.greeting') });
+const messages = ref([greeting()]);
 
 const defaultChips = computed(() => [
   t('assistant.suggest1'),
@@ -243,17 +289,57 @@ const scrollToBottom = () => {
 
 watch(() => messages.value.length, scrollToBottom);
 
+// A stored message as the panel shows it
+const fromStored = (m) => ({
+  id: m.id,
+  role: m.role,
+  content: m.content,
+  cards: m.cards || [],
+  suggestions: m.suggestions || [],
+  feedback: m.feedback || null,
+  toolExecutions: (m.tools || []).map(tool => ({ name: tool.name, status: tool.status, result: { message: tool.message } }))
+});
+
+// The conversation from before a reload
+const loadHistory = async () => {
+  try {
+    const res = await api.getChatHistory(sessionId.value);
+    const stored = res.data?.messages || [];
+    if (stored.length) {
+      messages.value = [greeting(), ...stored.map(fromStored)];
+      const last = [...stored].reverse().find(m => m.role === 'assistant');
+      if (last?.suggestions?.length) latestSuggestions.value = last.suggestions;
+      scrollToBottom();
+    }
+  } catch {
+    // An empty panel is fine
+  }
+};
+
 const resetChat = async () => {
   try {
     await api.clearChatSession(sessionId.value);
   } catch (e) {}
+  sessionId.value = newSessionId();
+  saveSessionId(sessionId.value);
   latestSuggestions.value = [];
-  messages.value = [
-    {
-      role: 'assistant',
-      content: t('assistant.greeting')
-    }
-  ];
+  messages.value = [greeting()];
+};
+
+const rate = async (msg, rating) => {
+  const next = msg.feedback?.rating === rating ? null : rating;
+  const before = msg.feedback;
+  msg.feedback = next ? { rating: next } : null;
+  try {
+    await api.rateChatMessage(sessionId.value, msg.id, next);
+  } catch {
+    msg.feedback = before;
+  }
+};
+
+// Opening a report from a card: on a phone the panel covers the page
+const onCardOpen = () => {
+  if (!isDesktop.value) closeAssistant();
 };
 
 // Minimal markdown: bold, emphasis, inline code, line breaks (styled via .md-content in <style>)
@@ -285,54 +371,81 @@ const handleSend = () => {
 const sendMessage = async (text) => {
   messages.value.push({ role: 'user', content: text });
   isThinking.value = true;
+  activeTool.value = null;
+  // Filled in as the answer streams
+  messages.value.push({ role: 'assistant', content: '', streaming: true, cards: [], toolExecutions: [], suggestions: [] });
+  const reply = messages.value[messages.value.length - 1];
+  streamingMessage.value = reply;
   scrollToBottom();
-
-  let user = null;
-  try { user = JSON.parse(localStorage.getItem('user')); } catch (e) {}
 
   const uiContext = {
     tab: props.activeContext,
     deviceSerial: props.selectedCamera?.deviceSerial || 'all'
   };
 
+  const onEvent = (type, data) => {
+    if (type === 'turn') {
+      // Text before a tool call was the model thinking aloud, not the answer
+      reply.content = '';
+    } else if (type === 'delta') {
+      reply.content += data.text;
+      scrollToBottom();
+    } else if (type === 'tool') {
+      activeTool.value = data.phase === 'start' ? data.name : null;
+    }
+  };
+
   try {
-    const res = await api.chatWithAssistant(text, sessionId.value, uiContext, user?.id);
-    if (res.data?.success) {
-      const { reply, suggestions, navigate, toolExecutions } = res.data;
+    let answer;
+    try {
+      answer = await api.chatWithAssistantStream(text, sessionId.value, uiContext, onEvent);
+    } catch (err) {
+      // No streaming here (an old proxy, a lost connection before anything came): ask once more in one piece
+      if (!err.streamUnavailable || err.status === 429) throw err;
+      const res = await api.chatWithAssistant(text, sessionId.value, uiContext);
+      if (!res.data?.success) throw new Error(res.data?.message || 'No response received from AI Agent');
+      answer = res.data;
+    }
+    const { suggestions, navigate } = answer;
+    Object.assign(reply, {
+      id: answer.messageId,
+      content: answer.reply,
+      cards: answer.cards || [],
+      toolExecutions: answer.toolExecutions || [],
+      suggestions: suggestions || [],
+      feedback: null,
+      streaming: false
+    });
 
-      messages.value.push({
-        role: 'assistant',
-        content: reply,
-        toolExecutions: toolExecutions || [],
-        suggestions: suggestions || []
-      });
+    if (suggestions && suggestions.length > 0) {
+      latestSuggestions.value = suggestions;
+    }
 
-      if (suggestions && suggestions.length > 0) {
-        latestSuggestions.value = suggestions;
+    // A page the agent opened (checked on the server): page, sub-tab, camera
+    if (navigate?.tab) {
+      if (navigate.deviceSerial) {
+        const cam = props.cameras.find(c => c.deviceSerial === navigate.deviceSerial);
+        if (cam) emit('select-camera', cam);
       }
-
-      // A page the agent opened (checked on the server): page, sub-tab, camera
-      if (navigate?.tab) {
-        if (navigate.deviceSerial) {
-          const cam = props.cameras.find(c => c.deviceSerial === navigate.deviceSerial);
-          if (cam) emit('select-camera', cam);
-        }
-        emit('navigate', { tab: navigate.tab, subTab: navigate.subTab });
-      }
-    } else {
-      throw new Error(res.data?.message || 'No response received from AI Agent');
+      emit('navigate', { tab: navigate.tab, subTab: navigate.subTab });
     }
   } catch (err) {
     console.warn('Agent chat API error:', err.message);
-    messages.value.push({ role: 'assistant', content: t('assistant.unavailable') });
+    Object.assign(reply, {
+      content: err.status === 429 || err.response?.status === 429 ? t('assistant.tooMany') : (err.fromServer ? err.message : t('assistant.unavailable')),
+      streaming: false
+    });
   } finally {
     isThinking.value = false;
+    activeTool.value = null;
+    streamingMessage.value = null;
     scrollToBottom();
   }
 };
 
 onMounted(() => {
   scrollToBottom();
+  loadHistory();
 });
 </script>
 
@@ -400,6 +513,11 @@ onMounted(() => {
   background-color: var(--el-bg-color);
   border: 1px solid var(--el-border-color);
   color: var(--el-text-color-primary);
+}
+
+.feedback-row :deep(.el-button) {
+  padding: 2px 6px;
+  font-size: 12px;
 }
 
 /* Markdown rendered through v-html */

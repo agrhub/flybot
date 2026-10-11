@@ -50,7 +50,7 @@ const triggerCaptureSnapshotDeclaration = {
     }
 };
 
-async function executeTriggerCaptureSnapshot({ deviceSerial, userId, user, addAction }) {
+async function executeTriggerCaptureSnapshot({ deviceSerial, userId, user, addAction, addCard = () => {} }) {
     try {
         if (!deviceSerial) return { error: 'Missing deviceSerial' };
         
@@ -94,6 +94,17 @@ async function executeTriggerCaptureSnapshot({ deviceSerial, userId, user, addAc
         const { countPests } = require('../../services/notificationService');
         const snapshot = await Snapshot.findById(saved._id);
         addAction('CAPTURE_TRIGGERED', { deviceSerial, snapshotId: saved._id });
+        addCard({
+            type: 'photos',
+            items: [{
+                id: String(saved._id),
+                deviceSerial: String(deviceSerial),
+                name: cam.deviceName || String(deviceSerial),
+                at: snapshot?.createdAt || saved.createdAt,
+                count: snapshot?.aiProcessed ? countPests(snapshot.aiResults?.summary) : null,
+                imageKey: saved.s3Key
+            }]
+        });
         return {
             success: true,
             deviceSerial,

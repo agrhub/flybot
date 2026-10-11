@@ -16,6 +16,7 @@ const Plot = require('./Plot');
 const Organization = require('./Organization');
 const ApiKey = require('./ApiKey');
 const Webhook = require('./Webhook');
+const ChatSession = require('./ChatSession');
 
 module.exports = {
     User,
@@ -35,5 +36,6 @@ module.exports = {
     Plot,
     Organization,
     ApiKey,
-    Webhook
+    Webhook,
+    ChatSession
 };

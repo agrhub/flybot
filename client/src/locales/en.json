@@ -670,7 +670,50 @@
     "thinking": "AI Copilot is analyzing...",
     "reset": "Reset conversation",
     "toolExecutions": "Tool executions ({count})",
-    "unavailable": "The AI Copilot is unavailable right now. Please try again in a moment."
+    "unavailable": "The AI Copilot is unavailable right now. Please try again in a moment.",
+    "usingTool": "Now {tool}...",
+    "tooMany": "You asked several questions in a row. Please wait a moment before the next one.",
+    "feedback": {
+      "up": "Helpful",
+      "down": "Not right",
+      "upHint": "This answer is right and helpful",
+      "downHint": "This answer is wrong or incomplete"
+    },
+    "tools": {
+      "get_cameras_status": "checking the cameras",
+      "trigger_capture_snapshot": "taking a photo",
+      "get_catch_summary": "reading the trap figures",
+      "get_insect_statistics": "counting catches",
+      "get_recent_snapshots": "looking at the latest photos",
+      "get_overview_metrics": "summing up the figures",
+      "list_reports": "listing reports",
+      "get_report_summary": "summarizing the report",
+      "send_report_to_me": "emailing the report",
+      "get_alerts": "reading alerts",
+      "get_treatments": "reading the logbook",
+      "compare_periods": "comparing periods",
+      "get_pipeline_health": "checking the capture pipeline",
+      "navigate_ui": "opening the page"
+    },
+    "cards": {
+      "count": "{n} insects",
+      "caught": "Catches",
+      "ftd": "{n} per trap per day",
+      "ftdShort": "Per trap per day",
+      "overThreshold": "Traps over threshold",
+      "noData": "No data yet",
+      "compare": "{days}-day comparison",
+      "current": "This period",
+      "previous": "Period before",
+      "up": "Up {pct}%",
+      "down": "Down {pct}%",
+      "openReport": "Open report",
+      "chart": {
+        "hour": "Catches by hour, last 24 hours",
+        "day": "Catches by day, last 30 days",
+        "month": "Catches by month, last 12 months"
+      }
+    }
   },
   "home": {
     "tagline": "SMART STICKY TRAPS & AI INSECT COUNTING",
