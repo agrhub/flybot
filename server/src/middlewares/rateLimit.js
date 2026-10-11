@@ -87,6 +87,8 @@ module.exports = {
         rateLimit({ windowMs: 60 * 1000, max: 10, includeIp: false, keyFn: (req) => `chat:${req.user?.id || ''}` }),
         rateLimit({ windowMs: 24 * 60 * 60 * 1000, max: 300, includeIp: false, keyFn: (req) => `chat-day:${req.user?.id || ''}` })
     ],
+    // Assistant confirm and rating clicks: 60 per person per minute
+    chatActionLimiter: rateLimit({ windowMs: 60 * 1000, max: 60, includeIp: false, keyFn: (req) => `chat-action:${req.user?.id || ''}` }),
     // Share invitations send email to any address: limit per sharer
     shareLimiter: rateLimit({ windowMs: 60 * 60 * 1000, max: 30, includeIp: false, keyFn: (req) => `share:${req.user?.id || ''}` }),
     // Express middleware over reportSendQuota (per user)

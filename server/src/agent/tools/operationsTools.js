@@ -286,7 +286,9 @@ const safe = (fn) => async (args) => {
     try {
         return await fn(args);
     } catch (err) {
-        return { error: err.message };
+        // Internal details stay in the log
+        console.error('[Agent Tool] crashed:', err.message);
+        return { error: 'This could not be looked up just now.' };
     }
 };
 

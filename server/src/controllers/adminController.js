@@ -160,7 +160,9 @@ async function deleteUser(req, res) {
             AuthToken.deleteMany({ userId: target._id }),
             PushSubscription.deleteMany({ userId: target._id }),
             ApiKey.deleteMany({ userId: target._id }),
-            Webhook.deleteMany({ userId: target._id })
+            Webhook.deleteMany({ userId: target._id }),
+            // Assistant conversations hold what the person asked and was shown
+            require('../models').ChatSession.deleteMany({ userId: target._id })
         ]);
         // Their farms: an organization's farm goes to another owner of it; the rest are deleted
         // (their cameras, possibly other people's in the organization, leave the plots first)

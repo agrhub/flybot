@@ -106,7 +106,8 @@ async function executeGetInsectStatistics({ deviceSerial, mode = 'day', userId, 
             records
         };
     } catch (err) {
-        return { error: err.message };
+        console.error('[Agent Tool] crashed:', err.message);
+        return { error: 'This could not be looked up just now.' };
     }
 }
 
@@ -171,7 +172,8 @@ async function executeGetRecentSnapshots({ deviceSerial, limit = 6, userId, user
             })
         };
     } catch (err) {
-        return { error: err.message };
+        console.error('[Agent Tool] crashed:', err.message);
+        return { error: 'This could not be looked up just now.' };
     }
 }
 
@@ -213,7 +215,8 @@ async function executeGetOverviewMetrics({ userId, user }) {
             speciesShare: speciesAgg.map(s => ({ species: s._id, sharePct: Math.round((s.total / (speciesAgg.reduce((a, b) => a + b.total, 0) || 1)) * 100) }))
         };
     } catch (err) {
-        return { error: err.message };
+        console.error('[Agent Tool] crashed:', err.message);
+        return { error: 'This could not be looked up just now.' };
     }
 }
 
@@ -269,7 +272,8 @@ async function executeGetCatchSummary({ userId, user }) {
             notes: 'sticky = glue card, counts accumulate until the card is replaced; lure = no glue, a photo shows the flies present at that moment. risk compares judgedValue with alertThreshold: the latest photo on a sticky trap, today\'s average per photo on a lure trap.'
         };
     } catch (err) {
-        return { error: err.message };
+        console.error('[Agent Tool] crashed:', err.message);
+        return { error: 'This could not be looked up just now.' };
     }
 }
 

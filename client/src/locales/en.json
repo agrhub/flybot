@@ -659,18 +659,18 @@
   },
   "assistant": {
     "title": "FlyBot Assistant",
-    "subtitle": "Agricultural AI & surveillance copilot",
+    "subtitle": "Your farm and camera assistant",
     "greeting": "Hello! I'm the FlyBot assistant. I can look up catches, compare traps, check cameras, take a new photo and open the page you need.",
     "suggest1": "📊 Summarize 24h pest detections",
     "suggest2": "🪰 Where is fruit fly density highest?",
     "suggest3": "🔔 Any alerts today?",
     "suggest4": "📈 This week compared with last week",
-    "inputPlaceholder": "Ask AI Copilot about cameras, insects, traps...",
+    "inputPlaceholder": "Ask the FlyBot assistant about cameras, insects, traps...",
     "send": "Send",
-    "thinking": "AI Copilot is analyzing...",
+    "thinking": "The assistant is looking into it...",
     "reset": "Reset conversation",
     "toolExecutions": "Tool executions ({count})",
-    "unavailable": "The AI Copilot is unavailable right now. Please try again in a moment.",
+    "unavailable": "The FlyBot assistant is unavailable right now. Please try again in a moment.",
     "usingTool": "Now {tool}...",
     "tooMany": "You asked several questions in a row. Please wait a moment before the next one.",
     "feedback": {
@@ -936,12 +936,37 @@
           "channels": {
             "title": "Channels & quiet hours",
             "desc": "Choose how alerts reach you when the app is closed.",
-            "items": "Open Settings, Notifications.\nTurn on alert emails, connect Telegram, or enable push notifications on this phone or computer.\nTurn on the weekly report for a Monday summary; \"Send me this week’s report now\" shows an example.\nSet quiet hours for the night, and switch off cameras you do not follow under \"Cameras I follow\"."
+            "items": "Open Settings, Notifications.\nTurn on alert emails, connect Telegram, or enable push notifications on this phone or computer.\nTurn on the weekly report for a Monday summary; \"Send me this week’s report now\" shows an example.\nSet quiet hours for the night, and switch off cameras you do not follow under \"Cameras I follow\".\nTurn on \"Morning brief\" for a summary at 6:30 every morning: yesterday's catches, traps over or near their threshold, cards due, cameras offline (on Telegram, or by email without Telegram)."
           },
           "reports": {
             "title": "Reports",
             "desc": "Arrange the charts and numbers you care about.",
             "items": "Open \"Reports\", create one and add blocks: key figures, flies per day, flies by trap, species, trap table, flies by period, flies by hour, latest photos.\nPick the time range at the top right: last 7 or 30 days, 3, 6 or 12 months, or your own dates; \"Save as default\" keeps it for everyone who opens the report. Figures are compared with the period just before.\nClick \"Export PDF\" to save the report with its charts and tables.\nShare it by email, or turn on a public link for partners. Under \"End of sharing\", pick a date and time after which the link and the people it is shared with lose access, or keep \"Never\".\nBy email: click \"Email me\" to get the report with its PDF now; the owner can open the three-dot menu, \"Email on a schedule\", to send it weekly or monthly (Vietnam time) to themselves or also to the people it is shared with."
+          }
+        }
+      },
+      "assistant": {
+        "title": "FlyBot Assistant",
+        "steps": {
+          "ask": {
+            "title": "Ask in plain words",
+            "desc": "Press \"Assistant\" at the top to open it; the left menu folds to make room.",
+            "items": "Ask as you would a colleague: \"Which trap is worst?\", \"This week compared with last week?\", \"Any alerts today?\", \"Did last week's spray work?\", \"Summarize the season report\".\nThe assistant looks up your real figures before answering, counting catches the same way as the other pages.\nIt only sees the cameras and reports you may see; administrators can also ask about the capture pipeline.\nIt can open the page or tab you need, take a new photo from a camera, or email a report as a PDF to you."
+          },
+          "cards": {
+            "title": "Answers with photos and charts",
+            "desc": "Answers appear as they are written, with result cards.",
+            "items": "Cards for the latest AI photos (click to enlarge), catches by hour, day or month, a two-period comparison, and a report with an \"Open report\" button.\nWhile it looks things up, the panel says what it is doing; open \"Tool executions\" to see the steps.\nPress \"Helpful\" or \"Not right\" under an answer to tell us how it did.\nConversations are kept for 7 days and survive a reload; the refresh button at the top starts a new one."
+          },
+          "photo": {
+            "title": "Ask about a photo",
+            "desc": "Have the AI look at one trap photo.",
+            "items": "Open a photo in the detection history (or on the Camera page) and press \"Ask the assistant about this photo\".\nThe assistant looks at it and tells you what insects are on it, whether the count looks right, and whether the photo has glare, blur, a dirty lens or a full card.\nEach person can ask about photos 20 times an hour."
+          },
+          "confirm": {
+            "title": "Changes you confirm",
+            "desc": "The assistant prepares, you decide.",
+            "items": "Say \"I replaced the card on mango trap A1\" or \"Log an Abamectin spray in plot A this morning\".\nThe assistant shows a card with the details; nothing is recorded until you press \"Confirm\", and \"Cancel\" drops it.\nThe details are checked as in the forms (your access to the camera, the date, the product for a spray), and each card can be used once."
           }
         }
       },
@@ -2243,8 +2268,8 @@
         "desc": "Threshold alerts, sudden rises, offline cameras and card reminders. Choose channels in Settings."
       },
       "assistant": {
-        "title": "AI assistant",
-        "desc": "Ask in plain words: which trap is worrying, flies this week, what to do."
+        "title": "FlyBot Assistant",
+        "desc": "Ask in plain words: which trap is worrying, this week against last. It answers with photos and charts, and records changes only when you confirm."
       },
       "profile": {
         "title": "Account",

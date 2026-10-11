@@ -122,9 +122,12 @@ async function chatWithAgent({
     const stored = await ChatSession.findOne({ userId, sessionId }).select('contents').lean();
     const sessionHistory = Array.isArray(stored?.contents) ? [...stored.contents] : [];
 
-    // Inject UI context header into current query
-    const tabStr = uiContext.tab ? `Current View: "${uiContext.tab}"` : 'View: dashboard';
-    const cameraStr = uiContext.deviceSerial ? `Selected Camera: "${uiContext.deviceSerial}"` : 'Camera: all';
+    // The page the user is on, as short plain values only (it goes into the prompt)
+    const plainValue = (value) => (typeof value === 'string' && /^[A-Za-z0-9_-]{1,64}$/.test(value) ? value : null);
+    const tab = plainValue(uiContext.tab);
+    const camera = plainValue(uiContext.deviceSerial);
+    const tabStr = tab ? `Current View: "${tab}"` : 'View: dashboard';
+    const cameraStr = camera && camera !== 'all' ? `Selected Camera: "${camera}"` : 'Camera: all';
     const photoStr = typeof uiContext.snapshotId === 'string' && /^[a-f0-9]{24}$/.test(uiContext.snapshotId) ? `, Selected Photo: "${uiContext.snapshotId}"` : '';
     const userPrompt = `[UI Context | ${tabStr}, ${cameraStr}${photoStr}]\n${message}`;
 
@@ -217,7 +220,8 @@ async function chatWithAgent({
                         afterTool(name, null, new Error('Unknown tool'));
                     }
                 } catch (e) {
-                    result = { error: e.message };
+                    // Internal details stay in the log
+                    result = { error: 'This could not be looked up just now.' };
                     afterTool(name, null, e);
                 }
                 const status = result?.error ? 'error' : 'success';

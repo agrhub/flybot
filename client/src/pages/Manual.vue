@@ -28,6 +28,10 @@ const IMAGES = {
   'alerts.smart': ['notifications'],
   'alerts.channels': ['alert-settings'],
   'alerts.reports': ['reports', 'report-share', 'report-schedule'],
+  'assistant.ask': ['assistant'],
+  'assistant.cards': ['assistant-chart'],
+  'assistant.photo': ['assistant-photo'],
+  'assistant.confirm': ['assistant-confirm'],
   'mobile.app': ['mobile-dashboard', 'mobile-cameras'],
   'mobile.more': ['mobile-more'],
   'integrations.api': ['integrations']

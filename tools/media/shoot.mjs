@@ -48,7 +48,8 @@ const ASK = (question, wait = 6000) => `
   panel().querySelector('.assistant-header button').click(); await sleep(800);
   const input = panel().querySelector('form input');
   input.value = ${JSON.stringify(question)}; input.dispatchEvent(new Event('input', { bubbles: true })); await sleep(300);
-  input.closest('form').requestSubmit(); await sleep(${wait});
+  input.closest('form').requestSubmit(); await sleep(1500);
+  for (let i = 0; i < 90 && document.querySelector('#smart-trap-assistant-sidebar .thinking'); i++) await sleep(500); await sleep(1500);
   const box = panel().querySelector('.overflow-y-auto'); box.scrollTop = box.scrollHeight; await sleep(600);
   document.querySelectorAll('.el-notification').forEach(n => n.remove());`;
 
@@ -56,8 +57,10 @@ const ASK = (question, wait = 6000) => `
 const PHOTO_ASK = `
         const panel = document.getElementById('smart-trap-assistant-sidebar');
         if (panel && getComputedStyle(panel).display !== 'none') { panel.querySelector('.assistant-header button').click(); await sleep(800); }
+        for (let i = 0; i < 40 && !document.querySelector('.el-table__body .el-button'); i++) await sleep(500);
         document.querySelector('.el-table__body .el-button').click(); await sleep(1500);
-        await click('.el-dialog button', ${JSON.stringify(W('Hỏi trợ lý', 'Ask the assistant'))}, 7000);
+        await click('.el-dialog button', ${JSON.stringify(W('Hỏi trợ lý', 'Ask the assistant'))}, 1500);
+        for (let i = 0; i < 90 && document.querySelector('#smart-trap-assistant-sidebar .thinking'); i++) await sleep(500); await sleep(1500);
         const box = document.getElementById('smart-trap-assistant-sidebar').querySelector('.overflow-y-auto'); box.scrollTop = box.scrollHeight; await sleep(600);
         document.querySelectorAll('.el-notification').forEach(n => n.remove());`;
 
@@ -155,6 +158,7 @@ const shots = [
         bell.click(); await sleep(1500);` },
     { name: 'alert-settings', url: '/settings?tab=notifications', action: `
         const c = [...document.querySelectorAll('.el-card')].find(e => e.innerText.includes(${JSON.stringify(W('Báo cáo tuần', 'Weekly report'))}));
+        for (let i = 0; i < 40 && document.querySelector('.el-loading-mask'); i++) await sleep(500);
         c?.scrollIntoView({ block: 'start' }); await sleep(600);` },
     { name: 'organizations', url: '/settings?tab=organizations' },
     { name: 'integrations', url: '/settings?tab=integrations' },

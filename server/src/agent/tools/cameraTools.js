@@ -31,7 +31,8 @@ async function executeGetCamerasStatus({ userId, user }) {
             }))
         };
     } catch (err) {
-        return { error: err.message };
+        console.error('[Agent Tool] crashed:', err.message);
+        return { error: 'This could not be looked up just now.' };
     }
 }
 
@@ -115,7 +116,8 @@ async function executeTriggerCaptureSnapshot({ deviceSerial, userId, user, addAc
                 : `New snapshot from ${deviceSerial} stored; AI analysis did not complete.`
         };
     } catch (err) {
-        return { error: `Could not capture image from ${deviceSerial}: ${err.message}` };
+        console.error('[Agent Tool] capture crashed:', err.message);
+        return { error: `Could not capture an image from ${deviceSerial}.` };
     }
 }
 
