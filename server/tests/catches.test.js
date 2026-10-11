@@ -38,6 +38,7 @@ test('dashboard: catches today and flies per trap per day, per camera too', asyn
     assert.equal(lure.trapKind, 'lure');
     assert.equal(lure.today, 2);
     assert.equal(lure.cardDueAt, null, 'no card to replace on a lure trap');
+    assert.deepEqual([lure.riskValue, lure.riskBasis], [2, 'dailyAverage'], 'judged by the day average, like its alert');
 });
 
 test('analytics insights: per-trap table, hourly activity and catches chart', async () => {

@@ -477,6 +477,11 @@ async function getAiOverview(req, res) {
         let peakCamera = null;
         let totalRealtimeInsects = 0;
         const latestByCamera = await latestProcessedByCamera(cameraSerials);
+        // Lure traps are judged by today's average per photo, as their threshold alert is
+        const lureSerials = dedupedCameras.filter(c => trapKindOf(c) === 'lure').map(c => c.deviceSerial);
+        const todayKey = dailyStats.dayKeyOf(new Date());
+        const lureAverage = new Map((lureSerials.length ? await dailyStats.rows(lureSerials, todayKey, todayKey) : [])
+            .filter(r => r.scans).map(r => [r.deviceSerial, Math.round((r.total / r.scans) * 10) / 10]));
 
         for (const cam of dedupedCameras) {
             // Same counting as alerts and diagnosis: pests only (no people, cars...)
@@ -511,7 +516,9 @@ async function getAiOverview(req, res) {
 
             // Risk against this camera's own alert threshold (Settings > Notifications)
             const alertThreshold = thresholdOf(cam);
-            const camRisk = riskLevel(currentCount, alertThreshold);
+            const lure = trapKindOf(cam) === 'lure';
+            const riskValue = lure ? (lureAverage.get(cam.deviceSerial) ?? 0) : currentCount;
+            const camRisk = riskLevel(riskValue, alertThreshold);
 
             cameraRealtimeList.push({
                 deviceSerial: cam.deviceSerial,
@@ -524,6 +531,9 @@ async function getAiOverview(req, res) {
                 trapKind: trapKindOf(cam),
                 cropType: cam.cropType || 'Mango Orchard',
                 currentCount,
+                // What the threshold is compared with: today's average per photo on a lure trap
+                riskValue,
+                riskBasis: lure ? 'dailyAverage' : 'latest',
                 riskLevel: camRisk,
                 alertThreshold,
                 status: cam.status ?? 1,

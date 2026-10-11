@@ -117,7 +117,7 @@
                   <div class="trap-item__name truncate">{{ cam.deviceName || cam.deviceSerial }}</div>
                   <!-- Insect density tag -->
                   <el-tag :type="getDensityTagType(cam.riskLevel)" effect="light" round size="small" class="shrink-0">
-                    {{ cam.currentCount }} {{ t('map.fruitFlyShort') }}
+                    {{ cam.riskValue }} {{ t('map.fruitFlyShort') }}
                   </el-tag>
                 </div>
                 <div class="flex items-center gap-1 mt-0.5 min-w-0">
@@ -318,6 +318,8 @@ const enrichedCameras = computed(() => {
       longitude: cam.longitude ?? live?.longitude ?? null,
       locationAddress: cam.locationAddress || live?.locationAddress || '',
       currentCount: live?.currentCount ?? 0,
+      riskValue: live?.riskValue ?? live?.currentCount ?? 0,
+      riskBasis: live?.riskBasis || 'latest',
       today: live?.today ?? null,
       ftd7: live?.ftd7 ?? null,
       trapKind: live?.trapKind || cam.trapKind || 'sticky',
@@ -426,7 +428,7 @@ const createCustomIcon = (cam) => {
       </div>
       <div class="map-marker__tip" style="background-color: ${color}"></div>
       <div class="map-marker__label">
-        ${escapeHtml(cam.deviceName || cam.deviceSerial)} <span style="color: ${color}">(${escapeHtml(cam.currentCount)})</span>
+        ${escapeHtml(cam.deviceName || cam.deviceSerial)} <span style="color: ${color}">(${escapeHtml(cam.riskValue)})</span>
       </div>
     </div>
   `;
@@ -808,7 +810,7 @@ const renderMarkers = () => {
 
         <!-- Density & orchard info -->
         <div class="popup-info-box">
-          <div><b>${cam.trapKind === 'lure' ? t('dashboard.presentNow') : t('dashboard.onTrapNow')}:</b> <span style="color: ${getPinColor(cam.riskLevel)}; font-weight: 600;">${cam.currentCount} / ${cam.alertThreshold ?? '--'} ${t('dashboard.insectsShort')}</span></div>
+          <div><b>${cam.riskBasis === 'dailyAverage' ? t('dashboard.averageToday') : t('dashboard.onTrapNow')}:</b> <span style="color: ${getPinColor(cam.riskLevel)}; font-weight: 600;">${cam.riskValue} / ${cam.alertThreshold ?? '--'} ${t('dashboard.insectsShort')}</span></div>
           <div><b>${t('map.popupToday')}:</b> ${cam.today ?? '--'} · <b>${t('map.popupFtd')}:</b> ${cam.ftd7 ?? '--'}</div>
           <div><b>${t('map.cropType')}:</b> ${escapeHtml(cam.cropType)}</div>
           <div class="map-popup__ellipsis"><b>${t('map.orchardAddress')}:</b> ${escapeHtml(cam.locationAddress || t('map.noAddress'))}</div>

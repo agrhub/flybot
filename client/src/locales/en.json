@@ -275,7 +275,8 @@
     "forecastBasis": "Following {name}: forecast new flies per day (+) added to the count on the glue card, against the trap threshold.",
     "forecastBasisLure": "Following {name}: forecast average flies present per day, against the trap threshold.",
     "noSnapshotYet": "No analyzed photo yet",
-    "snapshotCount": "{count} insects"
+    "snapshotCount": "{count} insects",
+    "averageToday": "avg today"
   },
   "cameras": {
     "title": "Camera Surveillance & Management",

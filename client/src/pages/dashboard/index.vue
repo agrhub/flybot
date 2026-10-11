@@ -80,14 +80,14 @@
                 <span class="meta-text font-mono truncate">({{ cam.deviceSerial }})</span>
               </div>
               <div class="shrink-0 text-right">
-                <span class="meta-text mr-1">{{ cam.trapKind === 'lure' ? t('dashboard.presentNow') : t('dashboard.onTrapNow') }}</span>
-                <span class="item-count" :class="`is-${levelTagType(cam.riskLevel)}`">{{ cam.currentCount }}</span>
+                <span class="meta-text mr-1">{{ cam.riskBasis === 'dailyAverage' ? t('dashboard.averageToday') : t('dashboard.onTrapNow') }}</span>
+                <span class="item-count" :class="`is-${levelTagType(cam.riskLevel)}`">{{ cam.riskValue ?? cam.currentCount }}</span>
                 <span class="meta-text ml-1">/ {{ cam.alertThreshold }} {{ t('dashboard.insectsShort') }}</span>
               </div>
             </div>
 
             <el-progress
-              :percentage="Math.min(100, Math.max(4, (cam.currentCount / (cam.alertThreshold || 15)) * 100))"
+              :percentage="Math.min(100, Math.max(4, ((cam.riskValue ?? cam.currentCount) / (cam.alertThreshold || 15)) * 100))"
               :color="`var(--el-color-${levelTagType(cam.riskLevel)})`"
               :stroke-width="8"
               :show-text="false"
