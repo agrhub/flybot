@@ -129,9 +129,14 @@ const currentSection = computed(() => {
   return 'dashboard';
 });
 
-const handleNavigate = (section) => {
-  const targetPath = '/' + section;
-  if (route.path !== targetPath) {
+// A section name, or { tab, subTab } from the assistant (sub-tab: the page's ?tab=)
+const handleNavigate = (target) => {
+  const { tab, subTab } = typeof target === 'string' ? { tab: target } : (target || {});
+  if (!tab) return;
+  const targetPath = '/' + tab;
+  if (subTab) {
+    router.push({ path: targetPath, query: { tab: subTab } });
+  } else if (route.path !== targetPath) {
     router.push(targetPath);
   }
 };

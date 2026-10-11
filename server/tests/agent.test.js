@@ -53,3 +53,33 @@ test('chat history is keyed per user', () => {
     agent.clearChatHistory(BOB, 'default-session');
     assert.deepEqual(agent.getChatHistory(ALICE, 'default-session'), []);
 });
+
+test('navigate_ui opens only known pages, with their own sub-tabs', async () => {
+    const actions = [];
+    const addAction = (type, payload) => actions.push(payload);
+    assert.match((await allExecutors.navigate_ui({ tab: '//evil.example', addAction })).error, /Unknown page/);
+    await allExecutors.navigate_ui({ tab: 'settings', subTab: 'notifications', addAction });
+    await allExecutors.navigate_ui({ tab: 'reports', subTab: 'history', deviceSerial: 'CAMA', addAction });
+    await allExecutors.navigate_ui({ tab: 'analytics', subTab: 'history', deviceSerial: 'CAMA', addAction });
+    assert.deepEqual(actions, [
+        { tab: 'settings', subTab: 'notifications' },
+        { tab: 'reports' },
+        { tab: 'analytics', subTab: 'history', deviceSerial: 'CAMA' }
+    ]);
+});
+
+test('chat history is trimmed between questions, never inside a tool exchange', () => {
+    const question = (n) => ({ role: 'user', parts: [{ text: `q${n}` }] });
+    const call = { role: 'model', parts: [{ functionCall: { name: 'get_catch_summary', args: {} } }] };
+    const result = { role: 'user', parts: [{ functionResponse: { name: 'get_catch_summary', response: {} } }] };
+    const answer = { role: 'model', parts: [{ text: 'a' }] };
+    const history = [];
+    for (let n = 0; n < 5; n++) history.push(question(n), call, result, answer);
+    agent.trimHistory(history, 6);
+    assert.deepEqual(history[0], question(4), 'starts at a question');
+    assert.equal(history.length, 4);
+    // A window with no question at all keeps the last question onwards
+    const long = [question(0), ...Array.from({ length: 4 }, () => [call, result]).flat(), answer];
+    agent.trimHistory(long, 3);
+    assert.deepEqual(long[0], question(0));
+});

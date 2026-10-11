@@ -409,5 +409,6 @@ module.exports = {
     effectiveSerials,
     parseRange,
     resolveRange,
+    judgedCounts,
     computeWidgetData
 };

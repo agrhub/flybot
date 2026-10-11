@@ -658,9 +658,9 @@
     }
   },
   "assistant": {
-    "title": "Smart Trap Copilot",
+    "title": "FlyBot Assistant",
     "subtitle": "Agricultural AI & surveillance copilot",
-    "greeting": "Hello! I am your Smart Trap AI Assistant. I can help you analyze pest density, check camera statuses, or generate summaries for agricultural decisions.",
+    "greeting": "Hello! I'm the FlyBot assistant. I can look up catches, compare traps, check cameras, take a new photo and open the page you need.",
     "suggest1": "📊 Summarize 24h pest detections",
     "suggest2": "🪰 Where is fruit fly density highest?",
     "suggest3": "📡 Check for offline cameras",

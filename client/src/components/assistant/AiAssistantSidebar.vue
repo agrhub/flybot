@@ -298,7 +298,7 @@ const sendMessage = async (text) => {
   try {
     const res = await api.chatWithAssistant(text, sessionId.value, uiContext, user?.id);
     if (res.data?.success) {
-      const { reply, suggestions, navigate, actions, toolExecutions } = res.data;
+      const { reply, suggestions, navigate, toolExecutions } = res.data;
 
       messages.value.push({
         role: 'assistant',
@@ -311,18 +311,13 @@ const sendMessage = async (text) => {
         latestSuggestions.value = suggestions;
       }
 
-      // Handle UI navigation triggered by agent
-      if (navigate && navigate.tab) {
-        emit('navigate', navigate.tab);
+      // A page the agent opened (checked on the server): page, sub-tab, camera
+      if (navigate?.tab) {
         if (navigate.deviceSerial) {
           const cam = props.cameras.find(c => c.deviceSerial === navigate.deviceSerial);
           if (cam) emit('select-camera', cam);
         }
-      } else if (actions && actions.length > 0) {
-        const navAction = actions.find(a => a.type === 'NAVIGATE');
-        if (navAction?.payload?.tab) {
-          emit('navigate', navAction.payload.tab);
-        }
+        emit('navigate', { tab: navigate.tab, subTab: navigate.subTab });
       }
     } else {
       throw new Error(res.data?.message || 'No response received from AI Agent');

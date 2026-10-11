@@ -3,13 +3,34 @@ const { viewableCameras } = require('../../utils/ownership');
 const dailyStats = require('../../services/dailyStats');
 const catchStats = require('../../services/catchStats');
 const { latestProcessedByCamera } = require('../../services/snapshotQueries');
+const { judgedCounts } = require('../../services/dashboardService');
 const { countPests } = require('../../services/notificationService');
 const { thresholdOf, riskLevel } = require('../../constants/risk');
 const { trapKindOf } = require('../../constants/trap');
 
+const HOUR_MS = 60 * 60 * 1000;
+// Farm time (Asia/Ho_Chi_Minh): UTC+7 all year
+const FARM_OFFSET_MS = 7 * HOUR_MS;
+const round1 = (n) => Math.round(n * 10) / 10;
+const plain = (summary) => (summary instanceof Map ? Object.fromEntries(summary) : (summary || {}));
+
+/**
+ * Cameras this user may see, narrowed to one when `deviceSerial` names one.
+ * Returns { serials } or { error }.
+ */
+async function serialsFor(user, deviceSerial) {
+    const cams = await viewableCameras(user).select('deviceSerial').lean();
+    const allowed = [...new Set(cams.map(c => c.deviceSerial))];
+    if (deviceSerial && deviceSerial !== 'all') {
+        if (!allowed.includes(deviceSerial)) return { error: `You do not have permission to access camera ${deviceSerial}.` };
+        return { serials: [deviceSerial] };
+    }
+    return { serials: allowed };
+}
+
 const getInsectStatisticsDeclaration = {
     name: 'get_insect_statistics',
-    description: 'Query insect pest statistics grouped by hour, day, or month. Supports filtering by a single camera or all cameras.',
+    description: 'Insects caught (new arrivals on the traps, pests only) per hour over the last 24 hours, per day over the last 30 days, or per month over the last 12 months, by species. For one camera or all cameras.',
     parameters: {
         type: 'OBJECT',
         properties: {
@@ -19,6 +40,7 @@ const getInsectStatisticsDeclaration = {
             },
             mode: {
                 type: 'STRING',
+                enum: ['hour', 'day', 'month'],
                 description: 'Timeframe group: "hour" (past 24h), "day" (past 30 days), "month" (past 12 months)'
             }
         }
@@ -27,77 +49,41 @@ const getInsectStatisticsDeclaration = {
 
 async function executeGetInsectStatistics({ deviceSerial, mode = 'day', userId, user }) {
     try {
-        let startDate = new Date();
-        let groupBy = {};
+        if (!userId) return { error: 'Not authenticated.' };
+        const scope = await serialsFor(user, deviceSerial);
+        if (scope.error) return scope;
+        const { serials } = scope;
+        if (!serials.length) return { mode, deviceSerial: deviceSerial || 'all', records: [] };
+        const now = new Date();
 
         if (mode === 'hour') {
-            startDate.setHours(startDate.getHours() - 24);
-            groupBy = { $dateToString: { format: "%H:00", date: "$createdAt", timezone: "Asia/Ho_Chi_Minh" } };
-        } else if (mode === 'month') {
-            startDate.setFullYear(startDate.getFullYear() - 1);
-            groupBy = { $dateToString: { format: "%m/%Y", date: "$createdAt", timezone: "Asia/Ho_Chi_Minh" } };
-        } else {
-            startDate.setDate(startDate.getDate() - 30);
-            groupBy = { $dateToString: { format: "%d/%m", date: "$createdAt", timezone: "Asia/Ho_Chi_Minh" } };
-        }
-
-        if (!userId) return { error: 'Not authenticated.' };
-        const userCams = await viewableCameras(user).select('deviceSerial');
-        const allowedSerials = userCams.map(c => c.deviceSerial);
-
-        const matchQuery = {
-            createdAt: { $gte: startDate },
-            aiProcessed: true
-        };
-
-        if (deviceSerial && deviceSerial !== 'all') {
-            if (!allowedSerials.includes(deviceSerial)) {
-                return { error: `You do not have permission to access camera ${deviceSerial}.` };
+            // Rise between consecutive photos of a sticky card; flies present on average for lure traps
+            const activity = await catchStats.activityByHour(serials, 2, now);
+            const records = [];
+            for (let i = 23; i >= 0; i--) {
+                const local = new Date(now.getTime() - i * HOUR_MS + FARM_OFFSET_MS);
+                const day = local.toISOString().slice(0, 10);
+                const hour = local.getUTCHours();
+                const d = activity.days.indexOf(day);
+                const h = activity.hours.indexOf(hour);
+                records.push({ day, hour: `${String(hour).padStart(2, '0')}:00`, caught: d >= 0 && h >= 0 ? round1(activity.cells[d][h]) : 0 });
             }
-            matchQuery.deviceSerial = deviceSerial;
-        } else if (allowedSerials.length > 0) {
-            matchQuery.deviceSerial = { $in: allowedSerials };
-        } else if (userId) {
-            return { mode, deviceSerial: 'all', periodsCount: 0, records: [] };
+            return {
+                mode,
+                deviceSerial: deviceSerial || 'all',
+                unit: 'insects caught per hour, local time (all species)',
+                records
+            };
         }
 
-        if (mode !== 'hour') {
-            const serials = typeof matchQuery.deviceSerial === 'string' ? [matchQuery.deviceSerial] : matchQuery.deviceSerial.$in;
-            const rollup = await dailyStats.rows(serials, dailyStats.dayKeyOf(startDate));
-            const records = dailyStats.speciesSeries(rollup, mode === 'month' ? 'month' : 'day')
-                .map(p => ({ _id: p._id, insects: p.insects }));
-            return { mode, deviceSerial: deviceSerial || 'all', periodsCount: records.length, records };
-        }
-
-        const data = await Snapshot.aggregate([
-            { $match: matchQuery },
-            {
-                $project: {
-                    createdAt: 1,
-                    summaryArray: { $objectToArray: "$aiResults.summary" }
-                }
-            },
-            { $unwind: "$summaryArray" },
-            {
-                $group: {
-                    _id: { time: groupBy, insect: "$summaryArray.k" },
-                    count: { $sum: "$summaryArray.v" }
-                }
-            },
-            {
-                $group: {
-                    _id: "$_id.time",
-                    insects: { $push: { label: "$_id.insect", value: "$count" } }
-                }
-            },
-            { $sort: { "_id": 1 } }
-        ]);
-
+        const data = await catchStats.catchesBySerial(serials, mode === 'month' ? 365 : 30, now);
+        const records = catchStats.speciesCatchSeries(data, mode === 'month' ? 'month' : 'day')
+            .map(p => ({ period: p._id, insects: p.insects.map(i => ({ label: i.label, caught: round1(i.value) })) }));
         return {
-            mode,
+            mode: mode === 'month' ? 'month' : 'day',
             deviceSerial: deviceSerial || 'all',
-            periodsCount: data.length,
-            records: data
+            unit: 'insects caught (new arrivals) per period, by species; periods without data are left out',
+            records
         };
     } catch (err) {
         return { error: err.message };
@@ -106,7 +92,7 @@ async function executeGetInsectStatistics({ deviceSerial, mode = 'day', userId, 
 
 const getRecentSnapshotsDeclaration = {
     name: 'get_recent_snapshots',
-    description: 'Retrieve the most recent trap snapshots with AI detection results (species, count, timestamp).',
+    description: 'Retrieve the most recent trap photos with AI detection results (pest count on the trap, species, timestamp).',
     parameters: {
         type: 'OBJECT',
         properties: {
@@ -116,7 +102,7 @@ const getRecentSnapshotsDeclaration = {
             },
             limit: {
                 type: 'NUMBER',
-                description: 'Number of snapshots to fetch (default: 6)'
+                description: 'Number of snapshots to fetch (default: 6, at most 20)'
             }
         }
     }
@@ -125,34 +111,30 @@ const getRecentSnapshotsDeclaration = {
 async function executeGetRecentSnapshots({ deviceSerial, limit = 6, userId, user }) {
     try {
         if (!userId) return { error: 'Not authenticated.' };
-        const userCams = await viewableCameras(user).select('deviceSerial');
-        const allowedSerials = userCams.map(c => c.deviceSerial);
+        const scope = await serialsFor(user, deviceSerial);
+        if (scope.error) return scope;
+        if (!scope.serials.length) return { totalReturned: 0, snapshots: [] };
 
-        const query = { aiProcessed: true };
-        if (deviceSerial && deviceSerial !== 'all') {
-            if (!allowedSerials.includes(deviceSerial)) {
-                return { error: `You do not have permission to access camera ${deviceSerial}.` };
-            }
-            query.deviceSerial = deviceSerial;
-        } else if (allowedSerials.length > 0) {
-            query.deviceSerial = { $in: allowedSerials };
-        } else if (userId) {
-            return { totalReturned: 0, snapshots: [] };
-        }
-
-        const snapshots = await Snapshot.find(query)
+        const snapshots = await Snapshot.find({ aiProcessed: true, deviceSerial: { $in: scope.serials } })
             .sort({ createdAt: -1 })
-            .limit(Math.min(limit, 20));
+            .limit(Math.max(1, Math.min(Number(limit) || 6, 20)))
+            .select('deviceSerial createdAt pestCount aiResults.summary review.status')
+            .lean();
 
         return {
             totalReturned: snapshots.length,
-            snapshots: snapshots.map(s => ({
-                id: s._id,
-                deviceSerial: s.deviceSerial,
-                createdAt: s.createdAt,
-                summary: s.aiResults?.summary || {},
-                totalDetected: Object.values(s.aiResults?.summary || {}).reduce((a, b) => a + b, 0)
-            }))
+            snapshots: snapshots.map(s => {
+                const summary = plain(s.aiResults?.summary);
+                return {
+                    id: s._id,
+                    deviceSerial: s.deviceSerial,
+                    createdAt: s.createdAt,
+                    // Pests on the trap in this photo (people, vehicles and animals excluded)
+                    pestsOnTrap: s.pestCount ?? countPests(summary),
+                    bySpecies: summary,
+                    reviewed: s.review?.status || null
+                };
+            })
         };
     } catch (err) {
         return { error: err.message };
@@ -171,26 +153,17 @@ const getOverviewMetricsDeclaration = {
 async function executeGetOverviewMetrics({ userId, user }) {
     try {
         if (!userId) return { error: 'Not authenticated.' };
-        const userCams = await viewableCameras(user).select('deviceSerial');
-        const allowedSerials = userCams.map(c => c.deviceSerial);
-
-        const baseMatch = { aiProcessed: true };
-        if (allowedSerials.length > 0) {
-            baseMatch.deviceSerial = { $in: allowedSerials };
-        } else if (userId) {
-            return { totalSnapshots: 0, last24hCount: 0, totalInsects: 0, topSpecies: 'No data', speciesDistribution: [] };
+        const { serials: allowedSerials } = await serialsFor(user);
+        if (!allowedSerials.length) {
+            return { totalSnapshots: 0, last24hCount: 0, insectsCaughtLast30Days: 0, topSpecies: 'No data', speciesShare: [] };
         }
+        const baseMatch = { aiProcessed: true, deviceSerial: { $in: allowedSerials } };
 
         const totalSnapshots = await Snapshot.countDocuments(baseMatch);
-        const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
-        const last24hCount = await Snapshot.countDocuments({
-            ...baseMatch,
-            createdAt: { $gte: last24h }
-        });
+        const last24hCount = await Snapshot.countDocuments({ ...baseMatch, createdAt: { $gte: new Date(Date.now() - 24 * HOUR_MS) } });
 
         const rollup = await dailyStats.rows(allowedSerials, dailyStats.startKeyForDays(30));
         const speciesAgg = dailyStats.speciesTotals(rollup, 'total').map(sp => ({ _id: sp.name, total: sp.value }));
-
         const catches = await catchStats.overview(allowedSerials);
 
         return {
@@ -212,7 +185,7 @@ async function executeGetOverviewMetrics({ userId, user }) {
 
 const getCatchSummaryDeclaration = {
     name: 'get_catch_summary',
-    description: 'Per-trap pest pressure: count on the trap now vs its alert threshold, insects caught today and over 7 days, flies per trap per day (FTD) and the change vs the previous 7 days, plus the farm totals. Use it for "how bad is it", "which trap is worst", "is it rising".',
+    description: 'Per-trap pest pressure: the value judged against the alert threshold (latest photo on a sticky trap, today\'s average per photo on a lure trap), insects caught today and over 7 days, flies per trap per day (FTD) and the change vs the previous 7 days, plus the farm totals. Use it for "how bad is it", "which trap is worst", "is it rising".',
     parameters: { type: 'OBJECT', properties: {} }
 };
 
@@ -224,23 +197,29 @@ async function executeGetCatchSummary({ userId, user }) {
         if (!unique.length) return { traps: [], note: 'No cameras.' };
         const serials = unique.map(c => c.deviceSerial);
         const [catches, latest] = await Promise.all([catchStats.overview(serials), latestProcessedByCamera(serials)]);
+        for (const row of latest.values()) row.count = countPests(plain(row.summary));
+        // The same judgement as alerts, the overview and reports
+        const judged = await judgedCounts(unique, latest);
         const traps = unique.map(cam => {
-            const snap = latest.get(cam.deviceSerial);
-            const onTrap = snap ? countPests(snap.summary instanceof Map ? Object.fromEntries(snap.summary) : snap.summary) : 0;
             const c = catches.perCamera[cam.deviceSerial] || {};
+            const { value, basis } = judged.get(cam.deviceSerial) || { value: 0, basis: 'latest' };
             return {
                 name: cam.deviceName || cam.deviceSerial,
                 serial: cam.deviceSerial,
                 trapKind: trapKindOf(cam),
                 online: cam.status === 1,
-                onTrapNow: onTrap,
+                onTrapInLatestPhoto: latest.get(cam.deviceSerial)?.count || 0,
+                judgedValue: value,
+                judgedBy: basis === 'dailyAverage' ? 'today\'s average per photo' : 'latest photo',
                 alertThreshold: thresholdOf(cam),
-                risk: riskLevel(onTrap, thresholdOf(cam)),
+                risk: riskLevel(value, thresholdOf(cam)),
                 caughtToday: c.today ?? null,
                 caughtLast7Days: c.last7 ?? null,
                 fliesPerTrapPerDay7: c.ftd7 ?? null,
                 changeVsPrevious7DaysPct: c.changePct ?? null,
-                cardAgeDays: cam.cardReplacedAt ? Math.floor((Date.now() - new Date(cam.cardReplacedAt).getTime()) / 86400000) : null
+                cardAgeDays: trapKindOf(cam) === 'sticky' && cam.cardReplacedAt
+                    ? Math.floor((Date.now() - new Date(cam.cardReplacedAt).getTime()) / 86400000)
+                    : null
             };
         }).sort((a, b) => (b.fliesPerTrapPerDay7 ?? -1) - (a.fliesPerTrapPerDay7 ?? -1));
         return {
@@ -253,7 +232,7 @@ async function executeGetCatchSummary({ userId, user }) {
                 changePct: catches.changePct
             },
             traps,
-            notes: 'sticky = glue card, counts accumulate until the card is replaced; lure = no glue, a photo shows the flies present at that moment (daily figure = average per photo). Alert thresholds compare the count in the latest photo.'
+            notes: 'sticky = glue card, counts accumulate until the card is replaced; lure = no glue, a photo shows the flies present at that moment. risk compares judgedValue with alertThreshold: the latest photo on a sticky trap, today\'s average per photo on a lure trap.'
         };
     } catch (err) {
         return { error: err.message };

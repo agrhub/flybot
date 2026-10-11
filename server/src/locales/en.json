@@ -412,5 +412,15 @@
       "caterpillar": "Caterpillar",
       "moth": "Moth"
     }
+  },
+  "assistant": {
+    "busy": "The assistant is receiving too many questions. Please try again in a few minutes.",
+    "timeout": "This question takes too long to look up. Try asking about one camera or one period.",
+    "noResponse": "The assistant could not come up with an answer. Please ask again.",
+    "error": "The assistant ran into an error with this question. Please try again in a few minutes.",
+    "suggest1": "📊 Summary of the last 24 hours",
+    "suggest2": "🪰 Which trap has the most flies?",
+    "suggest3": "📡 Which cameras are offline?",
+    "suggest4": "📈 This week compared with last week"
   }
 }

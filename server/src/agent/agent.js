@@ -3,6 +3,30 @@ const { VERTEX_PROJECT_ID, VERTEX_LOCATION, VERTEX_MODEL } = require('../config/
 const { allFunctionDeclarations, allExecutors } = require('./tools');
 const { getAgentInstruction } = require('./prompts');
 const { checkRateLimit, beforeTool, afterTool } = require('./shared_libraries/callbacks');
+const { translate, normalizeLanguage } = require('../utils/i18n');
+
+// One model call, and a whole question with its tool calls
+const MODEL_TIMEOUT_MS = 30000;
+const REPLY_DEADLINE_MS = 75000;
+const MAX_HISTORY = 16;
+
+/**
+ * Drop the oldest turns beyond `max`, cutting only before a user's question: a tool call and its
+ * result must stay together, or the model refuses the conversation.
+ */
+function trimHistory(history, max = MAX_HISTORY) {
+    if (history.length <= max) return history;
+    const isQuestion = (entry) => entry?.role === 'user' && (entry.parts || []).some(part => typeof part.text === 'string');
+    let start = history.length - max;
+    while (start < history.length && !isQuestion(history[start])) start++;
+    // No question in the window (one very long tool exchange): keep the last question onwards
+    if (start >= history.length) {
+        start = history.length - 1;
+        while (start > 0 && !isQuestion(history[start])) start--;
+    }
+    history.splice(0, start);
+    return history;
+}
 
 const vertexAI = new GoogleGenAI({
     vertexai: true,
@@ -42,12 +66,11 @@ async function chatWithAgent({
         throw new Error('chatWithAgent requires an authenticated userId');
     }
 
+    const language = normalizeLanguage(user?.language);
+    const t = (key) => translate(language, `assistant.${key}`);
+
     if (!checkRateLimit()) {
-        return {
-            reply: '⚠️ The system is currently handling too many requests. Please wait a moment and try again.',
-            suggestions: ['Restart conversation'],
-            actions: []
-        };
+        return { reply: t('busy'), suggestions: [], actions: [], toolExecutions: [] };
     }
 
     const sessionHistory = getChatHistory(userId, sessionId);
@@ -59,6 +82,7 @@ async function chatWithAgent({
     const userPrompt = contextPrefix + message;
 
     // Append user message
+    const historyLengthBefore = sessionHistory.length;
     sessionHistory.push({
         role: 'user',
         parts: [{ text: userPrompt }]
@@ -77,6 +101,7 @@ async function chatWithAgent({
     const actions = [];
     const addAction = (type, payload) => actions.push({ type, payload });
     const MAX_TOOL_TURNS = 5;
+    const startedAt = Date.now();
 
     try {
         let currentTurn = 0;
@@ -84,13 +109,18 @@ async function chatWithAgent({
 
         while (continueLoop && currentTurn < MAX_TOOL_TURNS) {
             currentTurn++;
+            if (Date.now() - startedAt > REPLY_DEADLINE_MS) {
+                finalReply = t('timeout');
+                break;
+            }
 
             const response = await vertexAI.models.generateContent({
                 model: modelName,
                 contents: sessionHistory,
                 config: {
                     systemInstruction,
-                    tools: toolsConfig
+                    tools: toolsConfig,
+                    httpOptions: { timeout: MODEL_TIMEOUT_MS }
                 }
             });
 
@@ -98,7 +128,7 @@ async function chatWithAgent({
             const content = candidate?.content;
 
             if (!content) {
-                finalReply = 'No response received from the AI model.';
+                finalReply = t('noResponse');
                 break;
             }
 
@@ -154,14 +184,23 @@ async function chatWithAgent({
                 });
             } else {
                 // No function call, retrieve text output
-                finalReply = response.text || '';
+                finalReply = response.text || t('noResponse');
                 continueLoop = false;
             }
         }
+        // Out of tool turns without a written answer
+        if (continueLoop && !finalReply) finalReply = t('noResponse');
     } catch (err) {
-        console.error('❌ [Agent Core Error]:', err);
-        finalReply = '⚠️ AI Assistant encountered an error. Please try again in a moment.';
+        console.error('❌ [Agent Core Error]:', err.message);
+        finalReply = t('error');
     }
+    // A question that did not end in a written answer (error, time limit, out of tool turns) leaves
+    // nothing half-done in the history, such as a tool call without its result
+    const lastTurn = sessionHistory.at(-1);
+    const answered = lastTurn?.role === 'model'
+        && (lastTurn.parts || []).some(part => typeof part.text === 'string')
+        && !(lastTurn.parts || []).some(part => part.functionCall);
+    if (!answered) sessionHistory.splice(historyLengthBefore);
 
     // Parse [SUGGESTIONS] block
     let suggestions = [];
@@ -175,36 +214,18 @@ async function chatWithAgent({
         finalReply = finalReply.replace(suggRegex, '').trim();
     }
 
-    // Parse [NAVIGATE] block
-    let navigate = undefined;
-    const navRegex = /\[NAVIGATE\]([\s\S]*?)\[\/NAVIGATE\]/i;
-    const navMatch = finalReply.match(navRegex);
-    if (navMatch) {
-        try {
-            const clean = navMatch[1].replace(/```json/g, '').replace(/```/g, '').trim();
-            navigate = JSON.parse(clean);
-        } catch (e) {}
-        finalReply = finalReply.replace(navRegex, '').trim();
-    }
+    // Pages open only through the navigate_ui tool, which checks them; a written tag is dropped
+    finalReply = finalReply.replace(/\[NAVIGATE\][\s\S]*?\[\/NAVIGATE\]/gi, '').trim();
+    if (!Array.isArray(suggestions)) suggestions = [];
+    suggestions = suggestions.filter(s => typeof s === 'string' && s.trim()).map(s => s.slice(0, 120)).slice(0, 4);
+    const navigate = [...actions].reverse().find(a => a.type === 'NAVIGATE')?.payload;
 
-    if (navigate) {
-        actions.push({ type: 'NAVIGATE', payload: navigate });
-    }
-
-    // Keep history bounded to last 16 messages to prevent token blowout
-    if (sessionHistory.length > 16) {
-        sessionHistory.splice(0, sessionHistory.length - 16);
-    }
-    chatHistoryStore.set(historyKey(userId, sessionId), sessionHistory);
+    // Bounded history, cut between questions
+    chatHistoryStore.set(historyKey(userId, sessionId), trimHistory(sessionHistory));
 
     // Default suggestions fallback if model omitted them
     if (suggestions.length === 0) {
-        suggestions = [
-            '📊 Summarize 24h pest density',
-            '📸 Capture new camera snapshot',
-            '📡 Check online cameras status',
-            '🪰 Fruit fly management recommendations'
-        ];
+        suggestions = [t('suggest1'), t('suggest2'), t('suggest3'), t('suggest4')];
     }
 
     return {
@@ -217,6 +238,7 @@ async function chatWithAgent({
 }
 
 module.exports = {
+    trimHistory,
     chatWithAgent,
     getChatHistory,
     clearChatHistory

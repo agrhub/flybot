@@ -412,5 +412,15 @@
       "caterpillar": "Sâu hại",
       "moth": "Bướm đêm"
     }
+  },
+  "assistant": {
+    "busy": "Trợ lý đang nhận quá nhiều câu hỏi. Vui lòng thử lại sau ít phút.",
+    "timeout": "Câu hỏi này cần quá nhiều thời gian để tra cứu. Hãy hỏi cụ thể hơn, ví dụ một camera hoặc một khoảng thời gian.",
+    "noResponse": "Trợ lý chưa đưa ra được câu trả lời. Vui lòng hỏi lại.",
+    "error": "Trợ lý gặp lỗi khi xử lý câu hỏi. Vui lòng thử lại sau ít phút.",
+    "suggest1": "📊 Tóm tắt tình hình 24 giờ qua",
+    "suggest2": "🪰 Bẫy nào đang có nhiều ruồi nhất?",
+    "suggest3": "📡 Camera nào đang mất kết nối?",
+    "suggest4": "📈 Mật độ tuần này so với tuần trước"
   }
 }

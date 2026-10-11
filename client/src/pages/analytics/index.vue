@@ -62,7 +62,8 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { ElMessageBox, ElNotification } from 'element-plus';
 import { Document, List, TrendCharts, VideoCamera, DataAnalysis } from '@element-plus/icons-vue';
@@ -76,8 +77,14 @@ import { dateRangeLabel } from '@/utils/dateRange';
 import { exportAnalyticsPdf } from '@/utils/analyticsPdf';
 
 const { t, locale } = useI18n();
+const route = useRoute();
 const { cameras, selectedCamera, selectCamera } = useCameras();
-const activeSubTab = ref('trends');
+// ?tab= opens a tab directly (links, the assistant)
+const SUB_TABS = ['trends', 'insights', 'history'];
+const activeSubTab = ref(SUB_TABS.includes(route.query.tab) ? route.query.tab : 'trends');
+watch(() => route.query.tab, (tab) => {
+  if (SUB_TABS.includes(tab)) activeSubTab.value = tab;
+});
 const range = ref({ preset: '30d' });
 
 const handleCameraChange = (serial) => {

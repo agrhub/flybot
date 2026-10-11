@@ -1,5 +1,8 @@
 const { viewableCameras, findManageableCamera } = require('../../utils/ownership');
 
+// How long a chat reply waits for a capture and its AI analysis
+const CAPTURE_WAIT_MS = 25000;
+
 const getCamerasStatusDeclaration = {
     name: 'get_cameras_status',
     description: 'Get list of all surveillance cameras, serial numbers, online/offline connection status, video encryption, and alarm defence mode.',
@@ -64,9 +67,26 @@ async function executeTriggerCaptureSnapshot({ deviceSerial, userId, user, addAc
             return { error: `Camera ${deviceSerial} was captured several times in the last minute. Please wait a moment and try again.` };
         }
 
-        // Same pipeline as the "Capture now" button: capture, store, AI analysis, alerts
+        // Same pipeline as the "Capture now" button: capture, store, AI analysis, alerts.
+        // The chat waits a while for it, not for as long as a slow AI analysis can take
         const { captureAndSaveSnapshot } = require('../../cron/captureJob');
-        const saved = await captureAndSaveSnapshot(String(deviceSerial));
+        const run = captureAndSaveSnapshot(String(deviceSerial));
+        const STILL_RUNNING = Symbol('running');
+        let timer;
+        const saved = await Promise.race([
+            run,
+            new Promise((resolve) => { timer = setTimeout(() => resolve(STILL_RUNNING), CAPTURE_WAIT_MS); })
+        ]).finally(() => clearTimeout(timer));
+        if (saved === STILL_RUNNING) {
+            run.catch(() => {});
+            addAction('CAPTURE_TRIGGERED', { deviceSerial, pending: true });
+            return {
+                success: true,
+                pending: true,
+                deviceSerial,
+                message: `Capture of ${deviceSerial} started; the photo and its AI result will appear in the camera's history in a few minutes.`
+            };
+        }
         if (!saved) {
             return { error: `Camera ${deviceSerial} did not return an image. It may be offline.` };
         }

@@ -1155,7 +1155,12 @@ async function chatWithAssistant(req, res) {
             suggestions: result.suggestions,
             navigate: result.navigate,
             actions: result.actions,
-            toolExecutions: result.toolExecutions
+            // What the panel shows of each tool run; the data itself stays on the server
+            toolExecutions: (result.toolExecutions || []).map(run => ({
+                name: run.name,
+                status: run.status,
+                result: { message: typeof run.result?.message === 'string' ? run.result.message : undefined }
+            }))
         });
     } catch (err) {
         console.error("❌ AI Agent chat error:", err);
