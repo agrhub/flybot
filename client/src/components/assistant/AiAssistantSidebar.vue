@@ -203,6 +203,7 @@
 <script setup>
 import { useBreakpoints } from '@/composables/useBreakpoints';
 import { ref, computed, nextTick, watch, onMounted } from 'vue';
+import { renderMarkdown } from '@/utils/chatMarkdown';
 import { useI18n } from 'vue-i18n';
 import {
   Monitor,
@@ -381,24 +382,8 @@ const onCardOpen = () => {
   if (!isDesktop.value) closeAssistant();
 };
 
-// Minimal markdown: bold, emphasis, inline code, line breaks (styled via .md-content in <style>)
-// The reply can contain camera names and other user-written text: escape everything first,
-// then apply the small markdown subset on the escaped string
-const escapeHtml = (value) => String(value ?? '')
-  .replace(/&/g, '&amp;')
-  .replace(/</g, '&lt;')
-  .replace(/>/g, '&gt;')
-  .replace(/"/g, '&quot;')
-  .replace(/'/g, '&#39;');
-
-const renderFormattedText = (raw) => {
-  if (!raw) return '';
-  return escapeHtml(raw)
-    .replace(/\*\*(.*?)\*\*/g, '<strong class="md-strong">$1</strong>')
-    .replace(/\*(.*?)\*/g, '<span class="md-em">$1</span>')
-    .replace(/`([^`]+)`/g, '<code class="md-code">$1</code>')
-    .replace(/\n/g, '<br/>');
-};
+// Replies are Markdown; the renderer escapes all text first (see utils/chatMarkdown)
+const renderFormattedText = (raw) => renderMarkdown(raw);
 
 const handleSend = () => {
   if (!inputQuery.value.trim() || isThinking.value) return;
@@ -566,8 +551,75 @@ onMounted(() => {
   color: var(--el-text-color-primary);
 }
 .md-content :deep(.md-em) {
+  font-style: italic;
+}
+.md-content :deep(.md-p) {
+  margin: 0 0 8px;
+}
+.md-content :deep(.md-h) {
+  margin: 12px 0 6px;
   font-weight: 600;
-  color: var(--el-color-primary);
+  color: var(--el-text-color-primary);
+}
+.md-content :deep(.md-h1),
+.md-content :deep(.md-h2) {
+  font-size: 15px;
+}
+.md-content :deep(.md-h3),
+.md-content :deep(.md-h4) {
+  font-size: 14px;
+}
+.md-content > :deep(:first-child) {
+  margin-top: 0;
+}
+.md-content > :deep(:last-child) {
+  margin-bottom: 0;
+}
+.md-content :deep(.md-list) {
+  margin: 0 0 8px;
+  padding-left: 20px;
+}
+.md-content :deep(ul.md-list) {
+  list-style: disc;
+}
+.md-content :deep(ul.md-list ul.md-list) {
+  list-style: circle;
+  margin: 4px 0 0;
+}
+.md-content :deep(ol.md-list) {
+  list-style: decimal;
+}
+.md-content :deep(.md-list li) {
+  margin: 2px 0;
+}
+.md-content :deep(.md-quote) {
+  margin: 0 0 8px;
+  padding: 4px 10px;
+  border-left: 3px solid var(--el-color-primary-light-5);
+  color: var(--el-text-color-regular);
+}
+.md-content :deep(.md-hr) {
+  margin: 10px 0;
+  border: none;
+  border-top: 1px solid var(--el-border-color);
+}
+.md-content :deep(.md-table-wrap) {
+  margin: 0 0 8px;
+  overflow-x: auto;
+}
+.md-content :deep(.md-table) {
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.md-content :deep(.md-table th),
+.md-content :deep(.md-table td) {
+  padding: 4px 8px;
+  border: 1px solid var(--el-border-color);
+  text-align: left;
+}
+.md-content :deep(.md-table th) {
+  font-weight: 600;
+  background-color: var(--el-fill-color-light);
 }
 .md-content :deep(.md-code) {
   padding: 1px 4px;
