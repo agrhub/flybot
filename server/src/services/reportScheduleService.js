@@ -74,18 +74,25 @@ const channelsOf = (user) => ({
  * to? } (default: the report's own range). `channels`: { email, telegram } (default: email only).
  * Returns false when nothing was sent.
  */
-async function sendReportTo(dashboard, user, { range = null, now = new Date(), channels = { email: true } } = {}) {
+async function sendReportTo(dashboard, user, { range = null, now = new Date(), channels = { email: true }, cache = null } = {}) {
     if (!user || user.disabled || (!channels.email && !channels.telegram)) return false;
     if (channels.email && !user.email) return false;
     const language = normalizeLanguage(user.language);
     const t = (key, params) => translate(language, key, params);
     const serials = await dashboardService.effectiveSerials(dashboard, user);
-    const { range: covered, widgets } = await dashboardService.computeWidgetData(dashboard, serials, {
-        imageUrl: () => '',
-        range,
-        now
-    });
-    const pdf = buildReportPdf({ dashboard, data: widgets, range: covered, language, generatedAt: now });
+    // People who see the same cameras in the same language get the same PDF (built once per run)
+    const key = `${language}|${serials.join(',')}`;
+    let built = cache?.get(key);
+    if (!built) {
+        const { range: covered, widgets } = await dashboardService.computeWidgetData(dashboard, serials, {
+            imageUrl: () => '',
+            range,
+            now
+        });
+        built = { covered, widgets, pdf: buildReportPdf({ dashboard, data: widgets, range: covered, language, generatedAt: now }) };
+        cache?.set(key, built);
+    }
+    const { covered, widgets, pdf } = built;
     const params = { name: String(dashboard.name).replace(/[\r\n\t]+/g, ' ').slice(0, 80), from: fullDay(covered.from), to: fullDay(covered.to) };
     const fileName = `FlyBot_${params.name.replace(/[^\p{L}\p{N}]+/gu, '_').slice(0, 40)}_${covered.from}_${covered.to}.pdf`;
     const lines = summaryLines(t, dashboard, widgets);
@@ -102,12 +109,15 @@ async function sendReportTo(dashboard, user, { range = null, now = new Date(), c
     }
     if (channels.telegram) {
         const esc = emailTemplates.escapeHtml;
+        const subject = t('email.scheduledReport.subject', params);
         const caption = [
-            `<b>${esc(t('email.scheduledReport.subject', params))}</b>`,
+            `<b>${esc(subject)}</b>`,
             ...lines.map(esc),
             ...(url ? [`<a href="${esc(url)}">${esc(t('email.scheduledReport.button'))}</a>`] : [])
         ].join('\n');
-        telegramService.queueDocument(user.telegram.chatId, { content: pdf, filename: fileName, caption });
+        // Same text without markup, if Telegram cannot read the HTML one
+        const plainCaption = [subject, ...lines, ...(url ? [url] : [])].join('\n');
+        telegramService.queueDocument(user.telegram.chatId, { content: pdf, filename: fileName, caption, plainCaption });
     }
     return true;
 }
@@ -119,7 +129,8 @@ async function sendReportTo(dashboard, user, { range = null, now = new Date(), c
 async function recipientsOf(dashboard) {
     const ids = [dashboard.ownerId?._id ?? dashboard.ownerId];
     if (dashboard.schedule?.recipients === 'all' && !dashboardService.isExpired(dashboard)) {
-        ids.push(...(dashboard.sharedWith || []).map(sh => sh.userId).filter(Boolean));
+        // Not those who stopped this report's scheduled messages for themselves
+        ids.push(...(dashboard.sharedWith || []).filter(sh => !sh.scheduleMuted).map(sh => sh.userId).filter(Boolean));
     }
     const users = await User.find({ _id: { $in: ids }, disabled: { $ne: true } })
         .select('email name language role disabled emailVerified notificationPrefs telegram');
@@ -139,12 +150,22 @@ async function sendDueReports(now = new Date()) {
         if (!dashboard.ownerId?.email || dashboard.ownerId.disabled) continue;
         // Marked first, so a failure is not retried every hour
         await Dashboard.updateOne({ _id: dashboard._id }, { $set: { 'schedule.lastSentAt': now } });
+        const cache = new Map();
+        let recipients = [];
         try {
-            for (const user of await recipientsOf(dashboard)) {
-                if (await sendReportTo(dashboard, user, { range: PERIOD[dashboard.schedule.frequency], now, channels: channelsOf(user) })) sent++;
-            }
+            recipients = await recipientsOf(dashboard);
         } catch (err) {
             console.error(`❌ Scheduled report ${dashboard._id} failed:`, err.message);
+        }
+        for (const user of recipients) {
+            // One person failing does not stop the others
+            try {
+                if (await sendReportTo(dashboard, user, { range: PERIOD[dashboard.schedule.frequency], now, channels: channelsOf(user), cache })) sent++;
+            } catch (err) {
+                console.error(`❌ Scheduled report ${dashboard._id} for ${user._id} failed:`, err.message);
+            }
+            // PDFs are built on the main thread: let requests in between
+            await new Promise(resolve => setImmediate(resolve));
         }
     }
     if (sent) console.log(`📨 Scheduled reports sent: ${sent}`);

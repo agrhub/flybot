@@ -140,6 +140,10 @@ export default {
   sendDashboardNow(id, range = null) {
     return apiClient.post(`/dashboards/${id}/send`, range ? { range } : {});
   },
+  // Someone a report is shared with: stop or resume its scheduled emails for themselves
+  muteDashboardSchedule(id, muted) {
+    return apiClient.put(`/dashboards/${id}/schedule-mute`, { muted });
+  },
   unshareDashboard(id, email) {
     return apiClient.delete(`/dashboards/${id}/share`, { data: { email } });
   },

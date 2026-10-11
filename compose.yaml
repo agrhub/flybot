@@ -10,6 +10,8 @@ services:
     restart: unless-stopped
     env_file: .env
     environment:
+      # Always production here, whatever .env says (development logs emails instead of dropping them)
+      NODE_ENV: production
       PORT: "8080"
       # Credentials come from the VM's attached service account (no key file needed).
       # To use a key file instead, mount it and set GOOGLE_APPLICATION_CREDENTIALS to its path.

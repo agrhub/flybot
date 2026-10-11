@@ -133,7 +133,7 @@
       "alerts": "Bẫy chạm hoặc vượt ngưỡng: {count} trên {cameras}.",
       "attached": "Báo cáo đầy đủ ở file PDF đính kèm.",
       "button": "Mở báo cáo",
-      "footer": "Bạn nhận báo cáo này theo lịch do chủ báo cáo đặt. Chủ báo cáo có thể đổi hoặc tắt lịch gửi ở trang báo cáo trong FlyBot."
+      "footer": "Bạn nhận báo cáo này theo lịch do chủ báo cáo đặt. Không muốn nhận nữa: mở báo cáo trong FlyBot và tắt \"Nhận báo cáo định kỳ\" (chủ báo cáo đổi hoặc tắt lịch ở cùng trang)."
     }
   },
   "telegram": {
@@ -354,7 +354,8 @@
     "too_many_requests_please_try_again_in_a_moment": "Quá nhiều yêu cầu. Vui lòng thử lại sau giây lát.",
     "a_public_report_can_only_include_cameras_you_own": "Báo cáo công khai chỉ dùng được camera bạn sở hữu.",
     "invalid_report_schedule": "Lịch gửi báo cáo không hợp lệ.",
-    "confirm_your_email_address_first": "Hãy xác nhận địa chỉ email trước."
+    "confirm_your_email_address_first": "Hãy xác nhận địa chỉ email trước.",
+    "only_people_a_report_is_shared_with_can_change_this": "Chỉ người được chia sẻ báo cáo mới đổi được mục này."
   },
   "reportPdf": {
     "range": "Khoảng thời gian: {from} - {to} ({days} ngày)",

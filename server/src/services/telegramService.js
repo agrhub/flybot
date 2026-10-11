@@ -52,21 +52,29 @@ async function sendMessage(chatId, html) {
 /**
  * Send a file (e.g. a report PDF) with an HTML caption now. Throws on failure.
  */
-async function sendDocument(chatId, { content, filename, contentType = 'application/pdf', caption = '' }) {
-    const form = new FormData();
-    form.append('chat_id', String(chatId));
-    form.append('document', new Blob([content], { type: contentType }), filename);
-    // Telegram captions are limited to 1024 characters
-    if (caption) {
-        form.append('caption', caption.slice(0, 1024));
-        form.append('parse_mode', 'HTML');
-    }
+async function sendDocument(chatId, { content, filename, contentType = 'application/pdf', caption = '', plainCaption = '' }) {
+    const post = (text, html) => {
+        const form = new FormData();
+        form.append('chat_id', String(chatId));
+        form.append('document', new Blob([content], { type: contentType }), filename);
+        if (text) {
+            form.append('caption', text);
+            if (html) form.append('parse_mode', 'HTML');
+        }
+        return axios.post(apiUrl('sendDocument'), form, { timeout: 30000 });
+    };
     try {
-        const { data } = await axios.post(apiUrl('sendDocument'), form, { timeout: 30000 });
+        const { data } = await post(caption, true);
         return data;
     } catch (err) {
-        if (err.response?.data?.error_code === 403) {
+        const code = err.response?.data?.error_code;
+        if (code === 403) {
             await User.updateOne({ 'telegram.chatId': String(chatId) }, { $unset: { telegram: 1 } }).catch(() => {});
+        }
+        // Caption refused (markup or length): once more with plain text, at most 1024 characters
+        if (code === 400 && caption) {
+            const { data } = await post((plainCaption || '').slice(0, 1024), false);
+            return data;
         }
         throw err;
     }

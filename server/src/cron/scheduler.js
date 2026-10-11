@@ -36,6 +36,7 @@ const statusSyncJob = exclusive('Camera status sync', syncCameraStatus);
 const cardReminderJob = exclusive('Card reminders', sendCardReminders);
 const weeklyReportJob = exclusive('Weekly reports', sendWeeklyReports);
 const scheduledReportJob = exclusive('Scheduled reports', () => sendDueReports());
+const pestCountJob = exclusive('Pest count backfill', () => require('../services/migrations').backfillPestCounts({ since: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) }));
 const trainingSyncJob = exclusive('Training sync', () => syncTrainingData());
 const ezvizPolicyJob = exclusive('EZVIZ sub-account policies', resyncEzvizPolicies);
 
@@ -46,6 +47,11 @@ function startCronJobs() {
     // Cleanup old data: Every 60 minutes
     cron.schedule('*/60 * * * *', () => {
         cleanupJob();
+    });
+
+    // Photos stored without a pest count (e.g. by an older server during a rollout): every hour
+    cron.schedule('20 * * * *', () => {
+        pestCountJob();
     });
 
     // Reports emailed on their schedule: shortly after every hour

@@ -1493,7 +1493,10 @@
       "lastSent": "Last sent: {time}",
       "saved": "Schedule saved.",
       "labelWeekly": "Emailed {day} {time}",
-      "labelMonthly": "Emailed monthly on day {day} {time}"
+      "labelMonthly": "Emailed monthly on day {day} {time}",
+      "receive": "Receive scheduled reports",
+      "receiveOff": "Scheduled reports are off for you.",
+      "receiveOn": "Scheduled reports are on again."
     }
   },
   "audit": {

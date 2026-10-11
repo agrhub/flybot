@@ -44,7 +44,9 @@ const widgetSchema = new mongoose.Schema({
 const dashboardShareSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     email: { type: String, required: true, lowercase: true, trim: true },
-    sharedAt: { type: Date, default: Date.now }
+    sharedAt: { type: Date, default: Date.now },
+    // This person stopped the report's scheduled emails and Telegram messages for themselves
+    scheduleMuted: { type: Boolean, default: false }
 }, { _id: false });
 
 const dashboardSchema = new mongoose.Schema({

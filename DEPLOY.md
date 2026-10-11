@@ -142,7 +142,7 @@ sudo usermod -aG docker $USER   # then log out and back in
 ```
 
 ### 3. Get the code and config
-Clone the repository, then create `.env` next to `compose.yaml`. Use the same keys as your local `.env`, plus:
+Clone the repository, then create `.env` next to `compose.yaml`. Use the same keys as your local `.env` (compose.yaml always sets `NODE_ENV=production`), and set `APP_BASE_URL` to the public address, plus:
 
 ```env
 # Random, 64+ characters. Use the same value as Cloud Run only if logins should work on both.

@@ -133,7 +133,7 @@
       "alerts": "Traps at or over their threshold: {count} of {cameras}.",
       "attached": "The full report is attached as a PDF.",
       "button": "Open the report",
-      "footer": "You get this report on the schedule its owner set. The owner can change or stop it from the report page in FlyBot."
+      "footer": "You get this report on the schedule its owner set. To stop it, open the report in FlyBot and turn off \"Receive scheduled reports\" (the owner changes or stops the schedule on the same page)."
     }
   },
   "telegram": {
@@ -354,7 +354,8 @@
     "too_many_requests_please_try_again_in_a_moment": "Too many requests. Please try again in a moment.",
     "a_public_report_can_only_include_cameras_you_own": "A public report can only include cameras you own.",
     "invalid_report_schedule": "Invalid report schedule.",
-    "confirm_your_email_address_first": "Confirm your email address first."
+    "confirm_your_email_address_first": "Confirm your email address first.",
+    "only_people_a_report_is_shared_with_can_change_this": "Only people a report is shared with can change this."
   },
   "reportPdf": {
     "range": "Period: {from} - {to} ({days} days)",

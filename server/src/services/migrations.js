@@ -130,14 +130,27 @@ async function cardRemindersOffForExisting() {
 }
 
 /**
- * Photos analyzed before Snapshot.pestCount existed get it, computed in the database.
+ * Photos analyzed without Snapshot.pestCount (from before it existed, or written by an older
+ * server during a rollout) get it, computed in the database, a batch at a time so the server
+ * keeps answering. Runs over every photo in the background after start-up, and hourly over the
+ * last two days (`since`, read through the createdAt index) to catch photos from a rollout.
  */
-async function backfillPestCounts() {
+async function backfillPestCounts({ batchSize = 5000, since = null } = {}) {
     const { Snapshot } = require('../models');
     const { pestCountExpr } = require('../constants/species');
-    const res = await Snapshot.collection.updateMany({ aiProcessed: true, pestCount: { $exists: false } }, [{ $set: { pestCount: pestCountExpr() } }]);
-    if (res.modifiedCount) console.log(`🪰 Pest counts stored on ${res.modifiedCount} photo(s).`);
-    return res.modifiedCount;
+    const missing = { aiProcessed: true, pestCount: { $exists: false }, ...(since ? { createdAt: { $gte: since } } : {}) };
+    let total = 0;
+    for (;;) {
+        const ids = (await Snapshot.collection.find(missing, { projection: { _id: 1 } }).limit(batchSize).toArray()).map(d => d._id);
+        if (!ids.length) break;
+        const res = await Snapshot.collection.updateMany({ _id: { $in: ids }, ...missing }, [{ $set: { pestCount: pestCountExpr() } }]);
+        total += res.modifiedCount;
+        if (ids.length < batchSize) break;
+        // Let requests in between batches
+        await new Promise(resolve => setImmediate(resolve));
+    }
+    if (total) console.log(`🪰 Pest counts stored on ${total} photo(s).`);
+    return total;
 }
 
 /**
@@ -155,11 +168,6 @@ async function runStartupMigrations() {
         await runOnce('organizations-v1', () => require('./orgService').migrateToOrganizations());
     } catch (err) {
         console.error('❌ Organization migration failed:', err);
-    }
-    try {
-        await runOnce('snapshot-pest-count', backfillPestCounts);
-    } catch (err) {
-        console.error('❌ Pest count backfill failed:', err);
     }
     try {
         await lowercaseEmails();

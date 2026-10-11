@@ -152,6 +152,10 @@ async function startServer() {
     const server = app.listen(PORT, () => {
         console.log(`🚀 Server is running at http://localhost:${PORT}`);
 
+        // Older photos get their stored pest count in the background (alarm filter, hourly activity)
+        require('./services/migrations').backfillPestCounts()
+            .catch(err => console.error('❌ Pest count backfill failed:', err.message));
+
         if (!ENABLE_CRON) {
             console.log('⏸️ Background jobs disabled (ENABLE_CRON=false).');
             return;

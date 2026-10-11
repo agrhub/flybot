@@ -94,3 +94,25 @@ test('a scheduled report also goes to a linked Telegram chat, with the PDF', asy
         telegramService.queueDocument = original;
     }
 });
+
+test('someone a report is shared with can stop its scheduled messages for themselves', async () => {
+    const owner = await createUser({ role: 'manager' });
+    const viewer = await createUser({ role: 'user', email: 'viewer@example.test' });
+    const stranger = await createUser({ role: 'user' });
+    await createCamera(owner, { deviceSerial: 'A1' });
+    const { body } = await json(await request('/api/dashboards', { method: 'POST', as: owner, body: { name: 'Muted', cameraSerials: ['A1'], widgets: [{ id: 'k', type: 'kpi' }] } }));
+    const id = body.dashboard.id;
+    await request(`/api/dashboards/${id}/share`, { method: 'POST', as: owner, body: { email: 'viewer@example.test' } });
+    await request(`/api/dashboards/${id}`, { method: 'PUT', as: owner, body: { schedule: { frequency: 'weekly', recipients: 'all' } } });
+
+    const before = await json(await request(`/api/dashboards/${id}`, { as: viewer }));
+    assert.deepEqual(before.body.dashboard.scheduleForMe, { active: true, muted: false });
+    assert.equal((await request(`/api/dashboards/${id}/schedule-mute`, { method: 'PUT', as: owner, body: { muted: true } })).status, 400, 'the owner changes the schedule instead');
+    assert.equal((await request(`/api/dashboards/${id}/schedule-mute`, { method: 'PUT', as: stranger, body: { muted: true } })).status, 404);
+    const muted = await json(await request(`/api/dashboards/${id}/schedule-mute`, { method: 'PUT', as: viewer, body: { muted: true } }));
+    assert.equal(muted.body.muted, true);
+
+    sentMails.length = 0;
+    assert.equal(await sendDueReports(new Date(Date.now() + 8 * DAY)), 1);
+    assert.deepEqual(sentMails.filter(m => /Muted/.test(m.subject)).map(m => m.to), [owner.email]);
+});

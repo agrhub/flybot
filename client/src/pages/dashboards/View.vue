@@ -53,6 +53,11 @@
             <el-icon class="mr-1"><AlarmClock /></el-icon>{{ scheduleLabel }}
           </el-tag>
           <span v-if="generatedAt" class="dash-meta">{{ t('dashboards.updatedAt', { time: formatTime(generatedAt) }) }}</span>
+          <!-- Shared with me and sent on a schedule: I can stop it for myself -->
+          <span v-if="dashboard.scheduleForMe?.active" class="inline-flex items-center gap-2 dash-meta">
+            <el-switch :model-value="!dashboard.scheduleForMe.muted" size="small" :loading="muting" @change="(on) => setScheduleMuted(!on)" />
+            {{ t('dashboards.schedule.receive') }}
+          </span>
         </div>
         <div class="flex flex-wrap items-center gap-2">
           <ReportRangePicker v-model="viewRange" />
@@ -413,6 +418,19 @@ const scheduleLabel = computed(() => {
     ? t('dashboards.schedule.labelWeekly', { day: t(`dashboards.schedule.weekdays.${sc.weekday}`), time })
     : t('dashboards.schedule.labelMonthly', { day: sc.monthDay, time });
 });
+const muting = ref(false);
+const setScheduleMuted = async (muted) => {
+  muting.value = true;
+  try {
+    const res = await api.muteDashboardSchedule(dashboard.value.id, muted);
+    dashboard.value = { ...dashboard.value, scheduleForMe: { ...dashboard.value.scheduleForMe, muted: res.data.muted } };
+    ElMessage.success(t(res.data.muted ? 'dashboards.schedule.receiveOff' : 'dashboards.schedule.receiveOn'));
+  } catch (err) {
+    ElMessage.error(dashboardErrorText(t, err));
+  } finally {
+    muting.value = false;
+  }
+};
 const sendNow = async () => {
   sending.value = true;
   try {

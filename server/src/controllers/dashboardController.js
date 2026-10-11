@@ -87,6 +87,15 @@ function toDetail(dashboard, user) {
             layout: { x: w.layout?.x ?? 0, y: w.layout?.y ?? 0, w: w.layout?.w ?? 12, h: w.layout?.h ?? 4 }
         }))
     };
+    // For someone it is shared with: whether its schedule sends to them, and if they stopped it
+    if (detail.access === 'shared') {
+        const share = (dashboard.sharedWith || []).find(sh => sh.userId && String(sh.userId) === String(user?.id ?? user?._id));
+        const sc = dashboard.schedule || {};
+        detail.scheduleForMe = {
+            active: (sc.frequency || 'off') !== 'off' && sc.recipients === 'all',
+            muted: !!share?.scheduleMuted
+        };
+    }
     // Share list and public link only for people who can change them
     if (detail.canEdit) {
         const sc = dashboard.schedule || {};
@@ -422,6 +431,26 @@ async function sendDashboardNow(req, res) {
 }
 
 /**
+ * PUT /api/dashboards/:id/schedule-mute { muted }: stop or resume the report's scheduled emails
+ * for me (someone it is shared with)
+ */
+async function muteDashboardSchedule(req, res) {
+    try {
+        const dashboard = await findDashboard(req.params.id);
+        if (!dashboardService.canViewDashboard(req.user, dashboard)) return res.status(404).json(NOT_FOUND);
+        const share = dashboard.sharedWith.find(sh => sh.userId && String(sh.userId) === String(req.user.id));
+        if (!share || typeof req.body?.muted !== 'boolean') {
+            return res.status(400).json({ success: false, message: "Only people a report is shared with can change this." });
+        }
+        share.scheduleMuted = req.body.muted;
+        await dashboard.save();
+        res.json({ success: true, muted: share.scheduleMuted });
+    } catch (err) {
+        sendServerError(res, err, { context: 'Mute report schedule' });
+    }
+}
+
+/**
  * POST /api/dashboards/:id/public-token: new public link (the old one stops working)
  */
 async function rotatePublicToken(req, res) {
@@ -671,5 +700,6 @@ module.exports = {
     streamPublicImage,
     streamDashboardImage,
     sendDashboardNow,
+    muteDashboardSchedule,
     claimPendingDashboardShares
 };

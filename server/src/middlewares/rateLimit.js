@@ -86,6 +86,8 @@ module.exports = {
     ],
     // Share invitations send email to any address: limit per sharer
     shareLimiter: rateLimit({ windowMs: 60 * 60 * 1000, max: 30, includeIp: false, keyFn: (req) => `share:${req.user?.id || ''}` }),
+    // "Email me" builds a report and its PDF: 5 per person per hour
+    reportSendLimiter: rateLimit({ windowMs: 60 * 60 * 1000, max: 5, includeIp: false, keyFn: (req) => `report-send:${req.user?.id || ''}` }),
     // 10 login attempts per IP+email per 15 minutes, and 50 per IP overall
     loginLimiter: [
         rateLimit({ windowMs: 15 * 60 * 1000, max: 50 }),

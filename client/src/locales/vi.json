@@ -1493,7 +1493,10 @@
       "lastSent": "Lần gửi gần nhất: {time}",
       "saved": "Đã lưu lịch gửi.",
       "labelWeekly": "Gửi {day} {time}",
-      "labelMonthly": "Gửi ngày {day} hằng tháng {time}"
+      "labelMonthly": "Gửi ngày {day} hằng tháng {time}",
+      "receive": "Nhận báo cáo định kỳ",
+      "receiveOff": "Đã tắt nhận báo cáo định kỳ cho bạn.",
+      "receiveOn": "Đã bật lại nhận báo cáo định kỳ."
     }
   },
   "audit": {
