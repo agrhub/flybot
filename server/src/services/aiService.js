@@ -1,6 +1,7 @@
 const axios = require('axios');
 const { GoogleGenAI } = require('@google/genai');
 const { Snapshot } = require('../models');
+const { pestCountOf } = require('../models/Snapshot');
 const dailyStats = require('./dailyStats');
 const { FRUIT_FLY, isFruitFly } = require('../constants/species');
 const {
@@ -139,6 +140,7 @@ MANDATORY COORDINATE RULES:
                 const vertexSnap = await Snapshot.findByIdAndUpdate(snapshotId, {
                     aiProcessed: true,
                     aiProvider: 'vertex',
+                    pestCount: pestCountOf(aiData.summary || {}),
                     aiResults: {
                         detected: aiData.detected,
                         insects: formattedInsects,
@@ -212,6 +214,7 @@ async function analyzeInsectsRoboflow(base64Image, snapshotId, imageUrl = null) 
                 const roboflowSnap = await Snapshot.findByIdAndUpdate(snapshotId, {
                     aiProcessed: true,
                     aiProvider: 'roboflow',
+                    pestCount: pestCountOf(summary),
                     aiResults: {
                         detected: count > 0,
                         insects: formattedInsects,

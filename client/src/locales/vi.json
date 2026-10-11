@@ -2029,5 +2029,66 @@
     "filterRange": "Thời gian: {range}",
     "filterRisk": "Trạng thái cảnh báo: {risk}",
     "filterReview": "Duyệt: {review}"
+  },
+  "tour": {
+    "menu": "Hướng dẫn nhanh",
+    "steps": {
+      "welcome": {
+        "title": "Chào mừng đến FlyBot",
+        "desc": "Một phút để làm quen: FlyBot dùng camera chụp bẫy côn trùng, AI đếm từng con và cảnh báo khi vượt ngưỡng. Bấm Tiếp để xem các phần chính."
+      },
+      "dashboard": {
+        "title": "Tổng quan",
+        "desc": "Ruồi vào bẫy hôm nay, ruồi/bẫy/ngày, mức nguy cơ từng bẫy, ảnh nhận dạng mới nhất và dự báo của AI."
+      },
+      "addCamera": {
+        "title": "Thêm camera",
+        "desc": "Nhập số serial và mã xác thực trên tem camera EZVIZ, chọn loại bẫy dính hoặc bẫy dẫn dụ."
+      },
+      "cameras": {
+        "title": "Camera",
+        "desc": "Xem trực tiếp, xem lại theo dòng thời gian, chụp ngay, bảo trì bẫy và lịch sử nhận diện của từng camera."
+      },
+      "analytics": {
+        "title": "Analytics",
+        "desc": "Biểu đồ, phân tích chuyên sâu và lịch sử nhận diện. Mỗi khối có bộ lọc riêng; xuất PDF hoặc Excel kèm ảnh."
+      },
+      "reports": {
+        "title": "Báo cáo",
+        "desc": "Tự thiết kế báo cáo, chọn khoảng thời gian, chia sẻ có thời hạn, xuất PDF hoặc gửi định kỳ qua email."
+      },
+      "farms": {
+        "title": "Vườn & lô",
+        "desc": "Khai báo vườn, vẽ lô trên bản đồ và gắn camera vào từng lô."
+      },
+      "logbook": {
+        "title": "Nhật ký vườn",
+        "desc": "Ghi lại các lần phun, bả, thay bẫy để so sánh số ruồi trước và sau xử lý."
+      },
+      "map": {
+        "title": "Bản đồ",
+        "desc": "Vị trí các bẫy, tô màu theo mức nguy cơ."
+      },
+      "more": {
+        "title": "Thêm",
+        "desc": "Báo cáo, Vườn & lô, Nhật ký vườn, Cài đặt, ngôn ngữ và giao diện sáng/tối."
+      },
+      "notifications": {
+        "title": "Thông báo",
+        "desc": "Cảnh báo vượt ngưỡng, tăng đột biến, mất kết nối và nhắc thay bẫy. Cấu hình kênh nhận trong Cài đặt."
+      },
+      "assistant": {
+        "title": "Trợ lý AI",
+        "desc": "Hỏi bằng lời: bẫy nào đáng lo, số ruồi tuần này, nên xử lý thế nào."
+      },
+      "profile": {
+        "title": "Tài khoản",
+        "desc": "Hồ sơ, mật khẩu, trang Hướng dẫn chi tiết và nút xem lại phần giới thiệu này."
+      },
+      "done": {
+        "title": "Sẵn sàng",
+        "desc": "Bắt đầu bằng việc thêm camera đầu tiên. Xem lại phần giới thiệu này bất cứ lúc nào từ menu tài khoản, mục \"Hướng dẫn nhanh\"."
+      }
+    }
   }
 }

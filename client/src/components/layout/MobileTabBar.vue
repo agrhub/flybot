@@ -6,6 +6,7 @@
       :key="item.id"
       type="button"
       class="tabbar__item"
+      :data-tour="`nav-${item.id}`"
       :class="{ 'is-active': isActive(item.id) }"
       :aria-current="isActive(item.id) ? 'page' : undefined"
       @click="item.id === 'more' ? (moreOpen = true) : emit('navigate', item.id)"

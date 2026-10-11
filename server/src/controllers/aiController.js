@@ -5,7 +5,7 @@ const aiService = require('../services/aiService');
 const s3Service = require('../services/s3Service');
 const { sendServerError } = require('../utils/http');
 const { viewableCameras, canManageSerial } = require('../utils/ownership');
-const { FRUIT_FLY, NON_PEST_LABELS, normalizeSpeciesExpr, isFruitFly, pestCountExpr } = require('../constants/species');
+const { FRUIT_FLY, NON_PEST_LABELS, normalizeSpeciesExpr, isFruitFly } = require('../constants/species');
 const { thresholdOf, riskLevel, worstRisk, moderateFloor } = require('../constants/risk');
 const { countPests } = require('../services/notificationService');
 const forecastService = require('../services/forecastService');
@@ -85,25 +85,22 @@ async function getAiResults(req, res) {
                 Snapshot.find(matchQuery).sort({ createdAt: -1 }).skip(skip).limit(limit).lean()
             ]);
         } else {
-            // The risk depends on each camera's threshold: compare in the database
-            const switchOf = (valueOf) => ({
-                $switch: {
-                    branches: serials.map(serial => ({ case: { $eq: ['$deviceSerial', serial] }, then: valueOf(cameraBySerial.get(serial)) })),
-                    default: valueOf(null)
-                }
-            });
-            const count = '$$count';
-            const levelExpr = {
-                $let: {
-                    vars: { count: pestCountExpr() },
-                    in: {
-                        $cond: [{ $gte: [count, switchOf(thresholdOf)] }, 'high',
-                            { $cond: [{ $gte: [count, switchOf(c => moderateFloor(thresholdOf(c)))] }, 'moderate', 'low'] }]
-                    }
-                }
+            // The risk depends on each camera's threshold: a pest-count range per camera, on the
+            // stored Snapshot.pestCount (filled in for older photos by a startup migration)
+            const { createdAt, ...base } = matchQuery;
+            delete base.deviceSerial;
+            const rangeOf = (camera) => {
+                const threshold = thresholdOf(camera);
+                const floor = moderateFloor(threshold);
+                if (risk === 'high') return { $gte: threshold };
+                if (risk === 'moderate') return { $gte: floor, $lt: threshold };
+                return { $lt: floor };
+            };
+            const filter = {
+                ...base,
+                $or: serials.map(serial => ({ deviceSerial: serial, ...(createdAt ? { createdAt } : {}), pestCount: rangeOf(cameraBySerial.get(serial)) }))
             };
             // find + countDocuments rather than $facet: a page of full snapshots can pass 16 MB
-            const filter = { ...matchQuery, $expr: { $eq: [levelExpr, risk] } };
             [total, docs] = await Promise.all([
                 Snapshot.countDocuments(filter),
                 Snapshot.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).lean()

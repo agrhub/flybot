@@ -43,7 +43,7 @@
         :collapse-transition="false"
         @select="handleSelect"
       >
-        <el-menu-item v-for="item in navItems" :key="item.id" :index="item.id">
+        <el-menu-item v-for="item in navItems" :key="item.id" :index="item.id" :data-tour="`nav-${item.id}`">
           <el-icon><component :is="item.icon" /></el-icon>
           <template #title>{{ item.label }}</template>
         </el-menu-item>
@@ -58,7 +58,7 @@
         placement="right"
         :show-after="100"
       >
-        <el-button type="primary" circle :icon="Plus" @click="emit('open-add-camera')" />
+        <el-button type="primary" circle :icon="Plus" data-tour="add-camera" @click="emit('open-add-camera')" />
       </el-tooltip>
 
       <el-button
@@ -67,6 +67,7 @@
         size="large"
         class="w-full"
         :icon="Plus"
+        data-tour="add-camera"
         @click="emit('open-add-camera')"
       >
         {{ t('cameras.addCameraBtn') }}

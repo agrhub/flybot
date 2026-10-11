@@ -1,4 +1,14 @@
 const mongoose = require('mongoose');
+const { NON_PEST_LABELS } = require('../constants/species');
+
+// Pests in a summary (people, vehicles, animals do not count); same as notificationService.countPests
+function pestCountOf(summary) {
+    if (!summary) return 0;
+    const entries = summary instanceof Map ? [...summary.entries()] : Object.entries(summary);
+    return entries
+        .filter(([label]) => !NON_PEST_LABELS.includes(String(label).toLowerCase()))
+        .reduce((sum, [, value]) => sum + (Number(value) || 0), 0);
+}
 
 const snapshotSchema = new mongoose.Schema({
     deviceSerial: { type: String, required: true },
@@ -18,6 +28,9 @@ const snapshotSchema = new mongoose.Schema({
         summary: { type: Map, of: Number }, // Statistics summary: { "caterpillar": 2, "fruit fly": 1 }
         raw_description: String
     },
+    // Pest total of aiResults.summary, kept in step with it, so filters by count (alarm status)
+    // need not add up the summary of every photo. Older photos get it from a startup migration.
+    pestCount: { type: Number, default: undefined },
     // Photo quality (services/imageQuality.js): measurements and the problems found
     quality: {
         brightness: { type: Number, default: undefined },
@@ -57,9 +70,18 @@ snapshotSchema.index({ deviceSerial: 1, createdAt: -1 });
 snapshotSchema.index({ 'review.status': 1, 'review.reviewedAt': -1 }, { sparse: true });
 // Training upload queue
 snapshotSchema.index({ 'trainingSync.status': 1 }, { sparse: true });
+// History filtered by alarm status: count range per camera
+snapshotSchema.index({ deviceSerial: 1, pestCount: 1, createdAt: -1 });
+
+snapshotSchema.pre('save', function keepPestCount() {
+    if (this.isNew || this.isModified('aiResults')) {
+        this.pestCount = this.aiProcessed || this.aiResults?.summary ? pestCountOf(this.aiResults?.summary) : undefined;
+    }
+});
 // Retention cleanup scans by age only
 snapshotSchema.index({ createdAt: 1 });
 
 const Snapshot = mongoose.model('Snapshot', snapshotSchema);
 
 module.exports = Snapshot;
+module.exports.pestCountOf = pestCountOf;

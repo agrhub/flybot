@@ -66,6 +66,9 @@
 
     <!-- Global Add Camera Modal Dialog -->
     <AddCameraModal />
+
+    <!-- Guided tour: first visit, or "Quick tour" in the profile menu -->
+    <AppTour />
   </div>
 </template>
 
@@ -86,6 +89,8 @@ import MobileTabBar from '@/components/layout/MobileTabBar.vue';
 import Topbar from '@/components/layout/Topbar.vue';
 import AiAssistantSidebar from '@/components/assistant/AiAssistantSidebar.vue';
 import AddCameraModal from '@/components/modals/AddCameraModal.vue';
+import AppTour from '@/components/layout/AppTour.vue';
+import { useAppTour } from '@/composables/useAppTour';
 
 const router = useRouter();
 const route = useRoute();
@@ -142,6 +147,7 @@ const stopListening = useNotifications().onNotification((n) => {
 onUnmounted(stopListening);
 
 onMounted(() => {
+  setTimeout(() => useAppTour().startIfNew(), 1500);
   const user = localStorage.getItem('user');
   if (!user) {
     router.push('/auth/login');

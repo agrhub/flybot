@@ -2029,5 +2029,66 @@
     "filterRange": "Dates: {range}",
     "filterRisk": "Alarm status: {risk}",
     "filterReview": "Review: {review}"
+  },
+  "tour": {
+    "menu": "Quick tour",
+    "steps": {
+      "welcome": {
+        "title": "Welcome to FlyBot",
+        "desc": "A one-minute tour: FlyBot uses cameras to photograph insect traps, the AI counts every insect and alerts you over the threshold. Click Next to see the main parts."
+      },
+      "dashboard": {
+        "title": "Overview",
+        "desc": "Flies caught today, flies per trap per day, each trap’s risk, the latest annotated photos and the AI forecast."
+      },
+      "addCamera": {
+        "title": "Add a camera",
+        "desc": "Enter the serial number and verification code from the EZVIZ label and choose a sticky or lure trap."
+      },
+      "cameras": {
+        "title": "Cameras",
+        "desc": "Live view, recordings on a timeline, capture now, trap upkeep and each camera’s detection history."
+      },
+      "analytics": {
+        "title": "Analytics",
+        "desc": "Charts, insights and detection history. Each widget has its own filters; export PDF or Excel with photos."
+      },
+      "reports": {
+        "title": "Reports",
+        "desc": "Build your own reports, pick the time range, share with an end date, export PDF or email them on a schedule."
+      },
+      "farms": {
+        "title": "Farms",
+        "desc": "Add farms, draw plots on the map and assign cameras to plots."
+      },
+      "logbook": {
+        "title": "Field log",
+        "desc": "Record sprays, baits and card changes to compare flies before and after."
+      },
+      "map": {
+        "title": "Map",
+        "desc": "Where the traps are, colored by risk."
+      },
+      "more": {
+        "title": "More",
+        "desc": "Reports, Farms, Field log, Settings, language and light/dark theme."
+      },
+      "notifications": {
+        "title": "Notifications",
+        "desc": "Threshold alerts, sudden rises, offline cameras and card reminders. Choose channels in Settings."
+      },
+      "assistant": {
+        "title": "AI assistant",
+        "desc": "Ask in plain words: which trap is worrying, flies this week, what to do."
+      },
+      "profile": {
+        "title": "Account",
+        "desc": "Profile, password, the detailed guide and a button to replay this tour."
+      },
+      "done": {
+        "title": "All set",
+        "desc": "Start by adding your first camera. Replay this tour any time from the account menu, \"Quick tour\"."
+      }
+    }
   }
 }

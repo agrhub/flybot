@@ -185,7 +185,7 @@ async function activityByHour(serials, days = 14, now = new Date()) {
     // Bounded on both sides: a report range can end in the past
     const snaps = await Snapshot.find({ deviceSerial: { $in: serials }, aiProcessed: true, createdAt: { $gte: since, $lte: now } })
         .sort({ deviceSerial: 1, createdAt: 1 })
-        .select('deviceSerial createdAt aiResults.summary')
+        .select('deviceSerial createdAt pestCount aiResults.summary')
         .lean();
     const cardEvents = await MaintenanceEvent.find({ deviceSerial: { $in: serials }, type: 'card_replaced', at: { $gte: since, $lte: now } })
         .select('deviceSerial at').lean();
@@ -196,7 +196,8 @@ async function activityByHour(serials, days = 14, now = new Date()) {
     const lureSums = new Map(); // "day|hour|serial" -> { sum, n }
     let previous = null;
     for (const snap of snaps) {
-        const count = countPests(snap.aiResults?.summary instanceof Map ? Object.fromEntries(snap.aiResults.summary) : snap.aiResults?.summary);
+        // Stored with the photo; older photos: added up from the summary
+        const count = snap.pestCount ?? countPests(snap.aiResults?.summary instanceof Map ? Object.fromEntries(snap.aiResults.summary) : snap.aiResults?.summary);
         if (kinds.get(snap.deviceSerial) === 'lure') {
             const key = `${dailyStats.dayKeyOf(snap.createdAt)}|${Number(hourOf.format(snap.createdAt))}|${snap.deviceSerial}`;
             const cell = lureSums.get(key) || { sum: 0, n: 0 };

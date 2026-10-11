@@ -25,7 +25,7 @@
         <template #reference>
           <span class="inline-flex">
             <el-badge :value="unreadCount" :max="99" :hidden="unreadCount === 0" type="warning">
-              <el-button circle :icon="Bell" :title="t('topbar.notifications')" />
+              <el-button circle :icon="Bell" :title="t('topbar.notifications')" data-tour="notifications" />
             </el-badge>
           </span>
         </template>
@@ -76,6 +76,7 @@
         :icon="MagicStick"
         :title="t('topbar.assistant')"
         :circle="isMobile"
+        data-tour="assistant"
         @click="toggleAssistant"
       >
         <span v-if="!isMobile">{{ t('topbar.assistant') }}</span>
@@ -83,7 +84,7 @@
 
       <!-- Profile menu -->
       <el-dropdown trigger="click" placement="bottom-end">
-        <el-avatar shape="square" :size="32" class="profile-avatar cursor-pointer">
+        <el-avatar shape="square" :size="32" class="profile-avatar cursor-pointer" data-tour="profile">
           {{ userInitial }}
         </el-avatar>
 
@@ -102,6 +103,9 @@
             <el-dropdown-item :icon="Lock" @click="goToSection('settings', 'password')">
               {{ t('topbar.changePassword') }}
             </el-dropdown-item>
+            <el-dropdown-item :icon="Guide" @click="startTour">
+              {{ t('tour.menu') }}
+            </el-dropdown-item>
             <el-dropdown-item :icon="Reading" @click="router.push('/manual')">
               {{ t('nav.manual') }}
             </el-dropdown-item>
@@ -119,10 +123,11 @@
 import { computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { Sunny, Moon, Bell, MagicStick, User, Lock, Reading, SwitchButton } from '@element-plus/icons-vue';
+import { Sunny, Moon, Bell, MagicStick, User, Lock, Reading, SwitchButton, Guide } from '@element-plus/icons-vue';
 import { useTheme } from '@/utils/theme';
 import { useAuth } from '@/composables/useAuth';
 import LanguageSelect from '@/components/shared/LanguageSelect.vue';
+import { useAppTour } from '@/composables/useAppTour';
 import { useNotifications } from '@/composables/useNotifications';
 import { useBreakpoints } from '@/composables/useBreakpoints';
 
@@ -140,6 +145,7 @@ const { t, locale } = useI18n();
 const { isDark, isAssistantOpen, toggleTheme, toggleAssistant } = useTheme();
 const { userName, userEmail, userInitial, logout } = useAuth();
 const { isMobile } = useBreakpoints();
+const { start: startTour } = useAppTour();
 
 const currentSectionTitle = computed(() => {
   const map = {

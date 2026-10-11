@@ -130,6 +130,17 @@ async function cardRemindersOffForExisting() {
 }
 
 /**
+ * Photos analyzed before Snapshot.pestCount existed get it, computed in the database.
+ */
+async function backfillPestCounts() {
+    const { Snapshot } = require('../models');
+    const { pestCountExpr } = require('../constants/species');
+    const res = await Snapshot.collection.updateMany({ aiProcessed: true, pestCount: { $exists: false } }, [{ $set: { pestCount: pestCountExpr() } }]);
+    if (res.modifiedCount) console.log(`🪰 Pest counts stored on ${res.modifiedCount} photo(s).`);
+    return res.modifiedCount;
+}
+
+/**
  * One-time data fixes that must run before the server accepts requests.
  */
 async function runStartupMigrations() {
@@ -144,6 +155,11 @@ async function runStartupMigrations() {
         await runOnce('organizations-v1', () => require('./orgService').migrateToOrganizations());
     } catch (err) {
         console.error('❌ Organization migration failed:', err);
+    }
+    try {
+        await runOnce('snapshot-pest-count', backfillPestCounts);
+    } catch (err) {
+        console.error('❌ Pest count backfill failed:', err);
     }
     try {
         await lowercaseEmails();
@@ -163,6 +179,7 @@ async function runStartupMigrations() {
 
 module.exports = {
     runOnce,
+    backfillPestCounts,
     cardRemindersOffForExisting,
     ensureRoles,
     lowercaseEmails,
