@@ -1351,7 +1351,7 @@
       "avgPerDay": "Average per day",
       "allTraps": "All traps together",
       "busiestDay": "Busiest day",
-      "alertHint": "Count on the trap now at or above its threshold",
+      "alertHint": "Count now at or above the threshold (lure traps: today’s average)",
       "noPrevious": "No data for the period before"
     },
     "ranking": {
@@ -1360,7 +1360,9 @@
       "trap": "Trap",
       "ftd": "Flies/trap/day",
       "change": "vs before",
-      "busiestDay": "Busiest day"
+      "busiestDay": "Busiest day",
+      "dailyAverageShort": "avg today",
+      "dailyAverageHint": "Lure trap: today’s average per photo, as the threshold alert uses"
     },
     "noData": "Save the report to load data.",
     "noDetections": "No insects detected in this period.",

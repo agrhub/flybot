@@ -107,7 +107,11 @@
           </el-table-column>
           <el-table-column :label="t('dashboards.ranking.latest')" width="120" align="right">
             <template #default="{ row }">
-              <el-tag :type="RISK_TAG[row.risk]" effect="light" round size="small">{{ row.latestCount }} / {{ row.threshold }}</el-tag>
+              <el-tooltip :disabled="row.riskBasis !== 'dailyAverage'" :content="t('dashboards.ranking.dailyAverageHint')" placement="top">
+                <el-tag :type="RISK_TAG[row.risk]" effect="light" round size="small">
+                  {{ row.riskValue ?? row.latestCount }} / {{ row.threshold }}<template v-if="row.riskBasis === 'dailyAverage'"> · {{ t('dashboards.ranking.dailyAverageShort') }}</template>
+                </el-tag>
+              </el-tooltip>
             </template>
           </el-table-column>
         </el-table>

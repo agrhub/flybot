@@ -134,6 +134,21 @@ async function latestPerCamera(serials) {
     return latest;
 }
 
+/**
+ * The count each camera is compared with its threshold by, as the threshold alert does:
+ * the latest photo on a sticky trap, the day's average per photo on a lure trap.
+ * Returns Map(serial -> { value, basis: 'latest' | 'dailyAverage' }).
+ */
+async function judgedCounts(cameras, latest, now = new Date()) {
+    const lure = cameras.filter(c => trapKindOf(c) === 'lure').map(c => c.deviceSerial);
+    const today = dailyStats.dayKeyOf(now);
+    const rows = lure.length ? await dailyStats.rows(lure, today, today) : [];
+    const average = new Map(rows.filter(r => r.scans).map(r => [r.deviceSerial, round1(r.total / r.scans)]));
+    return new Map(cameras.map(c => [c.deviceSerial, trapKindOf(c) === 'lure'
+        ? { value: average.get(c.deviceSerial) ?? 0, basis: 'dailyAverage' }
+        : { value: latest.get(c.deviceSerial)?.count || 0, basis: 'latest' }]));
+}
+
 const round1 = (n) => Math.round(n * 10) / 10;
 
 // Sum of the cameras' catches over some days; null when no camera has data on any of them
@@ -182,14 +197,14 @@ function speciesTotals(entries, days) {
         .sort((a, b) => b.value - a.value);
 }
 
-function kpiData(cameras, entries, ctx, latest) {
+function kpiData(cameras, entries, ctx, judged) {
     const current = catchStats.summarize(entries, ctx.current);
     const previous = catchStats.summarize(entries, ctx.previous);
     const serials = new Set(cameras.map(c => c.deviceSerial));
     return {
         cameras: cameras.length,
         online: cameras.filter(c => c.status === 1).length,
-        alertCameras: cameras.filter(c => (latest.get(c.deviceSerial)?.count || 0) >= thresholdOf(c)).length,
+        alertCameras: cameras.filter(c => (judged.get(c.deviceSerial)?.value || 0) >= thresholdOf(c)).length,
         scans: ctx.rows.filter(r => serials.has(r.deviceSerial)).reduce((sum, r) => sum + r.scans, 0),
         catches: round1(current.total),
         ftd: current.ftd,
@@ -235,7 +250,7 @@ function catchesByTrapData(cameras, ctx, granularity = 'auto') {
     };
 }
 
-function cameraRankingData(cameras, ctx, latest) {
+function cameraRankingData(cameras, ctx, latest, judged) {
     const ranking = cameras.map(c => {
         const entry = ctx.cameras.get(c.deviceSerial);
         const one = entry ? [entry] : [];
@@ -243,6 +258,7 @@ function cameraRankingData(cameras, ctx, latest) {
         const previous = catchStats.summarize(one, ctx.previous);
         const latestCount = latest.get(c.deviceSerial)?.count || 0;
         const threshold = thresholdOf(c);
+        const { value, basis } = judged.get(c.deviceSerial) || { value: latestCount, basis: 'latest' };
         return {
             deviceSerial: c.deviceSerial,
             deviceName: c.deviceName,
@@ -253,8 +269,11 @@ function cameraRankingData(cameras, ctx, latest) {
             daysWithData: current.trapDays,
             changePct: current.trapDays && previous.trapDays ? catchStats.percentChange(current.total, previous.total) : null,
             latestCount,
+            // What the threshold is compared with (the day's average on a lure trap)
+            riskValue: value,
+            riskBasis: basis,
             threshold,
-            risk: riskLevel(latestCount, threshold)
+            risk: riskLevel(value, threshold)
         };
     });
     ranking.sort((a, b) => (b.ftd ?? -1) - (a.ftd ?? -1) || b.total - a.total || b.latestCount - a.latestCount);
@@ -282,7 +301,7 @@ async function activityData(serials, range) {
     return { ...(await catchStats.activityByHour(serials, days, range.end)), windowDays: days };
 }
 
-async function latestSnapshotData(cameras, latest, imageUrl) {
+async function latestSnapshotData(cameras, latest, judged, imageUrl) {
     return {
         snapshots: cameras.map(c => {
             const snap = latest.get(c.deviceSerial);
@@ -293,7 +312,7 @@ async function latestSnapshotData(cameras, latest, imageUrl) {
                 status: c.status,
                 createdAt: snap?.createdAt || null,
                 count,
-                risk: riskLevel(count, thresholdOf(c)),
+                risk: riskLevel(judged.get(c.deviceSerial)?.value ?? count, thresholdOf(c)),
                 imageUrl: snap?.s3Key ? imageUrl(snap.s3Key) : null
             };
         })
@@ -322,6 +341,7 @@ async function computeWidgetData(dashboard, serials, { imageUrl, range: wanted =
     const allowed = new Set(serials);
     const needsLatest = widgets.some(w => LATEST_WIDGETS.includes(w.type) || (w.risk && w.risk !== 'all'));
     const latest = needsLatest ? await latestPerCamera(serials) : new Map();
+    const judged = needsLatest ? await judgedCounts(cameras, latest, now) : new Map();
 
     // Catches of a range and of the period before it ("compared with before"), read once per range
     const contexts = new Map();
@@ -351,7 +371,7 @@ async function computeWidgetData(dashboard, serials, { imageUrl, range: wanted =
                 const camera = cameraBySerial.get(serial);
                 if (status === 'online' && camera?.status !== 1) return false;
                 if (status === 'offline' && camera?.status === 1) return false;
-                if (risk !== 'all' && riskLevel(latest.get(serial)?.count || 0, thresholdOf(camera)) !== risk) return false;
+                if (risk !== 'all' && riskLevel(judged.get(serial)?.value || 0, thresholdOf(camera)) !== risk) return false;
                 return true;
             });
         const scopedCameras = scoped.map(s => cameraBySerial.get(s)).filter(Boolean);
@@ -360,14 +380,14 @@ async function computeWidgetData(dashboard, serials, { imageUrl, range: wanted =
         const granularity = widget.granularity || 'auto';
         let data;
         switch (widget.type) {
-            case 'kpi': data = kpiData(scopedCameras, catches, ctx, latest); break;
+            case 'kpi': data = kpiData(scopedCameras, catches, ctx, judged); break;
             case 'trend': data = trendData(catches, ctx, granularity); break;
             case 'catchesByTrap': data = catchesByTrapData(scopedCameras, ctx, granularity); break;
             case 'species': data = { species: speciesTotals(catches, ctx.current) }; break;
-            case 'cameraRanking': data = cameraRankingData(scopedCameras, ctx, latest); break;
+            case 'cameraRanking': data = cameraRankingData(scopedCameras, ctx, latest, judged); break;
             case 'dailyTable': data = dailyTableData(catches, ctx, granularity); break;
             case 'activity': data = scoped.length ? await activityData(scoped, widgetRange) : null; break;
-            case 'latestSnapshot': data = await latestSnapshotData(scopedCameras, latest, imageUrl); break;
+            case 'latestSnapshot': data = await latestSnapshotData(scopedCameras, latest, judged, imageUrl); break;
             default: data = null;
         }
         if (data) data.range = { preset: widgetRange.preset, from: widgetRange.from, to: widgetRange.to, days: widgetRange.days, own: !!widget.range?.preset };

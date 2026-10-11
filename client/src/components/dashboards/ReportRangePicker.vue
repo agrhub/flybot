@@ -4,8 +4,32 @@
       <template #prefix><el-icon><Calendar /></el-icon></template>
       <el-option v-for="preset in RANGE_PRESETS" :key="preset" :label="t(`dashboards.ranges.${preset}`)" :value="preset" />
     </el-select>
+    <template v-if="modelValue?.preset === 'custom' && isMobile">
+      <el-date-picker
+        :model-value="modelValue.from"
+        type="date"
+        value-format="YYYY-MM-DD"
+        format="DD/MM/YYYY"
+        :clearable="false"
+        :disabled-date="(date) => date.getTime() > Date.now()"
+        :placeholder="t('dashboards.rangeFrom')"
+        class="range-day"
+        @update:model-value="(v) => pickDates([v, modelValue.to])"
+      />
+      <el-date-picker
+        :model-value="modelValue.to"
+        type="date"
+        value-format="YYYY-MM-DD"
+        format="DD/MM/YYYY"
+        :clearable="false"
+        :disabled-date="(date) => date.getTime() > Date.now()"
+        :placeholder="t('dashboards.rangeTo')"
+        class="range-day"
+        @update:model-value="(v) => pickDates([modelValue.from, v])"
+      />
+    </template>
     <el-date-picker
-      v-if="modelValue?.preset === 'custom'"
+      v-else-if="modelValue?.preset === 'custom'"
       :model-value="dates"
       type="daterange"
       value-format="YYYY-MM-DD"
@@ -27,6 +51,7 @@ import { useI18n } from 'vue-i18n';
 import { ElMessage } from 'element-plus';
 import { Calendar } from '@element-plus/icons-vue';
 import { RANGE_PRESETS, MAX_RANGE_DAYS } from '@/utils/dashboards';
+import { useBreakpoints } from '@/composables/useBreakpoints';
 
 /**
  * Time range of a report: last 7 or 30 days, 3, 6 or 12 months, or chosen dates.
@@ -37,6 +62,7 @@ const props = defineProps({
 });
 const emit = defineEmits(['update:modelValue']);
 const { t } = useI18n();
+const { isMobile } = useBreakpoints();
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const dayKey = (date) => {
@@ -57,7 +83,8 @@ const pickPreset = (preset) => {
 
 const pickDates = (value) => {
   if (!value?.[0] || !value?.[1]) return;
-  const [from, to] = value;
+  // Picked separately on phones: keep from before to
+  const [from, to] = value[0] <= value[1] ? value : [value[1], value[0]];
   const span = Math.round((new Date(`${to}T12:00:00`) - new Date(`${from}T12:00:00`)) / DAY_MS) + 1;
   if (span > MAX_RANGE_DAYS) {
     ElMessage.warning(t('dashboards.rangeTooLong', { days: MAX_RANGE_DAYS }));
@@ -70,6 +97,9 @@ const pickDates = (value) => {
 <style scoped>
 .range-select {
   width: 170px;
+}
+.range-day {
+  width: 140px;
 }
 .range-dates {
   max-width: 280px;

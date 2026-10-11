@@ -88,6 +88,8 @@ test('build a report and read widget data over its time range', async () => {
     assert.equal(w.c.series.find(x => x.deviceSerial === 'A1').data.reduce((a, b) => a + (b || 0), 0), 8);
     assert.deepEqual(w.s.species, [{ label: 'fruit_fly', value: 8 }, { label: 'moth', value: 5 }]);
     assert.deepEqual(w.r.cameras.map(c => [c.deviceSerial, c.trapKind, c.total, c.ftd, c.risk]), [['A1', 'sticky', 8, 4, 'high'], ['B1', 'lure', 5, 2.5, 'low']]);
+    // A lure trap is judged like its alert: the day's average per photo (8 over 4 photos today)
+    assert.deepEqual(w.r.cameras.map(c => [c.riskValue, c.riskBasis]), [[12, 'latest'], [2, 'dailyAverage']]);
     assert.equal(w.d.rows.length, 7);
     assert.deepEqual([w.d.rows[0].from, w.d.rows[0].total, w.d.rows[0].topSpecies.label], [day(0), 7, 'fruit_fly']);
     assert.equal(w.a.windowDays, 7);

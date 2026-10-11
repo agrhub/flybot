@@ -181,7 +181,7 @@ export async function exportReportPdf({ t, locale, report, range, widgets, data,
             formatNumber(c.ftd),
             formatChange(c.changePct),
             c.busiestDay ? `${formatNumber(c.busiestDay.value)} (${formatDayKey(c.busiestDay.day)})` : '--',
-            `${c.latestCount} / ${c.threshold}`,
+            `${c.riskValue ?? c.latestCount} / ${c.threshold}${c.riskBasis === 'dailyAverage' ? ` (${t('dashboards.ranking.dailyAverageShort')})` : ''}`,
           ]),
           { 0: { cellWidth: 8 }, 3: { halign: 'right' }, 4: { halign: 'right' }, 5: { halign: 'right' }, 6: { halign: 'right' }, 7: { halign: 'right' } }
         );

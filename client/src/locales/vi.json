@@ -1351,7 +1351,7 @@
       "avgPerDay": "Trung bình mỗi ngày",
       "allTraps": "Tất cả các bẫy",
       "busiestDay": "Ngày nhiều nhất",
-      "alertHint": "Số hiện có trên bẫy chạm hoặc vượt ngưỡng",
+      "alertHint": "Số trên bẫy chạm hoặc vượt ngưỡng (bẫy dẫn dụ: trung bình hôm nay)",
       "noPrevious": "Chưa có dữ liệu kỳ trước"
     },
     "ranking": {
@@ -1360,7 +1360,9 @@
       "trap": "Bẫy",
       "ftd": "Ruồi/bẫy/ngày",
       "change": "So với trước",
-      "busiestDay": "Ngày nhiều nhất"
+      "busiestDay": "Ngày nhiều nhất",
+      "dailyAverageShort": "TB hôm nay",
+      "dailyAverageHint": "Bẫy dẫn dụ: trung bình mỗi ảnh hôm nay, giống cách tính cảnh báo"
     },
     "noData": "Lưu báo cáo để tải dữ liệu.",
     "noDetections": "Không phát hiện côn trùng trong khoảng thời gian này.",
