@@ -6,7 +6,10 @@
           <div class="section-title">{{ t('analytics.compare.title') }}</div>
           <div class="section-desc">{{ t('analytics.compare.subtitle', { days }) }}</div>
         </div>
-        <el-segmented v-model="days" :options="periodOptions" size="small" @change="load" />
+        <div class="flex items-center gap-2">
+          <el-segmented v-model="days" :options="periodOptions" size="small" @change="load" />
+          <WidgetFilter v-model="filter" :defaults="defaults" :fields="['cameras', 'risk']" />
+        </div>
       </div>
     </template>
 
@@ -36,7 +39,7 @@
 
       <div>
         <div class="subsection-title">{{ t('analytics.compare.ranking') }}</div>
-        <el-table :data="comparison?.cameras || []" size="small" class="w-full">
+        <el-table :data="rows" size="small" class="w-full">
           <template #empty>
             <el-empty :description="t('analytics.noStatsData')" :image-size="60" />
           </template>
@@ -71,11 +74,18 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { DataAnalysis, DataLine, Aim } from '@element-plus/icons-vue'
 import api from '@/services/api'
 import StatCard from '@/components/common/StatCard.vue'
+import WidgetFilter from '@/components/common/WidgetFilter.vue'
+import { useWidgetFilter } from '@/composables/useWidgetFilter'
+
+const props = defineProps({
+  // Page camera filter: 'all' or one serial
+  defaultCamera: { type: String, default: 'all' }
+})
 
 const { t } = useI18n()
 
@@ -85,6 +95,11 @@ const RISK_TAG = { high: 'danger', moderate: 'warning', low: 'success' }
 const days = ref(7)
 const loading = ref(false)
 const comparison = ref(null)
+
+const defaults = computed(() => ({ cameras: props.defaultCamera && props.defaultCamera !== 'all' ? [props.defaultCamera] : [], risk: 'all' }))
+const filter = useWidgetFilter(() => defaults.value)
+// Risk level of each camera: a table filter (the totals above cover the chosen cameras)
+const rows = computed(() => (comparison.value?.cameras || []).filter(row => !filter.value.risk || filter.value.risk === 'all' || row.riskLevel === filter.value.risk))
 
 const periodOptions = computed(() => PERIODS.map(d => ({ label: t('analytics.compare.days', { days: d }), value: d })))
 
@@ -104,7 +119,7 @@ const formatChange = (pct) => `${pct > 0 ? '+' : ''}${pct}%`
 const load = async () => {
   loading.value = true
   try {
-    const res = await api.getComparison(days.value)
+    const res = await api.getComparison(days.value, filter.value.cameras || [])
     comparison.value = res.data?.comparison || null
   } catch (e) {
     comparison.value = null
@@ -114,8 +129,25 @@ const load = async () => {
 }
 
 onMounted(load)
+watch(() => filter.value.cameras, load, { deep: true })
 
-defineExpose({ reload: load })
+/** The card as PDF sections (utils/analyticsPdf.js). */
+const pdfSections = () => [{
+  title: t('analytics.compare.title'),
+  lines: [t('analytics.compare.subtitle', { days: days.value })],
+  table: {
+    head: [t('dashboards.pdf.figure'), t('dashboards.pdf.value'), t('analytics.compare.change')],
+    body: metrics.value.map(m => [m.label, String(m.value), m.change === null ? '--' : formatChange(m.change)])
+  }
+}, {
+  title: t('analytics.compare.ranking'),
+  table: {
+    head: [t('analytics.compare.camera'), t('analytics.compare.totalInsects'), t('analytics.compare.avgPerScan'), t('analytics.compare.peak'), t('analytics.compare.scans'), t('analytics.compare.change')],
+    body: rows.value.map(r => [r.deviceName, String(r.totalInsects), String(r.avgPerScan), `${r.peakCount} / ${r.alertThreshold}`, String(r.scans), r.changePct === null ? '--' : formatChange(r.changePct)])
+  }
+}]
+
+defineExpose({ reload: load, pdfSections })
 </script>
 
 <style scoped>

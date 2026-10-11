@@ -149,10 +149,12 @@ function sumOver(entries, days) {
 }
 
 /**
- * Days grouped for charts and tables: by day up to two months, by week up to six, then by month.
+ * Days grouped for charts and tables. "auto": by day up to two months, by week up to six, then by month.
  */
-function bucketsOf(dayKeys) {
-    const unit = dayKeys.length <= 62 ? 'day' : dayKeys.length <= 186 ? 'week' : 'month';
+function bucketsOf(dayKeys, granularity = 'auto') {
+    const unit = ['day', 'week', 'month'].includes(granularity)
+        ? granularity
+        : dayKeys.length <= 62 ? 'day' : dayKeys.length <= 186 ? 'week' : 'month';
     const buckets = [];
     dayKeys.forEach((day, i) => {
         const key = unit === 'day' ? day : unit === 'week' ? String(Math.floor(i / 7)) : day.slice(0, 7);
@@ -199,18 +201,26 @@ function kpiData(cameras, entries, ctx, latest) {
     };
 }
 
-function trendData(entries, ctx) {
+// Daily by default; grouped by week or month when the widget asks for it
+function trendData(entries, ctx, granularity = 'day') {
+    const unit = granularity === 'auto' ? 'day' : granularity;
+    const current = bucketsOf(ctx.current, unit).buckets;
+    const previous = bucketsOf(ctx.previous, unit).buckets;
+    // Line up the period before from its end, so the last points compare like for like
+    const offset = previous.length - current.length;
     return {
-        points: ctx.current.map((day, i) => ({
-            date: day,
-            value: sumOver(entries, [day]),
-            previous: ctx.previous[i] ? sumOver(entries, [ctx.previous[i]]) : null
+        unit,
+        points: current.map((b, i) => ({
+            date: b.from,
+            to: b.to,
+            value: sumOver(entries, b.days),
+            previous: previous[i + offset] ? sumOver(entries, previous[i + offset].days) : null
         }))
     };
 }
 
-function catchesByTrapData(cameras, ctx) {
-    const { unit, buckets } = bucketsOf(ctx.current);
+function catchesByTrapData(cameras, ctx, granularity = 'auto') {
+    const { unit, buckets } = bucketsOf(ctx.current, granularity);
     return {
         unit,
         labels: buckets.map(b => b.from),
@@ -251,8 +261,8 @@ function cameraRankingData(cameras, ctx, latest) {
     return { cameras: ranking };
 }
 
-function dailyTableData(entries, ctx) {
-    const { unit, buckets } = bucketsOf(ctx.current);
+function dailyTableData(entries, ctx, granularity = 'auto') {
+    const { unit, buckets } = bucketsOf(ctx.current, granularity);
     const rows = buckets.map(b => {
         const summary = catchStats.summarize(entries, b.days);
         return {
@@ -293,11 +303,14 @@ async function latestSnapshotData(cameras, latest, imageUrl) {
 const CATCH_WIDGETS = ['kpi', 'trend', 'catchesByTrap', 'species', 'cameraRanking', 'dailyTable'];
 const LATEST_WIDGETS = ['kpi', 'cameraRanking', 'latestSnapshot'];
 
+const rangeKey = (range) => `${range.preset}:${range.from}:${range.to}`;
+
 /**
- * Data for every widget, keyed by widget id, over the report's time range (or `range` when the
- * viewer picked another one). `serials` are the cameras this audience may see;
- * `imageUrl(s3Key)` builds the image link (signed-in proxy or public-link proxy).
- * Returns { range, widgets }.
+ * Data for every widget, keyed by widget id. A widget uses its own range when it has one, else the
+ * report's range (or `range` when the viewer picked another one); its status and risk filters
+ * narrow its cameras. `serials` are the cameras this audience may see; `imageUrl(s3Key)` builds
+ * the image link (signed-in proxy or public-link proxy).
+ * Returns { range, widgets }; each widget's data carries the range it covers.
  */
 async function computeWidgetData(dashboard, serials, { imageUrl, range: wanted = null, now = new Date() }) {
     const range = resolveRange(wanted || dashboard.range, now);
@@ -307,35 +320,57 @@ async function computeWidgetData(dashboard, serials, { imageUrl, range: wanted =
         : [];
     const cameraBySerial = new Map(cameras.map(c => [c.deviceSerial, c]));
     const allowed = new Set(serials);
-    const uses = (types) => widgets.some(w => types.includes(w.type));
+    const needsLatest = widgets.some(w => LATEST_WIDGETS.includes(w.type) || (w.risk && w.risk !== 'all'));
+    const latest = needsLatest ? await latestPerCamera(serials) : new Map();
 
-    // Catches of the range and of the period before it ("compared with before"), read once for all widgets
-    const ctx = { cameras: new Map(), current: [], previous: [], rows: [] };
-    if (serials.length && uses(CATCH_WIDGETS)) {
-        const { dayKeys, cameras: byCamera } = await catchStats.catchesBySerial(serials, range.days * 2, range.end);
-        ctx.cameras = byCamera;
-        ctx.current = dayKeys.slice(-range.days);
-        ctx.previous = dayKeys.slice(0, dayKeys.length - range.days);
-        if (uses(['kpi'])) ctx.rows = await dailyStats.rows(serials, ctx.current[0], ctx.current.at(-1));
-    }
-    const latest = uses(LATEST_WIDGETS) ? await latestPerCamera(serials) : new Map();
+    // Catches of a range and of the period before it ("compared with before"), read once per range
+    const contexts = new Map();
+    const contextOf = (widgetRange) => {
+        const key = rangeKey(widgetRange);
+        if (!contexts.has(key)) {
+            contexts.set(key, (async () => {
+                const ctx = { cameras: new Map(), current: [], previous: [], rows: [] };
+                if (!serials.length) return ctx;
+                const { dayKeys, cameras: byCamera } = await catchStats.catchesBySerial(serials, widgetRange.days * 2, widgetRange.end);
+                ctx.cameras = byCamera;
+                ctx.current = dayKeys.slice(-widgetRange.days);
+                ctx.previous = dayKeys.slice(0, dayKeys.length - widgetRange.days);
+                ctx.rows = await dailyStats.rows(serials, ctx.current[0], ctx.current.at(-1));
+                return ctx;
+            })());
+        }
+        return contexts.get(key);
+    };
 
     const entries = await Promise.all(widgets.map(async (widget) => {
-        const scoped = widget.cameraSerials?.length ? widget.cameraSerials.filter(s => allowed.has(s)) : serials;
+        const widgetRange = widget.range?.preset ? resolveRange(widget.range, now) : range;
+        const status = widget.status || 'all';
+        const risk = widget.risk || 'all';
+        const scoped = (widget.cameraSerials?.length ? widget.cameraSerials.filter(s => allowed.has(s)) : serials)
+            .filter((serial) => {
+                const camera = cameraBySerial.get(serial);
+                if (status === 'online' && camera?.status !== 1) return false;
+                if (status === 'offline' && camera?.status === 1) return false;
+                if (risk !== 'all' && riskLevel(latest.get(serial)?.count || 0, thresholdOf(camera)) !== risk) return false;
+                return true;
+            });
         const scopedCameras = scoped.map(s => cameraBySerial.get(s)).filter(Boolean);
-        const catches = scoped.map(s => ctx.cameras.get(s)).filter(Boolean);
+        const ctx = CATCH_WIDGETS.includes(widget.type) ? await contextOf(widgetRange) : null;
+        const catches = ctx ? scoped.map(s => ctx.cameras.get(s)).filter(Boolean) : [];
+        const granularity = widget.granularity || 'auto';
         let data;
         switch (widget.type) {
             case 'kpi': data = kpiData(scopedCameras, catches, ctx, latest); break;
-            case 'trend': data = trendData(catches, ctx); break;
-            case 'catchesByTrap': data = catchesByTrapData(scopedCameras, ctx); break;
+            case 'trend': data = trendData(catches, ctx, granularity); break;
+            case 'catchesByTrap': data = catchesByTrapData(scopedCameras, ctx, granularity); break;
             case 'species': data = { species: speciesTotals(catches, ctx.current) }; break;
             case 'cameraRanking': data = cameraRankingData(scopedCameras, ctx, latest); break;
-            case 'dailyTable': data = dailyTableData(catches, ctx); break;
-            case 'activity': data = scoped.length ? await activityData(scoped, range) : null; break;
+            case 'dailyTable': data = dailyTableData(catches, ctx, granularity); break;
+            case 'activity': data = scoped.length ? await activityData(scoped, widgetRange) : null; break;
             case 'latestSnapshot': data = await latestSnapshotData(scopedCameras, latest, imageUrl); break;
             default: data = null;
         }
+        if (data) data.range = { preset: widgetRange.preset, from: widgetRange.from, to: widgetRange.to, days: widgetRange.days, own: !!widget.range?.preset };
         return [widget.id, data];
     }));
     return {

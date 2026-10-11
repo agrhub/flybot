@@ -402,7 +402,12 @@
         "low_contrast": "Hazy compared with usual: clean the lens, or wipe off condensation or dust.",
         "card_full": "The sticky card is nearly covered. Replace it so new insects can be counted."
       }
-    }
+    },
+    "prevDay": "Previous day",
+    "nextDay": "Next day",
+    "noClips": "No recordings on this day",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out"
   },
   "analytics": {
     "title": "AI Analytics & Detection History",
@@ -528,7 +533,11 @@
     "metricCatches": "New flies",
     "metricOnTrap": "On trap",
     "catchesInPeriod": "Flies caught in the period",
-    "catchesInPeriodDesc": "Total new flies in the chosen range"
+    "catchesInPeriodDesc": "Total new flies in the chosen range",
+    "onTrapHourly": "Count on the trap by hour",
+    "summaryTitle": "Summary",
+    "exportAllPdf": "Export PDF",
+    "exportAllHint": "The PDF holds the three tabs: Trends & Charts, Insights and the detection history with every photo matching its filters. Each part uses the filters set on it. A long history can take a few minutes."
   },
   "settings": {
     "title": "System Settings",
@@ -779,12 +788,12 @@
           "live": {
             "title": "Camera grid",
             "desc": "The Cameras page shows all your cameras in a grid with their connection status and latest photo.",
-            "items": "Pick a 2x2, 3x3 or Auto grid at the top.\nOnline cameras play live; offline ones show their latest photo and a \"Refresh\" button.\nClick \"Details\" to open a camera: high-quality live view and SD-card playback by hour.\nFor cameras with video encryption, enter the verification code when asked."
+            "items": "Pick a 2x2, 3x3 or Auto grid at the top.\nOnline cameras play live; offline cameras show their latest photo with a \"Refresh\" button.\nClick \"View details\" to open a camera: the live picture on top, recordings right below.\nRecordings: pick a day (arrows step one day), clips run left to right with the nearest AI photo, and a 24-hour bar below colors the recorded spans. Click a clip or a point on the bar to play it; zoom in or out for detail; \"Back to live\" returns.\nFor cameras with video encryption, enter the verification code when asked."
           },
           "health": {
             "title": "Capture now & camera status",
             "desc": "Camera details tell you whether the camera is capturing and being analyzed regularly.",
-            "items": "Click \"Capture now\" to take a photo and count it right away.\nCheck \"Last snapshot\", \"Snapshots (24h)\" and \"AI analyzed (24h)\": a low rate means bad photos or an AI service problem.\n\"Photo quality\" flags Too dark, Too bright, Blurry, Dirty lens or Card full; hover over the tag for how to fix it."
+            "items": "Click \"Capture now\" under the picture to take a photo and have the AI count it right away.\nClick \"Quick info\" for the camera details: status, verification code, model, latest photo, photos and AI success in the last 24 hours, capture schedule.\n\"Image quality\" reports too dark, too bright, blurry, dirty lens or full trap; a problem shows right under the picture."
           },
           "card": {
             "title": "Trap upkeep",
@@ -799,17 +808,17 @@
           "count": {
             "title": "See the AI count on a photo",
             "desc": "Every photo is counted by the AI; blue boxes mark each insect with its confidence.",
-            "items": "Open Analytics, choose a camera and period, then the \"Detection History\" tab.\nClick the eye icon on a row to open the photo: detection boxes, counts per species and a share chart.\nThe daily catch is the rise on the card over the day before; card-change days are not counted."
+            "items": "In Analytics open the \"Detection History\" tab, or open a camera and scroll to its detection history.\nThe table has its own filters: cameras (several at once), dates, alarm status (Alarm, Warning, Normal) and review status.\n\"Alarm status\" compares each photo’s count with the camera threshold; with several cameras the table adds a Camera column.\nClick the eye icon on a row to open the photo: detection boxes, counts per species and a ratio chart.\n\"Export\" saves every record matching the filters (not only the page on screen) with the annotated photos: \"PDF with photos\" or \"Excel with photos\" (one sheet per camera)."
           },
           "review": {
             "title": "Confirm or correct counts",
             "desc": "Technicians check the AI results so the numbers can be trusted.",
-            "items": "In the photo details, click \"Confirm result\" when the AI count is right.\nClick \"Correct counts\" to enter the number per species and a note.\nCorrected counts are used in every statistic, alert and report; \"Export corrected data\" lists the corrected photos."
+            "items": "In the photo details, click \"Confirm\" when the AI count is right.\nClick \"Correct counts\" to enter the count of each species and a note.\nCorrected counts feed every statistic, alert and report; in the history table, \"Export\" has the corrections export for retraining."
           },
           "analytics": {
             "title": "Charts & reports",
             "desc": "The \"Trends & Charts\" tab shows flies over time and by species; the Overview adds a 14-day chart per trap.",
-            "items": "Choose \"New flies\" for flies arriving each day, or \"On trap\" for the count in the photos (on a glue card it grows until replaced; dashed lines mark card changes and treatments).\nView by Hour, Day or Month.\nCards on top: count on the trap now, main species, flies caught in the period and the 3-day trend.\nClick \"Export PDF Report\" or \"Export Excel\" to save a report for the chosen period."
+            "items": "The filters at the top (camera, dates) apply to the whole page; every chart and table has its own filter button (camera, dates, group by, camera status, against threshold, trap type). A dot on the button means that widget uses its own filters; \"Use page filters\" goes back.\nChoose \"New flies\" for flies arriving each day, or \"On trap\" for the count in the photos (on a glue card it grows until replaced; dashed lines mark card changes and treatments). By Hour shows the count on the trap.\nCards on top: count on the trap now, main species, flies caught in the period and the 3-day trend.\nClick \"Export PDF\" to save the three tabs (Trends & Charts, Insights, History) in one file, each part with its own filters."
           },
           "insights": {
             "title": "Insights",
@@ -1417,7 +1426,8 @@
       "value": "Value",
       "hour": "Hour",
       "count": "On trap",
-      "time": "Photo time"
+      "time": "Photo time",
+      "ownRange": "Own range: {from} - {to}"
     },
     "expiry": {
       "title": "End of sharing",
@@ -1430,6 +1440,16 @@
       "expired": "Sharing ended",
       "until": "Shared until {time}",
       "expiredHint": "Sharing has ended. Pick a later date or choose Never to share it again."
+    },
+    "widgetRange": {
+      "report": "Report range",
+      "own": "Own range"
+    },
+    "granularity": {
+      "auto": "Auto",
+      "day": "Day",
+      "week": "Week",
+      "month": "Month"
     }
   },
   "audit": {
@@ -1890,5 +1910,78 @@
       "card": "Card age",
       "photo": "Photo"
     }
+  },
+  "filters": {
+    "dateRange": "Dates",
+    "ranges": {
+      "today": "Today",
+      "7d": "Last 7 days",
+      "30d": "Last 30 days",
+      "90d": "Last 90 days",
+      "custom": "Custom dates"
+    },
+    "own": "This widget’s filters",
+    "ownActive": "This widget uses its own filters",
+    "useShared": "Use page filters",
+    "camera": "Camera",
+    "cameras": "Cameras",
+    "granularity": "Group by",
+    "granularities": {
+      "hour": "Hour",
+      "day": "Day",
+      "month": "Month"
+    },
+    "status": "Camera status",
+    "statuses": {
+      "all": "All",
+      "online": "Online",
+      "offline": "Offline"
+    },
+    "threshold": "Against threshold",
+    "risks": {
+      "all": "All",
+      "high": "At or over threshold",
+      "moderate": "Getting close",
+      "low": "Below"
+    },
+    "allKinds": "All types",
+    "summary": "{camera} · {range}",
+    "pageHint": "Each chart and table starts from these filters; use its filter button to set its own.",
+    "pdfNote": "Each section follows the filters set on it."
+  },
+  "history": {
+    "subtitle": "Every analyzed photo with its count, alarm status and AI notes",
+    "cameraTitle": "Detection history of this camera",
+    "export": "Export",
+    "exportPdf": "PDF with photos",
+    "exportXlsx": "Excel with photos",
+    "allStatus": "All alarm states",
+    "allReviews": "All reviews",
+    "risk": {
+      "high": "Alarm",
+      "moderate": "Warning",
+      "low": "Normal"
+    },
+    "review": {
+      "none": "Not reviewed",
+      "confirmed": "Confirmed",
+      "corrected": "Corrected"
+    },
+    "colCamera": "Camera",
+    "colAlarm": "Alarm status",
+    "colReview": "Review",
+    "colThreshold": "Threshold",
+    "progress": {
+      "records": "Reading {done}/{total}",
+      "images": "Photos {done}/{total}"
+    },
+    "largeExport": "{count} photos match the filters. The file includes every photo with its detection boxes, so it can take a few minutes and be large. Continue?",
+    "exported": "{count} records exported.",
+    "exportFailed": "Could not export the history.",
+    "exportCount": "{count} records",
+    "filterCameras": "Cameras: {cameras}",
+    "filterRange": "Dates: {range}",
+    "filterRisk": "Alarm status: {risk}",
+    "filterReview": "Review: {review}"
   }
 }

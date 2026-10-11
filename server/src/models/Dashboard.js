@@ -3,6 +3,9 @@ const mongoose = require('mongoose');
 const WIDGET_TYPES = ['kpi', 'trend', 'catchesByTrap', 'species', 'cameraRanking', 'dailyTable', 'activity', 'latestSnapshot'];
 // Report time ranges: last 7 or 30 days, 3, 6 or 12 months, or chosen dates
 const RANGE_PRESETS = ['7d', '30d', '3m', '6m', '12m', 'custom'];
+const GRANULARITIES = ['auto', 'day', 'week', 'month'];
+const CAMERA_STATUSES = ['all', 'online', 'offline'];
+const RISK_FILTERS = ['all', 'high', 'moderate', 'low'];
 
 const widgetSchema = new mongoose.Schema({
     id: { type: String, required: true },
@@ -12,6 +15,17 @@ const widgetSchema = new mongoose.Schema({
     cameraSerials: { type: [String], default: [] },
     // Unused since reports have one time range; kept so older documents still validate
     rangeDays: { type: Number, default: 7, min: 1, max: 365 },
+    // The widget's own filters. No range preset = the report's range.
+    range: {
+        preset: { type: String, enum: RANGE_PRESETS, default: undefined },
+        from: { type: String, default: undefined },
+        to: { type: String, default: undefined }
+    },
+    // Days grouped by day, week or month; auto picks from the length of the range
+    granularity: { type: String, enum: GRANULARITIES, default: 'auto' },
+    // Only cameras online/offline, and only cameras whose count now is in a risk level
+    status: { type: String, enum: CAMERA_STATUSES, default: 'all' },
+    risk: { type: String, enum: RISK_FILTERS, default: 'all' },
     // Grid position (24-column grid)
     layout: {
         x: { type: Number, default: 0 },
@@ -62,3 +76,6 @@ const Dashboard = mongoose.model('Dashboard', dashboardSchema);
 module.exports = Dashboard;
 module.exports.WIDGET_TYPES = WIDGET_TYPES;
 module.exports.RANGE_PRESETS = RANGE_PRESETS;
+module.exports.GRANULARITIES = GRANULARITIES;
+module.exports.CAMERA_STATUSES = CAMERA_STATUSES;
+module.exports.RISK_FILTERS = RISK_FILTERS;

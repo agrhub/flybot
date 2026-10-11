@@ -5,8 +5,8 @@ const aiService = require('../services/aiService');
 const s3Service = require('../services/s3Service');
 const { sendServerError } = require('../utils/http');
 const { viewableCameras, canManageSerial } = require('../utils/ownership');
-const { FRUIT_FLY, NON_PEST_LABELS, normalizeSpeciesExpr, isFruitFly } = require('../constants/species');
-const { thresholdOf, riskLevel, worstRisk } = require('../constants/risk');
+const { FRUIT_FLY, NON_PEST_LABELS, normalizeSpeciesExpr, isFruitFly, pestCountExpr } = require('../constants/species');
+const { thresholdOf, riskLevel, worstRisk, moderateFloor } = require('../constants/risk');
 const { countPests } = require('../services/notificationService');
 const forecastService = require('../services/forecastService');
 const { latestProcessedByCamera } = require('../services/snapshotQueries');
@@ -17,38 +17,48 @@ const degreeDayService = require('../services/degreeDayService');
 const catchStats = require('../services/catchStats');
 const { trapKindOf, isSticky } = require('../constants/trap');
 
+const RISK_LEVELS = ['high', 'moderate', 'low'];
+const REVIEW_FILTERS = ['confirmed', 'corrected', 'none'];
+
 /**
- * Get AI detection history with pagination (filter by specific camera or all cameras)
+ * Get AI detection history with pagination.
+ * Query:
+ *  - deviceSerial: one camera or "all"; deviceSerials: comma-separated cameras (takes precedence)
+ *  - startDate, endDate: day range (endDate inclusive)
+ *  - risk: high (alarm: at or over the camera threshold) | moderate | low
+ *  - review: confirmed | corrected | none
+ * Each result carries deviceName, pestCount, threshold and risk, so the table and exports can
+ * show the alarm status of every photo.
  */
 async function getAiResults(req, res) {
     try {
-        const userId = req.user.id;
         const { deviceSerial } = req.query;
-        const page = parseInt(req.query.page, 10) || 1;
-        // Capped at 500 (the Excel export size)
+        const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+        // Capped at 500 per page; exports read page after page
         const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 10, 1), 500);
         const skip = (page - 1) * limit;
 
-        const userCams = await viewableCameras(req.user).select('deviceSerial');
-        const allowedSerials = userCams.map(c => c.deviceSerial);
-
-        // If user has 0 cameras, return empty list
+        const userCams = await viewableCameras(req.user).select('deviceSerial deviceName alertThreshold').lean();
+        const cameraBySerial = new Map(userCams.map(c => [c.deviceSerial, c]));
+        const allowedSerials = [...cameraBySerial.keys()];
         if (allowedSerials.length === 0) {
             return res.json({ success: true, total: 0, page, limit, results: [] });
         }
 
-        const matchQuery = { aiProcessed: true };
-        if (deviceSerial && deviceSerial !== 'all') {
-            if (allowedSerials.length > 0 && !allowedSerials.includes(deviceSerial)) {
+        let serials = allowedSerials;
+        const wanted = typeof req.query.deviceSerials === 'string' && req.query.deviceSerials.trim()
+            ? [...new Set(req.query.deviceSerials.split(',').map(x => x.trim()).filter(Boolean))]
+            : (deviceSerial && deviceSerial !== 'all' ? [deviceSerial] : null);
+        if (wanted) {
+            if (wanted.some(serial => !cameraBySerial.has(serial))) {
                 return res.status(403).json({ success: false, message: "You do not have permission to access this camera." });
             }
-            matchQuery.deviceSerial = deviceSerial;
-        } else if (allowedSerials.length > 0) {
-            matchQuery.deviceSerial = { $in: allowedSerials };
-        } else if (userId) {
-            return res.json({ success: true, total: 0, page, limit, results: [] });
+            serials = wanted;
         }
+        const risk = RISK_LEVELS.includes(req.query.risk) ? req.query.risk : null;
+        const review = REVIEW_FILTERS.includes(req.query.review) ? req.query.review : null;
 
+        const matchQuery = { aiProcessed: true, deviceSerial: serials.length === 1 ? serials[0] : { $in: serials } };
         if (req.query.startDate && req.query.endDate) {
             matchQuery.createdAt = {
                 $gte: new Date(req.query.startDate),
@@ -59,20 +69,52 @@ async function getAiResults(req, res) {
         } else if (req.query.endDate) {
             matchQuery.createdAt = { $lte: new Date(new Date(req.query.endDate).setHours(23, 59, 59, 999)) };
         }
+        if (review === 'none') matchQuery['review.status'] = { $exists: false };
+        else if (review) matchQuery['review.status'] = review;
 
-        const total = await Snapshot.countDocuments(matchQuery);
-        const results = await Snapshot.find(matchQuery)
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limit);
+        const describe = (doc) => {
+            const camera = cameraBySerial.get(doc.deviceSerial);
+            const threshold = thresholdOf(camera);
+            const pestCount = countPests(doc.aiResults?.summary);
+            return { ...doc, deviceName: camera?.deviceName || doc.deviceSerial, pestCount, threshold, risk: riskLevel(pestCount, threshold) };
+        };
 
-        res.json({
-            success: true,
-            total,
-            page,
-            limit,
-            results
-        });
+        let total;
+        let docs;
+        if (!risk) {
+            [total, docs] = await Promise.all([
+                Snapshot.countDocuments(matchQuery),
+                Snapshot.find(matchQuery).sort({ createdAt: -1 }).skip(skip).limit(limit).lean()
+            ]);
+        } else {
+            // The risk depends on each camera's threshold: compare in the database
+            const switchOf = (valueOf) => ({
+                $switch: {
+                    branches: serials.map(serial => ({ case: { $eq: ['$deviceSerial', serial] }, then: valueOf(cameraBySerial.get(serial)) })),
+                    default: valueOf(null)
+                }
+            });
+            const count = '$$count';
+            const levelExpr = {
+                $let: {
+                    vars: { count: pestCountExpr() },
+                    in: {
+                        $cond: [{ $gte: [count, switchOf(thresholdOf)] }, 'high',
+                            { $cond: [{ $gte: [count, switchOf(c => moderateFloor(thresholdOf(c)))] }, 'moderate', 'low'] }]
+                    }
+                }
+            };
+            const [result] = await Snapshot.aggregate([
+                { $match: matchQuery },
+                { $sort: { createdAt: -1 } },
+                { $match: { $expr: { $eq: [levelExpr, risk] } } },
+                { $facet: { total: [{ $count: 'n' }], page: [{ $skip: skip }, { $limit: limit }] } }
+            ]);
+            total = result?.total?.[0]?.n || 0;
+            docs = result?.page || [];
+        }
+
+        res.json({ success: true, total, page, limit, results: docs.map(describe) });
     } catch (error) {
         console.error("❌ Error fetching AI history:", error);
         sendServerError(res, error);
@@ -910,7 +952,11 @@ async function getAiComparison(req, res) {
         const userCameras = await viewableCameras(req.user);
         const bySerial = new Map();
         userCameras.forEach(c => { if (!bySerial.has(c.deviceSerial)) bySerial.set(c.deviceSerial, c); });
-        const cameras = [...bySerial.values()];
+        // Optional: only some of my cameras (comma-separated serials)
+        const wanted = typeof req.query.deviceSerials === 'string' && req.query.deviceSerials.trim()
+            ? new Set(req.query.deviceSerials.split(',').map(x => x.trim()).filter(Boolean))
+            : null;
+        const cameras = [...bySerial.values()].filter(c => !wanted || wanted.has(c.deviceSerial));
 
         const now = new Date();
         const currentStart = new Date(now.getTime() - days * 86400000);

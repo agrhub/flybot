@@ -24,7 +24,7 @@ export const newWidgetId = () => `w${Date.now().toString(36)}${Math.random().toS
 
 export function newWidget(type, order = 0) {
   const size = DEFAULT_SIZE[type] || { w: 12, h: 4 };
-  return { id: newWidgetId(), type, title: '', cameraSerials: [], layout: { x: 0, y: order, ...size } };
+  return { id: newWidgetId(), type, title: '', cameraSerials: [], range: null, granularity: 'auto', status: 'all', risk: 'all', layout: { x: 0, y: order, ...size } };
 }
 
 // Starter layout for a new report

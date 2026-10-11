@@ -129,6 +129,7 @@
 import { ref, watch, computed, nextTick, onUnmounted } from 'vue'
 import Chart from 'chart.js/auto'
 import api from '@/services/api'
+import { drawDetections } from '@/utils/detectionImage'
 import { useI18n } from 'vue-i18n'
 import { ElNotification } from 'element-plus'
 import { Check, EditPen, Delete, Plus } from '@element-plus/icons-vue'
@@ -243,35 +244,7 @@ const drawDetection = () => {
     canvas.height = img.height
     ctx.drawImage(img, 0, 0)
 
-    const detections = props.item.aiResults?.insects || []
-    detections.forEach(det => {
-      const box = det.bbox
-      if (!box || box.length < 4) return
-
-      const x = box[0]
-      const y = box[1]
-      const w = box[2] - box[0]
-      const h = box[3] - box[1]
-
-      // Draw bounding box
-      ctx.strokeStyle = '#2563eb'
-      ctx.lineWidth = Math.max(2, img.width / 400)
-      ctx.strokeRect(x, y, w, h)
-
-      // Draw label background
-      ctx.fillStyle = '#2563eb'
-      const fontSize = Math.max(12, Math.round(img.width / 60))
-      ctx.font = `bold ${fontSize}px Quicksand, sans-serif`
-      const conf = det.confidence ? Math.round(det.confidence * 100) : 100
-      const label = `${speciesName(det.name, t)} (${conf}%)`
-      const textWidth = ctx.measureText(label).width
-
-      ctx.fillRect(x, Math.max(0, y - fontSize - 6), textWidth + 10, fontSize + 6)
-
-      // Draw label text
-      ctx.fillStyle = '#ffffff'
-      ctx.fillText(label, x + 5, Math.max(fontSize, y - 4))
-    })
+    drawDetections(ctx, props.item.aiResults?.insects, { t, imageWidth: img.width })
 
     imageLoading.value = false
   }

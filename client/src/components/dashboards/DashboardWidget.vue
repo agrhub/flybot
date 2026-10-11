@@ -7,6 +7,7 @@
           <span class="dash-widget__title truncate">{{ widget.title || t(`dashboards.widgetTypes.${widget.type}`) }}</span>
         </div>
         <div class="flex items-center gap-1 shrink-0">
+          <el-tag v-for="tag in ownTags" :key="tag" type="primary" effect="plain" size="small" class="hidden sm:inline-flex">{{ tag }}</el-tag>
           <el-tooltip v-if="shortWindow" :content="t('dashboards.activityWindow', { days: data.windowDays })" placement="top">
             <el-tag type="info" effect="plain" size="small">{{ t('dashboards.lastDays', { days: data.windowDays }) }}</el-tag>
           </el-tooltip>
@@ -184,7 +185,7 @@ import StatCard from '@/components/common/StatCard.vue';
 import CatchBarChart from '@/components/charts/CatchBarChart.vue';
 import ActivityHeatmap from '@/components/charts/ActivityHeatmap.vue';
 import { speciesName } from '@/utils/species';
-import { formatDayKey, formatPeriod, formatNumber, formatChange, changeTagType } from '@/utils/dashboards';
+import { formatDayKey, formatPeriod, formatNumber, formatChange, changeTagType, rangeLabel } from '@/utils/dashboards';
 
 const props = defineProps({
   widget: { type: Object, required: true },
@@ -207,7 +208,13 @@ const chartRef = ref(null);
 let chart = null;
 
 const bodyHeight = computed(() => Math.max(140, (props.widget.layout?.h || 4) * ROW_HEIGHT - HEADER_HEIGHT));
-const shortWindow = computed(() => props.widget.type === 'activity' && props.data?.windowDays && props.rangeDays > props.data.windowDays);
+const shortWindow = computed(() => props.widget.type === 'activity' && props.data?.windowDays && (props.data.range?.days || props.rangeDays) > props.data.windowDays);
+// The widget's own filters, shown next to its title
+const ownTags = computed(() => [
+  ...(props.widget.range?.preset ? [rangeLabel(t, props.widget.range)] : []),
+  ...(props.widget.status && props.widget.status !== 'all' ? [t(`filters.statuses.${props.widget.status}`)] : []),
+  ...(props.widget.risk && props.widget.risk !== 'all' ? [t(`filters.risks.${props.widget.risk}`)] : []),
+]);
 const hasTrend = computed(() => (props.data?.points || []).some(p => p.value || p.previous));
 
 const trapLabels = computed(() => (props.data?.labels || []).map(key => formatDayKey(key, props.data.unit === 'month' ? 'month' : 'day')));
@@ -244,7 +251,7 @@ const renderChart = async () => {
     chart = new Chart(chartRef.value, {
       type: 'line',
       data: {
-        labels: points.map(p => formatDayKey(p.date)),
+        labels: points.map(p => formatDayKey(p.date, props.data.unit === 'month' ? 'month' : 'day')),
         datasets: [
           {
             label: t('dashboards.thisPeriod'),

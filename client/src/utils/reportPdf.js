@@ -61,6 +61,8 @@ export async function exportReportPdf({ t, locale, report, range, widgets, data,
       margin: { left: MARGIN, right: MARGIN },
       head: [head],
       body: body.length ? body : [[t('dashboards.noDetections'), ...head.slice(1).map(() => '')]],
+      // Short tables stay on one page
+      pageBreak: body.length <= 20 ? 'avoid' : 'auto',
       theme: 'grid',
       styles: { font: 'Quicksand', fontSize: 8.5, valign: 'middle', textColor: TEXT },
       headStyles: { fillColor: BRAND, textColor: [255, 255, 255], fontStyle: 'bold' },
@@ -100,6 +102,13 @@ export async function exportReportPdf({ t, locale, report, range, widgets, data,
     // Keep a title with the start of what follows it
     ensure(found ? found.height + 12 : 28);
     write(widget.title || t(`dashboards.widgetTypes.${widget.type}`), { size: 12, color: TEXT, bold: true, gap: 7 });
+    // The widget's own filters
+    const own = [
+      ...(widget.range?.preset && d?.range ? [t('dashboards.pdf.ownRange', { from: fullDay(d.range.from), to: fullDay(d.range.to) })] : []),
+      ...(widget.status && widget.status !== 'all' ? [t(`filters.statuses.${widget.status}`)] : []),
+      ...(widget.risk && widget.risk !== 'all' ? [t(`filters.risks.${widget.risk}`)] : []),
+    ];
+    if (own.length) write(own.join(' · '));
     if (!d) {
       write(t('dashboards.noDetections'));
       y += 3;

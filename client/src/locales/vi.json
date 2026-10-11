@@ -402,7 +402,12 @@
         "low_contrast": "Mờ đục hơn bình thường: lau ống kính, lau hơi nước đọng hoặc bụi.",
         "card_full": "Tấm bẫy gần kín. Hãy thay tấm mới để đếm được côn trùng mới."
       }
-    }
+    },
+    "prevDay": "Ngày trước",
+    "nextDay": "Ngày sau",
+    "noClips": "Không có bản ghi trong ngày này",
+    "zoomIn": "Phóng to",
+    "zoomOut": "Thu nhỏ"
   },
   "analytics": {
     "title": "Báo Cáo & Lịch Sử Nhận Dạng AI",
@@ -528,7 +533,11 @@
     "metricCatches": "Ruồi mới",
     "metricOnTrap": "Trên bẫy",
     "catchesInPeriod": "Ruồi vào bẫy trong kỳ",
-    "catchesInPeriodDesc": "Tổng số ruồi mới trong khoảng đã chọn"
+    "catchesInPeriodDesc": "Tổng số ruồi mới trong khoảng đã chọn",
+    "onTrapHourly": "Số đếm trên bẫy theo giờ",
+    "summaryTitle": "Tổng quan",
+    "exportAllPdf": "Xuất PDF",
+    "exportAllHint": "File PDF gồm cả ba tab: Biểu đồ & Xu hướng, Phân tích chuyên sâu và lịch sử nhận diện với mọi ảnh khớp bộ lọc. Mỗi phần theo bộ lọc đang đặt cho phần đó. Lịch sử dài có thể mất vài phút."
   },
   "settings": {
     "title": "Cài Đặt Hệ Thống",
@@ -779,12 +788,12 @@
           "live": {
             "title": "Lưới camera",
             "desc": "Trang Camera hiển thị mọi camera của bạn dạng lưới, kèm trạng thái kết nối và ảnh chụp gần nhất.",
-            "items": "Chọn kiểu lưới 2x2, 3x3 hoặc Tự động ở góc trên.\nCamera trực tuyến phát hình trực tiếp; camera ngoại tuyến hiện ảnh gần nhất kèm nút \"Làm mới\".\nBấm \"Xem chi tiết\" để mở một camera: xem trực tiếp chất lượng cao, xem lại thẻ nhớ theo giờ.\nVới camera bật mã hoá video, nhập mã xác thực khi được hỏi."
+            "items": "Chọn kiểu lưới 2x2, 3x3 hoặc Tự động ở góc trên.\nCamera trực tuyến phát hình trực tiếp; camera ngoại tuyến hiện ảnh gần nhất kèm nút \"Làm mới\".\nBấm \"Xem chi tiết\" để mở một camera: hình trực tiếp chất lượng cao ở trên, ngay dưới là phần xem lại.\nPhần xem lại: chọn ngày (mũi tên để lùi, tiến một ngày), các đoạn ghi hình xếp ngang kèm ảnh AI gần nhất; bên dưới là thanh 24 giờ, đoạn có ghi hình được tô màu. Bấm một đoạn hoặc một vị trí trên thanh để xem lại; dùng nút phóng to, thu nhỏ để xem chi tiết theo giờ; \"Về xem trực tiếp\" để quay lại.\nVới camera bật mã hoá video, nhập mã xác thực khi được hỏi."
           },
           "health": {
             "title": "Chụp ngay & tình trạng camera",
             "desc": "Phần chi tiết camera cho biết camera có đang chụp và phân tích đều đặn không.",
-            "items": "Bấm \"Chụp ngay\" để chụp và cho AI đếm ngay, không chờ lịch.\nXem \"Ảnh gần nhất\", \"Số ảnh (24 giờ)\" và \"AI phân tích (24 giờ)\": tỷ lệ thấp nghĩa là ảnh lỗi hoặc dịch vụ AI gặp sự cố.\n\"Chất lượng ảnh\" báo Quá tối, Quá sáng, Ảnh mờ, Ống kính bẩn hoặc Bẫy đầy; di chuột vào nhãn để xem cách khắc phục."
+            "items": "Bấm \"Chụp ngay\" dưới khung hình để chụp và cho AI đếm ngay, không chờ lịch.\nBấm \"Thông tin nhanh\" để mở thông tin camera: trạng thái, mã xác thực, mẫu thiết bị, ảnh gần nhất, số ảnh và tỷ lệ AI phân tích trong 24 giờ, lịch chụp.\n\"Chất lượng ảnh\" báo Quá tối, Quá sáng, Ảnh mờ, Ống kính bẩn hoặc Bẫy đầy; khi có vấn đề, nhãn hiện ngay dưới khung hình."
           },
           "card": {
             "title": "Bảo trì bẫy",
@@ -799,17 +808,17 @@
           "count": {
             "title": "Xem AI đếm trên ảnh",
             "desc": "Mỗi ảnh được AI đếm; khung xanh đánh dấu từng con kèm độ tin cậy.",
-            "items": "Vào Analytics, chọn camera và khoảng thời gian, mở tab \"Lịch sử Snapshot\".\nBấm biểu tượng con mắt ở một dòng để mở ảnh: khung nhận diện, số lượng theo loài và biểu đồ tỷ lệ.\nSố bắt mỗi ngày là phần tăng thêm trên tấm bẫy so với hôm trước; ngày thay tấm không được tính."
+            "items": "Vào Analytics, mở tab \"Lịch sử Snapshot\", hoặc mở một camera và kéo xuống \"Lịch sử nhận diện của camera\".\nBảng có bộ lọc riêng: camera (chọn nhiều), thời gian, trạng thái cảnh báo (Cảnh báo, Cần chú ý, Bình thường) và trạng thái duyệt.\nCột \"Trạng thái cảnh báo\" so số đếm của ảnh với ngưỡng của camera; khi chọn nhiều camera, bảng có thêm cột Camera.\nBấm biểu tượng con mắt ở một dòng để mở ảnh: khung nhận diện, số lượng theo loài và biểu đồ tỷ lệ.\n\"Xuất dữ liệu\" lưu mọi bản ghi khớp bộ lọc (không chỉ trang đang xem), kèm ảnh có khung nhận diện: \"PDF kèm ảnh\" hoặc \"Excel kèm ảnh\" (mỗi camera một sheet)."
           },
           "review": {
             "title": "Xác nhận hoặc sửa số đếm",
             "desc": "Kỹ thuật viên kiểm tra kết quả AI để số liệu đáng tin hơn.",
-            "items": "Trong ảnh chi tiết, bấm \"Xác nhận đúng\" nếu AI đếm chính xác.\nBấm \"Sửa số đếm\" để nhập lại số lượng từng loài và ghi chú.\nSố đã sửa được dùng cho mọi thống kê, cảnh báo và báo cáo; bấm \"Xuất dữ liệu đã sửa\" để lấy danh sách ảnh đã sửa."
+            "items": "Trong ảnh chi tiết, bấm \"Xác nhận đúng\" nếu AI đếm chính xác.\nBấm \"Sửa số đếm\" để nhập lại số lượng từng loài và ghi chú.\nSố đã sửa được dùng cho mọi thống kê, cảnh báo và báo cáo; trong bảng lịch sử, mục \"Xuất dữ liệu\" có \"Xuất dữ liệu đã sửa\" để lấy danh sách ảnh đã sửa."
           },
           "analytics": {
             "title": "Biểu đồ & báo cáo",
             "desc": "Tab \"Biểu đồ & Xu Hướng\" cho thấy số ruồi theo thời gian và theo loài; Tổng quan có thêm biểu đồ 14 ngày theo từng bẫy.",
-            "items": "Chọn \"Ruồi mới\" để xem số ruồi vào bẫy mỗi ngày, hoặc \"Trên bẫy\" để xem số đếm trong ảnh (trên tấm keo tăng dần đến khi thay tấm; đường gạch đánh dấu ngày thay và ngày xử lý).\nChọn xem theo Giờ, Ngày hoặc Tháng.\nThẻ phía trên: số hiện có trên bẫy, loài phổ biến, ruồi vào bẫy trong kỳ và xu hướng 3 ngày gần nhất.\nBấm \"Xuất Báo Cáo PDF\" hoặc \"Xuất Excel\" để lưu báo cáo cho khoảng đã chọn."
+            "items": "Bộ lọc trên cùng (camera, thời gian) áp dụng cho cả trang; mỗi biểu đồ và bảng có nút lọc riêng (camera, thời gian, nhóm theo, trạng thái camera, so với ngưỡng, loại bẫy). Dấu chấm trên nút cho biết khối đó đang lọc riêng; bấm \"Theo bộ lọc chung\" để quay lại.\nChọn \"Ruồi mới\" để xem số ruồi vào bẫy mỗi ngày, hoặc \"Trên bẫy\" để xem số đếm trong ảnh (trên tấm keo tăng dần đến khi thay tấm; đường gạch đánh dấu ngày thay và ngày xử lý). Xem theo Giờ là số đếm trên bẫy.\nThẻ phía trên: số hiện có trên bẫy, loài phổ biến, ruồi vào bẫy trong kỳ và xu hướng 3 ngày gần nhất.\nBấm \"Xuất PDF\" để lưu cả ba tab (Biểu đồ & Xu hướng, Phân tích chuyên sâu, Lịch sử) trong một file, mỗi phần theo bộ lọc của phần đó."
           },
           "insights": {
             "title": "Phân tích chuyên sâu",
@@ -1417,7 +1426,8 @@
       "value": "Giá trị",
       "hour": "Giờ",
       "count": "Trên bẫy",
-      "time": "Thời điểm chụp"
+      "time": "Thời điểm chụp",
+      "ownRange": "Khoảng riêng: {from} - {to}"
     },
     "expiry": {
       "title": "Thời hạn chia sẻ",
@@ -1430,6 +1440,16 @@
       "expired": "Đã hết hạn chia sẻ",
       "until": "Chia sẻ đến {time}",
       "expiredHint": "Đã hết hạn chia sẻ. Chọn ngày muộn hơn hoặc \"Không hết hạn\" để chia sẻ lại."
+    },
+    "widgetRange": {
+      "report": "Theo báo cáo",
+      "own": "Khoảng riêng"
+    },
+    "granularity": {
+      "auto": "Tự động",
+      "day": "Ngày",
+      "week": "Tuần",
+      "month": "Tháng"
     }
   },
   "audit": {
@@ -1890,5 +1910,78 @@
       "card": "Tuổi tấm keo",
       "photo": "Ảnh"
     }
+  },
+  "filters": {
+    "dateRange": "Thời gian",
+    "ranges": {
+      "today": "Hôm nay",
+      "7d": "7 ngày qua",
+      "30d": "30 ngày qua",
+      "90d": "90 ngày qua",
+      "custom": "Chọn ngày"
+    },
+    "own": "Bộ lọc của khối này",
+    "ownActive": "Khối này đang dùng bộ lọc riêng",
+    "useShared": "Theo bộ lọc chung",
+    "camera": "Camera",
+    "cameras": "Các camera",
+    "granularity": "Nhóm theo",
+    "granularities": {
+      "hour": "Giờ",
+      "day": "Ngày",
+      "month": "Tháng"
+    },
+    "status": "Trạng thái camera",
+    "statuses": {
+      "all": "Tất cả",
+      "online": "Trực tuyến",
+      "offline": "Ngoại tuyến"
+    },
+    "threshold": "So với ngưỡng",
+    "risks": {
+      "all": "Tất cả",
+      "high": "Chạm hoặc vượt ngưỡng",
+      "moderate": "Gần ngưỡng",
+      "low": "Dưới ngưỡng"
+    },
+    "allKinds": "Tất cả loại",
+    "summary": "{camera} · {range}",
+    "pageHint": "Mỗi biểu đồ và bảng bắt đầu từ bộ lọc này; bấm nút lọc trên từng khối để lọc riêng.",
+    "pdfNote": "Mỗi phần theo bộ lọc đang đặt cho phần đó."
+  },
+  "history": {
+    "subtitle": "Mọi ảnh đã phân tích kèm số đếm, trạng thái cảnh báo và nhận xét của AI",
+    "cameraTitle": "Lịch sử nhận diện của camera",
+    "export": "Xuất dữ liệu",
+    "exportPdf": "PDF kèm ảnh",
+    "exportXlsx": "Excel kèm ảnh",
+    "allStatus": "Mọi trạng thái cảnh báo",
+    "allReviews": "Mọi trạng thái duyệt",
+    "risk": {
+      "high": "Cảnh báo",
+      "moderate": "Cần chú ý",
+      "low": "Bình thường"
+    },
+    "review": {
+      "none": "Chưa duyệt",
+      "confirmed": "Đã xác nhận",
+      "corrected": "Đã sửa"
+    },
+    "colCamera": "Camera",
+    "colAlarm": "Trạng thái cảnh báo",
+    "colReview": "Duyệt",
+    "colThreshold": "Ngưỡng",
+    "progress": {
+      "records": "Đang đọc {done}/{total}",
+      "images": "Ảnh {done}/{total}"
+    },
+    "largeExport": "Có {count} ảnh khớp bộ lọc. File gồm mọi ảnh kèm khung nhận diện nên có thể mất vài phút và dung lượng lớn. Tiếp tục?",
+    "exported": "Đã xuất {count} bản ghi.",
+    "exportFailed": "Không xuất được lịch sử.",
+    "exportCount": "{count} bản ghi",
+    "filterCameras": "Camera: {cameras}",
+    "filterRange": "Thời gian: {range}",
+    "filterRisk": "Trạng thái cảnh báo: {risk}",
+    "filterReview": "Duyệt: {review}"
   }
 }

@@ -336,6 +336,7 @@
     "invalid_expiry_date": "Invalid expiry date.",
     "the_expiry_date_must_be_in_the_future": "The expiry date must be in the future.",
     "the_expiry_date_can_be_at_most_5_years_ahead": "The expiry date can be at most 5 years ahead.",
-    "this_report_link_has_expired": "This report link has expired."
+    "this_report_link_has_expired": "This report link has expired.",
+    "invalid_widget_filter": "Invalid widget filter."
   }
 }

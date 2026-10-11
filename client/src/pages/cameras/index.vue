@@ -140,10 +140,15 @@
         </div>
       </el-card>
 
-      <!-- Live Player and Playback Section -->
-      <div class="w-full flex justify-center">
-        <LiveTab
-          :camera="currentDetailCamera"
+      <!-- Live view, recordings, trap upkeep, then this camera's detection history -->
+      <div class="flex flex-col gap-4">
+        <LiveTab :camera="currentDetailCamera" />
+        <DetectionHistory
+          v-if="currentDetailCamera?.deviceSerial"
+          :key="currentDetailCamera.deviceSerial"
+          :camera-serials="[currentDetailCamera.deviceSerial]"
+          :default-range="{ preset: '7d' }"
+          :title="t('history.cameraTitle')"
         />
       </div>
     </template>
@@ -160,6 +165,7 @@ import { useBreakpoints } from '@/composables/useBreakpoints';
 import PageHeader from '@/components/common/PageHeader.vue';
 import LiveTab from '@/components/cameras/LiveTab.vue';
 import GridCameraCard from '@/components/cameras/GridCameraCard.vue';
+import DetectionHistory from '@/components/history/DetectionHistory.vue';
 
 const { t } = useI18n();
 const { cameras, selectedCamera, selectCamera, openAddCameraModal } = useCameras();

@@ -306,3 +306,39 @@ test('admins see, edit and publish any dashboard; managers only their own', asyn
     assert.equal((await request(`/api/dashboards/${id}`, { method: 'DELETE', as: m2 })).status, 404);
     assert.equal((await request(`/api/dashboards/${id}`, { method: 'DELETE', as: m1 })).status, 200);
 });
+
+test('widgets can have their own range, grouping, camera status and threshold filters', async () => {
+    const owner = await createUser({ role: 'manager' });
+    await createCamera(owner, { deviceSerial: 'A1', deviceName: 'Plot A', alertThreshold: 10, status: 1 });
+    await createCamera(owner, { deviceSerial: 'B1', deviceName: 'Plot B', alertThreshold: 10, status: 0 });
+    await models.DailyStat.insertMany([
+        row('A1', 20, 1), row('A1', 19, 3), row('A1', 1, 2), row('A1', 0, 6),
+        row('B1', 1, 1), row('B1', 0, 2)
+    ]);
+    await models.Snapshot.create({
+        deviceSerial: 'A1', imageUrl: 'x', s3Key: `snapshots/A1/A1_${Date.now()}.jpg`,
+        aiProcessed: true, aiResults: { detected: true, summary: { fruit_fly: 12 } }
+    });
+    const widgets = [
+        { id: 'week', type: 'kpi' },
+        { id: 'month', type: 'kpi', range: { preset: '30d' } },
+        { id: 'online', type: 'kpi', status: 'online' },
+        { id: 'alarm', type: 'cameraRanking', risk: 'high' },
+        { id: 'weekly', type: 'trend', range: { preset: '30d' }, granularity: 'week' }
+    ];
+    const { body } = await json(await create(owner, { name: 'Filters', cameraSerials: ['A1', 'B1'], widgets }));
+    assert.equal(body.dashboard.widgets[1].range.preset, '30d');
+    assert.equal(body.dashboard.widgets[0].range, null);
+    const w = (await json(await request(`/api/dashboards/${body.dashboard.id}/data`, { as: owner }))).body.widgets;
+    assert.equal(w.week.catches, 5, 'A1 +4, B1 +1 this week');
+    assert.equal(w.week.range.own, false);
+    assert.equal(w.month.catches, 7, 'the widget reads 30 days: A1 +2 on day 19 too');
+    assert.deepEqual([w.month.range.days, w.month.range.own], [30, true]);
+    assert.equal(w.online.cameras, 1);
+    assert.deepEqual(w.alarm.cameras.map(c => c.deviceSerial), ['A1']);
+    assert.equal(w.weekly.unit, 'week');
+    assert.equal(w.weekly.points.length, 5);
+
+    const bad = await create(owner, { name: 'Bad', widgets: [{ id: 'x', type: 'kpi', granularity: 'year' }] });
+    assert.equal(bad.status, 400);
+});

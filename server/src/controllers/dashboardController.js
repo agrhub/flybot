@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 const mongoose = require('mongoose');
 const { Dashboard, Camera, User } = require('../models');
-const { WIDGET_TYPES } = require('../models/Dashboard');
+const { WIDGET_TYPES, GRANULARITIES, CAMERA_STATUSES, RISK_FILTERS } = require('../models/Dashboard');
 const { viewFilter } = require('../utils/ownership');
 const { sendServerError } = require('../utils/http');
 const { normalizeLanguage } = require('../utils/i18n');
@@ -77,6 +77,10 @@ function toDetail(dashboard, user) {
             type: w.type,
             title: w.title,
             cameraSerials: w.cameraSerials,
+            range: w.range?.preset ? (w.range.preset === 'custom' ? { preset: 'custom', from: w.range.from, to: w.range.to } : { preset: w.range.preset }) : null,
+            granularity: w.granularity || 'auto',
+            status: w.status || 'all',
+            risk: w.risk || 'all',
             layout: { x: w.layout?.x ?? 0, y: w.layout?.y ?? 0, w: w.layout?.w ?? 12, h: w.layout?.h ?? 4 }
         }))
     };
@@ -143,12 +147,29 @@ async function validateInput(body, { editor, owner, partial = false, current = n
             if (!isInt(layout.x, 0, 23) || !isInt(layout.y, 0, 1000) || !isInt(layout.w, 1, 24) || !isInt(layout.h, 1, 20) || layout.x + layout.w > 24) {
                 return { error: "Invalid widget layout." };
             }
+            // The widget's own filters (all optional)
+            let range;
+            if (w.range) {
+                const parsed = dashboardService.parseRange(w.range);
+                if (parsed.error) return { error: parsed.error };
+                range = parsed.range;
+            }
+            const granularity = w.granularity ?? 'auto';
+            const status = w.status ?? 'all';
+            const risk = w.risk ?? 'all';
+            if (!GRANULARITIES.includes(granularity) || !CAMERA_STATUSES.includes(status) || !RISK_FILTERS.includes(risk)) {
+                return { error: "Invalid widget filter." };
+            }
             ids.add(w.id);
             value.widgets.push({
                 id: w.id,
                 type: w.type,
                 title: text(w.title, 80),
                 cameraSerials: [...new Set(serials)],
+                range,
+                granularity,
+                status,
+                risk,
                 layout: { x: layout.x, y: layout.y, w: layout.w, h: layout.h }
             });
         }

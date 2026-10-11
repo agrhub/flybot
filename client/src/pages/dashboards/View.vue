@@ -133,6 +133,33 @@
             <el-option v-for="serial in draft.cameraSerials" :key="serial" :label="cameraName(serial)" :value="serial" />
           </el-select>
         </el-form-item>
+
+        <!-- The widget's own filters -->
+        <el-divider content-position="left">{{ t('filters.own') }}</el-divider>
+        <el-form-item v-if="editingWidget.type !== 'latestSnapshot'" :label="t('dashboards.range')">
+          <div class="flex flex-col gap-2 w-full">
+            <el-radio-group :model-value="editingWidget.range ? 'own' : 'report'" @update:model-value="setWidgetRangeMode">
+              <el-radio value="report">{{ t('dashboards.widgetRange.report') }}</el-radio>
+              <el-radio value="own">{{ t('dashboards.widgetRange.own') }}</el-radio>
+            </el-radio-group>
+            <ReportRangePicker v-if="editingWidget.range" v-model="editingWidget.range" />
+          </div>
+        </el-form-item>
+        <el-form-item v-if="['trend', 'catchesByTrap', 'dailyTable'].includes(editingWidget.type)" :label="t('filters.granularity')">
+          <el-segmented v-model="editingWidget.granularity" :options="granularityOptions" />
+        </el-form-item>
+        <el-form-item :label="t('filters.status')">
+          <el-select v-model="editingWidget.status" class="w-full">
+            <el-option v-for="s in ['all', 'online', 'offline']" :key="s" :label="t(`filters.statuses.${s}`)" :value="s" />
+          </el-select>
+        </el-form-item>
+        <el-form-item :label="t('filters.threshold')">
+          <el-select v-model="editingWidget.risk" class="w-full">
+            <el-option v-for="r in ['all', 'high', 'moderate', 'low']" :key="r" :label="t(`filters.risks.${r}`)" :value="r" />
+          </el-select>
+        </el-form-item>
+
+        <el-divider />
         <el-form-item :label="t('dashboards.width')">
           <el-segmented v-model="editingWidget.layout.w" :options="widthOptions" />
         </el-form-item>
@@ -287,6 +314,10 @@ const cameraOptions = computed(() => {
 const cameraName = (serial) => cameraOptions.value.find(c => c.deviceSerial === serial)?.deviceName || serial;
 const hasSharedCameras = computed(() => draft.cameraSerials.some(s => cameras.value.find(c => c.deviceSerial === s)?.canManage === false));
 
+const granularityOptions = computed(() => ['auto', 'day', 'week', 'month'].map(g => ({ value: g, label: t(`dashboards.granularity.${g}`) })));
+const setWidgetRangeMode = (mode) => {
+  editingWidget.value.range = mode === 'own' ? { preset: '30d' } : null;
+};
 const widthOptions = computed(() => WIDGET_WIDTHS.map(w => ({ value: w, label: t(`dashboards.widths.${w}`) })));
 const heightOptions = computed(() => WIDGET_HEIGHTS.map(h => ({ value: h, label: t(`dashboards.heights.${h}`) })));
 
@@ -294,7 +325,7 @@ const startEditing = () => {
   draft.name = dashboard.value.name;
   draft.description = dashboard.value.description || '';
   draft.cameraSerials = [...dashboard.value.cameraSerials];
-  draft.widgets = clone(dashboard.value.widgets).sort((a, b) => a.layout.y - b.layout.y || a.layout.x - b.layout.x);
+  draft.widgets = clone(dashboard.value.widgets).map(w => ({ range: null, granularity: 'auto', status: 'all', risk: 'all', ...w })).sort((a, b) => a.layout.y - b.layout.y || a.layout.x - b.layout.x);
   editing.value = true;
 };
 

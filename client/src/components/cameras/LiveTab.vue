@@ -1,8 +1,8 @@
 <template>
-  <div class="flex flex-col gap-6 w-full max-w-6xl pb-10">
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-      <!-- Video Player (2 Cols) -->
-      <div class="live-tab__viewport lg:col-span-2 bg-black rounded-lg overflow-hidden aspect-video relative group flex items-center justify-center">
+  <div class="flex flex-col gap-4 w-full pb-4">
+    <div class="flex flex-col gap-3">
+      <!-- Video player -->
+      <div class="live-tab__viewport bg-black rounded-lg overflow-hidden aspect-video max-h-[65vh] w-full relative group flex items-center justify-center">
         <div id="hls-video" ref="hlsContainer" class="w-full h-full object-contain hidden"></div>
         <video ref="hlsVideo" controls autoplay playsinline class="w-full h-full object-contain hidden"></video>
         <div id="ezopen-video" ref="ezopenVideo" class="w-full h-full object-contain hidden"></div>
@@ -22,124 +22,133 @@
         </div>
       </div>
 
-      <!-- Quick Info Side Cards (1 Col) -->
-      <el-card shadow="never">
-        <template #header>
-          <div class="flex items-center justify-between gap-2">
-            <span class="live-tab__card-title">{{ t('cameras.quickInfo') }}</span>
-            <el-button
-              v-if="camera && camera.canManage !== false"
-              size="small"
-              type="primary"
-              plain
-              :icon="Camera"
-              :loading="capturing"
-              @click="handleCaptureNow"
-            >
-              {{ t('cameras.captureNow') }}
-            </el-button>
-          </div>
-        </template>
-        <el-descriptions :column="1" size="small">
-          <el-descriptions-item :label="t('cameras.status')">
-            <el-tag :type="camera?.status === 1 ? 'success' : 'info'" effect="light" round size="small">
-              {{ camera?.status === 1 ? t('common.online') : t('common.offline') }}
-            </el-tag>
-          </el-descriptions-item>
-          <el-descriptions-item :label="t('cameras.cloudService')">
-            <el-tag type="success" effect="light" round size="small">{{ t('cameras.cloudConnected') }}</el-tag>
-          </el-descriptions-item>
-          <el-descriptions-item :label="t('cameras.currentStream')">
-            <span class="inline-flex items-center gap-1.5">
-              <el-tag type="success" effect="plain" size="small">HD</el-tag>
-              <span class="live-tab__value">{{ currentStreamType }}</span>
-            </span>
-          </el-descriptions-item>
-          <el-descriptions-item :label="t('cameras.validateCode')">
-            <span class="inline-flex items-center gap-1.5">
-              <el-tag type="info" effect="plain" size="small" class="font-mono">
-                {{ camera?.validateCode || '--' }}
-              </el-tag>
-              <el-tooltip v-if="camera && camera.canManage !== false" :content="t('cameras.updateCode')" placement="top">
-                <el-button
-                  @click="openValidateCodeDialog"
-                  size="small"
-                  text
-                  circle
-                  type="primary"
-                  :icon="EditPen"
-                />
-              </el-tooltip>
-            </span>
-          </el-descriptions-item>
-          <el-descriptions-item :label="t('cameras.encrypted')">
-            <el-tag :type="camera?.isEncrypt === 1 ? 'warning' : 'success'" effect="light" round size="small">
-              {{ camera?.isEncrypt === 1 ? t('cameras.encryptOn') : t('cameras.encryptOff') }}
-            </el-tag>
-          </el-descriptions-item>
-          <el-descriptions-item v-if="camera?.model || camera?.deviceType" :label="t('cameras.model')">
-            <span class="live-tab__value truncate inline-block max-w-[160px] align-bottom" :title="camera?.model || camera?.deviceType">
-              {{ camera?.model || camera?.deviceType }}
-            </span>
-          </el-descriptions-item>
-          <el-descriptions-item v-if="camera?.deviceVersion" :label="t('cameras.firmware')">
-            <span class="live-tab__meta font-mono truncate inline-block max-w-[160px] align-bottom" :title="camera?.deviceVersion">
-              {{ camera?.deviceVersion }}
-            </span>
-          </el-descriptions-item>
-          <el-descriptions-item v-if="typeof camera?.defence !== 'undefined'" :label="t('cameras.defence')">
-            <el-tag :type="camera?.defence === 1 ? 'warning' : 'info'" effect="light" round size="small">
-              {{ camera?.defence === 1 ? t('cameras.on') : t('cameras.off') }}
-            </el-tag>
-          </el-descriptions-item>
-          <!-- Device health (last 24h) -->
-          <el-descriptions-item v-if="health" :label="t('cameras.health.lastSnapshot')">
-            <span class="live-tab__value">{{ health.lastSnapshotAt ? relativeTime(health.lastSnapshotAt) : '--' }}</span>
-          </el-descriptions-item>
-          <el-descriptions-item v-if="health" :label="t('cameras.health.snapshots24h')">
-            <span class="live-tab__value">{{ health.snapshots24h }}</span>
-          </el-descriptions-item>
-          <el-descriptions-item v-if="health" :label="t('cameras.health.aiSuccess')">
-            <el-tag
-              v-if="health.aiSuccessRate !== null"
-              :type="health.aiSuccessRate >= 90 ? 'success' : (health.aiSuccessRate >= 60 ? 'warning' : 'danger')"
-              effect="light"
-              round
-              size="small"
-            >
-              {{ health.aiSuccessRate }}%
-            </el-tag>
-            <span v-else class="live-tab__value">--</span>
-          </el-descriptions-item>
-          <el-descriptions-item v-if="health" :label="t('cameras.imageQuality.label')">
-            <span v-if="!health.imageCheckedAt" class="live-tab__value">--</span>
-            <el-tag v-else-if="!health.imageIssues?.length" type="success" effect="light" round size="small">{{ t('cameras.imageQuality.good') }}</el-tag>
-            <span v-else class="inline-flex flex-wrap gap-1">
-              <el-tooltip v-for="issue in health.imageIssues" :key="issue" :content="t(`cameras.imageQuality.hints.${issue}`)" placement="top">
-                <el-tag type="warning" effect="light" round size="small">{{ t(`cameras.imageQuality.issues.${issue}`) }}</el-tag>
-              </el-tooltip>
-            </span>
-          </el-descriptions-item>
-          <el-descriptions-item v-if="health" :label="t('cameras.health.schedule')">
-            <span class="live-tab__value">
-              {{ t('cameras.schedule.every', { minutes: health.captureIntervalMinutes || 30 }) }}<template v-if="health.captureDaytimeOnly">, {{ t('cameras.schedule.daytimeOnly') }}</template>
-            </span>
-          </el-descriptions-item>
-        </el-descriptions>
-      </el-card>
+
+      <!-- Under the video: what is playing, and the camera actions -->
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div class="flex flex-wrap items-center gap-2">
+          <el-tag :type="camera?.status === 1 ? 'success' : 'info'" effect="light" round size="small">
+            {{ camera?.status === 1 ? t('common.online') : t('common.offline') }}
+          </el-tag>
+          <el-tag type="success" effect="plain" size="small">HD</el-tag>
+          <span class="live-tab__value">{{ currentStreamType }}</span>
+          <el-tag v-if="health?.imageIssues?.length" type="warning" effect="light" round size="small">{{ t('cameras.imageQuality.label') }}: {{ health.imageIssues.map(i => t(`cameras.imageQuality.issues.${i}`)).join(', ') }}</el-tag>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <el-button
+            v-if="camera && camera.canManage !== false"
+            size="small"
+            type="primary"
+            plain
+            :icon="Camera"
+            :loading="capturing"
+            @click="handleCaptureNow"
+          >
+            {{ t('cameras.captureNow') }}
+          </el-button>
+          <el-button size="small" :icon="InfoFilled" :disabled="!camera" @click="infoVisible = true">{{ t('cameras.quickInfo') }}</el-button>
+        </div>
+      </div>
     </div>
+
+    <!-- Camera details, on demand -->
+    <el-dialog v-model="infoVisible" :title="`${t('cameras.quickInfo')}: ${camera?.deviceName || ''}`" width="min(720px, 94vw)" append-to-body>
+      <el-descriptions :column="isMobile ? 1 : 2" size="small" border>
+        <el-descriptions-item :label="t('cameras.status')">
+          <el-tag :type="camera?.status === 1 ? 'success' : 'info'" effect="light" round size="small">
+            {{ camera?.status === 1 ? t('common.online') : t('common.offline') }}
+          </el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('cameras.cloudService')">
+          <el-tag type="success" effect="light" round size="small">{{ t('cameras.cloudConnected') }}</el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('cameras.currentStream')">
+          <span class="inline-flex items-center gap-1.5">
+            <el-tag type="success" effect="plain" size="small">HD</el-tag>
+            <span class="live-tab__value">{{ currentStreamType }}</span>
+          </span>
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('cameras.validateCode')">
+          <span class="inline-flex items-center gap-1.5">
+            <el-tag type="info" effect="plain" size="small" class="font-mono">
+              {{ camera?.validateCode || '--' }}
+            </el-tag>
+            <el-tooltip v-if="camera && camera.canManage !== false" :content="t('cameras.updateCode')" placement="top">
+              <el-button
+                @click="openValidateCodeDialog"
+                size="small"
+                text
+                circle
+                type="primary"
+                :icon="EditPen"
+              />
+            </el-tooltip>
+          </span>
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('cameras.encrypted')">
+          <el-tag :type="camera?.isEncrypt === 1 ? 'warning' : 'success'" effect="light" round size="small">
+            {{ camera?.isEncrypt === 1 ? t('cameras.encryptOn') : t('cameras.encryptOff') }}
+          </el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item v-if="camera?.model || camera?.deviceType" :label="t('cameras.model')">
+          <span class="live-tab__value truncate inline-block max-w-[160px] align-bottom" :title="camera?.model || camera?.deviceType">
+            {{ camera?.model || camera?.deviceType }}
+          </span>
+        </el-descriptions-item>
+        <el-descriptions-item v-if="camera?.deviceVersion" :label="t('cameras.firmware')">
+          <span class="live-tab__meta font-mono truncate inline-block max-w-[160px] align-bottom" :title="camera?.deviceVersion">
+            {{ camera?.deviceVersion }}
+          </span>
+        </el-descriptions-item>
+        <el-descriptions-item v-if="typeof camera?.defence !== 'undefined'" :label="t('cameras.defence')">
+          <el-tag :type="camera?.defence === 1 ? 'warning' : 'info'" effect="light" round size="small">
+            {{ camera?.defence === 1 ? t('cameras.on') : t('cameras.off') }}
+          </el-tag>
+        </el-descriptions-item>
+        <!-- Device health (last 24h) -->
+        <el-descriptions-item v-if="health" :label="t('cameras.health.lastSnapshot')">
+          <span class="live-tab__value">{{ health.lastSnapshotAt ? relativeTime(health.lastSnapshotAt) : '--' }}</span>
+        </el-descriptions-item>
+        <el-descriptions-item v-if="health" :label="t('cameras.health.snapshots24h')">
+          <span class="live-tab__value">{{ health.snapshots24h }}</span>
+        </el-descriptions-item>
+        <el-descriptions-item v-if="health" :label="t('cameras.health.aiSuccess')">
+          <el-tag
+            v-if="health.aiSuccessRate !== null"
+            :type="health.aiSuccessRate >= 90 ? 'success' : (health.aiSuccessRate >= 60 ? 'warning' : 'danger')"
+            effect="light"
+            round
+            size="small"
+          >
+            {{ health.aiSuccessRate }}%
+          </el-tag>
+          <span v-else class="live-tab__value">--</span>
+        </el-descriptions-item>
+        <el-descriptions-item v-if="health" :label="t('cameras.imageQuality.label')">
+          <span v-if="!health.imageCheckedAt" class="live-tab__value">--</span>
+          <el-tag v-else-if="!health.imageIssues?.length" type="success" effect="light" round size="small">{{ t('cameras.imageQuality.good') }}</el-tag>
+          <span v-else class="inline-flex flex-wrap gap-1">
+            <el-tooltip v-for="issue in health.imageIssues" :key="issue" :content="t(`cameras.imageQuality.hints.${issue}`)" placement="top">
+              <el-tag type="warning" effect="light" round size="small">{{ t(`cameras.imageQuality.issues.${issue}`) }}</el-tag>
+            </el-tooltip>
+          </span>
+        </el-descriptions-item>
+        <el-descriptions-item v-if="health" :label="t('cameras.health.schedule')">
+          <span class="live-tab__value">
+            {{ t('cameras.schedule.every', { minutes: health.captureIntervalMinutes || 30 }) }}<template v-if="health.captureDaytimeOnly">, {{ t('cameras.schedule.daytimeOnly') }}</template>
+          </span>
+        </el-descriptions-item>
+      </el-descriptions>
+    </el-dialog>
+
+    <!-- Recordings: clips and a timeline under the video -->
+    <PlaybackControls
+      :camera="camera"
+      @play-playback="handlePlayPlayback"
+      @back-to-live="playLiveStream"
+    />
 
     <!-- Sticky card and other field work -->
     <TrapMaintenanceCard v-if="camera" :camera="camera" />
-
-    <!-- Playback Controls Section -->
-    <div class="w-full">
-      <PlaybackControls
-        :camera="camera"
-        @play-playback="handlePlayPlayback"
-        @back-to-live="playLiveStream"
-      />
-    </div>
 
     <!-- Verification Code Dialog -->
     <el-dialog
@@ -188,7 +197,8 @@ import api from '@/services/api'
 import PlaybackControls from './PlaybackControls.vue'
 import TrapMaintenanceCard from './TrapMaintenanceCard.vue'
 import { ElNotification } from 'element-plus'
-import { VideoCamera, Key, Lock, EditPen, Camera } from '@element-plus/icons-vue'
+import { VideoCamera, Key, Lock, EditPen, Camera, InfoFilled } from '@element-plus/icons-vue'
+import { useBreakpoints } from '@/composables/useBreakpoints'
 import { useNotifications } from '@/composables/useNotifications'
 import { useI18n } from 'vue-i18n'
 
@@ -210,6 +220,8 @@ const currentStreamId = ref('')
 const { relativeTime } = useNotifications()
 const health = ref(null)
 const capturing = ref(false)
+const infoVisible = ref(false)
+const { isMobile } = useBreakpoints()
 
 const loadHealth = async () => {
   const serial = props.camera?.deviceSerial

@@ -389,6 +389,16 @@ export default {
     if (endDate) params.append('endDate', endDate);
     return apiClient.get(`/ai/results?${params.toString()}`);
   },
+  // Detection history with filters: { deviceSerials: [], startDate, endDate, risk, review, page, limit }
+  getHistory({ deviceSerials = [], page = 1, limit = 10, startDate = null, endDate = null, risk = null, review = null } = {}) {
+    const params = { page, limit };
+    if (deviceSerials.length) params.deviceSerials = deviceSerials.join(',');
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+    if (risk) params.risk = risk;
+    if (review) params.review = review;
+    return apiClient.get('/ai/results', { params });
+  },
   getStatistics(deviceSerial = 'all', mode = 'hour', startDate = null, endDate = null, metric = null) {
     const params = new URLSearchParams();
     // metric "catches": insects caught per day instead of the count on the traps
@@ -404,8 +414,8 @@ export default {
     return apiClient.get('/ai/insights', { params: { deviceSerial, days } });
   },
   // This period vs the previous one, overall and per camera (days: 7 | 14 | 30)
-  getComparison(days = 7) {
-    return apiClient.get('/ai/comparison', { params: { days } });
+  getComparison(days = 7, deviceSerials = []) {
+    return apiClient.get('/ai/comparison', { params: { days, ...(deviceSerials.length ? { deviceSerials: deviceSerials.join(',') } : {}) } });
   },
   // Human review of an AI result: { status: 'confirmed' } or { status: 'corrected', summary, note }
   reviewSnapshot(snapshotId, body) {

@@ -1,159 +1,249 @@
 <template>
-  <div class="w-full max-w-5xl mt-5 mb-5 select-none">
-    <div class="w-full grid grid-cols-1 md:grid-cols-3 gap-6">
-      <!-- Search Form -->
-      <el-card shadow="never" class="md:col-span-1">
-        <template #header>
-          <span class="playback__title flex items-center gap-2">
-            <el-icon class="playback__title-icon"><Calendar /></el-icon>
-            {{ t('cameras.playbackTitle') }}
-          </span>
-        </template>
-        <div class="flex flex-col gap-3">
-          <el-date-picker v-model="searchDate" type="date" :placeholder="t('cameras.selectDate')" class="!w-full" />
-          <el-button @click="searchRecords" :loading="loading" type="primary" :icon="Search" class="w-full">
-            {{ t('cameras.queryDAS') }}
-          </el-button>
-          <el-button @click="backToLive" :icon="VideoCamera" class="w-full !ml-0">
-            {{ t('cameras.backToLive') }}
-          </el-button>
+  <el-card shadow="never" class="playback w-full select-none">
+    <template #header>
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <span class="playback__title flex items-center gap-2">
+          <el-icon class="playback__title-icon"><Film /></el-icon>
+          {{ t('cameras.playbackTitle') }}
+          <span class="playback__meta">· {{ records.length }} {{ t('cameras.clipsUnit') }}</span>
+        </span>
+        <div class="flex flex-wrap items-center gap-2">
+          <el-button :icon="ArrowLeft" circle size="small" :aria-label="t('cameras.prevDay')" @click="shiftDay(-1)" />
+          <el-date-picker v-model="searchDate" type="date" format="DD/MM/YYYY" :clearable="false" :disabled-date="(d) => d.getTime() > Date.now()" class="playback__date" />
+          <el-button :icon="ArrowRight" circle size="small" :disabled="isToday" :aria-label="t('cameras.nextDay')" @click="shiftDay(1)" />
+          <el-button :icon="Refresh" size="small" :loading="loading" @click="searchRecords">{{ t('common.refresh') }}</el-button>
+          <el-button type="primary" plain :icon="VideoCamera" size="small" :disabled="!playing" @click="backToLive">{{ t('cameras.backToLive') }}</el-button>
         </div>
-      </el-card>
+      </div>
+    </template>
 
-      <!-- Record List -->
-      <el-card shadow="never" class="md:col-span-2">
-        <template #header>
-          <div class="flex items-center justify-between gap-2">
-            <span class="playback__title">{{ t('cameras.sdRecords') }}</span>
-            <span class="playback__meta">{{ records.length }} {{ t('cameras.clipsUnit') }}</span>
-          </div>
-        </template>
-        <el-scrollbar height="220px" v-loading="loading">
-          <el-empty
-            v-if="!loading && records.length === 0"
-            :image-size="64"
-            :description="t('cameras.queryDAS')"
-          />
-          <div class="flex flex-col gap-2 pr-2">
-            <div
-              v-for="(clip, index) in records"
-              :key="index"
-              @click="playPlayback(clip)"
-              class="playback__clip flex justify-between items-center gap-3 px-3 py-2.5 cursor-pointer"
-            >
-              <div class="flex flex-col min-w-0">
-                <div class="flex items-center gap-2">
-                  <span class="playback__clip-title">{{ t('cameras.clipNumber') }} #{{ index + 1 }}</span>
-                  <el-tag type="success" effect="light" size="small">{{ clip.type || 'LOCAL' }}</el-tag>
-                  <span v-if="getDuration(clip)" class="playback__meta font-mono">({{ getDuration(clip) }})</span>
-                </div>
-                <span class="playback__meta font-mono mt-0.5">{{ formatISOToTime(clip.startTime || clip.beginTime) }} - {{ formatISOToTime(clip.endTime || clip.stopTime) }}</span>
-              </div>
-              <el-button type="primary" circle size="small" :icon="VideoPlay" @click.stop="playPlayback(clip)" />
+    <div v-loading="loading">
+      <!-- Clips, left to right in time order -->
+      <el-scrollbar v-if="clips.length" ref="stripRef" class="playback__strip">
+        <div class="flex gap-3 pb-2">
+          <div
+            v-for="clip in clips"
+            :key="clip.key"
+            :data-clip="clip.key"
+            class="playback__clip"
+            :class="{ 'is-playing': playing?.key === clip.key }"
+            role="button"
+            tabindex="0"
+            @click="playClip(clip)"
+            @keyup.enter="playClip(clip)"
+          >
+            <div class="playback__thumb">
+              <el-image v-if="clip.thumb" :src="clip.thumb" fit="cover" class="w-full h-full" lazy />
+              <el-icon v-else :size="22"><VideoCamera /></el-icon>
+              <span class="playback__badge playback__badge--start">{{ formatTime(clip.start) }}</span>
+              <span class="playback__badge playback__badge--duration">{{ formatDuration(clip) }}</span>
+              <el-icon class="playback__play" :size="22"><VideoPlay /></el-icon>
             </div>
           </div>
-        </el-scrollbar>
-      </el-card>
+        </div>
+      </el-scrollbar>
+      <el-empty v-else-if="!loading" :image-size="56" :description="t('cameras.noClips')" />
+
+      <!-- 24-hour timeline: recorded spans, the playing clip, zoom -->
+      <div class="flex items-center gap-2 mt-2">
+        <div ref="timelineScroll" class="playback__timeline-scroll">
+          <div
+            class="playback__timeline"
+            :style="{ width: `${zoom * 100}%` }"
+            @click="onTimelineClick"
+          >
+            <div
+              v-for="clip in clips"
+              :key="clip.key"
+              class="playback__span"
+              :class="{ 'is-playing': playing?.key === clip.key }"
+              :style="spanStyle(clip)"
+            ></div>
+            <div v-if="playing" class="playback__cursor" :style="{ left: `${percentOf(playing.start)}%` }">
+              <span class="playback__cursor-label">{{ formatTime(playing.start) }}</span>
+            </div>
+            <div v-for="h in ticks" :key="h" class="playback__tick" :style="{ left: `${(h / 24) * 100}%` }">
+              <span>{{ String(h).padStart(2, '0') }}:00</span>
+            </div>
+          </div>
+        </div>
+        <div class="flex flex-col gap-1">
+          <el-button :icon="ZoomIn" circle size="small" :disabled="zoom >= ZOOMS.at(-1)" :aria-label="t('cameras.zoomIn')" @click="setZoom(1)" />
+          <el-button :icon="ZoomOut" circle size="small" :disabled="zoom <= ZOOMS[0]" :aria-label="t('cameras.zoomOut')" @click="setZoom(-1)" />
+        </div>
+      </div>
     </div>
-  </div>
+  </el-card>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useI18n } from 'vue-i18n'
-import api from '@/services/api'
-import { ElNotification } from 'element-plus'
-import { Calendar, Search, VideoCamera, VideoPlay } from '@element-plus/icons-vue'
+import { ref, computed, watch, nextTick, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { ElNotification } from 'element-plus';
+import { ArrowLeft, ArrowRight, Film, Refresh, VideoCamera, VideoPlay, ZoomIn, ZoomOut } from '@element-plus/icons-vue';
+import api from '@/services/api';
 
+/**
+ * Recordings of one day as a horizontal strip of clips (with the nearest AI photo as a thumbnail)
+ * above a 24-hour timeline. Clicking a clip, or a recorded span on the timeline, plays it.
+ */
 const props = defineProps({
   camera: Object,
-})
+});
+const emit = defineEmits(['play-playback', 'back-to-live']);
+const { t, locale } = useI18n();
 
-const emit = defineEmits(['play-playback', 'back-to-live'])
+const ZOOMS = [1, 2, 4, 8];
+const searchDate = ref(new Date());
+const records = ref([]);
+const photos = ref([]);
+const loading = ref(false);
+const playing = ref(null);
+const zoom = ref(1);
+const stripRef = ref(null);
+const timelineScroll = ref(null);
 
-const { t } = useI18n()
+const isToday = computed(() => new Date(searchDate.value).toDateString() === new Date().toDateString());
+const dayStart = computed(() => {
+  const d = new Date(searchDate.value);
+  d.setHours(0, 0, 0, 0);
+  return d;
+});
+const pad = (n) => String(n).padStart(2, '0');
+const dayText = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
-const searchDate = ref(new Date())
-const records = ref([])
-const loading = ref(false)
+// Clip times come as "YYYY-MM-DD HH:mm:ss" (local), ISO strings or epoch milliseconds
+const toDate = (value) => {
+  if (value === null || value === undefined || value === '') return null;
+  if (typeof value === 'number' || /^\d+$/.test(String(value))) return new Date(Number(value));
+  const date = new Date(String(value).replace(' ', 'T'));
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const clips = computed(() => records.value
+  .map((clip, i) => {
+    const start = toDate(clip.startTime || clip.beginTime);
+    const end = toDate(clip.endTime || clip.stopTime);
+    if (!start) return null;
+    return { key: `${i}-${start.getTime()}`, raw: clip, start, end: end || start };
+  })
+  .filter(Boolean)
+  .sort((a, b) => a.start - b.start)
+  .map((clip) => {
+    // Thumbnail: the AI photo taken during the clip, or the last one before it
+    let thumb = null;
+    for (const photo of photos.value) {
+      if (photo.at <= clip.end) thumb = photo.url;
+      else break;
+    }
+    return { ...clip, thumb };
+  }));
+
+const percentOf = (date) => Math.min(100, Math.max(0, ((date - dayStart.value) / 86400000) * 100));
+const spanStyle = (clip) => {
+  const left = percentOf(clip.start);
+  return { left: `${left}%`, width: `${Math.max(0.15, percentOf(clip.end) - left)}%` };
+};
+const ticks = computed(() => {
+  const step = zoom.value >= 4 ? 1 : zoom.value === 2 ? 2 : 3;
+  return Array.from({ length: Math.ceil(24 / step) }, (_, i) => i * step);
+});
+
+const formatTime = (date) => date.toLocaleTimeString(locale.value === 'vi' ? 'vi-VN' : 'en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+const formatDuration = (clip) => {
+  const seconds = Math.max(0, Math.round((clip.end - clip.start) / 1000));
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return m ? `${m}'${pad(s)}"` : `${s}"`;
+};
+
+const loadPhotos = async () => {
+  try {
+    const res = await api.getHistory({ deviceSerials: [props.camera.deviceSerial], startDate: dayStart.value.toISOString(), endDate: dayText(dayStart.value), limit: 500 });
+    photos.value = (res.data?.results || [])
+      .map(r => ({ at: new Date(r.createdAt), url: api.getImageUrl(r.imageUrl || r.s3Key) }))
+      .sort((a, b) => a.at - b.at);
+  } catch {
+    photos.value = [];
+  }
+};
 
 const searchRecords = async () => {
-  if (!props.camera) {
-    ElNotification({ title: t('common.error'), message: t('cameras.noCameraSelected'), type: 'error' })
-    return
-  }
-  if (!searchDate.value) {
-    ElNotification({ title: t('common.error'), message: t('cameras.selectDate'), type: 'error' })
-    return
-  }
-
-  loading.value = true
-  records.value = []
-
-  const d = new Date(searchDate.value);
-  const startTime = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} 00:00:00`;
-  const endTime = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} 23:59:59`;
-
+  if (!props.camera?.deviceSerial) return;
+  loading.value = true;
+  records.value = [];
+  const day = dayText(dayStart.value);
   try {
-    const response = await api.getRecords(props.camera.deviceSerial, startTime, endTime)
-    const result = response.data
-
-    const isSuccess = (result.meta && (result.meta.code === 200 || result.meta.code === '200')) ||
-                      result.code === '200' || result.code === 200
-
-    let list = []
-    if (Array.isArray(result.data)) {
-      list = result.data
-    } else if (Array.isArray(result.data?.list)) {
-      list = result.data.list
-    } else if (Array.isArray(result.list)) {
-      list = result.list
-    }
-
-    if (isSuccess && list.length > 0) {
-      records.value = list
-      ElNotification({ title: t('common.success'), message: `${list.length} ${t('cameras.clipsUnit')}`, type: 'success' })
-    } else {
-      ElNotification({ title: t('common.error'), message: result.msg || result.meta?.message || t('analytics.noData'), type: 'warning' })
-    }
+    const [response] = await Promise.all([
+      api.getRecords(props.camera.deviceSerial, `${day} 00:00:00`, `${day} 23:59:59`),
+      loadPhotos(),
+    ]);
+    const result = response.data;
+    const list = Array.isArray(result.data) ? result.data
+      : Array.isArray(result.data?.list) ? result.data.list
+        : Array.isArray(result.list) ? result.list : [];
+    records.value = list;
   } catch (error) {
-    ElNotification({ title: t('common.error'), message: error.message, type: 'error' })
+    ElNotification({ title: t('common.error'), message: error.response?.data?.message || error.message, type: 'error' });
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
-const playPlayback = (clip) => {
+const playClip = (clip) => {
+  playing.value = clip;
   emit('play-playback', {
-    startTime: clip.startTime || clip.beginTime,
-    stopTime: clip.endTime || clip.stopTime,
-  })
-}
+    startTime: clip.raw.startTime || clip.raw.beginTime,
+    stopTime: clip.raw.endTime || clip.raw.stopTime,
+  });
+  nextTick(() => {
+    stripRef.value?.$el?.querySelector(`[data-clip="${clip.key}"]`)?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  });
+};
+
+// A click on the timeline plays the clip at that time, or the next one after it
+const onTimelineClick = (event) => {
+  const rect = event.currentTarget.getBoundingClientRect();
+  const at = new Date(dayStart.value.getTime() + ((event.clientX - rect.left) / rect.width) * 86400000);
+  const clip = clips.value.find(c => c.start <= at && c.end >= at) || clips.value.find(c => c.start >= at);
+  if (clip) playClip(clip);
+};
+
+const setZoom = async (direction) => {
+  const i = ZOOMS.indexOf(zoom.value) + direction;
+  if (i < 0 || i >= ZOOMS.length) return;
+  zoom.value = ZOOMS[i];
+  await nextTick();
+  // Keep the playing clip (or now) in view
+  const box = timelineScroll.value;
+  if (box) {
+    const focus = playing.value ? percentOf(playing.value.start) : (isToday.value ? percentOf(new Date()) : 50);
+    box.scrollLeft = (focus / 100) * box.scrollWidth - box.clientWidth / 2;
+  }
+};
+
+const shiftDay = (days) => {
+  const d = new Date(searchDate.value);
+  d.setDate(d.getDate() + days);
+  if (d.getTime() <= Date.now()) searchDate.value = d;
+};
 
 const backToLive = () => {
-  emit('back-to-live')
-}
+  playing.value = null;
+  emit('back-to-live');
+};
 
-const formatISOToTime = (isoString) => {
-  if (!isoString) return '--:--'
-  const date = new Date(isoString)
-  if (isNaN(date.getTime())) {
-    const parts = isoString.split(' ')
-    return parts.length > 1 ? parts[1].substring(0, 5) : isoString
+watch(searchDate, () => {
+  playing.value = null;
+  searchRecords();
+});
+watch(() => props.camera?.deviceSerial, (serial, old) => {
+  if (serial && serial !== old) {
+    playing.value = null;
+    searchRecords();
   }
-  return date.toTimeString().substring(0, 5)
-}
-
-const getDuration = (clip) => {
-  const start = new Date(clip.startTime || clip.beginTime)
-  const end = new Date(clip.endTime || clip.stopTime)
-  if (isNaN(start.getTime()) || isNaN(end.getTime())) return null
-  const diffSec = Math.floor((end - start) / 1000)
-  if (diffSec <= 0) return null
-  const m = Math.floor(diffSec / 60)
-  const s = diffSec % 60
-  return `${m}m${s > 0 ? s + 's' : ''}`
-}
+});
+onMounted(searchRecords);
 </script>
 
 <style scoped>
@@ -167,22 +257,119 @@ const getDuration = (clip) => {
 }
 .playback__meta {
   font-size: 12px;
+  font-weight: 400;
   color: var(--el-text-color-secondary);
 }
+.playback__date {
+  width: 150px;
+}
 .playback__clip {
-  border: 1px solid var(--el-border-color);
-  border-left: 3px solid var(--el-color-primary);
-  border-radius: 8px;
-  background: var(--el-bg-color);
-  transition: border-color 0.2s, background-color 0.2s;
+  flex: 0 0 auto;
+  width: 148px;
+  cursor: pointer;
+  border-radius: var(--el-border-radius-base);
+  border: 2px solid transparent;
+  transition: border-color 0.2s;
 }
-.playback__clip:hover {
+.playback__clip:hover,
+.playback__clip:focus-visible {
+  border-color: var(--el-color-primary-light-5);
+  outline: none;
+}
+.playback__clip.is-playing {
   border-color: var(--el-color-primary);
-  background: var(--el-fill-color-light);
 }
-.playback__clip-title {
-  font-size: 13px;
+.playback__thumb {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: calc(var(--el-border-radius-base) - 2px);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--el-fill-color-dark);
+  color: var(--el-text-color-secondary);
+}
+.playback__badge {
+  position: absolute;
+  top: 4px;
+  padding: 0 5px;
+  border-radius: 4px;
+  font-size: 11px;
   font-weight: 600;
-  color: var(--el-text-color-primary);
+  line-height: 18px;
+  background-color: var(--el-overlay-color-light);
+  color: var(--el-color-white);
+}
+.playback__badge--start {
+  left: 4px;
+}
+.playback__badge--duration {
+  right: 4px;
+}
+.playback__play {
+  position: absolute;
+  color: var(--el-color-white);
+  opacity: 0.85;
+}
+.playback__timeline-scroll {
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+.playback__timeline {
+  position: relative;
+  height: 46px;
+  min-width: 100%;
+  cursor: pointer;
+  border-radius: var(--el-border-radius-base);
+  background-color: var(--el-fill-color-light);
+}
+.playback__span {
+  position: absolute;
+  top: 6px;
+  height: 14px;
+  border-radius: 3px;
+  background-color: var(--el-color-primary-light-5);
+}
+.playback__span.is-playing {
+  background-color: var(--el-color-primary);
+}
+.playback__cursor {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background-color: var(--el-color-primary);
+  pointer-events: none;
+}
+.playback__cursor-label {
+  position: absolute;
+  top: -2px;
+  left: 4px;
+  padding: 0 4px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  background-color: var(--el-color-primary);
+  color: var(--el-color-white);
+}
+.playback__tick {
+  position: absolute;
+  bottom: 0;
+  height: 10px;
+  border-left: 1px solid var(--el-border-color-darker);
+  pointer-events: none;
+}
+.playback__tick span {
+  position: absolute;
+  bottom: 10px;
+  left: 3px;
+  font-size: 10px;
+  white-space: nowrap;
+  color: var(--el-text-color-secondary);
 }
 </style>
