@@ -118,3 +118,33 @@ test('orphan file report: files no snapshot points to, recent uploads left out',
         s3Client.send = original;
     }
 });
+
+test('admin pipeline monitor: photos by hour, retry queue, problem cameras and job runs', async () => {
+    const { request } = require('./dbHelpers');
+    const jobStatus = require('../src/services/jobStatus');
+    const admin = await createUser({ role: 'admin' });
+    await createCamera(admin, { deviceSerial: 'MON1', deviceName: 'Trap A' });
+    await createCamera(admin, { deviceSerial: 'MON2', deviceName: 'Trap B' });
+    await photo('MON1', 60, { aiProcessed: true, pestCount: 2 });
+    await photo('MON1', 90, { aiProcessed: true, pestCount: 2, aiRetries: 1 });
+    await photo('MON1', 120); // failed, waiting for a retry
+    await photo('MON1', 150, { aiRetries: 3 }); // given up
+    await photo('MON1', 3); // still being analyzed
+    await jobStatus.track('cleanup', async () => ({ photos: 5, more: false }));
+    await assert.rejects(jobStatus.track('aiRetry', async () => { throw new Error('S3 down'); }));
+
+    const res = await request('/api/admin/pipeline', { as: admin });
+    assert.equal(res.status, 200);
+    const { pipeline } = await res.json();
+    assert.deepEqual(pipeline.totals, { photos: 5, analyzed: 2, failed: 2, recovered: 1, waitingRetry: 1, gaveUp: 1 });
+    assert.equal(pipeline.hours.length, 24);
+    assert.equal(pipeline.hours.reduce((sum, h) => sum + h.photos, 0), 5);
+    assert.deepEqual(pipeline.cameras.map(c => [c.deviceSerial, c.problems]), [['MON1', ['failing']], ['MON2', ['noPhotos']]]);
+    const jobs = Object.fromEntries(pipeline.jobs.map(j => [j.id, j]));
+    assert.deepEqual(jobs.cleanup.last.result, { photos: 5, more: false });
+    assert.equal(jobs.aiRetry.last.ok, false);
+    assert.equal(jobs.aiRetry.last.error, 'S3 down');
+
+    const manager = await createUser({ role: 'manager' });
+    assert.equal((await request('/api/admin/pipeline', { as: manager })).status, 403);
+});

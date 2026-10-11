@@ -8,21 +8,23 @@ const { sendDueReports } = require('../services/reportScheduleService');
 const { syncPending: syncTrainingData } = require('../services/trainingSync');
 const { resyncAll: resyncEzvizPolicies } = require('../services/ezvizRamService');
 const { TIMEZONE } = require('../services/captureSchedule');
+const jobStatus = require('../services/jobStatus');
 
 /**
  * Wrap a job so a tick is skipped while the previous run is still going
- * (a slow EZVIZ/S3 call must not stack up runs).
+ * (a slow EZVIZ/S3 call must not stack up runs). `id` names it in the admin pipeline monitor.
  */
-function exclusive(name, job) {
+function exclusive(name, job, id) {
     let running = false;
     return async () => {
         if (running) {
             console.warn(`⏭️ ${name} still running, skipping this tick`);
+            if (id) jobStatus.skipped(id);
             return;
         }
         running = true;
         try {
-            await job();
+            await (id ? jobStatus.track(id, job) : job());
         } catch (err) {
             console.error(`❌ ${name} failed:`, err.message);
         } finally {
@@ -31,15 +33,18 @@ function exclusive(name, job) {
     };
 }
 
-const cleanupJob = exclusive('Retention cleanup', cleanupOldData);
-const statusSyncJob = exclusive('Camera status sync', syncCameraStatus);
-const cardReminderJob = exclusive('Card reminders', sendCardReminders);
-const weeklyReportJob = exclusive('Weekly reports', sendWeeklyReports);
-const scheduledReportJob = exclusive('Scheduled reports', () => sendDueReports());
-const pestCountJob = exclusive('Pest count backfill', () => require('../services/migrations').backfillPestCounts({ since: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) }));
-const trainingSyncJob = exclusive('Training sync', () => syncTrainingData());
-const aiRetryJob = exclusive('AI analysis retry', () => retryFailedAnalyses());
-const ezvizPolicyJob = exclusive('EZVIZ sub-account policies', resyncEzvizPolicies);
+const cleanupJob = exclusive('Retention cleanup', () => cleanupOldData(), 'cleanup');
+const captureJob = exclusive('Capture', () => autoCaptureDueCameras(), 'capture');
+const statusSyncJob = exclusive('Camera status sync', syncCameraStatus, 'statusSync');
+const cardReminderJob = exclusive('Card reminders', async () => ({ sent: await sendCardReminders() }), 'cardReminders');
+const weeklyReportJob = exclusive('Weekly reports', async () => ({ sent: await sendWeeklyReports() }), 'weeklyReports');
+const scheduledReportJob = exclusive('Scheduled reports', async () => ({ sent: await sendDueReports() }), 'scheduledReports');
+const pestCountJob = exclusive('Pest count backfill', async () => ({
+    photos: await require('../services/migrations').backfillPestCounts({ since: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) })
+}), 'pestCount');
+const trainingSyncJob = exclusive('Training sync', () => syncTrainingData(), 'trainingSync');
+const aiRetryJob = exclusive('AI analysis retry', () => retryFailedAnalyses(), 'aiRetry');
+const ezvizPolicyJob = exclusive('EZVIZ sub-account policies', async () => ({ changed: await resyncEzvizPolicies() }), 'ezvizPolicies');
 
 /**
  * Start scheduled tasks (Cron Jobs)
@@ -68,7 +73,7 @@ function startCronJobs() {
     // Snapshot capture & AI recognition: check every 5 minutes which cameras are due
     // (each camera has its own interval and optional daytime-only setting)
     cron.schedule('*/5 * * * *', () => {
-        autoCaptureDueCameras();
+        captureJob();
     });
 
     // Sticky card reminders: every morning, local time

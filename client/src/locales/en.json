@@ -1242,7 +1242,7 @@
       "allowRegistrationDesc": "When off, nobody can sign up, including people who were invited by email.",
       "retentionMonths": "Keep snapshots for",
       "months": "months",
-      "retentionDesc": "Older snapshots and their images are deleted automatically.",
+      "retentionDesc": "Older photos are deleted automatically. Daily statistics are kept for at least 25 months, for long-range reports.",
       "defaultThreshold": "Default alert threshold for new cameras",
       "defaultThresholdDesc": "Owners can change it per camera in Notifications.",
       "updatedAt": "Last changed {time}"
@@ -1261,6 +1261,97 @@
       "runNow": "Upload now",
       "schedule": "Also retries failed uploads.",
       "ran": "Uploaded {uploaded}, failed {failed}."
+    },
+    "pipeline": {
+      "tab": "Capture pipeline",
+      "title": "Capture pipeline",
+      "subtitle": "Photo capture, AI analysis and background jobs over the last 24 hours.",
+      "updated": "Updated {time}",
+      "cronOff": "This server does not run the background jobs (ENABLE_CRON=false). Photo figures are complete, but job runs only show on the server that runs them.",
+      "stats": {
+        "photos": "Photos taken",
+        "analyzed": "Analyzed",
+        "failed": "Analysis failed",
+        "waitingRetry": "Waiting for a retry",
+        "recovered": "Recovered by a retry",
+        "gaveUp": "Given up"
+      },
+      "rate": "{rate}% of photos",
+      "gaveUpNote": "Failed after {max} retries",
+      "byHour": "Photos by hour",
+      "photosAxis": "Photos",
+      "inProgress": "In progress",
+      "noPhotos": "No photos in the last 24 hours",
+      "cameras": "Cameras",
+      "problemsOnly": "Cameras with problems only",
+      "noProblems": "No camera has a problem",
+      "online": "Online",
+      "offline": "Offline",
+      "cols": {
+        "camera": "Camera",
+        "status": "Status",
+        "photos": "Photos",
+        "failed": "Failed",
+        "lastPhoto": "Latest photo",
+        "problems": "Problems",
+        "job": "Job",
+        "lastRun": "Last run",
+        "duration": "Duration",
+        "result": "Result",
+        "state": "State"
+      },
+      "problems": {
+        "noPhotos": "No photos in 24 h",
+        "failing": "Analysis often fails"
+      },
+      "jobs": "Background jobs",
+      "jobsDesc": "Since the server last started.",
+      "noJobs": "No job has run yet",
+      "notYet": "Not run yet",
+      "states": {
+        "running": "Running",
+        "notYet": "Not run yet",
+        "ok": "Succeeded",
+        "failed": "Failed"
+      },
+      "jobNames": {
+        "capture": "Photo capture",
+        "aiRetry": "AI retry for failed photos",
+        "cleanup": "Old data removal",
+        "pestCount": "Pest count fill-in",
+        "statusSync": "Camera status sync",
+        "scheduledReports": "Scheduled reports",
+        "weeklyReports": "Weekly report",
+        "cardReminders": "Sticky card reminders",
+        "trainingSync": "AI training upload",
+        "ezvizPolicies": "EZVIZ sub-account access"
+      },
+      "jobSchedules": {
+        "capture": "Every 5 minutes",
+        "aiRetry": "Every 15 minutes",
+        "cleanup": "Every hour",
+        "pestCount": "Hourly, at :20",
+        "statusSync": "Every minute",
+        "scheduledReports": "Hourly, at :05",
+        "weeklyReports": "Mondays, 7:30",
+        "cardReminders": "Daily, 7:00",
+        "trainingSync": "Every 15 minutes",
+        "ezvizPolicies": "Hourly, at :17"
+      },
+      "results": {
+        "cameras": "{n} camera(s)",
+        "saved": "{n} photo(s) saved",
+        "retried": "{n} retried",
+        "succeeded": "{n} succeeded",
+        "photos": "{n} photo(s)",
+        "files": "{n} file(s)",
+        "failed": "{n} failed",
+        "sent": "{n} sent",
+        "uploaded": "{n} uploaded",
+        "changed": "{n} changed",
+        "more": "more next run",
+        "skipped": "{n} tick(s) skipped while still running"
+      }
     }
   },
   "dashboards": {

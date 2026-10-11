@@ -100,6 +100,10 @@ export default {
   getAdminSettings() {
     return apiClient.get('/admin/settings');
   },
+  // Capture pipeline monitor (admin)
+  getPipeline() {
+    return apiClient.get('/admin/pipeline');
+  },
   // Roboflow retraining upload (admin)
   getTrainingSync() {
     return apiClient.get('/admin/training-sync');

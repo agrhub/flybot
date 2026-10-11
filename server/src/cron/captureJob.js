@@ -160,31 +160,38 @@ let captureRunInProgress = false;
  * Runs on a short tick; a run is skipped if the previous one is still going.
  */
 async function autoCaptureDueCameras() {
-    if (captureRunInProgress) return;
+    if (captureRunInProgress) return null;
     captureRunInProgress = true;
     try {
         const cameras = await Camera.find({}).select('deviceSerial captureIntervalMinutes captureDaytimeOnly lastCaptureAt');
         const due = dueSerials(cameras, new Date());
-        if (due.length === 0) return;
+        if (due.length === 0) return { cameras: 0, saved: 0 };
         console.log(`🚀 Capturing ${due.length} due camera(s), ${CAPTURE_CONCURRENCY} at a time...`);
         // Several cameras in parallel (each one waits on EZVIZ, S3 and the AI), with
         // starts spaced out so EZVIZ is not hit in a burst
         const started = Date.now();
-        await runPool(due, { limit: CAPTURE_CONCURRENCY, minStartGapMs: 1000 }, captureAndSaveSnapshot);
+        let saved = 0;
+        await runPool(due, { limit: CAPTURE_CONCURRENCY, minStartGapMs: 1000 }, async (serial) => {
+            if (await captureAndSaveSnapshot(serial)) saved++;
+        });
         console.log(`✅ Captured ${due.length} camera(s) in ${Math.round((Date.now() - started) / 1000)}s`);
+        return { cameras: due.length, saved };
     } catch (error) {
         console.error("❌ Auto-capture error:", error.message);
+        throw error;
     } finally {
         captureRunInProgress = false;
     }
 }
 
-// Photos whose AI analysis failed at capture are tried again for a while
-const AI_RETRY_WINDOW_MS = 6 * 60 * 60 * 1000;
-// Not before this, so a capture still analyzing its photo is left alone
-const AI_RETRY_MIN_AGE_MS = 10 * 60 * 1000;
-const AI_RETRY_MAX = 3;
-const AI_RETRY_BATCH = 20;
+const AI_RETRY = {
+    // Photos whose AI analysis failed at capture are tried again for a while
+    windowMs: 6 * 60 * 60 * 1000,
+    // Not before this, so a capture still analyzing its photo is left alone
+    minAgeMs: 10 * 60 * 1000,
+    max: 3,
+    batch: 20
+};
 
 /**
  * Analyze again the recent photos the AI failed on (image read back from S3), oldest first.
@@ -194,9 +201,9 @@ const AI_RETRY_BATCH = 20;
 async function retryFailedAnalyses(now = new Date()) {
     const due = await Snapshot.find({
         aiProcessed: false,
-        createdAt: { $gte: new Date(now.getTime() - AI_RETRY_WINDOW_MS), $lte: new Date(now.getTime() - AI_RETRY_MIN_AGE_MS) },
-        aiRetries: { $not: { $gte: AI_RETRY_MAX } }
-    }).sort({ createdAt: 1 }).limit(AI_RETRY_BATCH).select('_id deviceSerial s3Key createdAt aiRetries').lean();
+        createdAt: { $gte: new Date(now.getTime() - AI_RETRY.windowMs), $lte: new Date(now.getTime() - AI_RETRY.minAgeMs) },
+        aiRetries: { $not: { $gte: AI_RETRY.max } }
+    }).sort({ createdAt: 1 }).limit(AI_RETRY.batch).select('_id deviceSerial s3Key createdAt aiRetries').lean();
 
     const result = { retried: 0, succeeded: 0 };
     for (const snap of due) {
@@ -222,6 +229,7 @@ async function retryFailedAnalyses(now = new Date()) {
 }
 
 module.exports = {
+    AI_RETRY,
     retryFailedAnalyses,
     captureAndSaveSnapshot,
     autoCaptureDueCameras,

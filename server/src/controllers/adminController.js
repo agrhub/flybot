@@ -402,6 +402,19 @@ async function exportAuditLog(req, res) {
  * GET /api/admin/training-sync: state of the Roboflow retraining upload
  * POST /api/admin/training-sync/run: upload the next batch now (also retries failed ones)
  */
+/**
+ * GET /api/admin/pipeline: capture, AI analysis and background jobs over the last 24 hours
+ */
+async function getPipeline(req, res) {
+    try {
+        const { ENABLE_CRON } = require('../config/env');
+        const overview = await require('../services/pipelineStats').pipelineOverview();
+        res.json({ success: true, pipeline: { ...overview, cronEnabled: ENABLE_CRON } });
+    } catch (err) {
+        sendServerError(res, err, { context: 'Pipeline overview' });
+    }
+}
+
 async function getTrainingSync(req, res) {
     try {
         res.json({ success: true, sync: await trainingSync.stats() });
@@ -424,6 +437,7 @@ async function runTrainingSync(req, res) {
 }
 
 module.exports = {
+    getPipeline,
     getTrainingSync,
     runTrainingSync,
     listAuditLog,

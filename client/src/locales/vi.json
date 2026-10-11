@@ -1242,7 +1242,7 @@
       "allowRegistrationDesc": "Khi tắt, không ai đăng ký được, kể cả người được mời qua email.",
       "retentionMonths": "Lưu ảnh chụp trong",
       "months": "tháng",
-      "retentionDesc": "Ảnh chụp cũ hơn sẽ tự động bị xóa.",
+      "retentionDesc": "Ảnh chụp cũ hơn sẽ tự động bị xóa. Số liệu thống kê theo ngày được giữ ít nhất 25 tháng để làm báo cáo dài hạn.",
       "defaultThreshold": "Ngưỡng cảnh báo mặc định cho camera mới",
       "defaultThresholdDesc": "Chủ sở hữu có thể đổi cho từng camera trong mục Thông báo.",
       "updatedAt": "Thay đổi lần cuối {time}"
@@ -1261,6 +1261,97 @@
       "runNow": "Tải lên ngay",
       "schedule": "Đồng thời thử lại các ảnh bị lỗi.",
       "ran": "Đã tải lên {uploaded}, lỗi {failed}."
+    },
+    "pipeline": {
+      "tab": "Luồng chụp ảnh",
+      "title": "Luồng chụp ảnh",
+      "subtitle": "Chụp ảnh, nhận dạng AI và các việc chạy nền trong 24 giờ qua.",
+      "updated": "Cập nhật {time}",
+      "cronOff": "Máy chủ này không chạy việc nền (ENABLE_CRON=false). Số ảnh vẫn đúng, nhưng lần chạy của các việc nền chỉ xem được trên máy chủ chạy chúng.",
+      "stats": {
+        "photos": "Ảnh đã chụp",
+        "analyzed": "Đã nhận dạng",
+        "failed": "Nhận dạng lỗi",
+        "waitingRetry": "Chờ nhận dạng lại",
+        "recovered": "Nhận dạng lại thành công",
+        "gaveUp": "Đã bỏ qua"
+      },
+      "rate": "{rate}% số ảnh",
+      "gaveUpNote": "Lỗi sau {max} lần thử lại",
+      "byHour": "Ảnh theo giờ",
+      "photosAxis": "Ảnh",
+      "inProgress": "Đang xử lý",
+      "noPhotos": "Chưa có ảnh nào trong 24 giờ qua",
+      "cameras": "Camera",
+      "problemsOnly": "Chỉ camera có vấn đề",
+      "noProblems": "Không camera nào có vấn đề",
+      "online": "Trực tuyến",
+      "offline": "Ngoại tuyến",
+      "cols": {
+        "camera": "Camera",
+        "status": "Trạng thái",
+        "photos": "Ảnh",
+        "failed": "Lỗi",
+        "lastPhoto": "Ảnh gần nhất",
+        "problems": "Vấn đề",
+        "job": "Việc",
+        "lastRun": "Lần chạy gần nhất",
+        "duration": "Thời gian",
+        "result": "Kết quả",
+        "state": "Tình trạng"
+      },
+      "problems": {
+        "noPhotos": "Không có ảnh 24 giờ",
+        "failing": "Lỗi nhận dạng nhiều"
+      },
+      "jobs": "Việc chạy nền",
+      "jobsDesc": "Tính từ lần khởi động máy chủ gần nhất.",
+      "noJobs": "Chưa có việc nào chạy",
+      "notYet": "Chưa chạy",
+      "states": {
+        "running": "Đang chạy",
+        "notYet": "Chưa chạy",
+        "ok": "Thành công",
+        "failed": "Lỗi"
+      },
+      "jobNames": {
+        "capture": "Chụp ảnh",
+        "aiRetry": "Nhận dạng lại ảnh lỗi",
+        "cleanup": "Xóa dữ liệu cũ",
+        "pestCount": "Bổ sung số côn trùng",
+        "statusSync": "Đồng bộ trạng thái camera",
+        "scheduledReports": "Báo cáo định kỳ",
+        "weeklyReports": "Báo cáo tuần",
+        "cardReminders": "Nhắc thay tấm keo",
+        "trainingSync": "Gửi ảnh huấn luyện AI",
+        "ezvizPolicies": "Quyền tài khoản phụ EZVIZ"
+      },
+      "jobSchedules": {
+        "capture": "Mỗi 5 phút",
+        "aiRetry": "Mỗi 15 phút",
+        "cleanup": "Mỗi giờ",
+        "pestCount": "Mỗi giờ, phút 20",
+        "statusSync": "Mỗi phút",
+        "scheduledReports": "Mỗi giờ, phút 5",
+        "weeklyReports": "Thứ Hai, 7:30",
+        "cardReminders": "Hằng ngày, 7:00",
+        "trainingSync": "Mỗi 15 phút",
+        "ezvizPolicies": "Mỗi giờ, phút 17"
+      },
+      "results": {
+        "cameras": "{n} camera",
+        "saved": "{n} ảnh đã lưu",
+        "retried": "{n} ảnh thử lại",
+        "succeeded": "{n} thành công",
+        "photos": "{n} ảnh",
+        "files": "{n} file",
+        "failed": "{n} lỗi",
+        "sent": "{n} đã gửi",
+        "uploaded": "{n} đã gửi",
+        "changed": "{n} thay đổi",
+        "more": "còn tiếp ở lần sau",
+        "skipped": "bỏ qua {n} lượt vì lần trước chưa xong"
+      }
     }
   },
   "dashboards": {

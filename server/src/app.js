@@ -163,7 +163,9 @@ async function startServer() {
 
         // 3. Initial camera status sync & capture
         syncCameraStatus();
-        backfillCameraThumbnails().then(autoCaptureDueCameras);
+        backfillCameraThumbnails()
+            .then(() => require('./services/jobStatus').track('capture', autoCaptureDueCameras))
+            .catch(() => {}); // already logged by the capture run
 
         // 4. Start periodic cron jobs
         startCronJobs();

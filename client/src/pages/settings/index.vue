@@ -75,6 +75,10 @@
               <el-icon><Tools /></el-icon>
               <span>{{ t('admin.system.tab') }}</span>
             </el-menu-item>
+            <el-menu-item index="adminPipeline">
+              <el-icon><DataLine /></el-icon>
+              <span>{{ t('admin.pipeline.tab') }}</span>
+            </el-menu-item>
             <el-menu-item index="adminAudit">
               <el-icon><Tickets /></el-icon>
               <span>{{ t('audit.tab') }}</span>
@@ -602,6 +606,9 @@
         <div v-else-if="activeTab === 'adminSystem' && isAdmin" class="max-w-3xl">
           <SystemSettingsPanel />
         </div>
+        <div v-else-if="activeTab === 'adminPipeline' && isAdmin" class="max-w-6xl">
+          <PipelineMonitorPanel />
+        </div>
         <div v-else-if="activeTab === 'adminAudit' && isAdmin" class="max-w-6xl">
           <AuditLogPanel />
         </div>
@@ -702,6 +709,7 @@ import AdminUsersPanel from '@/components/admin/AdminUsersPanel.vue';
 import AdminCamerasPanel from '@/components/admin/AdminCamerasPanel.vue';
 import SystemSettingsPanel from '@/components/admin/SystemSettingsPanel.vue';
 import AuditLogPanel from '@/components/admin/AuditLogPanel.vue';
+import PipelineMonitorPanel from '@/components/admin/PipelineMonitorPanel.vue';
 import PushNotificationsCard from '@/components/settings/PushNotificationsCard.vue';
 import AlertPreferencesCard from '@/components/settings/AlertPreferencesCard.vue';
 import {
@@ -728,7 +736,8 @@ import {
   Connection,
   Camera,
   Tools,
-  Tickets
+  Tickets,
+  DataLine
 } from '@element-plus/icons-vue';
 import { useNotifications } from '@/composables/useNotifications';
 
@@ -758,6 +767,7 @@ const mobileSections = computed(() => [
     { value: 'adminUsers', label: t('admin.users.tab') },
     { value: 'adminCameras', label: t('admin.cameras.tab') },
     { value: 'adminSystem', label: t('admin.system.tab') },
+    { value: 'adminPipeline', label: t('admin.pipeline.tab') },
     { value: 'adminAudit', label: t('audit.tab') }
   ] }] : []),
   { label: t('settings.legal'), items: [{ value: 'legal', label: t('settings.termsTab') }] }
