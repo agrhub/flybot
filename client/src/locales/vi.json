@@ -273,7 +273,9 @@
     "catchChartDesc": "Số ruồi mới mỗi ngày, cột chồng theo từng bẫy",
     "moreAnalytics": "Phân tích chi tiết",
     "forecastBasis": "Theo dõi {name}: dự báo số ruồi mới mỗi ngày (+) cộng dồn vào số trên tấm keo, so với ngưỡng của bẫy.",
-    "forecastBasisLure": "Theo dõi {name}: dự báo số ruồi hiện diện trung bình mỗi ngày, so với ngưỡng của bẫy."
+    "forecastBasisLure": "Theo dõi {name}: dự báo số ruồi hiện diện trung bình mỗi ngày, so với ngưỡng của bẫy.",
+    "noSnapshotYet": "Chưa có ảnh đã phân tích",
+    "snapshotCount": "{count} con"
   },
   "cameras": {
     "title": "Quản Lý & Xem Camera",

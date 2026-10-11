@@ -10,7 +10,7 @@ const { Snapshot } = require('../models');
 
 /**
  * Latest AI-processed snapshot per camera.
- * Returns Map(deviceSerial -> { createdAt, s3Key, imageUrl, summary, insects }).
+ * Returns Map(deviceSerial -> { snapshotId, createdAt, s3Key, imageUrl, summary, insects }).
  */
 const latestProcessedPipeline = (serials) => [
     { $match: { deviceSerial: { $in: serials }, aiProcessed: true } },
@@ -18,6 +18,7 @@ const latestProcessedPipeline = (serials) => [
     {
         $group: {
             _id: '$deviceSerial',
+            snapshotId: { $first: '$_id' },
             createdAt: { $first: '$createdAt' },
             s3Key: { $first: '$s3Key' },
             imageUrl: { $first: '$imageUrl' },

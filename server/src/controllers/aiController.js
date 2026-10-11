@@ -536,6 +536,15 @@ async function getAiOverview(req, res) {
                 status: cam.status ?? 1,
                 lastScanTime,
                 lastImageUrl,
+                // The latest analyzed photo with its detections, for the annotated preview
+                latestSnapshot: latestSnapshot ? {
+                    _id: latestSnapshot.snapshotId,
+                    deviceSerial: cam.deviceSerial,
+                    createdAt: latestSnapshot.createdAt,
+                    imageUrl: latestSnapshot.imageUrl || '',
+                    s3Key: latestSnapshot.s3Key || '',
+                    aiResults: { summary: latestSnapshot.summary || {}, insects: latestSnapshot.insects || [] }
+                } : null,
                 // Sticky card reminder date (null when reminders are off)
                 cardDueAt: cardDueAt(cam)
             });

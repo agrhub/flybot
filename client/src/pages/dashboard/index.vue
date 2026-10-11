@@ -369,6 +369,15 @@
             </el-tag>
           </div>
 
+          <!-- Latest analyzed photo with its detection boxes -->
+          <AnnotatedSnapshot
+            class="mt-3"
+            :item="latestOf(cam)?.latestSnapshot || null"
+            :title="cam.deviceName || cam.deviceSerial"
+            :count="latestOf(cam)?.latestSnapshot ? latestOf(cam).currentCount : null"
+            @open="openSnapshot"
+          />
+
           <el-divider class="!my-3" />
 
           <div class="flex items-center justify-between gap-2">
@@ -381,6 +390,8 @@
         </el-card>
       </div>
     </el-card>
+
+    <DetectionModal :visible="snapshotVisible" :item="openedSnapshot" @close="snapshotVisible = false" @updated="(s) => (openedSnapshot = { ...openedSnapshot, ...s })" />
   </div>
 </template>
 
@@ -391,6 +402,8 @@ import { useI18n } from 'vue-i18n';
 import { useCameras } from '@/composables/useCameras';
 import api from '@/services/api';
 import { ElNotification } from 'element-plus';
+import AnnotatedSnapshot from '@/components/common/AnnotatedSnapshot.vue';
+import DetectionModal from '@/components/modals/DetectionModal.vue';
 import {
   Lightning,
   DataAnalysis,
@@ -481,6 +494,16 @@ const overviewData = ref({
   topSpecies: '--',
   trend7Days: []
 });
+
+// Overview entry of a camera card (latest snapshot with its detections)
+const realtimeBySerial = computed(() => new Map((overviewData.value.cameraRealtimeList || []).map(c => [c.deviceSerial, c])));
+const latestOf = (cam) => realtimeBySerial.value.get(cam.deviceSerial);
+const snapshotVisible = ref(false);
+const openedSnapshot = ref(null);
+const openSnapshot = (snapshot) => {
+  openedSnapshot.value = snapshot;
+  snapshotVisible.value = true;
+};
 
 const selectedPeriod = ref('day'); // 'day' | 'week' | 'month'
 const periodOptions = computed(() => [
