@@ -136,6 +136,10 @@ export default {
   shareDashboard(id, email) {
     return apiClient.post(`/dashboards/${id}/share`, { email });
   },
+  // Email me the report with its PDF now (range: the one on screen, or null for the report's own)
+  sendDashboardNow(id, range = null) {
+    return apiClient.post(`/dashboards/${id}/send`, range ? { range } : {});
+  },
   unshareDashboard(id, email) {
     return apiClient.delete(`/dashboards/${id}/share`, { data: { email } });
   },

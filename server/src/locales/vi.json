@@ -125,6 +125,15 @@
       "from": "Từ {name} <{email}>.",
       "topic": "Chủ đề: {subject}",
       "footer": "Gửi từ form Liên hệ của FlyBot. Trả lời email này để phản hồi người gửi."
+    },
+    "scheduledReport": {
+      "subject": "📊 {name}: {from} - {to}",
+      "intro": "Gửi bạn báo cáo \"{name}\" từ {from} đến {to}.",
+      "catches": "Ruồi vào bẫy: {count}{change}, {ftd} con mỗi bẫy mỗi ngày.",
+      "alerts": "Bẫy chạm hoặc vượt ngưỡng: {count} trên {cameras}.",
+      "attached": "Báo cáo đầy đủ ở file PDF đính kèm.",
+      "button": "Mở báo cáo",
+      "footer": "Bạn nhận báo cáo này theo lịch do chủ báo cáo đặt. Chủ báo cáo có thể đổi hoặc tắt lịch gửi ở trang báo cáo trong FlyBot."
     }
   },
   "telegram": {
@@ -343,6 +352,64 @@
     "this_report_link_has_expired": "Liên kết báo cáo này đã hết hạn.",
     "invalid_widget_filter": "Bộ lọc của khối không hợp lệ.",
     "too_many_requests_please_try_again_in_a_moment": "Quá nhiều yêu cầu. Vui lòng thử lại sau giây lát.",
-    "a_public_report_can_only_include_cameras_you_own": "Báo cáo công khai chỉ dùng được camera bạn sở hữu."
+    "a_public_report_can_only_include_cameras_you_own": "Báo cáo công khai chỉ dùng được camera bạn sở hữu.",
+    "invalid_report_schedule": "Lịch gửi báo cáo không hợp lệ.",
+    "confirm_your_email_address_first": "Hãy xác nhận địa chỉ email trước."
+  },
+  "reportPdf": {
+    "range": "Khoảng thời gian: {from} - {to} ({days} ngày)",
+    "generated": "Tạo lúc: {time}",
+    "ownRange": "Khoảng riêng: {from} - {to}",
+    "noData": "Không có dữ liệu trong khoảng này",
+    "figure": "Chỉ số",
+    "value": "Giá trị",
+    "flies": "con",
+    "thisPeriod": "Kỳ này",
+    "topSpecies": "Loài nhiều nhất",
+    "hour": "Giờ",
+    "onTrap": "Trên bẫy",
+    "photoTime": "Thời điểm chụp",
+    "unit": {
+      "day": "Ngày",
+      "week": "Tuần",
+      "month": "Tháng"
+    },
+    "widgets": {
+      "kpi": "Chỉ số chính",
+      "trend": "Số ruồi mỗi ngày",
+      "catchesByTrap": "Số ruồi theo bẫy",
+      "species": "Loài côn trùng",
+      "cameraRanking": "Bảng tổng hợp bẫy",
+      "dailyTable": "Số ruồi theo kỳ",
+      "activity": "Ruồi vào bẫy theo giờ",
+      "latestSnapshot": "Ảnh chụp mới nhất"
+    },
+    "kpi": {
+      "catches": "Ruồi vào bẫy",
+      "ftd": "Ruồi/bẫy/ngày",
+      "avgPerDay": "Trung bình mỗi ngày",
+      "busiestDay": "Ngày nhiều nhất",
+      "alertCameras": "Bẫy vượt ngưỡng",
+      "cameras": "Camera",
+      "online": "{cameras} ({online} trực tuyến)",
+      "scans": "Ảnh đã phân tích",
+      "vsPrevious": "{change} so với kỳ trước ({previous})",
+      "noPrevious": "chưa có dữ liệu kỳ trước"
+    },
+    "ranking": {
+      "trap": "Bẫy",
+      "total": "Ruồi vào bẫy",
+      "ftd": "Ruồi/bẫy/ngày",
+      "change": "So với trước",
+      "latest": "Hiện có / ngưỡng",
+      "averageToday": "TB hôm nay"
+    },
+    "species": {
+      "title": "Loài",
+      "fruitFly": "Ruồi vàng",
+      "bug": "Bọ",
+      "caterpillar": "Sâu hại",
+      "moth": "Bướm đêm"
+    }
   }
 }

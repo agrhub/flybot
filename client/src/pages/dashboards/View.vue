@@ -14,6 +14,9 @@
             <el-button :icon="Back" @click="router.push('/reports')">{{ t('dashboards.backToList') }}</el-button>
             <el-button :icon="Refresh" :loading="loadingData" @click="loadData">{{ t('common.refresh') }}</el-button>
             <el-button :icon="Download" :loading="exporting" :disabled="!widgetData || !dashboard.widgets.length" @click="exportPdf">{{ t('dashboards.exportPdf') }}</el-button>
+            <el-tooltip :content="t('dashboards.sendNowHint')" placement="bottom">
+              <el-button :icon="Message" :loading="sending" :disabled="!dashboard.widgets.length" @click="sendNow">{{ t('dashboards.sendNow') }}</el-button>
+            </el-tooltip>
             <template v-if="dashboard.canEdit">
               <el-button :icon="Share" @click="shareVisible = true">{{ t('share.button') }}</el-button>
               <el-button type="primary" :icon="Edit" @click="startEditing">{{ t('dashboards.edit') }}</el-button>
@@ -21,7 +24,8 @@
                 <el-button :icon="MoreFilled" circle />
                 <template #dropdown>
                   <el-dropdown-menu>
-                    <el-dropdown-item command="delete" :icon="Delete">{{ t('dashboards.delete') }}</el-dropdown-item>
+                    <el-dropdown-item command="schedule" :icon="AlarmClock">{{ t('dashboards.schedule.menu') }}</el-dropdown-item>
+                    <el-dropdown-item command="delete" :icon="Delete" divided>{{ t('dashboards.delete') }}</el-dropdown-item>
                   </el-dropdown-menu>
                 </template>
               </el-dropdown>
@@ -44,6 +48,9 @@
           </el-tag>
           <el-tag v-if="dashboard.expiresAt" :type="dashboard.expired ? 'danger' : 'info'" effect="plain" round size="small">
             {{ dashboard.expired ? t('dashboards.expiry.expired') : t('dashboards.expiry.until', { time: formatDateTime(dashboard.expiresAt) }) }}
+          </el-tag>
+          <el-tag v-if="scheduleLabel" type="success" effect="plain" round size="small" class="cursor-pointer" @click="scheduleVisible = true">
+            <el-icon class="mr-1"><AlarmClock /></el-icon>{{ scheduleLabel }}
           </el-tag>
           <span v-if="generatedAt" class="dash-meta">{{ t('dashboards.updatedAt', { time: formatTime(generatedAt) }) }}</span>
         </div>
@@ -173,6 +180,7 @@
     </el-drawer>
 
     <DashboardShareDialog v-model="shareVisible" :dashboard="dashboard" @updated="(d) => (dashboard = d)" />
+    <ReportScheduleDialog v-model="scheduleVisible" :dashboard="dashboard" @updated="(d) => (dashboard = { ...dashboard, ...d })" />
   </div>
 </template>
 
@@ -182,7 +190,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import {
-  Back, Refresh, Share, Edit, Delete, MoreFilled, Check, Plus, Top, Bottom, Setting, Download,
+  Back, Refresh, Share, Edit, Delete, MoreFilled, Check, Plus, Top, Bottom, Setting, Download, Message, AlarmClock,
 } from '@element-plus/icons-vue';
 import api from '@/services/api';
 import { useCameras } from '@/composables/useCameras';
@@ -190,6 +198,7 @@ import PageHeader from '@/components/common/PageHeader.vue';
 import DashboardGrid from '@/components/dashboards/DashboardGrid.vue';
 import DashboardShareDialog from '@/components/dashboards/DashboardShareDialog.vue';
 import ReportRangePicker from '@/components/dashboards/ReportRangePicker.vue';
+import ReportScheduleDialog from '@/components/dashboards/ReportScheduleDialog.vue';
 import {
   WIDGET_TYPES, WIDGET_WIDTHS, WIDGET_HEIGHTS, newWidget, dashboardErrorText, rangeQuery, sameRange,
 } from '@/utils/dashboards';
@@ -393,7 +402,35 @@ const save = async () => {
   }
 };
 
+// ---------- Email ----------
+const scheduleVisible = ref(false);
+const sending = ref(false);
+const scheduleLabel = computed(() => {
+  const sc = dashboard.value?.schedule;
+  if (!sc || sc.frequency === 'off') return '';
+  const time = `${String(sc.hour).padStart(2, '0')}:00`;
+  return sc.frequency === 'weekly'
+    ? t('dashboards.schedule.labelWeekly', { day: t(`dashboards.schedule.weekdays.${sc.weekday}`), time })
+    : t('dashboards.schedule.labelMonthly', { day: sc.monthDay, time });
+});
+const sendNow = async () => {
+  sending.value = true;
+  try {
+    const query = sameRange(viewRange.value, dashboard.value.range) ? null : viewRange.value;
+    const res = await api.sendDashboardNow(dashboard.value.id, query);
+    ElMessage.success(t('dashboards.sentNow', { email: res.data.email }));
+  } catch (err) {
+    ElMessage.error(dashboardErrorText(t, err));
+  } finally {
+    sending.value = false;
+  }
+};
+
 const onCommand = async (command) => {
+  if (command === 'schedule') {
+    scheduleVisible.value = true;
+    return;
+  }
   if (command !== 'delete') return;
   try {
     await ElMessageBox.confirm(t('dashboards.deleteConfirm', { name: dashboard.value.name }), t('dashboards.delete'), {

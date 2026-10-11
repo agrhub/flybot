@@ -1,7 +1,8 @@
 const crypto = require('crypto');
 const mongoose = require('mongoose');
 const { Dashboard, Camera, User } = require('../models');
-const { WIDGET_TYPES, GRANULARITIES, CAMERA_STATUSES, RISK_FILTERS } = require('../models/Dashboard');
+const { WIDGET_TYPES, GRANULARITIES, CAMERA_STATUSES, RISK_FILTERS, SCHEDULE_FREQUENCIES, SCHEDULE_RECIPIENTS } = require('../models/Dashboard');
+const reportScheduleService = require('../services/reportScheduleService');
 const { viewFilter } = require('../utils/ownership');
 const { sendServerError } = require('../utils/http');
 const { normalizeLanguage } = require('../utils/i18n');
@@ -27,6 +28,7 @@ const NOT_FOUND = { success: false, message: "Report not found." };
 const newPublicToken = () => crypto.randomBytes(18).toString('base64url');
 const isInt = (v, min, max) => Number.isInteger(v) && v >= min && v <= max;
 const dashboardTarget = (dashboard) => ({ type: 'dashboard', id: String(dashboard._id), label: dashboard.name });
+const scheduleKey = (sc) => (sc ? [sc.frequency || 'off', sc.weekday, sc.monthDay, sc.hour, sc.recipients].join('|') : 'off');
 const text = (value, max) => (typeof value === 'string' ? value.trim().slice(0, max) : '');
 
 function sharesOf(dashboard) {
@@ -87,6 +89,15 @@ function toDetail(dashboard, user) {
     };
     // Share list and public link only for people who can change them
     if (detail.canEdit) {
+        const sc = dashboard.schedule || {};
+        detail.schedule = {
+            frequency: sc.frequency || 'off',
+            weekday: sc.weekday ?? 1,
+            monthDay: sc.monthDay ?? 1,
+            hour: sc.hour ?? 7,
+            recipients: sc.recipients || 'owner',
+            lastSentAt: sc.lastSentAt || null
+        };
         detail.sharedWith = sharesOf(dashboard);
         detail.publicToken = dashboard.visibility === 'public' ? dashboard.publicToken : null;
     }
@@ -185,6 +196,20 @@ async function validateInput(body, { editor, owner, partial = false, current = n
         const parsed = dashboardService.parseRange(body.range);
         if (parsed.error) return { error: parsed.error };
         value.range = parsed.range;
+    }
+
+    if (body.schedule !== undefined) {
+        const sc = body.schedule;
+        const frequency = sc?.frequency ?? 'off';
+        const weekday = sc?.weekday ?? 1;
+        const monthDay = sc?.monthDay ?? 1;
+        const hour = sc?.hour ?? 7;
+        const recipients = sc?.recipients ?? 'owner';
+        if (!sc || typeof sc !== 'object' || !SCHEDULE_FREQUENCIES.includes(frequency) || !SCHEDULE_RECIPIENTS.includes(recipients)
+            || !isInt(weekday, 1, 7) || !isInt(monthDay, 1, 28) || !isInt(hour, 0, 23)) {
+            return { error: "Invalid report schedule." };
+        }
+        value.schedule = { frequency, weekday, monthDay, hour, recipients };
     }
 
     if (body.expiresAt !== undefined) {
@@ -299,6 +324,12 @@ async function updateDashboard(req, res) {
 
         const wasPublic = dashboard.visibility === 'public';
         const previousExpiry = dashboard.expiresAt ? new Date(dashboard.expiresAt).getTime() : null;
+        const previousSchedule = scheduleKey(dashboard.schedule);
+        const scheduleChanged = !!result.value.schedule && scheduleKey(result.value.schedule) !== previousSchedule;
+        // A changed schedule starts from now: no email for a moment already past
+        if (result.value.schedule) {
+            result.value.schedule = { ...result.value.schedule, lastSentAt: scheduleChanged ? new Date() : dashboard.schedule?.lastSentAt ?? null };
+        }
         Object.assign(dashboard, result.value);
         // Cameras taken off the report also leave its widgets
         if (result.value.cameraSerials && result.value.widgets === undefined) {
@@ -312,6 +343,9 @@ async function updateDashboard(req, res) {
         const isPublic = dashboard.visibility === 'public';
         if (isPublic !== wasPublic) {
             recordAudit(req, { action: isPublic ? 'dashboard.published' : 'dashboard.unpublished', target: dashboardTarget(dashboard) });
+        }
+        if (scheduleChanged) {
+            recordAudit(req, { action: 'dashboard.schedule_changed', target: dashboardTarget(dashboard), details: { frequency: dashboard.schedule.frequency, recipients: dashboard.schedule.recipients } });
         }
         const expiry = dashboard.expiresAt ? new Date(dashboard.expiresAt).getTime() : null;
         if (expiry !== previousExpiry) {
@@ -364,6 +398,26 @@ async function getDashboardData(req, res) {
         res.json({ success: true, generatedAt: new Date(), range, widgets });
     } catch (err) {
         sendServerError(res, err, { context: 'Dashboard data' });
+    }
+}
+
+/**
+ * POST /api/dashboards/:id/send { range? }: email me the report with its PDF now
+ */
+async function sendDashboardNow(req, res) {
+    try {
+        const dashboard = await findDashboard(req.params.id);
+        if (!dashboardService.canViewDashboard(req.user, dashboard)) return res.status(404).json(NOT_FOUND);
+        const wanted = req.body?.range ? dashboardService.parseRange(req.body.range) : { range: null };
+        if (wanted.error) return res.status(400).json({ success: false, message: wanted.error });
+        const user = await User.findById(req.user.id).select('email name language role disabled emailVerified');
+        if (!user?.emailVerified) {
+            return res.status(400).json({ success: false, message: "Confirm your email address first." });
+        }
+        await reportScheduleService.sendReportTo(dashboard, user, { range: wanted.range });
+        res.json({ success: true, email: user.email });
+    } catch (err) {
+        sendServerError(res, err, { context: 'Send report' });
     }
 }
 
@@ -616,5 +670,6 @@ module.exports = {
     getPublicDashboard,
     streamPublicImage,
     streamDashboardImage,
+    sendDashboardNow,
     claimPendingDashboardShares
 };

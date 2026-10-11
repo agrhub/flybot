@@ -876,7 +876,7 @@
           "reports": {
             "title": "Reports",
             "desc": "Arrange the charts and numbers you care about.",
-            "items": "Open \"Reports\", create one and add blocks: key figures, flies per day, flies by trap, species, trap table, flies by period, flies by hour, latest photos.\nPick the time range at the top right: last 7 or 30 days, 3, 6 or 12 months, or your own dates; \"Save as default\" keeps it for everyone who opens the report. Figures are compared with the period just before.\nClick \"Export PDF\" to save the report with its charts and tables.\nShare it by email, or turn on a public link for partners. Under \"End of sharing\", pick a date and time after which the link and the people it is shared with lose access, or keep \"Never\"."
+            "items": "Open \"Reports\", create one and add blocks: key figures, flies per day, flies by trap, species, trap table, flies by period, flies by hour, latest photos.\nPick the time range at the top right: last 7 or 30 days, 3, 6 or 12 months, or your own dates; \"Save as default\" keeps it for everyone who opens the report. Figures are compared with the period just before.\nClick \"Export PDF\" to save the report with its charts and tables.\nShare it by email, or turn on a public link for partners. Under \"End of sharing\", pick a date and time after which the link and the people it is shared with lose access, or keep \"Never\".\nBy email: click \"Email me\" to get the report with its PDF now; the owner can open the three-dot menu, \"Email on a schedule\", to send it weekly or monthly (Vietnam time) to themselves or also to the people it is shared with."
           }
         }
       },
@@ -1456,6 +1456,44 @@
       "day": "Day",
       "week": "Week",
       "month": "Month"
+    },
+    "sendNow": "Email me",
+    "sendNowHint": "Send the report with its PDF to your email now",
+    "sentNow": "Sending the report to {email}.",
+    "schedule": {
+      "menu": "Email on a schedule",
+      "title": "Email on a schedule: {name}",
+      "desc": "FlyBot emails the report with its PDF on a schedule (Vietnam time).",
+      "frequency": "How often",
+      "frequencies": {
+        "off": "Off",
+        "weekly": "Weekly",
+        "monthly": "Monthly"
+      },
+      "weekday": "Day of the week",
+      "weekdays": {
+        "1": "Monday",
+        "2": "Tuesday",
+        "3": "Wednesday",
+        "4": "Thursday",
+        "5": "Friday",
+        "6": "Saturday",
+        "7": "Sunday"
+      },
+      "monthDay": "Day of the month",
+      "dayOfMonth": "Day {day}",
+      "hour": "Time",
+      "recipients": "Recipients",
+      "recipientsOwner": "Only me",
+      "recipientsAll": "Me and the people it is shared with",
+      "covers": {
+        "weekly": "Each email covers the last 7 days.",
+        "monthly": "Each email covers the last 30 days."
+      },
+      "lastSent": "Last sent: {time}",
+      "saved": "Schedule saved.",
+      "labelWeekly": "Emailed {day} {time}",
+      "labelMonthly": "Emailed monthly on day {day} {time}"
     }
   },
   "audit": {
@@ -1520,7 +1558,8 @@
         "published": "Public link turned on",
         "unpublished": "Public link turned off",
         "link_rotated": "New public link created",
-        "expiry_changed": "End of sharing changed"
+        "expiry_changed": "End of sharing changed",
+        "schedule_changed": "Report schedule changed"
       },
       "settings": {
         "updated": "System settings changed"

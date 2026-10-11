@@ -125,6 +125,15 @@
       "from": "From {name} <{email}>.",
       "topic": "Subject: {subject}",
       "footer": "Sent from the FlyBot contact form. Reply to this email to answer the sender."
+    },
+    "scheduledReport": {
+      "subject": "📊 {name}: {from} - {to}",
+      "intro": "Here is the report \"{name}\" for {from} to {to}.",
+      "catches": "Flies caught: {count}{change}, {ftd} per trap per day.",
+      "alerts": "Traps at or over their threshold: {count} of {cameras}.",
+      "attached": "The full report is attached as a PDF.",
+      "button": "Open the report",
+      "footer": "You get this report on the schedule its owner set. The owner can change or stop it from the report page in FlyBot."
     }
   },
   "telegram": {
@@ -343,6 +352,64 @@
     "this_report_link_has_expired": "This report link has expired.",
     "invalid_widget_filter": "Invalid widget filter.",
     "too_many_requests_please_try_again_in_a_moment": "Too many requests. Please try again in a moment.",
-    "a_public_report_can_only_include_cameras_you_own": "A public report can only include cameras you own."
+    "a_public_report_can_only_include_cameras_you_own": "A public report can only include cameras you own.",
+    "invalid_report_schedule": "Invalid report schedule.",
+    "confirm_your_email_address_first": "Confirm your email address first."
+  },
+  "reportPdf": {
+    "range": "Period: {from} - {to} ({days} days)",
+    "generated": "Generated: {time}",
+    "ownRange": "Own period: {from} - {to}",
+    "noData": "No data for this period",
+    "figure": "Figure",
+    "value": "Value",
+    "flies": "flies",
+    "thisPeriod": "This period",
+    "topSpecies": "Main species",
+    "hour": "Hour",
+    "onTrap": "On trap",
+    "photoTime": "Photo time",
+    "unit": {
+      "day": "Day",
+      "week": "Week",
+      "month": "Month"
+    },
+    "widgets": {
+      "kpi": "Key figures",
+      "trend": "Flies per day",
+      "catchesByTrap": "Flies by trap",
+      "species": "Species",
+      "cameraRanking": "Trap table",
+      "dailyTable": "Flies by period",
+      "activity": "Flies by hour",
+      "latestSnapshot": "Latest snapshots"
+    },
+    "kpi": {
+      "catches": "Flies caught",
+      "ftd": "Flies/trap/day",
+      "avgPerDay": "Average per day",
+      "busiestDay": "Busiest day",
+      "alertCameras": "Traps over threshold",
+      "cameras": "Cameras",
+      "online": "{cameras} ({online} online)",
+      "scans": "Photos analyzed",
+      "vsPrevious": "{change} vs previous period ({previous})",
+      "noPrevious": "no data for the period before"
+    },
+    "ranking": {
+      "trap": "Trap",
+      "total": "Flies caught",
+      "ftd": "Flies/trap/day",
+      "change": "vs before",
+      "latest": "Now / threshold",
+      "averageToday": "avg today"
+    },
+    "species": {
+      "title": "Species",
+      "fruitFly": "Fruit fly",
+      "bug": "Bug",
+      "caterpillar": "Caterpillar",
+      "moth": "Moth"
+    }
   }
 }

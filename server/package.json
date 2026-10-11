@@ -26,6 +26,8 @@
     "express": "^5.2.1",
     "jpeg-js": "^0.4.4",
     "jsonwebtoken": "^9.0.3",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.8",
     "mongoose": "^9.1.1",
     "node-cron": "^4.2.1",
     "nodemailer": "^10.0.10",

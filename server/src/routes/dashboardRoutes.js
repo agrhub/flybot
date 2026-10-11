@@ -17,6 +17,7 @@ router.get('/:id/data', dashboardController.getDashboardData);
 router.get('/:id/images/*key', dashboardController.streamDashboardImage);
 router.post('/:id/public-token', dashboardController.rotatePublicToken);
 router.post('/:id/share', shareLimiter, dashboardController.shareDashboard);
+router.post('/:id/send', shareLimiter, dashboardController.sendDashboardNow);
 router.delete('/:id/share', dashboardController.unshareDashboard);
 
 module.exports = router;

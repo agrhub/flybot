@@ -876,7 +876,7 @@
           "reports": {
             "title": "Báo cáo",
             "desc": "Tự sắp xếp các biểu đồ và chỉ số cần theo dõi.",
-            "items": "Vào \"Báo cáo\", tạo báo cáo mới và thêm các khối: chỉ số chính, số ruồi mỗi ngày, số ruồi theo bẫy, loài côn trùng, bảng tổng hợp bẫy, số ruồi theo kỳ, ruồi vào bẫy theo giờ, ảnh mới nhất.\nChọn khoảng thời gian ở góc phải: 7 hoặc 30 ngày qua, 3, 6 hoặc 12 tháng qua, hoặc tự chọn ngày; \"Lưu làm mặc định\" giữ khoảng này cho mọi người mở báo cáo. Các số liệu được so với kỳ liền trước.\nBấm \"Xuất PDF\" để lưu báo cáo kèm biểu đồ và bảng.\nChia sẻ theo email, hoặc bật liên kết công khai cho đối tác. Ở mục \"Thời hạn chia sẻ\", chọn ngày giờ mà sau đó liên kết và người được chia sẻ mất quyền xem, hoặc để \"Không hết hạn\"."
+            "items": "Vào \"Báo cáo\", tạo báo cáo mới và thêm các khối: chỉ số chính, số ruồi mỗi ngày, số ruồi theo bẫy, loài côn trùng, bảng tổng hợp bẫy, số ruồi theo kỳ, ruồi vào bẫy theo giờ, ảnh mới nhất.\nChọn khoảng thời gian ở góc phải: 7 hoặc 30 ngày qua, 3, 6 hoặc 12 tháng qua, hoặc tự chọn ngày; \"Lưu làm mặc định\" giữ khoảng này cho mọi người mở báo cáo. Các số liệu được so với kỳ liền trước.\nBấm \"Xuất PDF\" để lưu báo cáo kèm biểu đồ và bảng.\nChia sẻ theo email, hoặc bật liên kết công khai cho đối tác. Ở mục \"Thời hạn chia sẻ\", chọn ngày giờ mà sau đó liên kết và người được chia sẻ mất quyền xem, hoặc để \"Không hết hạn\".\nMuốn nhận qua email: bấm \"Gửi email\" để nhận ngay báo cáo kèm file PDF; chủ báo cáo vào nút ba chấm, \"Gửi định kỳ\" để đặt lịch gửi hằng tuần hoặc hằng tháng (giờ Việt Nam), cho riêng mình hoặc cả những người được chia sẻ."
           }
         }
       },
@@ -1456,6 +1456,44 @@
       "day": "Ngày",
       "week": "Tuần",
       "month": "Tháng"
+    },
+    "sendNow": "Gửi email",
+    "sendNowHint": "Gửi báo cáo kèm file PDF tới email của bạn ngay",
+    "sentNow": "Đang gửi báo cáo tới {email}.",
+    "schedule": {
+      "menu": "Gửi định kỳ",
+      "title": "Gửi định kỳ: {name}",
+      "desc": "FlyBot gửi báo cáo kèm file PDF qua email theo lịch (giờ Việt Nam).",
+      "frequency": "Tần suất",
+      "frequencies": {
+        "off": "Tắt",
+        "weekly": "Hằng tuần",
+        "monthly": "Hằng tháng"
+      },
+      "weekday": "Ngày trong tuần",
+      "weekdays": {
+        "1": "Thứ Hai",
+        "2": "Thứ Ba",
+        "3": "Thứ Tư",
+        "4": "Thứ Năm",
+        "5": "Thứ Sáu",
+        "6": "Thứ Bảy",
+        "7": "Chủ Nhật"
+      },
+      "monthDay": "Ngày trong tháng",
+      "dayOfMonth": "Ngày {day}",
+      "hour": "Giờ gửi",
+      "recipients": "Người nhận",
+      "recipientsOwner": "Chỉ mình tôi",
+      "recipientsAll": "Tôi và những người được chia sẻ",
+      "covers": {
+        "weekly": "Mỗi email gồm số liệu 7 ngày gần nhất.",
+        "monthly": "Mỗi email gồm số liệu 30 ngày gần nhất."
+      },
+      "lastSent": "Lần gửi gần nhất: {time}",
+      "saved": "Đã lưu lịch gửi.",
+      "labelWeekly": "Gửi {day} {time}",
+      "labelMonthly": "Gửi ngày {day} hằng tháng {time}"
     }
   },
   "audit": {
@@ -1520,7 +1558,8 @@
         "published": "Bật liên kết công khai",
         "unpublished": "Tắt liên kết công khai",
         "link_rotated": "Tạo liên kết công khai mới",
-        "expiry_changed": "Đổi thời hạn chia sẻ"
+        "expiry_changed": "Đổi thời hạn chia sẻ",
+        "schedule_changed": "Đổi lịch gửi báo cáo"
       },
       "settings": {
         "updated": "Đổi cài đặt hệ thống"

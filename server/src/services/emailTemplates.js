@@ -157,6 +157,25 @@ function weeklyReportEmail({ user, language, lines, url }) {
 }
 
 /**
+ * A report sent on its schedule (or on request), with the report as a PDF attachment.
+ */
+function scheduledReportEmail({ user, language, params, lines = [], url, attachments }) {
+    const t = (key, p) => translate(language, key, p);
+    return {
+        to: user.email,
+        subject: t('email.scheduledReport.subject', params),
+        ...layout({
+            language,
+            user,
+            paragraphs: [t('email.scheduledReport.intro', params), ...lines, t('email.scheduledReport.attached')],
+            button: url ? { label: t('email.scheduledReport.button'), url } : null,
+            footerKey: 'email.scheduledReport.footer'
+        }),
+        attachments
+    };
+}
+
+/**
  * A message from the public contact form, for the operator. Replying answers the sender.
  */
 function contactEmail({ to, language, name, email, subject, message }) {
@@ -178,6 +197,7 @@ module.exports = {
     contactEmail,
     shareEmail,
     weeklyReportEmail,
+    scheduledReportEmail,
     escapeHtml,
     passwordResetEmail,
     passwordChangedEmail,

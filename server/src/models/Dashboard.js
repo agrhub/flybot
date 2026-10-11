@@ -6,6 +6,8 @@ const RANGE_PRESETS = ['7d', '30d', '3m', '6m', '12m', 'custom'];
 const GRANULARITIES = ['auto', 'day', 'week', 'month'];
 const CAMERA_STATUSES = ['all', 'online', 'offline'];
 const RISK_FILTERS = ['all', 'high', 'moderate', 'low'];
+const SCHEDULE_FREQUENCIES = ['off', 'weekly', 'monthly'];
+const SCHEDULE_RECIPIENTS = ['owner', 'all'];
 
 const widgetSchema = new mongoose.Schema({
     id: { type: String, required: true },
@@ -64,12 +66,24 @@ const dashboardSchema = new mongoose.Schema({
         to: { type: String, default: undefined }
     },
     // After this moment the public link and the people it is shared with lose access (null = never)
-    expiresAt: { type: Date, default: null }
+    expiresAt: { type: Date, default: null },
+    // Emailed with a PDF on a schedule, farm time (services/reportScheduleService.js)
+    schedule: {
+        frequency: { type: String, enum: SCHEDULE_FREQUENCIES, default: 'off' },
+        // Monday = 1 ... Sunday = 7
+        weekday: { type: Number, min: 1, max: 7, default: 1 },
+        monthDay: { type: Number, min: 1, max: 28, default: 1 },
+        hour: { type: Number, min: 0, max: 23, default: 7 },
+        // owner only, or also the people it is shared with
+        recipients: { type: String, enum: SCHEDULE_RECIPIENTS, default: 'owner' },
+        lastSentAt: { type: Date, default: null }
+    }
 }, { timestamps: true });
 
 dashboardSchema.index({ publicToken: 1 }, { unique: true, sparse: true });
 dashboardSchema.index({ 'sharedWith.userId': 1 });
 dashboardSchema.index({ 'sharedWith.email': 1 });
+dashboardSchema.index({ 'schedule.frequency': 1 });
 
 const Dashboard = mongoose.model('Dashboard', dashboardSchema);
 
@@ -79,3 +93,5 @@ module.exports.RANGE_PRESETS = RANGE_PRESETS;
 module.exports.GRANULARITIES = GRANULARITIES;
 module.exports.CAMERA_STATUSES = CAMERA_STATUSES;
 module.exports.RISK_FILTERS = RISK_FILTERS;
+module.exports.SCHEDULE_FREQUENCIES = SCHEDULE_FREQUENCIES;
+module.exports.SCHEDULE_RECIPIENTS = SCHEDULE_RECIPIENTS;
