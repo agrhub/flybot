@@ -1,7 +1,7 @@
 const { User, Camera, DailyStat, MaintenanceEvent, Treatment } = require('../models');
 const { viewableCameras } = require('../utils/ownership');
 const { translate, normalizeLanguage } = require('../utils/i18n');
-const { dayKeyOf, DAY_MS } = require('./dailyStats');
+const { dayKeyOf, addDays, DAY_MS } = require('./dailyStats');
 const { dailyValues } = require('./treatmentService');
 const { trapKindOf } = require('../constants/trap');
 const { cardDueAt } = require('./maintenanceService');
@@ -17,7 +17,6 @@ const TOP_CAMERAS = 5;
 const RISING_PCT = 50;
 const RISING_MIN = 10;
 
-const addDays = (key, n) => dayKeyOf(new Date(`${key}T12:00:00Z`).getTime() + n * DAY_MS);
 const sum = (values) => values.reduce((a, b) => a + (b || 0), 0);
 const percentChange = (current, previous) => (previous > 0 ? Math.round(((current - previous) / previous) * 100) : null);
 

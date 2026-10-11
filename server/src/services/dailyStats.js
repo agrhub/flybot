@@ -17,6 +17,20 @@ const dayKeyOf = (date) => dayFormat.format(new Date(date));
 // Day key `days - 1` days before today, so "last N days" includes today
 const startKeyForDays = (days) => dayKeyOf(new Date(Date.now() - (Math.max(1, days) - 1) * DAY_MS));
 
+// Day keys are calendar dates: shifting one is plain date arithmetic. Long ranges step through
+// the same days for every camera and species, so the results are kept (a few thousand entries).
+const shifted = new Map();
+function addDays(key, n) {
+    const cacheKey = `${key}|${n}`;
+    let result = shifted.get(cacheKey);
+    if (result === undefined) {
+        result = new Date(new Date(`${key}T12:00:00Z`).getTime() + n * DAY_MS).toISOString().slice(0, 10);
+        if (shifted.size >= 20000) shifted.clear();
+        shifted.set(cacheKey, result);
+    }
+    return result;
+}
+
 /**
  * Rollup documents for one camera from its processed snapshots in [from, to).
  */
@@ -186,6 +200,7 @@ function speciesSeries(list, mode) {
 module.exports = {
     DAY_MS,
     dayKeyOf,
+    addDays,
     startKeyForDays,
     computeDays,
     rebuildRange,

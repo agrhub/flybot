@@ -4,7 +4,6 @@ const { dailyValues } = require('./treatmentService');
 const { Camera } = require('../models');
 const { trapKindOf } = require('../constants/trap');
 const { countPests } = require('./notificationService');
-const { TIMEZONE } = require('./captureSchedule');
 
 /**
  * Catches: insects that arrived on a trap, as opposed to the count on the sticky card.
@@ -17,8 +16,11 @@ const { TIMEZONE } = require('./captureSchedule');
  * average per photo (treatmentService.dailyValues); it feeds the same per-trap-per-day figures.
  */
 const DAY_MS = 24 * 60 * 60 * 1000;
+// Farm time (Asia/Ho_Chi_Minh): UTC+7 all year
+const FARM_OFFSET_MS = 7 * 60 * 60 * 1000;
+const PEST_COUNT_INDEX = { deviceSerial: 1, pestCount: 1, createdAt: -1 };
 const round1 = (n) => Math.round(n * 10) / 10;
-const addDays = (key, n) => dailyStats.dayKeyOf(new Date(`${key}T12:00:00Z`).getTime() + n * DAY_MS);
+const { addDays } = dailyStats;
 const percentChange = (current, previous) => (previous > 0 ? Math.round(((current - previous) / previous) * 100) : null);
 
 /**
@@ -183,23 +185,47 @@ function speciesCatchSeries({ dayKeys, cameras }, mode = 'day') {
 async function activityByHour(serials, days = 14, now = new Date()) {
     const since = new Date(now.getTime() - days * DAY_MS);
     // Bounded on both sides: a report range can end in the past
-    const snaps = await Snapshot.find({ deviceSerial: { $in: serials }, aiProcessed: true, createdAt: { $gte: since, $lte: now } })
-        .sort({ deviceSerial: 1, createdAt: 1 })
-        .select('deviceSerial createdAt pestCount aiResults.summary')
-        .lean();
+    const createdAt = { $gte: since, $lte: now };
+    const [counted, uncounted] = await Promise.all([
+        // Read from the { deviceSerial, pestCount, createdAt } index alone, a camera at a time
+        Promise.all(serials.map((serial) => {
+            const read = (options) => Snapshot.collection.find(
+                { deviceSerial: serial, pestCount: { $gte: 0 }, createdAt },
+                { projection: { _id: 0, deviceSerial: 1, createdAt: 1, pestCount: 1 }, ...options }
+            ).toArray();
+            // The index may still be building on a new deployment: then without it
+            return read({ hint: PEST_COUNT_INDEX }).catch(() => read({}));
+        })),
+        // Analyzed photos not given their stored count yet (filled in the background): from the summary
+        Snapshot.find({ deviceSerial: { $in: serials }, aiProcessed: true, pestCount: { $exists: false }, createdAt })
+            .select('deviceSerial createdAt aiResults.summary').lean()
+    ]);
+    const snaps = counted.flat().map(s => ({ deviceSerial: s.deviceSerial, createdAt: s.createdAt, count: s.pestCount }));
+    for (const s of uncounted) {
+        snaps.push({ deviceSerial: s.deviceSerial, createdAt: s.createdAt, count: countPests(s.aiResults?.summary) });
+    }
+    snaps.sort((a, b) => (a.deviceSerial < b.deviceSerial ? -1 : a.deviceSerial > b.deviceSerial ? 1 : a.createdAt - b.createdAt));
     const cardEvents = await MaintenanceEvent.find({ deviceSerial: { $in: serials }, type: 'card_replaced', at: { $gte: since, $lte: now } })
         .select('deviceSerial at').lean();
-    const hourOf = new Intl.DateTimeFormat('en-GB', { timeZone: TIMEZONE, hour: '2-digit', hourCycle: 'h23' });
+    const cardChanges = new Map();
+    for (const e of cardEvents) {
+        if (!cardChanges.has(e.deviceSerial)) cardChanges.set(e.deviceSerial, []);
+        cardChanges.get(e.deviceSerial).push(e.at);
+    }
 
     const kinds = new Map((await Camera.find({ deviceSerial: { $in: serials } }).select('deviceSerial trapKind').lean()).map(c => [c.deviceSerial, trapKindOf(c)]));
     const cells = new Map(); // "day|hour" -> catches
     const lureSums = new Map(); // "day|hour|serial" -> { sum, n }
     let previous = null;
+    // "day|hour" in farm time. A fixed offset: Intl formatting each of tens of thousands of photos is slow
+    const cellOf = (date) => {
+        const local = new Date(date.getTime() + FARM_OFFSET_MS);
+        return `${local.toISOString().slice(0, 10)}|${local.getUTCHours()}`;
+    };
     for (const snap of snaps) {
-        // Stored with the photo; older photos: added up from the summary
-        const count = snap.pestCount ?? countPests(snap.aiResults?.summary instanceof Map ? Object.fromEntries(snap.aiResults.summary) : snap.aiResults?.summary);
+        const { count } = snap;
         if (kinds.get(snap.deviceSerial) === 'lure') {
-            const key = `${dailyStats.dayKeyOf(snap.createdAt)}|${Number(hourOf.format(snap.createdAt))}|${snap.deviceSerial}`;
+            const key = `${cellOf(snap.createdAt)}|${snap.deviceSerial}`;
             const cell = lureSums.get(key) || { sum: 0, n: 0 };
             cell.sum += count;
             cell.n++;
@@ -208,11 +234,11 @@ async function activityByHour(serials, days = 14, now = new Date()) {
             continue;
         }
         if (previous && previous.deviceSerial === snap.deviceSerial) {
-            const changed = cardEvents.some(e => e.deviceSerial === snap.deviceSerial && e.at > previous.createdAt && e.at <= snap.createdAt);
+            const changed = (cardChanges.get(snap.deviceSerial) || []).some(at => at > previous.createdAt && at <= snap.createdAt);
             const rise = count - previous.count;
             // A drop means a new card (or a miscount): nothing arrived that we can measure
             if (!changed && rise > 0) {
-                const key = `${dailyStats.dayKeyOf(snap.createdAt)}|${Number(hourOf.format(snap.createdAt))}`;
+                const key = cellOf(snap.createdAt);
                 cells.set(key, (cells.get(key) || 0) + rise);
             }
         }

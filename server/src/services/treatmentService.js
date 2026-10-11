@@ -1,5 +1,5 @@
 const { DailyStat, MaintenanceEvent, Camera } = require('../models');
-const { dayKeyOf, DAY_MS } = require('./dailyStats');
+const { dayKeyOf, addDays, DAY_MS } = require('./dailyStats');
 
 const { trapKindOf } = require('../constants/trap');
 
@@ -7,7 +7,6 @@ const DEFAULT_WINDOW_DAYS = 7;
 // Fewer days than this after the treatment: too early to judge
 const MIN_DAYS_AFTER = 2;
 
-const addDays = (key, n) => dayKeyOf(new Date(`${key}T12:00:00Z`).getTime() + n * DAY_MS);
 
 /**
  * Insects caught per day by one trap, from the daily rollup.

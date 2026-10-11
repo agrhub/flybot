@@ -57,6 +57,10 @@ test('analytics insights: per-trap table, hourly activity and catches chart', as
     assert.equal(trap.onCard, 8);
     assert.equal(trap.daily.length, 14);
     assert.equal(body.insights.activity.byHour.reduce((a, b) => a + b, 0), 5, 'rises of 2 and 3 between photos');
+    // Some photos with their stored count, some still without: read together, in time order
+    await models.Snapshot.collection.updateMany({ deviceSerial: 'INS1', 'aiResults.summary.fruit_fly': { $in: [3, 8] } }, [{ $set: { pestCount: '$aiResults.summary.fruit_fly' } }]);
+    const mixed = await json(await request('/api/ai/insights?days=14', { as: owner }));
+    assert.equal(mixed.body.insights.activity.byHour.reduce((a, b) => a + b, 0), 5);
 
     const chart = await json(await request('/api/ai/statistics?mode=day&metric=catches', { as: owner }));
     assert.equal(chart.body.metric, 'catches');
