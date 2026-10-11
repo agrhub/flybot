@@ -25,8 +25,9 @@
           </el-descriptions-item>
 
           <el-descriptions-item :label="t('analytics.targetStats')">
+            <!-- Fixed size: a self-resizing chart in a table cell inside an opening dialog measures wrong -->
             <div class="h-44 w-full flex items-center justify-center mb-3 relative">
-              <canvas ref="pieChartRef"></canvas>
+              <canvas ref="pieChartRef" width="240" height="176"></canvas>
               <span v-if="!hasInsects" class="meta-text absolute">{{ t('analytics.noInsects') }}</span>
             </div>
             <div class="flex flex-wrap gap-1.5">
@@ -262,7 +263,7 @@ const drawDetection = () => {
       const fontSize = Math.max(12, Math.round(img.width / 60))
       ctx.font = `bold ${fontSize}px Quicksand, sans-serif`
       const conf = det.confidence ? Math.round(det.confidence * 100) : 100
-      const label = `${det.name} (${conf}%)`
+      const label = `${speciesName(det.name, t)} (${conf}%)`
       const textWidth = ctx.measureText(label).width
 
       ctx.fillRect(x, Math.max(0, y - fontSize - 6), textWidth + 10, fontSize + 6)
@@ -310,8 +311,7 @@ const renderChart = () => {
       ]
     },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
+      responsive: false,
       cutout: '70%',
       plugins: {
         legend: { display: false },

@@ -9,11 +9,13 @@ const FRUIT_FLY_ALIASES = ['fruit_fly', 'fruit fly', 'fruit-fly', 'bactrocera', 
 // Legacy Vietnamese labels: 'bọ' = bug, 'sâu' = caterpillar
 const BUG_ALIASES = ['bug', 'bọ'];
 const CATERPILLAR_ALIASES = ['caterpillar', 'sâu'];
+const MOTH_ALIASES = ['moth', 'bướm'];
 
 const I18N_KEYS = {
   [FRUIT_FLY]: 'species.fruitFly',
   bug: 'species.bug',
-  caterpillar: 'species.caterpillar'
+  caterpillar: 'species.caterpillar',
+  moth: 'species.moth'
 };
 
 const matches = (label, aliases) => aliases.some(alias => label.includes(alias));
@@ -27,6 +29,7 @@ export function normalizeSpecies(label) {
   if (matches(s, FRUIT_FLY_ALIASES)) return FRUIT_FLY;
   if (matches(s, BUG_ALIASES)) return 'bug';
   if (matches(s, CATERPILLAR_ALIASES)) return 'caterpillar';
+  if (matches(s, MOTH_ALIASES)) return 'moth';
   return label;
 }
 

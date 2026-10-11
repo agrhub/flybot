@@ -706,26 +706,38 @@
     "audience3Feat2": "Read-only API and signed webhooks",
     "audience3Feat3": "Retrain the AI with reviewed photos",
     "liveEngine": "Live Engine",
-    "startBtn": "Start"
+    "startBtn": "Start",
+    "videoTag": "Product tour",
+    "videoHeading": "See FlyBot at work in one minute",
+    "videoDesc": "From trap photos to alerts and forecasts: the main FlyBot screens, with sample data.",
+    "videoCta": "Read the full guide",
+    "watchVideo": "Watch the 1-minute video"
   },
   "manual": {
     "title": "User guide",
-    "subtitle": "From your first camera to alerts, reports and integrations.",
+    "subtitle": "Step by step with screenshots: from your first camera to alerts, reports and integrations.",
+    "videoTitle": "FlyBot in one minute",
+    "videoDesc": "A short tour of the main screens. Screenshots and video use sample data.",
+    "stepsLabel": "How to",
+    "zoomHint": "Click the picture to enlarge it",
     "sections": {
       "start": {
         "title": "Getting started",
         "steps": {
           "account": {
-            "title": "Account & roles",
-            "desc": "Sign up with your email and confirm it. Admins run the whole system; managers add and manage their cameras; viewers see what is shared with them."
+            "title": "Sign in & the Overview",
+            "desc": "After signing in, the Overview shows which trap has the most flies, the total on all traps, how many cameras are online and the pest risk level.",
+            "items": "Sign up with your email and click the confirmation link in your inbox.\nAccount roles: admins run the whole system; managers add and manage cameras; viewers see what is shared with them.\nThe bar under each trap compares its current count with its alert threshold.\n\"Pest Hotspot\" appears when a trap reaches its threshold; \"Replace card\" when its sticky card should be replaced."
           },
           "camera": {
             "title": "Add a camera",
-            "desc": "In Cameras, choose Add camera and enter the serial number (SN) and the 6-character verification code printed on the EZVIZ camera label. New cameras go into the first organization you own."
+            "desc": "Each EZVIZ camera is added with the serial number and verification code printed on its label.",
+            "items": "In Cameras, click \"Add camera\".\nEnter the serial number (SN, 9 characters) and the 6-letter verification code from the label; give it a clear name, for example \"Mango trap A1\".\nSave. The camera joins the first organization you own and is photographed on schedule.\nIf it says the camera belongs to another account, ask its owner to share it with you."
           },
           "schedule": {
-            "title": "Schedule, threshold & location",
-            "desc": "In Settings, Camera management: choose the capture interval, daytime only if needed, the alert threshold and the GPS location. The location is needed for weather and the degree-day forecast."
+            "title": "Capture schedule & alert threshold",
+            "desc": "Each camera has its own schedule and threshold, set in Settings.",
+            "items": "Open Settings, Camera Management.\nChoose the capture interval: 15, 30, 60 or 120 minutes. Turn on \"Daytime only\" if the camera has no night vision.\nSet the alert threshold: the number of flies that calls for action (15 by default).\nPlace the camera on the Map page by dragging its pin. The location is needed for weather and the degree-day forecast."
           }
         }
       },
@@ -733,16 +745,19 @@
         "title": "Cameras & traps",
         "steps": {
           "live": {
-            "title": "Live view & playback",
-            "desc": "The Cameras page shows a grid of cameras. Open one for live view, SD-card playback, or capture a photo now for the AI to count."
+            "title": "Camera grid",
+            "desc": "The Cameras page shows all your cameras in a grid with their connection status and latest photo.",
+            "items": "Pick a 2x2, 3x3 or Auto grid at the top.\nOnline cameras play live; offline ones show their latest photo and a \"Refresh\" button.\nClick \"Details\" to open a camera: high-quality live view and SD-card playback by hour.\nFor cameras with video encryption, enter the verification code when asked."
           },
           "health": {
-            "title": "Camera status & photo quality",
-            "desc": "Camera details show the latest photo, photos in the last 24 hours, the AI success rate and photo quality: too dark, too bright, blurry, dirty lens, full card."
+            "title": "Capture now & camera status",
+            "desc": "Camera details tell you whether the camera is capturing and being analyzed regularly.",
+            "items": "Click \"Capture now\" to take a photo and count it right away.\nCheck \"Last snapshot\", \"Snapshots (24h)\" and \"AI analyzed (24h)\": a low rate means bad photos or an AI service problem.\n\"Photo quality\" flags Too dark, Too bright, Blurry, Dirty lens or Card full; hover over the tag for how to fix it."
           },
           "card": {
             "title": "Sticky card upkeep",
-            "desc": "Log each card replacement and set the reminder interval. FlyBot also records it when the count drops sharply (a new card) and tells you; delete the entry if it was a mistake."
+            "desc": "A sticky card keeps what it catches, so log each replacement for correct daily catches.",
+            "items": "In camera details, Trap maintenance, click \"Card replaced\" as soon as you replace it.\nLog other work with \"Log\": lure replaced, lens cleaned, other.\nChoose a reminder after 3 to 30 days; FlyBot reminds you when it is due.\nWhen the count drops sharply, FlyBot records a replacement and tells you; delete it if it was a mistake."
           }
         }
       },
@@ -750,20 +765,24 @@
         "title": "AI & analytics",
         "steps": {
           "count": {
-            "title": "AI insect counting",
-            "desc": "Every photo is counted by the AI. A sticky card keeps what it catches, so the daily catch is the rise over the day before."
+            "title": "See the AI count on a photo",
+            "desc": "Every photo is counted by the AI; blue boxes mark each insect with its confidence.",
+            "items": "Open Analytics, choose a camera and period, then the \"Detection History\" tab.\nClick the eye icon on a row to open the photo: detection boxes, counts per species and a share chart.\nThe daily catch is the rise on the card over the day before; card-change days are not counted."
           },
           "review": {
-            "title": "Review & correct counts",
-            "desc": "In the photo history, confirm a count or correct it. Corrected counts are used in all statistics and can be used to retrain the AI."
+            "title": "Confirm or correct counts",
+            "desc": "Technicians check the AI results so the numbers can be trusted.",
+            "items": "In the photo details, click \"Confirm result\" when the AI count is right.\nClick \"Correct counts\" to enter the number per species and a note.\nCorrected counts are used in every statistic, alert and report; \"Export corrected data\" lists the corrected photos."
           },
           "analytics": {
-            "title": "Analytics & comparison",
-            "desc": "The Analytics page has charts by day and species, comparisons between traps and periods, and PDF or Excel export."
+            "title": "Charts & reports",
+            "desc": "The \"Trends & Charts\" tab shows insect density over time and by species.",
+            "items": "View by Hour, Day or Month; dashed orange lines mark card replacements.\nCards on top: current density, main species, number of scans and the short-term trend.\nClick \"Export PDF Report\" or \"Export Excel\" to save a report for the chosen period."
           },
           "forecast": {
-            "title": "Diagnosis & forecast",
-            "desc": "On the Overview, run the diagnosis for the risk level, the 7-day trend, the degree-day forecast of the next wave of adult flies and suggested actions. These are estimates to guide you."
+            "title": "AI diagnosis & forecast",
+            "desc": "The AI Copilot panel on the Overview brings risk, trend and suggested actions together.",
+            "items": "Click the AI Agent diagnosis button at the bottom of the Overview.\n\"7-day trend forecast\": expected flies per day, colored by risk.\n\"Next wave of adult flies\": a degree-day estimate from the biggest catch, with progress and generation length.\n\"Recommended actions\": suggestions following integrated pest management. These are estimates; check the field."
           }
         }
       },
@@ -772,32 +791,58 @@
         "steps": {
           "plots": {
             "title": "Farms & plots",
-            "desc": "Create a farm, draw each plot on the map, put cameras in plots and set a threshold per plot."
+            "desc": "Group traps by farm and plot to follow each area.",
+            "items": "Open \"Farms\", create a farm, then click \"Add plot\".\nDraw the plot boundary on the map and enter its area and color.\nPut cameras in the plot and set a plot threshold if needed.\nEach plot shows its traps, the current average and the last 7 days; Low/High follows the risk."
+          },
+          "map": {
+            "title": "Map",
+            "desc": "The Map page shows traps and plots on a street or satellite map.",
+            "items": "Turn on \"Plots\" to color plots by risk; turn on \"Heatmap\" to see where flies concentrate.\nDrag a camera pin to set the trap real position.\nThe list on the right finds traps by name or serial number."
           },
           "sharing": {
             "title": "Sharing & organizations",
-            "desc": "Share cameras or farms by email. For a team, create an organization in Settings and add members as owner, manager or member."
+            "desc": "Work as a team by sharing cameras or farms, or with an organization.",
+            "items": "Share a camera in Settings, Camera Management; share a farm with the \"Share\" button on the farm page.\nFor a cooperative or company: Settings, Organizations, \"New organization\".\nAdd members by email as Owner, Manager or Member. Members see every camera and farm of the organization.\nOnly the camera owner or an admin can delete it, share it outside or move it to another organization."
           },
           "log": {
-            "title": "Treatment log",
-            "desc": "Record each spray, release of natural enemies or other action. FlyBot compares catches before and after, and exports the log in VietGAP format."
+            "title": "Treatment log & VietGAP",
+            "desc": "Record every action taken and see its effect on trap catches.",
+            "items": "Open \"Field log\", click \"Log treatment\".\nChoose the method: spray, protein bait, lure, biological, sanitation, bagging or other; pick the traps in the treated area.\nEnter product, active ingredient, dose, operator and pre-harvest interval.\n\"Effect\" compares average catches before and after; \"Harvest\" shows when the interval has passed.\nClick \"Export VietGAP log\" to save the pesticide use record."
           }
         }
       },
       "alerts": {
         "title": "Alerts & reports",
         "steps": {
-          "channels": {
-            "title": "Alert channels",
-            "desc": "In Settings, Notifications: turn on email, connect Telegram, enable push notifications on your phone or computer."
-          },
           "smart": {
-            "title": "Smart alerts",
-            "desc": "Threshold reached, sudden rise, camera offline, photo problems, card due. Set quiet hours for the night or mute a single camera."
+            "title": "In-app notifications",
+            "desc": "The bell at the top shows new alerts.",
+            "items": "Alert types: threshold reached, sudden rise, camera offline or back online, AI analysis failing, photo problems, card due.\nClick a notification to open the related page.\nClick \"Mark all as read\" to clear the bell count."
+          },
+          "channels": {
+            "title": "Channels & quiet hours",
+            "desc": "Choose how alerts reach you when the app is closed.",
+            "items": "Open Settings, Notifications.\nTurn on alert emails, connect Telegram, or enable push notifications on this phone or computer.\nTurn on the weekly report for a Monday summary; \"Send me this week’s report now\" shows an example.\nSet quiet hours for the night, and switch off cameras you do not follow under \"Cameras I follow\"."
           },
           "reports": {
-            "title": "Reports",
-            "desc": "A weekly report arrives every Monday morning. Build custom dashboards and share them with a public link when needed."
+            "title": "Custom dashboards",
+            "desc": "Arrange the charts and numbers you care about.",
+            "items": "Open \"Dashboards\", create one and add widgets: numbers, charts, trap comparisons.\nShare a dashboard by email, or turn on a public link for partners."
+          }
+        }
+      },
+      "mobile": {
+        "title": "On the phone",
+        "steps": {
+          "app": {
+            "title": "Phone layout",
+            "desc": "FlyBot switches to an app-like layout on phones.",
+            "items": "Bottom bar: Overview, Cameras, Analytics, Map and More.\nLong pages become vertical cards, easy to scroll with one hand."
+          },
+          "more": {
+            "title": "More menu & installing",
+            "desc": "The \"More\" button opens everything else.",
+            "items": "More holds: Dashboards, Farms, Field log, Settings, Add camera, Guide, language and light/dark theme.\nTo install it as an app: Settings, Notifications, \"Install the app\" (Android, computer), or on iPhone use Safari, Share, \"Add to Home Screen\".\nOnce installed, enable push notifications to get alerts right on the phone."
           }
         }
       },
@@ -805,16 +850,14 @@
         "title": "Integrations",
         "steps": {
           "api": {
-            "title": "API keys",
-            "desc": "In Settings, API & Webhooks, create a read-only key so other systems can read cameras, daily counts and alerts at /api/v1."
-          },
-          "webhook": {
-            "title": "Webhooks",
-            "desc": "Receive alerts as they happen at your HTTPS address. Each request is signed so you can check it; use Test to send a sample event."
+            "title": "API keys & webhooks",
+            "desc": "Connect FlyBot to your own systems (managers and admins).",
+            "items": "Open Settings, API & Webhooks.\nClick \"Create key\", name it and copy the key right away: it is shown only once.\nUse the key to read cameras, daily counts, analyzed photos and alerts at /api/v1.\nAdd a webhook: enter an HTTPS address, choose events, keep the signing secret to check signatures; click \"Test\" to send a sample event."
           },
           "training": {
             "title": "Retraining the AI",
-            "desc": "Admins can upload reviewed photos to a Roboflow project, so the model learns from your own farm photos."
+            "desc": "Admins can use reviewed photos to improve the model.",
+            "items": "Open Settings, System settings, the \"Retrain the AI with reviewed photos\" card.\nTurn uploading on; confirmed photos go with their detection boxes, corrected ones are tagged with the right count for labeling in Roboflow."
           }
         }
       }
@@ -985,7 +1028,8 @@
     "fruitFly": "Fruit Fly",
     "bug": "Bug",
     "caterpillar": "Caterpillar",
-    "other": "Other"
+    "other": "Other",
+    "moth": "Moth"
   },
   "notifications": {
     "markAllRead": "Mark all as read",

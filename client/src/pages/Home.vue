@@ -17,7 +17,14 @@ import {
   MapLocation
 } from '@element-plus/icons-vue';
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
+
+// The product tour in the page language; VITE_HOME_VIDEO_URL replaces it (an mp4, or a YouTube/Vimeo embed link)
+const customVideo = import.meta.env.VITE_HOME_VIDEO_URL || '';
+const embedVideo = /youtube\.com\/embed|youtube-nocookie\.com\/embed|player\.vimeo\.com/.test(customVideo) ? customVideo : '';
+const videoLang = computed(() => (locale.value === 'en' ? 'en' : 'vi'));
+const videoSrc = computed(() => customVideo || `/media/flybot-tour-${videoLang.value}.mp4`);
+const videoPoster = computed(() => (customVideo ? undefined : `/media/flybot-tour-${videoLang.value}-poster.webp`));
 const { isDark } = useTheme();
 
 function handleScroll(targetId, e) {
@@ -89,10 +96,10 @@ const isAuthenticated = computed(() => {
 
             <a
               href="#engine"
-              @click="(e) => handleScroll('#engine', e)"
+              @click="(e) => handleScroll('#video', e)"
               class="inline-flex items-center justify-center border border-[var(--el-border-color)] text-[var(--el-text-color-primary)] px-8 py-4 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-[var(--el-fill-color-light)] transition-all w-fit cursor-pointer"
             >
-              {{ t('home.howItWorks') }}
+              {{ t('home.watchVideo') }}
             </a>
           </div>
         </div>
@@ -180,6 +187,43 @@ const isAuthenticated = computed(() => {
         <h2 class="text-[10vw] font-black tracking-tighter text-outline uppercase px-4 opacity-40">
           FlyBot AI • Smart Trap • Vision AI • FlyBot AI • Smart Trap • Vision AI • 
         </h2>
+      </div>
+    </section>
+
+    <!-- Product tour video (VITE_HOME_VIDEO_URL can point to a commercial: an mp4 or a YouTube/Vimeo embed link) -->
+    <section id="video" class="py-24 px-6 scroll-mt-20">
+      <div class="container mx-auto max-w-[1200px]">
+        <div class="text-center mb-10 space-y-3">
+          <span class="text-xs font-bold uppercase tracking-widest text-[#3ecf8e] block">{{ t('home.videoTag') }}</span>
+          <h2 class="text-3xl sm:text-5xl font-extrabold tracking-tighter text-[var(--el-text-color-primary)]">{{ t('home.videoHeading') }}</h2>
+          <p class="text-sm sm:text-base text-[var(--el-text-color-secondary)] max-w-2xl mx-auto">{{ t('home.videoDesc') }}</p>
+        </div>
+        <div class="rounded-2xl overflow-hidden border border-[var(--el-border-color)] shadow-lg bg-black">
+          <iframe
+            v-if="embedVideo"
+            :src="embedVideo"
+            class="w-full aspect-video block"
+            :title="t('home.videoHeading')"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; picture-in-picture"
+            allowfullscreen
+          ></iframe>
+          <video
+            v-else
+            :key="videoSrc"
+            class="w-full aspect-video block"
+            controls
+            playsinline
+            preload="metadata"
+            :poster="videoPoster"
+          >
+            <source :src="videoSrc" type="video/mp4" />
+          </video>
+        </div>
+        <div class="text-center mt-6">
+          <RouterLink to="/manual" class="text-xs font-bold uppercase tracking-widest border-b border-[#3ecf8e] pb-1 text-[#3ecf8e] hover:text-[var(--el-text-color-primary)] transition-colors">
+            {{ t('home.videoCta') }} &rarr;
+          </RouterLink>
+        </div>
       </div>
     </section>
 

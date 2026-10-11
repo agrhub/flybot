@@ -45,7 +45,7 @@
         :type="riskTagType"
       >
         <template #value>
-          <el-tag :type="riskTagType" effect="light" round>{{ riskLabel }}</el-tag>
+          <el-tag :type="riskTagType" effect="light" round class="risk-tag">{{ riskLabel }}</el-tag>
         </template>
       </StatCard>
     </section>
@@ -621,6 +621,14 @@ onMounted(async () => {
   padding: 16px;
   border-radius: var(--el-border-radius-base);
   background-color: var(--el-fill-color-light);
+}
+/* Long risk labels wrap instead of being cut off on phones */
+.risk-tag {
+  height: auto;
+  padding-top: 2px;
+  padding-bottom: 2px;
+  white-space: normal;
+  line-height: 1.4;
 }
 .forecast-bar {
   border-radius: 4px 4px 0 0;

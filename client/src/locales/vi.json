@@ -706,26 +706,38 @@
     "audience3Feat2": "API chỉ đọc và webhook có chữ ký",
     "audience3Feat3": "Huấn luyện lại AI bằng ảnh đã duyệt",
     "liveEngine": "Hệ Thống Trực Tuyến",
-    "startBtn": "Bắt đầu"
+    "startBtn": "Bắt đầu",
+    "videoTag": "Video giới thiệu",
+    "videoHeading": "Xem FlyBot hoạt động trong 1 phút",
+    "videoDesc": "Từ ảnh tấm bẫy đến cảnh báo và dự báo: các màn hình chính của FlyBot, dùng dữ liệu minh hoạ.",
+    "videoCta": "Xem hướng dẫn chi tiết",
+    "watchVideo": "Xem video 1 phút"
   },
   "manual": {
     "title": "Hướng dẫn sử dụng",
-    "subtitle": "Từ thêm camera đầu tiên đến cảnh báo, báo cáo và tích hợp.",
+    "subtitle": "Từng bước, kèm ảnh màn hình: từ thêm camera đầu tiên đến cảnh báo, báo cáo và tích hợp.",
+    "videoTitle": "Xem FlyBot trong 1 phút",
+    "videoDesc": "Video giới thiệu nhanh các màn hình chính. Ảnh và video dùng dữ liệu minh hoạ.",
+    "stepsLabel": "Cách làm",
+    "zoomHint": "Bấm vào ảnh để phóng to",
     "sections": {
       "start": {
         "title": "Bắt đầu",
         "steps": {
           "account": {
-            "title": "Tài khoản & vai trò",
-            "desc": "Đăng ký bằng email rồi xác nhận email. Quản trị viên quản lý toàn hệ thống; quản lý thêm và quản lý camera của mình; người xem chỉ thấy những gì được chia sẻ."
+            "title": "Đăng nhập & xem Tổng quan",
+            "desc": "Sau khi đăng nhập, trang Tổng quan cho biết ngay bẫy nào đang nhiều ruồi nhất, tổng số ruồi trên các bẫy, số camera đang trực tuyến và mức nguy cơ dịch hại.",
+            "items": "Đăng ký bằng email rồi bấm liên kết xác nhận trong hộp thư.\nVai trò của tài khoản: quản trị viên quản lý toàn hệ thống; quản lý thêm và quản lý camera; người xem chỉ thấy những gì được chia sẻ.\nThanh màu dưới mỗi bẫy so số ruồi hiện tại với ngưỡng cảnh báo của bẫy đó.\nNhãn \"Điểm nóng dịch hại\" xuất hiện khi bẫy chạm ngưỡng; \"Cần thay bẫy\" khi tấm bẫy đã đến hạn thay."
           },
           "camera": {
             "title": "Thêm camera",
-            "desc": "Vào Camera, chọn Thêm camera, nhập số serial (SN) và mã xác thực 6 ký tự in trên tem camera EZVIZ. Camera mới tự vào tổ chức đầu tiên bạn sở hữu."
+            "desc": "Mỗi camera EZVIZ được thêm bằng số serial và mã xác thực in trên tem dán ở thân hoặc đế camera.",
+            "items": "Vào Camera, bấm \"Thêm camera\".\nNhập số serial (SN, 9 ký tự) và mã xác thực 6 chữ in hoa trên tem camera; đặt tên dễ nhớ, ví dụ \"Bẫy xoài A1\".\nBấm Lưu. Camera mới tự vào tổ chức đầu tiên bạn sở hữu và bắt đầu được chụp theo lịch.\nNếu báo \"đã được đăng ký bởi tài khoản khác\", hãy nhờ chủ camera chia sẻ cho bạn."
           },
           "schedule": {
-            "title": "Lịch chụp, ngưỡng & vị trí",
-            "desc": "Trong Cài đặt, mục Quản lý camera: chọn chu kỳ chụp, chỉ chụp ban ngày nếu cần, ngưỡng cảnh báo và vị trí GPS. Vị trí cần cho thời tiết và dự báo độ-ngày."
+            "title": "Lịch chụp & ngưỡng cảnh báo",
+            "desc": "Mỗi camera có lịch chụp và ngưỡng riêng, chỉnh trong Cài đặt.",
+            "items": "Vào Cài đặt, mục Quản lý Camera.\nChọn chu kỳ chụp: 15, 30, 60 hoặc 120 phút. Bật \"Chỉ chụp ban ngày\" nếu camera không có đèn hồng ngoại.\nĐặt ngưỡng cảnh báo: số ruồi trên bẫy khiến bạn cần hành động (mặc định 15).\nĐặt vị trí camera trên trang Bản đồ bằng cách kéo ghim tới đúng chỗ. Vị trí cần cho thời tiết và dự báo độ-ngày."
           }
         }
       },
@@ -733,16 +745,19 @@
         "title": "Camera & bẫy",
         "steps": {
           "live": {
-            "title": "Xem trực tiếp & xem lại",
-            "desc": "Trang Camera hiển thị lưới nhiều camera. Mở một camera để xem trực tiếp, xem lại video trên thẻ nhớ, hoặc chụp ảnh ngay để AI đếm."
+            "title": "Lưới camera",
+            "desc": "Trang Camera hiển thị mọi camera của bạn dạng lưới, kèm trạng thái kết nối và ảnh chụp gần nhất.",
+            "items": "Chọn kiểu lưới 2x2, 3x3 hoặc Tự động ở góc trên.\nCamera trực tuyến phát hình trực tiếp; camera ngoại tuyến hiện ảnh gần nhất kèm nút \"Làm mới\".\nBấm \"Xem chi tiết\" để mở một camera: xem trực tiếp chất lượng cao, xem lại thẻ nhớ theo giờ.\nVới camera bật mã hoá video, nhập mã xác thực khi được hỏi."
           },
           "health": {
-            "title": "Tình trạng camera & chất lượng ảnh",
-            "desc": "Phần chi tiết camera cho biết ảnh gần nhất, số ảnh trong 24 giờ, tỷ lệ AI phân tích thành công và chất lượng ảnh: quá tối, quá sáng, mờ, bẩn ống kính, tấm bẫy đầy."
+            "title": "Chụp ngay & tình trạng camera",
+            "desc": "Phần chi tiết camera cho biết camera có đang chụp và phân tích đều đặn không.",
+            "items": "Bấm \"Chụp ngay\" để chụp và cho AI đếm ngay, không chờ lịch.\nXem \"Ảnh gần nhất\", \"Số ảnh (24 giờ)\" và \"AI phân tích (24 giờ)\": tỷ lệ thấp nghĩa là ảnh lỗi hoặc dịch vụ AI gặp sự cố.\n\"Chất lượng ảnh\" báo Quá tối, Quá sáng, Ảnh mờ, Ống kính bẩn hoặc Bẫy đầy; di chuột vào nhãn để xem cách khắc phục."
           },
           "card": {
             "title": "Bảo trì tấm bẫy",
-            "desc": "Ghi nhận mỗi lần thay tấm bẫy và đặt số ngày nhắc thay. FlyBot cũng tự ghi nhận khi số đếm giảm mạnh (tấm mới) và báo cho bạn; nếu nhận nhầm, bạn có thể xoá lần ghi nhận đó."
+            "desc": "Tấm bẫy dính tích lũy côn trùng, nên cần ghi lại mỗi lần thay để số bắt mỗi ngày tính đúng.",
+            "items": "Trong chi tiết camera, mục Bảo trì bẫy, bấm \"Đã thay tấm bẫy\" ngay khi thay.\nGhi thêm việc khác bằng \"Ghi nhận\": thay mồi dẫn dụ, lau ống kính, việc khác.\nChọn \"Nhắc thay bẫy\" sau 3 đến 30 ngày; FlyBot nhắc khi đến hạn.\nKhi số đếm giảm mạnh, FlyBot tự ghi nhận đã thay tấm và báo cho bạn; xoá lần ghi nhận đó nếu nhầm."
           }
         }
       },
@@ -750,20 +765,24 @@
         "title": "AI & phân tích",
         "steps": {
           "count": {
-            "title": "AI đếm côn trùng",
-            "desc": "Mỗi ảnh được AI đếm. Tấm bẫy tích lũy côn trùng, nên số bắt mỗi ngày là phần tăng thêm so với hôm trước."
+            "title": "Xem AI đếm trên ảnh",
+            "desc": "Mỗi ảnh được AI đếm; khung xanh đánh dấu từng con kèm độ tin cậy.",
+            "items": "Vào Analytics, chọn camera và khoảng thời gian, mở tab \"Lịch sử Snapshot\".\nBấm biểu tượng con mắt ở một dòng để mở ảnh: khung nhận diện, số lượng theo loài và biểu đồ tỷ lệ.\nSố bắt mỗi ngày là phần tăng thêm trên tấm bẫy so với hôm trước; ngày thay tấm không được tính."
           },
           "review": {
-            "title": "Duyệt & sửa số đếm",
-            "desc": "Trong lịch sử ảnh, xác nhận số đếm đúng hoặc sửa lại. Số đã sửa được dùng cho mọi thống kê và có thể được dùng để huấn luyện lại AI."
+            "title": "Xác nhận hoặc sửa số đếm",
+            "desc": "Kỹ thuật viên kiểm tra kết quả AI để số liệu đáng tin hơn.",
+            "items": "Trong ảnh chi tiết, bấm \"Xác nhận đúng\" nếu AI đếm chính xác.\nBấm \"Sửa số đếm\" để nhập lại số lượng từng loài và ghi chú.\nSố đã sửa được dùng cho mọi thống kê, cảnh báo và báo cáo; bấm \"Xuất dữ liệu đã sửa\" để lấy danh sách ảnh đã sửa."
           },
           "analytics": {
-            "title": "Phân tích & so sánh",
-            "desc": "Trang Analytics có biểu đồ theo ngày, theo loài, so sánh giữa các bẫy và giữa các kỳ; xuất PDF hoặc Excel."
+            "title": "Biểu đồ & báo cáo",
+            "desc": "Tab \"Biểu đồ & Xu hướng\" cho thấy mật độ côn trùng theo thời gian và theo loài.",
+            "items": "Chọn xem theo Giờ, Ngày hoặc Tháng; đường gạch cam đánh dấu ngày thay bẫy.\nThẻ phía trên: mật độ hiện tại, loài phổ biến, số lần quét và xu hướng ngắn hạn.\nBấm \"Xuất Báo Cáo PDF\" hoặc \"Xuất Excel\" để lưu báo cáo cho khoảng đã chọn."
           },
           "forecast": {
-            "title": "Chẩn đoán & dự báo",
-            "desc": "Ở Tổng quan, bấm chẩn đoán để xem mức nguy cơ, xu hướng 7 ngày, đợt ruồi trưởng thành tiếp theo theo độ-ngày và các biện pháp gợi ý. Đây là ước tính để tham khảo."
+            "title": "Chẩn đoán AI & dự báo",
+            "desc": "Khung AI Copilot ở Tổng quan tổng hợp nguy cơ, xu hướng và biện pháp gợi ý.",
+            "items": "Bấm \"Chẩn đoán lại với AI Agent\" ở cuối trang Tổng quan.\n\"Dự báo xu hướng 7 ngày tới\": số ruồi dự kiến mỗi ngày, màu theo mức nguy cơ.\n\"Đợt ruồi trưởng thành tiếp theo\": tính theo độ-ngày từ đợt bắt nhiều nhất, kèm tiến độ và thời gian một thế hệ.\n\"Biện pháp xử lý khuyến nghị\": gợi ý theo nguyên tắc quản lý dịch hại tổng hợp. Đây là ước tính để tham khảo, hãy kiểm tra thực tế tại vườn."
           }
         }
       },
@@ -772,32 +791,58 @@
         "steps": {
           "plots": {
             "title": "Vườn & lô",
-            "desc": "Tạo vườn, vẽ ranh giới từng lô trên bản đồ, gán camera vào lô và đặt ngưỡng cảnh báo theo lô."
+            "desc": "Nhóm bẫy theo vườn và lô để theo dõi theo khu vực.",
+            "items": "Vào \"Vườn & lô\", tạo vườn mới, rồi bấm \"Thêm lô\".\nVẽ ranh giới lô trên bản đồ, nhập diện tích và màu.\nGán camera vào lô và đặt ngưỡng cảnh báo cho lô nếu cần.\nMỗi lô cho biết số bẫy, số ruồi trung bình hiện tại và tổng 7 ngày qua; nhãn Thấp/Cao theo mức nguy cơ."
+          },
+          "map": {
+            "title": "Bản đồ",
+            "desc": "Trang Bản đồ hiển thị bẫy và lô trên nền bản đồ hoặc ảnh vệ tinh.",
+            "items": "Bật \"Lô\" để tô màu các lô theo mức nguy cơ; bật \"Bản đồ nhiệt\" để xem vùng tập trung ruồi.\nKéo thả ghim camera để cập nhật tọa độ thực tế của bẫy.\nDanh sách bên phải cho phép tìm bẫy theo tên hoặc số serial."
           },
           "sharing": {
             "title": "Chia sẻ & tổ chức",
-            "desc": "Chia sẻ camera hoặc vườn qua email. Với nhóm làm việc, tạo tổ chức trong Cài đặt và thêm thành viên với vai trò chủ sở hữu, quản lý hoặc thành viên."
+            "desc": "Làm việc nhóm bằng chia sẻ từng camera, từng vườn, hoặc bằng tổ chức.",
+            "items": "Chia sẻ camera trong Cài đặt, mục Quản lý Camera; chia sẻ vườn bằng nút \"Chia sẻ\" trên trang vườn.\nVới hợp tác xã hay doanh nghiệp: vào Cài đặt, mục Tổ chức, bấm \"Tạo tổ chức\".\nThêm thành viên theo email với vai trò Chủ sở hữu, Quản lý hoặc Thành viên. Thành viên xem mọi camera và vườn của tổ chức.\nChỉ chủ camera hoặc quản trị viên mới xoá, chia sẻ ra ngoài hay chuyển camera sang tổ chức khác."
           },
           "log": {
-            "title": "Nhật ký xử lý",
-            "desc": "Ghi lại mỗi lần phun thuốc, thả thiên địch hay biện pháp khác. FlyBot so sánh số bắt trước và sau để đánh giá hiệu quả, và xuất nhật ký theo mẫu VietGAP."
+            "title": "Nhật ký xử lý & VietGAP",
+            "desc": "Ghi lại mọi biện pháp đã làm và xem hiệu quả trên số ruồi vào bẫy.",
+            "items": "Vào \"Nhật ký vườn\", bấm \"Ghi nhận xử lý\".\nChọn biện pháp: phun thuốc, bả protein, mồi, sinh học, vệ sinh vườn, bao trái hoặc khác; chọn bẫy trong khu vực xử lý.\nNhập tên thuốc, hoạt chất, liều lượng, người thực hiện và thời gian cách ly.\nCột \"Hiệu quả\" so số bắt trung bình trước và sau xử lý; cột \"Thu hoạch\" báo khi đã qua thời gian cách ly.\nBấm \"Xuất sổ VietGAP\" để lưu sổ ghi chép sử dụng thuốc."
           }
         }
       },
       "alerts": {
         "title": "Cảnh báo & báo cáo",
         "steps": {
-          "channels": {
-            "title": "Kênh nhận cảnh báo",
-            "desc": "Trong Cài đặt, mục Thông báo: bật email, kết nối Telegram, bật thông báo đẩy trên điện thoại hoặc máy tính."
-          },
           "smart": {
-            "title": "Cảnh báo thông minh",
-            "desc": "Vượt ngưỡng, tăng đột biến, camera mất kết nối, ảnh có vấn đề, đến hạn thay tấm bẫy. Đặt giờ yên lặng ban đêm hoặc tắt cảnh báo của từng camera."
+            "title": "Thông báo trong ứng dụng",
+            "desc": "Biểu tượng chuông ở góc trên cho biết các cảnh báo mới.",
+            "items": "Các loại cảnh báo: vượt ngưỡng, tăng đột biến, camera mất kết nối hoặc có lại kết nối, AI phân tích lỗi, ảnh có vấn đề, đến hạn thay tấm bẫy.\nBấm một thông báo để mở đúng trang liên quan.\nBấm \"Đánh dấu đã đọc tất cả\" để xoá số đếm trên chuông."
+          },
+          "channels": {
+            "title": "Kênh nhận & giờ yên lặng",
+            "desc": "Chọn cách nhận cảnh báo khi không mở ứng dụng.",
+            "items": "Vào Cài đặt, mục Thông báo.\nBật email cảnh báo, kết nối Telegram, hoặc bật thông báo đẩy trên điện thoại/máy tính đang dùng.\nBật \"Báo cáo tuần\" để nhận tóm tắt mỗi sáng thứ Hai; bấm \"Gửi báo cáo tuần này cho tôi ngay\" để xem thử.\nĐặt \"Giờ yên lặng\" để không bị làm phiền ban đêm, và tắt camera không muốn theo dõi trong \"Camera tôi theo dõi\"."
           },
           "reports": {
-            "title": "Báo cáo",
-            "desc": "Báo cáo tuần gửi mỗi sáng thứ Hai. Tạo bảng tùy chỉnh và chia sẻ bằng liên kết công khai khi cần."
+            "title": "Bảng tùy chỉnh",
+            "desc": "Tự sắp xếp các biểu đồ và chỉ số cần theo dõi.",
+            "items": "Vào \"Bảng tùy chỉnh\", tạo bảng mới và thêm các widget: số liệu, biểu đồ, so sánh bẫy.\nChia sẻ bảng cho người khác theo email, hoặc bật liên kết công khai để gửi cho đối tác."
+          }
+        }
+      },
+      "mobile": {
+        "title": "Trên điện thoại",
+        "steps": {
+          "app": {
+            "title": "Giao diện điện thoại",
+            "desc": "FlyBot tự chuyển sang giao diện như ứng dụng khi mở trên điện thoại.",
+            "items": "Thanh dưới cùng: Tổng quan, Camera, Analytics, Bản đồ và Thêm.\nCác trang dài được xếp thành từng thẻ dọc, dễ cuộn bằng một tay."
+          },
+          "more": {
+            "title": "Menu Thêm & cài ứng dụng",
+            "desc": "Nút \"Thêm\" mở các mục còn lại.",
+            "items": "Thêm gồm: Bảng tùy chỉnh, Vườn & lô, Nhật ký vườn, Cài đặt, Thêm camera, Hướng dẫn, ngôn ngữ và giao diện sáng/tối.\nĐể cài như ứng dụng: vào Cài đặt, mục Thông báo, bấm \"Cài đặt ứng dụng\" (Android, máy tính), hoặc trên iPhone dùng Safari, nút Chia sẻ, \"Thêm vào MH chính\".\nSau khi cài, bật thông báo đẩy để nhận cảnh báo ngay trên điện thoại."
           }
         }
       },
@@ -805,16 +850,14 @@
         "title": "Tích hợp",
         "steps": {
           "api": {
-            "title": "API key",
-            "desc": "Trong Cài đặt, mục API & Webhook, tạo key chỉ đọc để hệ thống khác lấy danh sách camera, số đếm theo ngày và cảnh báo qua địa chỉ /api/v1."
-          },
-          "webhook": {
-            "title": "Webhook",
-            "desc": "Nhận cảnh báo ngay khi xảy ra tại địa chỉ HTTPS của bạn. Mỗi yêu cầu có chữ ký để kiểm tra; dùng nút Thử để gửi một sự kiện mẫu."
+            "title": "API key & webhook",
+            "desc": "Kết nối FlyBot với hệ thống của bạn (dành cho quản lý và quản trị viên).",
+            "items": "Vào Cài đặt, mục API & Webhook.\nBấm \"Tạo key\", đặt tên, rồi sao chép key ngay: key chỉ hiện một lần.\nDùng key để đọc danh sách camera, số đếm theo ngày, ảnh đã phân tích và cảnh báo qua địa chỉ /api/v1.\nThêm webhook: nhập địa chỉ HTTPS, chọn sự kiện cần nhận, lưu lại khóa ký (secret) để kiểm tra chữ ký; bấm \"Thử\" để gửi sự kiện mẫu."
           },
           "training": {
             "title": "Huấn luyện lại AI",
-            "desc": "Quản trị viên có thể bật tải ảnh đã duyệt lên project Roboflow, giúp mô hình nhận diện tốt hơn với ảnh của chính vườn bạn."
+            "desc": "Quản trị viên có thể dùng ảnh đã duyệt để cải thiện mô hình.",
+            "items": "Vào Cài đặt, mục Cài đặt hệ thống, thẻ \"Huấn luyện lại AI bằng ảnh đã duyệt\".\nBật tải lên; ảnh xác nhận đúng được gửi kèm khung nhận diện, ảnh đã sửa được gắn thẻ số đếm đúng để gán nhãn trong Roboflow."
           }
         }
       }
@@ -985,7 +1028,8 @@
     "fruitFly": "Ruồi vàng",
     "bug": "Bọ",
     "caterpillar": "Sâu hại",
-    "other": "Khác"
+    "other": "Khác",
+    "moth": "Bướm đêm"
   },
   "notifications": {
     "markAllRead": "Đánh dấu đã đọc tất cả",
