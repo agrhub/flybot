@@ -758,13 +758,13 @@
         "steps": {
           "account": {
             "title": "Sign in & the Overview",
-            "desc": "After signing in, the Overview shows which trap has the most flies, the total on all traps, how many cameras are online and the pest risk level.",
-            "items": "Sign up with your email and click the confirmation link in your inbox.\nAccount roles: admins run the whole system; managers add and manage cameras; viewers see what is shared with them.\nThe bar under each trap compares its current count with its alert threshold.\n\"Pest Hotspot\" appears when a trap reaches its threshold; \"Replace card\" when its sticky card should be replaced."
+            "desc": "The Overview shows how many flies arrived today, flies per trap per day, cameras online and the pest risk level.",
+            "items": "Sign up with your email and click the confirmation link in your inbox.\nAccount roles: admins run the whole system; managers add and manage cameras; viewers see what is shared with them.\n\"Flies caught today\" counts new flies on all traps, with yesterday next to it; \"Flies/trap/day (7 days)\" is the standard figure to compare weeks.\nIn the trap list, the bar compares what is on each trap now with its alert threshold; the line below shows today’s new flies and the daily average.\n\"Pest Hotspot\" appears when a trap reaches its threshold; \"Replace card\" when its glue card should be replaced."
           },
           "camera": {
-            "title": "Add a camera",
-            "desc": "Each EZVIZ camera is added with the serial number and verification code printed on its label.",
-            "items": "In Cameras, click \"Add camera\".\nEnter the serial number (SN, 9 characters) and the 6-letter verification code from the label; give it a clear name, for example \"Mango trap A1\".\nSave. The camera joins the first organization you own and is photographed on schedule.\nIf it says the camera belongs to another account, ask its owner to share it with you."
+            "title": "Add a camera & choose the trap type",
+            "desc": "Each EZVIZ camera is added with the serial number and verification code printed on its label. The trap type decides how FlyBot reads the counts.",
+            "items": "In Cameras, click \"Add Camera\".\nEnter the serial number (SN, 9 characters) and the 6-letter verification code from the label.\nChoose the trap type: \"Sticky trap (glue card)\" when flies stay on the card and the count grows until it is replaced; \"Lure trap (no glue)\" when flies come in and can fly away, so a photo shows the flies present.\nClick \"Add Camera\". The camera joins the first organization you own; the trap type can be changed later in Settings, Camera Management.\nIf it says the camera belongs to another account, ask its owner to share it with you."
           },
           "schedule": {
             "title": "Capture schedule & alert threshold",
@@ -787,9 +787,9 @@
             "items": "Click \"Capture now\" to take a photo and count it right away.\nCheck \"Last snapshot\", \"Snapshots (24h)\" and \"AI analyzed (24h)\": a low rate means bad photos or an AI service problem.\n\"Photo quality\" flags Too dark, Too bright, Blurry, Dirty lens or Card full; hover over the tag for how to fix it."
           },
           "card": {
-            "title": "Sticky card upkeep",
-            "desc": "A sticky card keeps what it catches, so log each replacement for correct daily catches.",
-            "items": "In camera details, Trap maintenance, click \"Card replaced\" as soon as you replace it.\nLog other work with \"Log\": lure replaced, lens cleaned, other.\nChoose a reminder after 3 to 30 days; FlyBot reminds you when it is due.\nWhen the count drops sharply, FlyBot records a replacement and tells you; delete it if it was a mistake."
+            "title": "Trap upkeep",
+            "desc": "A sticky trap keeps what it catches, so log each card replacement for correct daily figures.",
+            "items": "In camera details, Trap maintenance, click \"Card replaced\" as soon as you replace it.\nLog other work with the add button: lure replaced, lens cleaned, other.\nChoose a reminder after 3 to 30 days; FlyBot reminds you when it is due.\nWhen the count drops sharply, FlyBot records a replacement and tells you; delete it if it was a mistake.\nLure traps have no glue card, so there is no card reminder; just log lure refills and lens cleaning."
           }
         }
       },
@@ -808,13 +808,18 @@
           },
           "analytics": {
             "title": "Charts & reports",
-            "desc": "The \"Trends & Charts\" tab shows insect density over time and by species.",
-            "items": "View by Hour, Day or Month; dashed orange lines mark card replacements.\nCards on top: current density, main species, number of scans and the short-term trend.\nClick \"Export PDF Report\" or \"Export Excel\" to save a report for the chosen period."
+            "desc": "The \"Trends & Charts\" tab shows flies over time and by species; the Overview adds a 14-day chart per trap.",
+            "items": "Choose \"New flies\" for flies arriving each day, or \"On trap\" for the count in the photos (on a glue card it grows until replaced; dashed lines mark card changes and treatments).\nView by Hour, Day or Month.\nCards on top: count on the trap now, main species, flies caught in the period and the 3-day trend.\nClick \"Export PDF Report\" or \"Export Excel\" to save a report for the chosen period."
+          },
+          "insights": {
+            "title": "Insights",
+            "desc": "The \"Insights\" tab finds the most worrying traps and when flies are most active.",
+            "items": "\"Trap summary\" is sorted by flies per trap per day: trap type, now vs threshold, today, 14 days, change vs the week before, a mini chart, card age and photo status. Click a row to open the camera.\n\"Flies per day by trap\": stacked bars over 14 days.\n\"Temperature and flies\": daily high and low at the trap next to the flies (needs a GPS location).\n\"Flies arriving by hour\": the darker the cell, the more flies; the line above names the busiest hours, a good time to bait or check traps."
           },
           "forecast": {
             "title": "AI diagnosis & forecast",
             "desc": "The AI Copilot panel on the Overview brings risk, trend and suggested actions together.",
-            "items": "Click the AI Agent diagnosis button at the bottom of the Overview.\n\"7-day trend forecast\": expected flies per day, colored by risk.\n\"Next wave of adult flies\": a degree-day estimate from the biggest catch, with progress and generation length.\n\"Recommended actions\": suggestions following integrated pest management. These are estimates; check the field."
+            "items": "Click the AI Agent diagnosis button at the bottom of the Overview.\n\"7-day trend forecast\" follows the busiest trap: expected new flies per day (+) added to the count on its glue card, colored against its threshold.\n\"Next wave of adult flies\": a degree-day estimate from the biggest catch, with progress and generation length.\n\"Recommended actions\": suggestions following integrated pest management. These are estimates; check the field."
           }
         }
       },

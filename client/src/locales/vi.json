@@ -758,13 +758,13 @@
         "steps": {
           "account": {
             "title": "Đăng nhập & xem Tổng quan",
-            "desc": "Sau khi đăng nhập, trang Tổng quan cho biết ngay bẫy nào đang nhiều ruồi nhất, tổng số ruồi trên các bẫy, số camera đang trực tuyến và mức nguy cơ dịch hại.",
-            "items": "Đăng ký bằng email rồi bấm liên kết xác nhận trong hộp thư.\nVai trò của tài khoản: quản trị viên quản lý toàn hệ thống; quản lý thêm và quản lý camera; người xem chỉ thấy những gì được chia sẻ.\nThanh màu dưới mỗi bẫy so số ruồi hiện tại với ngưỡng cảnh báo của bẫy đó.\nNhãn \"Điểm nóng dịch hại\" xuất hiện khi bẫy chạm ngưỡng; \"Cần thay bẫy\" khi tấm bẫy đã đến hạn thay."
+            "desc": "Trang Tổng quan cho biết hôm nay có bao nhiêu ruồi vào bẫy, chỉ số ruồi/bẫy/ngày, số camera trực tuyến và mức nguy cơ dịch hại.",
+            "items": "Đăng ký bằng email rồi bấm liên kết xác nhận trong hộp thư.\nVai trò của tài khoản: quản trị viên quản lý toàn hệ thống; quản lý thêm và quản lý camera; người xem chỉ thấy những gì được chia sẻ.\n\"Ruồi vào bẫy hôm nay\" là số ruồi mới trên tất cả các bẫy, kèm số hôm qua; \"Ruồi/bẫy/ngày (7 ngày)\" là chỉ số chuẩn để so sánh giữa các tuần.\nTrong danh sách bẫy, thanh màu so số hiện có trên bẫy với ngưỡng cảnh báo; dòng dưới cho biết hôm nay có thêm bao nhiêu con và trung bình mỗi ngày.\nNhãn \"Điểm nóng dịch hại\" xuất hiện khi bẫy chạm ngưỡng; \"Cần thay bẫy\" khi tấm keo đã đến hạn thay."
           },
           "camera": {
-            "title": "Thêm camera",
-            "desc": "Mỗi camera EZVIZ được thêm bằng số serial và mã xác thực in trên tem dán ở thân hoặc đế camera.",
-            "items": "Vào Camera, bấm \"Thêm camera\".\nNhập số serial (SN, 9 ký tự) và mã xác thực 6 chữ in hoa trên tem camera; đặt tên dễ nhớ, ví dụ \"Bẫy xoài A1\".\nBấm Lưu. Camera mới tự vào tổ chức đầu tiên bạn sở hữu và bắt đầu được chụp theo lịch.\nNếu báo \"đã được đăng ký bởi tài khoản khác\", hãy nhờ chủ camera chia sẻ cho bạn."
+            "title": "Thêm camera & chọn loại bẫy",
+            "desc": "Mỗi camera EZVIZ được thêm bằng số serial và mã xác thực in trên tem dán ở thân hoặc đế camera. Loại bẫy quyết định cách FlyBot đọc số đếm.",
+            "items": "Vào Camera, bấm \"Thêm camera\".\nNhập số serial (SN, 9 ký tự) và mã xác thực 6 chữ in hoa trên tem camera.\nChọn loại bẫy: \"Bẫy dính (tấm keo)\" khi ruồi dính lại trên tấm keo, số đếm tăng dần đến khi thay tấm; \"Bẫy dẫn dụ (không keo)\" khi ruồi vào rồi có thể bay đi, mỗi ảnh là số ruồi đang có mặt.\nBấm \"Thêm camera\". Camera mới tự vào tổ chức đầu tiên bạn sở hữu; loại bẫy sửa được sau trong Cài đặt, mục Quản lý Camera.\nNếu báo \"đã được đăng ký bởi tài khoản khác\", hãy nhờ chủ camera chia sẻ cho bạn."
           },
           "schedule": {
             "title": "Lịch chụp & ngưỡng cảnh báo",
@@ -787,9 +787,9 @@
             "items": "Bấm \"Chụp ngay\" để chụp và cho AI đếm ngay, không chờ lịch.\nXem \"Ảnh gần nhất\", \"Số ảnh (24 giờ)\" và \"AI phân tích (24 giờ)\": tỷ lệ thấp nghĩa là ảnh lỗi hoặc dịch vụ AI gặp sự cố.\n\"Chất lượng ảnh\" báo Quá tối, Quá sáng, Ảnh mờ, Ống kính bẩn hoặc Bẫy đầy; di chuột vào nhãn để xem cách khắc phục."
           },
           "card": {
-            "title": "Bảo trì tấm bẫy",
-            "desc": "Tấm bẫy dính tích lũy côn trùng, nên cần ghi lại mỗi lần thay để số bắt mỗi ngày tính đúng.",
-            "items": "Trong chi tiết camera, mục Bảo trì bẫy, bấm \"Đã thay tấm bẫy\" ngay khi thay.\nGhi thêm việc khác bằng \"Ghi nhận\": thay mồi dẫn dụ, lau ống kính, việc khác.\nChọn \"Nhắc thay bẫy\" sau 3 đến 30 ngày; FlyBot nhắc khi đến hạn.\nKhi số đếm giảm mạnh, FlyBot tự ghi nhận đã thay tấm và báo cho bạn; xoá lần ghi nhận đó nếu nhầm."
+            "title": "Bảo trì bẫy",
+            "desc": "Bẫy dính tích lũy côn trùng, nên cần ghi lại mỗi lần thay tấm keo để số ruồi mỗi ngày tính đúng.",
+            "items": "Trong chi tiết camera, mục Bảo trì bẫy, bấm \"Đã thay tấm bẫy\" ngay khi thay.\nGhi thêm việc khác bằng nút thêm: thay mồi dẫn dụ, lau ống kính, việc khác.\nChọn \"Nhắc thay bẫy\" sau 3 đến 30 ngày; FlyBot nhắc khi đến hạn.\nKhi số đếm giảm mạnh, FlyBot tự ghi nhận đã thay tấm và báo cho bạn; xoá lần ghi nhận đó nếu nhầm.\nBẫy dẫn dụ không có tấm keo nên không có nhắc thay tấm; chỉ cần ghi lại thay mồi và lau ống kính."
           }
         }
       },
@@ -808,13 +808,18 @@
           },
           "analytics": {
             "title": "Biểu đồ & báo cáo",
-            "desc": "Tab \"Biểu đồ & Xu hướng\" cho thấy mật độ côn trùng theo thời gian và theo loài.",
-            "items": "Chọn xem theo Giờ, Ngày hoặc Tháng; đường gạch cam đánh dấu ngày thay bẫy.\nThẻ phía trên: mật độ hiện tại, loài phổ biến, số lần quét và xu hướng ngắn hạn.\nBấm \"Xuất Báo Cáo PDF\" hoặc \"Xuất Excel\" để lưu báo cáo cho khoảng đã chọn."
+            "desc": "Tab \"Biểu đồ & Xu Hướng\" cho thấy số ruồi theo thời gian và theo loài; Tổng quan có thêm biểu đồ 14 ngày theo từng bẫy.",
+            "items": "Chọn \"Ruồi mới\" để xem số ruồi vào bẫy mỗi ngày, hoặc \"Trên bẫy\" để xem số đếm trong ảnh (trên tấm keo tăng dần đến khi thay tấm; đường gạch đánh dấu ngày thay và ngày xử lý).\nChọn xem theo Giờ, Ngày hoặc Tháng.\nThẻ phía trên: số hiện có trên bẫy, loài phổ biến, ruồi vào bẫy trong kỳ và xu hướng 3 ngày gần nhất.\nBấm \"Xuất Báo Cáo PDF\" hoặc \"Xuất Excel\" để lưu báo cáo cho khoảng đã chọn."
+          },
+          "insights": {
+            "title": "Phân tích chuyên sâu",
+            "desc": "Tab \"Phân tích chuyên sâu\" giúp tìm bẫy đáng lo nhất và thời điểm ruồi hoạt động mạnh.",
+            "items": "Bảng \"Tổng hợp từng bẫy\" xếp theo ruồi/bẫy/ngày: loại bẫy, hiện có so với ngưỡng, hôm nay, 14 ngày, % thay đổi so với tuần trước, biểu đồ mini, tuổi tấm keo và tình trạng ảnh. Bấm một dòng để mở camera.\n\"Số ruồi mỗi ngày theo bẫy\": cột chồng 14 ngày.\n\"Nhiệt độ và số ruồi\": nhiệt độ cao nhất, thấp nhất tại vị trí bẫy đặt cạnh số ruồi (cần vị trí GPS).\n\"Ruồi vào bẫy theo giờ\": ô càng đậm càng nhiều ruồi; dòng mô tả cho biết khung giờ nhiều nhất, thời điểm tốt để phun bả hoặc kiểm tra bẫy."
           },
           "forecast": {
             "title": "Chẩn đoán AI & dự báo",
             "desc": "Khung AI Copilot ở Tổng quan tổng hợp nguy cơ, xu hướng và biện pháp gợi ý.",
-            "items": "Bấm \"Chẩn đoán lại với AI Agent\" ở cuối trang Tổng quan.\n\"Dự báo xu hướng 7 ngày tới\": số ruồi dự kiến mỗi ngày, màu theo mức nguy cơ.\n\"Đợt ruồi trưởng thành tiếp theo\": tính theo độ-ngày từ đợt bắt nhiều nhất, kèm tiến độ và thời gian một thế hệ.\n\"Biện pháp xử lý khuyến nghị\": gợi ý theo nguyên tắc quản lý dịch hại tổng hợp. Đây là ước tính để tham khảo, hãy kiểm tra thực tế tại vườn."
+            "items": "Bấm \"Chẩn đoán lại với AI Agent\" ở cuối trang Tổng quan.\n\"Dự báo xu hướng 7 ngày tới\" theo dõi bẫy nhiều ruồi nhất: dự báo số ruồi mới mỗi ngày (+) rồi cộng dồn vào số trên tấm keo, màu theo ngưỡng của bẫy.\n\"Đợt ruồi trưởng thành tiếp theo\": tính theo độ-ngày từ đợt bắt nhiều nhất, kèm tiến độ và thời gian một thế hệ.\n\"Biện pháp xử lý khuyến nghị\": gợi ý theo nguyên tắc quản lý dịch hại tổng hợp. Đây là ước tính để tham khảo, hãy kiểm tra thực tế tại vườn."
           }
         }
       },

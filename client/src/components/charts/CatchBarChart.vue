@@ -33,7 +33,8 @@ let chart = null;
 
 const hasData = computed(() => props.series.some(s => (s.data || []).some(v => v !== null && v !== undefined && v !== 0)));
 
-const PALETTE = ['primary', 'success', 'warning', 'danger', 'info'];
+// primary and success are both green in this theme: keep them apart
+const PALETTE = ['primary', 'warning', 'danger', 'info', 'success'];
 const cssVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 const colorOf = (i) => {
   const base = PALETTE[i % PALETTE.length];
