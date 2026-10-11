@@ -54,6 +54,10 @@ if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
     }
 }
 
+// The SMTP login, when it is an email address, doubles as sender and contact address
+const SMTP_USER = (process.env.SMTP_USER || "").trim();
+const SMTP_USER_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(SMTP_USER) ? SMTP_USER : "";
+
 const config = {
     PORT: process.env.PORT || 3000,
     MONGO_URI: process.env.MONGO_URI || "mongodb://localhost:27017/ezviz_manager",
@@ -76,12 +80,13 @@ const config = {
     SMTP_PORT: parseInt(process.env.SMTP_PORT || '587', 10),
     // true for port 465 (implicit TLS); false uses STARTTLS on 587
     SMTP_SECURE: process.env.SMTP_SECURE === 'true',
-    SMTP_USER: process.env.SMTP_USER || "",
+    SMTP_USER,
     SMTP_PASS: process.env.SMTP_PASS || "",
-    MAIL_FROM: process.env.MAIL_FROM || "FlyBot <no-reply@localhost>",
+    // Default: the SMTP account itself (most servers refuse another sender)
+    MAIL_FROM: process.env.MAIL_FROM || (SMTP_USER_EMAIL ? `FlyBot <${SMTP_USER_EMAIL}>` : "FlyBot <no-reply@localhost>"),
     // Public contact address: shown on the legal pages and receives the contact form
-    // (comma-separated for several). Empty = the form goes to the admins.
-    CONTACT_EMAIL: (process.env.CONTACT_EMAIL || "").trim(),
+    // (comma-separated for several). Default: the SMTP account; without one, the form goes to the admins.
+    CONTACT_EMAIL: (process.env.CONTACT_EMAIL || "").trim() || SMTP_USER_EMAIL,
 
     // Telegram alerts: bot token from @BotFather and the bot username (without @). Unset = feature off.
     TELEGRAM_BOT_TOKEN: (process.env.TELEGRAM_BOT_TOKEN || "").trim(),
