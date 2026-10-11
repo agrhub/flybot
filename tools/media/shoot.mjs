@@ -104,6 +104,16 @@ const shots = [
     { name: 'catch-chart', url: '/dashboard', settle: 6000, action: `
         const c = [...document.querySelectorAll('.el-card')].find(e => e.innerText.includes(${JSON.stringify(W('Ruồi vào bẫy 14 ngày qua', 'Flies caught in the last 14 days'))}));
         c?.scrollIntoView({ block: 'start' }); window.scrollBy(0, -80); await sleep(1000);` },
+    { name: 'report-schedule', url: '/reports', action: `
+        document.querySelector('.dash-card').click(); await sleep(5000);
+        [...document.querySelectorAll('button')].find(b => b.classList.contains('is-circle') && b.closest('.el-dropdown')).click(); await sleep(800);
+        await click('.el-dropdown-menu__item', ${JSON.stringify(W('Gửi định kỳ', 'Email on a schedule'))}, 1000);
+        const dialog = [...document.querySelectorAll('.el-dialog')].find(d => d.offsetParent);
+        [...dialog.querySelectorAll('.el-radio-button')].find(b => b.innerText.includes(${JSON.stringify(W('Hằng tuần', 'Weekly'))})).click(); await sleep(800);` },
+    { name: 'app-tour', url: '/dashboard', settle: 4000, action: `
+        document.querySelector('[data-tour="profile"]').click(); await sleep(800);
+        await click('.el-dropdown-menu__item', ${JSON.stringify(W('Hướng dẫn nhanh', 'Quick tour'))}, 1500);
+        for (let i = 0; i < 5; i++) { [...document.querySelectorAll('.el-tour button')].find(b => b.className.includes('primary') || /Tiếp|Next/.test(b.innerText)).click(); await sleep(700); }` },
     { name: 'farms', url: '/farms', settle: 3000 },
     { name: 'farm-map', url: '/farms', action: `
         const link = [...document.querySelectorAll('a, .el-card')].find(e => e.innerText && e.innerText.includes(${JSON.stringify(W('Vườn Hòa Lộc', 'Hoa Loc Orchard'))}));
@@ -134,6 +144,8 @@ try {
         localStorage.setItem('user', ${JSON.stringify(JSON.stringify(m.user))});
         localStorage.setItem('flybot_language', '${LANG}');
         localStorage.setItem('smart_trap_theme', 'light');
+        // The first-visit tour would cover every shot; the app-tour shot opens it itself
+        localStorage.setItem('flybot_tour_done', '1');
         return true;`);
     for (const s of shots) {
         if (only && !only.includes(s.name)) continue;

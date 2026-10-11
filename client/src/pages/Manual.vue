@@ -10,7 +10,7 @@ const router = useRouter();
 
 // Screenshots in /public/manual/<vi|en> (taken from the app with sample data), per "section.step"
 const IMAGES = {
-  'start.account': ['dashboard', 'dashboard-cameras'],
+  'start.account': ['dashboard', 'dashboard-cameras', 'app-tour'],
   'start.camera': ['add-camera'],
   'start.schedule': ['camera-settings'],
   'cameras.live': ['cameras', 'playback'],
@@ -27,7 +27,7 @@ const IMAGES = {
   'farms.log': ['logbook'],
   'alerts.smart': ['notifications'],
   'alerts.channels': ['alert-settings'],
-  'alerts.reports': ['reports', 'report-share'],
+  'alerts.reports': ['reports', 'report-share', 'report-schedule'],
   'mobile.app': ['mobile-dashboard', 'mobile-cameras'],
   'mobile.more': ['mobile-more'],
   'integrations.api': ['integrations']
