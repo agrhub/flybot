@@ -11,7 +11,7 @@
     <div class="assistant-header h-16 px-4 flex items-center justify-between gap-2 shrink-0">
       <!-- Title & live status -->
       <div class="flex items-center gap-2.5 min-w-0">
-        <el-avatar :size="32" :icon="Monitor" shape="square" class="assistant-avatar shrink-0" />
+        <el-avatar :size="32" src="/logo.png" alt="FlyBot" shape="square" fit="contain" class="assistant-avatar shrink-0" />
         <div class="min-w-0 flex-1">
           <div class="flex items-center gap-1.5 min-w-0">
             <span class="assistant-title truncate">{{ t('assistant.title') }}</span>
@@ -53,7 +53,7 @@
         <!-- Assistant bubble -->
         <div v-else class="max-w-[95%] w-full space-y-2">
           <div class="flex items-center gap-1.5">
-            <el-avatar :size="20" :icon="ChatDotRound" class="assistant-avatar" />
+            <el-avatar :size="20" src="/logo.png" alt="FlyBot" fit="contain" class="assistant-avatar" />
             <span class="assistant-name">{{ t('assistant.title') }}</span>
           </div>
 
@@ -206,10 +206,8 @@ import { ref, computed, nextTick, watch, onMounted } from 'vue';
 import { renderMarkdown } from '@/utils/chatMarkdown';
 import { useI18n } from 'vue-i18n';
 import {
-  Monitor,
   Refresh,
   Close,
-  ChatDotRound,
   Operation,
   MagicStick,
   Loading,
@@ -503,9 +501,9 @@ onMounted(() => {
   font-weight: 600;
   color: var(--el-color-primary);
 }
+/* The app logo */
 .assistant-avatar {
-  background-color: var(--el-color-primary-light-9);
-  color: var(--el-color-primary);
+  background-color: transparent;
 }
 .meta-text {
   font-size: 12px;
