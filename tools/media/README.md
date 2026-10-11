@@ -46,5 +46,6 @@ Copy the results into the app:
 - `cdp.mjs`: headless Chrome through the DevTools protocol.
 - `shoot.mjs`: the screenshot list. Each entry has a name, a page and the clicks to make before the shot. The guide shows them through `IMAGES` in `client/src/pages/Manual.vue`.
 - `record.mjs`: the tour scenes (`ORDER`), captions in both languages, timing and bitrate.
+- `remux-mp4.ps1`: Chrome records a fragmented MP4 with no duration in its header, which PowerPoint cannot play and browsers cannot seek. After `record.mjs`, re-encode each video with Windows' own encoder: `powershell -NoProfile -ExecutionPolicy Bypass -File remux-mp4.ps1 <in.mp4> <out.mp4> 700000` (the last number is the bitrate).
 - `embed-video-pptx.mjs`: PDF and PowerPoint exports of a deck show a video as its still frame. `node embed-video-pptx.mjs <in.pptx> <slide> <video.mp4> <out.pptx>` turns the largest picture on that slide into the playable video (PowerPoint 2010 and later). PDF cannot play video: give it a link.
 - `frames.mjs`: frame grabber for checking a video.
