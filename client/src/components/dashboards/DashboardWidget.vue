@@ -1,5 +1,5 @@
 <template>
-  <el-card shadow="never" class="dash-widget h-full" body-class="dash-widget__body">
+  <el-card shadow="never" class="dash-widget h-full" body-class="dash-widget__body" :data-widget-id="widget.id">
     <template #header>
       <div class="flex items-center justify-between gap-2 min-w-0">
         <div class="flex items-center gap-2 min-w-0">
@@ -7,9 +7,9 @@
           <span class="dash-widget__title truncate">{{ widget.title || t(`dashboards.widgetTypes.${widget.type}`) }}</span>
         </div>
         <div class="flex items-center gap-1 shrink-0">
-          <el-tag v-if="widget.type !== 'latestSnapshot'" type="info" effect="plain" size="small">
-            {{ t('dashboards.lastDays', { days: widget.rangeDays }) }}
-          </el-tag>
+          <el-tooltip v-if="shortWindow" :content="t('dashboards.activityWindow', { days: data.windowDays })" placement="top">
+            <el-tag type="info" effect="plain" size="small">{{ t('dashboards.lastDays', { days: data.windowDays }) }}</el-tag>
+          </el-tooltip>
           <slot name="actions" />
         </div>
       </div>
@@ -19,19 +19,44 @@
       <el-skeleton v-if="loading && !data" :rows="3" animated />
       <el-empty v-else-if="!data" :description="t('dashboards.noData')" :image-size="56" />
 
-      <!-- KPI tiles -->
-      <div v-else-if="widget.type === 'kpi'" class="grid grid-cols-2 xl:grid-cols-3 gap-3">
+      <!-- Key figures -->
+      <div v-else-if="widget.type === 'kpi'" class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
+        <StatCard
+          :label="t('dashboards.kpi.catches')"
+          :value="formatNumber(data.catches)"
+          :unit="t('dashboards.kpi.fliesUnit')"
+          :icon="DataLine"
+          type="primary"
+          :description="data.previousCatches === null ? t('dashboards.kpi.noPrevious') : t('dashboards.kpi.vsPrevious', { change: formatChange(data.changePct), previous: formatNumber(data.previousCatches) })"
+        />
+        <StatCard
+          :label="t('dashboards.kpi.ftd')"
+          :value="formatNumber(data.ftd)"
+          :icon="TrendCharts"
+          :description="data.previousFtd === null ? t('dashboards.kpi.noPrevious') : t('dashboards.kpi.previousValue', { value: formatNumber(data.previousFtd) })"
+        />
+        <StatCard :label="t('dashboards.kpi.avgPerDay')" :value="formatNumber(data.avgPerDay)" :icon="Histogram" :description="t('dashboards.kpi.allTraps')" />
+        <StatCard
+          :label="t('dashboards.kpi.busiestDay')"
+          :value="data.busiestDay ? formatNumber(data.busiestDay.value) : '--'"
+          :icon="TopRight"
+          :description="data.busiestDay ? formatDayKey(data.busiestDay.day) : ''"
+        />
+        <StatCard
+          :label="t('dashboards.kpi.alertCameras')"
+          :value="data.alertCameras"
+          :icon="Warning"
+          :type="data.alertCameras > 0 ? 'danger' : 'success'"
+          :description="t('dashboards.kpi.alertHint')"
+        />
         <StatCard :label="t('dashboards.kpi.cameras')" :value="data.cameras" :icon="VideoCamera" :description="t('dashboards.kpi.online', { count: data.online })" />
-        <StatCard :label="t('dashboards.kpi.alertCameras')" :value="data.alertCameras" :icon="Warning" :type="data.alertCameras > 0 ? 'danger' : 'success'" />
-        <StatCard :label="t('dashboards.kpi.totalPests')" :value="data.totalPests" :icon="DataLine" type="primary" />
-        <StatCard :label="t('dashboards.kpi.peak')" :value="data.peak" :icon="TopRight" />
         <StatCard :label="t('dashboards.kpi.scans')" :value="data.scans" :icon="Camera" />
       </div>
 
-      <!-- Trend / species charts -->
+      <!-- Daily catches, with the period before -->
       <template v-else-if="widget.type === 'trend' || widget.type === 'species'">
         <el-empty
-          v-if="widget.type === 'species' && !data.species?.length"
+          v-if="(widget.type === 'species' && !data.species?.length) || (widget.type === 'trend' && !hasTrend)"
           :description="t('dashboards.noDetections')"
           :image-size="56"
         />
@@ -40,24 +65,79 @@
         </div>
       </template>
 
-      <!-- Camera ranking -->
+      <!-- Catches per trap -->
+      <CatchBarChart
+        v-else-if="widget.type === 'catchesByTrap'"
+        :labels="trapLabels"
+        :series="trapSeries"
+        :height="bodyHeight"
+        :y-title="t('dashboards.kpi.fliesUnit')"
+        :empty-text="t('dashboards.noDetections')"
+      />
+
+      <!-- Trap table -->
       <template v-else-if="widget.type === 'cameraRanking'">
         <el-empty v-if="!data.cameras?.length" :description="t('dashboards.noCameras')" :image-size="56" />
         <el-table v-else :data="data.cameras" size="small" :max-height="bodyHeight" style="width: 100%">
           <el-table-column type="index" width="44" />
-          <el-table-column :label="t('cameras.deviceName')" min-width="140">
+          <el-table-column :label="t('dashboards.ranking.trap')" min-width="160">
             <template #default="{ row }">
-              <span class="truncate">{{ row.deviceName }}</span>
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="truncate">{{ row.deviceName }}</span>
+                <el-tag type="info" effect="plain" size="small">{{ t(`trapKind.${row.trapKind}.short`) }}</el-tag>
+              </div>
             </template>
           </el-table-column>
-          <el-table-column :label="t('dashboards.ranking.total')" prop="total" width="90" align="right" />
-          <el-table-column :label="t('dashboards.ranking.peak')" prop="peak" width="80" align="right" />
+          <el-table-column :label="t('dashboards.ranking.total')" width="100" align="right">
+            <template #default="{ row }">{{ formatNumber(row.total) }}</template>
+          </el-table-column>
+          <el-table-column :label="t('dashboards.ranking.ftd')" width="110" align="right">
+            <template #default="{ row }">{{ formatNumber(row.ftd) }}</template>
+          </el-table-column>
+          <el-table-column :label="t('dashboards.ranking.change')" width="110" align="right">
+            <template #default="{ row }">
+              <el-tag :type="changeTagType(row.changePct)" effect="light" size="small">{{ formatChange(row.changePct) }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column :label="t('dashboards.ranking.busiestDay')" width="120" align="right">
+            <template #default="{ row }">
+              {{ row.busiestDay ? `${formatNumber(row.busiestDay.value)} (${formatDayKey(row.busiestDay.day)})` : '--' }}
+            </template>
+          </el-table-column>
           <el-table-column :label="t('dashboards.ranking.latest')" width="120" align="right">
             <template #default="{ row }">
-              <el-tag :type="RISK_TAG[row.risk]" effect="light" round size="small">{{ row.latestCount }}</el-tag>
+              <el-tag :type="RISK_TAG[row.risk]" effect="light" round size="small">{{ row.latestCount }} / {{ row.threshold }}</el-tag>
             </template>
           </el-table-column>
         </el-table>
+      </template>
+
+      <!-- Catches by day, week or month -->
+      <template v-else-if="widget.type === 'dailyTable'">
+        <el-empty v-if="!data.rows?.length" :description="t('dashboards.noDetections')" :image-size="56" />
+        <el-table v-else :data="data.rows" size="small" :max-height="bodyHeight" style="width: 100%">
+          <el-table-column :label="t(`dashboards.periodUnit.${data.unit}`)" min-width="110">
+            <template #default="{ row }">{{ formatPeriod(row.from, row.to, data.unit) }}</template>
+          </el-table-column>
+          <el-table-column :label="t('dashboards.ranking.total')" width="100" align="right">
+            <template #default="{ row }">{{ formatNumber(row.total) }}</template>
+          </el-table-column>
+          <el-table-column :label="t('dashboards.ranking.ftd')" width="110" align="right">
+            <template #default="{ row }">{{ formatNumber(row.ftd) }}</template>
+          </el-table-column>
+          <el-table-column :label="t('dashboards.topSpecies')" min-width="140">
+            <template #default="{ row }">
+              <span v-if="row.topSpecies">{{ speciesName(row.topSpecies.label, t) }} ({{ row.topSpecies.value }})</span>
+              <span v-else>--</span>
+            </template>
+          </el-table-column>
+        </el-table>
+      </template>
+
+      <!-- Flies arriving by hour -->
+      <template v-else-if="widget.type === 'activity'">
+        <p v-if="peakHour !== null" class="dash-widget__meta mb-2">{{ t('insights.activityPeak', { from: peakHour, to: peakHour + 1 }) }}</p>
+        <ActivityHeatmap :activity="data" :max-height="bodyHeight - 24" :empty-text="t('dashboards.noDetections')" newest-first />
       </template>
 
       <!-- Latest snapshots -->
@@ -98,21 +178,27 @@ import { ref, computed, watch, nextTick, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
 import Chart from 'chart.js/auto';
 import {
-  Odometer, TrendCharts, PieChart, Histogram, Picture, VideoCamera, Warning, DataLine, TopRight, Camera,
+  Odometer, TrendCharts, PieChart, Histogram, Picture, VideoCamera, Warning, DataLine, TopRight, Camera, Grid, Timer, List,
 } from '@element-plus/icons-vue';
 import StatCard from '@/components/common/StatCard.vue';
+import CatchBarChart from '@/components/charts/CatchBarChart.vue';
+import ActivityHeatmap from '@/components/charts/ActivityHeatmap.vue';
 import { speciesName } from '@/utils/species';
+import { formatDayKey, formatPeriod, formatNumber, formatChange, changeTagType } from '@/utils/dashboards';
 
 const props = defineProps({
   widget: { type: Object, required: true },
   data: { type: Object, default: null },
   loading: { type: Boolean, default: false },
+  // Days in the report's range (the hourly widget may cover fewer)
+  rangeDays: { type: Number, default: 0 },
 });
 
-const WIDGET_ICONS = { kpi: Odometer, trend: TrendCharts, species: PieChart, cameraRanking: Histogram, latestSnapshot: Picture };
+const WIDGET_ICONS = {
+  kpi: Odometer, trend: TrendCharts, catchesByTrap: Histogram, species: PieChart,
+  cameraRanking: List, dailyTable: Grid, activity: Timer, latestSnapshot: Picture,
+};
 const RISK_TAG = { high: 'danger', moderate: 'warning', low: 'success' };
-// Chart series colors (allowed exception to the theme-only rule)
-const SERIES_COLORS = ['#10b981', '#f59e0b', '#ef4444', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6', '#64748b'];
 const ROW_HEIGHT = 80;
 const HEADER_HEIGHT = 120;
 
@@ -121,14 +207,21 @@ const chartRef = ref(null);
 let chart = null;
 
 const bodyHeight = computed(() => Math.max(140, (props.widget.layout?.h || 4) * ROW_HEIGHT - HEADER_HEIGHT));
+const shortWindow = computed(() => props.widget.type === 'activity' && props.data?.windowDays && props.rangeDays > props.data.windowDays);
+const hasTrend = computed(() => (props.data?.points || []).some(p => p.value || p.previous));
+
+const trapLabels = computed(() => (props.data?.labels || []).map(key => formatDayKey(key, props.data.unit === 'month' ? 'month' : 'day')));
+const trapSeries = computed(() => (props.data?.series || []).map(s => ({ label: s.deviceName, data: s.data })));
+
+const peakHour = computed(() => {
+  const byHour = props.data?.byHour || [];
+  const max = Math.max(0, ...byHour);
+  return max > 0 ? props.data.hours[byHour.indexOf(max)] : null;
+});
 
 const formatDateTime = (value) => new Date(value).toLocaleString(locale.value === 'vi' ? 'vi-VN' : 'en-US', {
   day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
 });
-const formatDay = (date) => {
-  const [, m, d] = date.split('-');
-  return `${d}/${m}`;
-};
 const cssVar = (name, fallback) => getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
 
 const destroyChart = () => {
@@ -142,28 +235,46 @@ const renderChart = async () => {
   if (!chartRef.value || !props.data) return;
   const gridColor = cssVar('--el-border-color', 'rgba(128,128,128,0.15)');
   const textColor = cssVar('--el-text-color-secondary', '#888');
+  const primary = cssVar('--el-color-primary', '#10b981');
+  const muted = cssVar('--el-text-color-placeholder', '#a8abb2');
 
   if (props.widget.type === 'trend') {
     const points = props.data.points || [];
+    const hasPrevious = points.some(p => p.previous !== null && p.previous !== undefined);
     chart = new Chart(chartRef.value, {
       type: 'line',
       data: {
-        labels: points.map(p => formatDay(p.date)),
-        datasets: [{
-          label: t('dashboards.kpi.totalPests'),
-          data: points.map(p => p.value),
-          borderColor: SERIES_COLORS[0],
-          backgroundColor: `${SERIES_COLORS[0]}20`,
-          borderWidth: 2,
-          tension: 0.35,
-          fill: true,
-          pointRadius: points.length > 45 ? 0 : 3,
-        }],
+        labels: points.map(p => formatDayKey(p.date)),
+        datasets: [
+          {
+            label: t('dashboards.thisPeriod'),
+            data: points.map(p => p.value),
+            borderColor: primary,
+            backgroundColor: cssVar('--el-color-primary-light-8', 'rgba(16,185,129,0.15)'),
+            borderWidth: 2,
+            tension: 0.35,
+            fill: true,
+            spanGaps: true,
+            pointRadius: points.length > 45 ? 0 : 3,
+          },
+          ...(hasPrevious ? [{
+            label: t('dashboards.previousPeriod'),
+            data: points.map(p => p.previous),
+            borderColor: muted,
+            borderDash: [5, 4],
+            borderWidth: 1.5,
+            tension: 0.35,
+            fill: false,
+            spanGaps: true,
+            pointRadius: 0,
+          }] : []),
+        ],
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
+        interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { position: 'bottom', labels: { color: textColor, boxWidth: 12, usePointStyle: true } } },
         scales: {
           y: { beginAtZero: true, ticks: { precision: 0, color: textColor }, grid: { color: gridColor } },
           x: { ticks: { color: textColor, maxTicksLimit: 12 }, grid: { display: false } },
@@ -173,13 +284,15 @@ const renderChart = async () => {
   } else if (props.widget.type === 'species') {
     const species = props.data.species || [];
     if (!species.length) return;
+    const total = species.reduce((sum, s) => sum + s.value, 0) || 1;
+    const palette = ['primary', 'warning', 'danger', 'info', 'success'].map(c => cssVar(`--el-color-${c}`, primary));
     chart = new Chart(chartRef.value, {
       type: 'bar',
       data: {
         labels: species.map(s => speciesName(s.label, t)),
         datasets: [{
           data: species.map(s => s.value),
-          backgroundColor: species.map((_, i) => SERIES_COLORS[i % SERIES_COLORS.length]),
+          backgroundColor: species.map((_, i) => palette[i % palette.length]),
           borderRadius: 4,
         }],
       },
@@ -187,7 +300,10 @@ const renderChart = async () => {
         indexAxis: 'y',
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: (ctx) => `${ctx.raw} (${Math.round((ctx.raw / total) * 100)}%)` } },
+        },
         scales: {
           x: { beginAtZero: true, ticks: { precision: 0, color: textColor }, grid: { color: gridColor } },
           y: { ticks: { color: textColor }, grid: { display: false } },

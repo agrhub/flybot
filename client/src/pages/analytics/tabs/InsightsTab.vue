@@ -42,32 +42,7 @@
             {{ peakHour !== null ? t('insights.activityPeak', { from: peakHour, to: peakHour + 1 }) : t('insights.activityDesc') }}
           </p>
         </template>
-        <div v-if="activity && activityMax > 0" class="overflow-x-auto">
-          <table class="heatmap">
-            <thead>
-              <tr>
-                <th></th>
-                <th v-for="h in activity.hours" :key="h" class="heatmap__hour">{{ h }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(row, i) in activity.cells" :key="activity.days[i]">
-                <th class="heatmap__day">{{ shortDay(activity.days[i]) }}</th>
-                <td v-for="(value, j) in row" :key="j">
-                  <el-tooltip :content="t('insights.activityCell', { day: shortDay(activity.days[i]), hour: activity.hours[j], value })" placement="top" :show-after="200">
-                    <div class="heatmap__cell" :style="{ opacity: value ? 0.15 + 0.85 * (value / activityMax) : 0.06 }"></div>
-                  </el-tooltip>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-          <div class="flex items-center justify-end gap-2 mt-2 meta-text">
-            <span>{{ t('insights.less') }}</span>
-            <div v-for="o in [0.15, 0.4, 0.65, 1]" :key="o" class="heatmap__cell heatmap__legend" :style="{ opacity: o }"></div>
-            <span>{{ t('insights.more') }}</span>
-          </div>
-        </div>
-        <el-empty v-else :description="t('analytics.noStatsData')" :image-size="70" />
+        <ActivityHeatmap :activity="activity" />
       </el-card>
     </div>
 
@@ -149,6 +124,7 @@ import { useI18n } from 'vue-i18n';
 import api from '@/services/api';
 import { useCameras } from '@/composables/useCameras';
 import CatchBarChart from '@/components/charts/CatchBarChart.vue';
+import ActivityHeatmap from '@/components/charts/ActivityHeatmap.vue';
 
 const props = defineProps({
   camera: { type: Object, default: null },
@@ -184,7 +160,6 @@ const weatherSeries = computed(() => {
   return series;
 });
 
-const activityMax = computed(() => Math.max(0, ...(activity.value?.cells || []).flat()));
 const peakHour = computed(() => {
   const byHour = activity.value?.byHour || [];
   const max = Math.max(0, ...byHour);
@@ -243,33 +218,6 @@ onMounted(() => { if (props.active) load(); });
 }
 .status-dot.is-online {
   background-color: var(--el-color-success);
-}
-.heatmap {
-  border-collapse: separate;
-  border-spacing: 3px;
-  font-size: 11px;
-  color: var(--el-text-color-secondary);
-}
-.heatmap__hour {
-  font-weight: 500;
-  text-align: center;
-  min-width: 22px;
-}
-.heatmap__day {
-  font-weight: 500;
-  text-align: right;
-  padding-right: 6px;
-  white-space: nowrap;
-}
-.heatmap__cell {
-  width: 22px;
-  height: 16px;
-  border-radius: 3px;
-  background-color: var(--el-color-primary);
-}
-.heatmap__legend {
-  width: 14px;
-  height: 10px;
 }
 .spark {
   display: flex;

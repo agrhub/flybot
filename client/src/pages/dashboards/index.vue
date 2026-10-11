@@ -31,7 +31,7 @@
               <div class="dash-card__title truncate">{{ d.name }}</div>
               <p class="dash-card__desc">{{ d.description || t('dashboards.noDescription') }}</p>
             </div>
-            <el-icon :size="20" class="dash-card__icon"><Grid /></el-icon>
+            <el-icon :size="20" class="dash-card__icon"><Document /></el-icon>
           </div>
 
           <div class="flex flex-wrap items-center gap-1.5 mt-4">
@@ -41,6 +41,9 @@
             </el-tag>
             <el-tag v-if="d.access !== 'owner'" type="info" effect="plain" round size="small">
               {{ d.access === 'shared' ? t('dashboards.sharedBy', { owner: d.owner.name || d.owner.email }) : t('dashboards.ownedBy', { owner: d.owner.email }) }}
+            </el-tag>
+            <el-tag v-if="d.expiresAt" :type="d.expired ? 'danger' : 'info'" effect="plain" round size="small">
+              {{ d.expired ? t('dashboards.expiry.expired') : t('dashboards.expiry.until', { time: formatDate(d.expiresAt) }) }}
             </el-tag>
           </div>
 
@@ -67,6 +70,9 @@
             <el-option v-for="cam in cameras" :key="cam.deviceSerial" :label="cam.deviceName" :value="cam.deviceSerial" />
           </el-select>
         </el-form-item>
+        <el-form-item :label="t('dashboards.defaultRange')">
+          <ReportRangePicker v-model="form.range" />
+        </el-form-item>
         <el-form-item :label="t('dashboards.template')">
           <el-radio-group v-model="form.template">
             <el-radio value="overview">{{ t('dashboards.templates.overview') }}</el-radio>
@@ -89,11 +95,12 @@ import { ref, reactive, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { ElMessage } from 'element-plus';
-import { Plus, Refresh, Grid, Link, Lock } from '@element-plus/icons-vue';
+import { Plus, Refresh, Document, Link, Lock } from '@element-plus/icons-vue';
 import api from '@/services/api';
 import { useAuth } from '@/composables/useAuth';
 import { useCameras } from '@/composables/useCameras';
 import PageHeader from '@/components/common/PageHeader.vue';
+import ReportRangePicker from '@/components/dashboards/ReportRangePicker.vue';
 import { overviewWidgets, dashboardErrorText } from '@/utils/dashboards';
 
 const router = useRouter();
@@ -121,13 +128,14 @@ const load = async () => {
 // ---------- Create ----------
 const createVisible = ref(false);
 const creating = ref(false);
-const form = reactive({ name: '', description: '', cameraSerials: [], template: 'overview' });
+const form = reactive({ name: '', description: '', cameraSerials: [], range: { preset: '7d' }, template: 'overview' });
 
 const openCreate = () => {
   form.name = '';
   form.description = '';
   // Default to the cameras you manage (the ones you can also publish)
   form.cameraSerials = cameras.value.filter(c => c.canManage !== false).map(c => c.deviceSerial).slice(0, 50);
+  form.range = { preset: '7d' };
   form.template = 'overview';
   createVisible.value = true;
 };
@@ -140,6 +148,7 @@ const create = async () => {
       name: form.name.trim(),
       description: form.description.trim(),
       cameraSerials: form.cameraSerials,
+      range: form.range,
       widgets: form.template === 'overview' ? overviewWidgets() : [],
     });
     createVisible.value = false;

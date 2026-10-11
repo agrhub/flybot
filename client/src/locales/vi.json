@@ -864,7 +864,7 @@
           "reports": {
             "title": "Báo cáo",
             "desc": "Tự sắp xếp các biểu đồ và chỉ số cần theo dõi.",
-            "items": "Vào \"Báo cáo\", tạo báo cáo mới và thêm các widget: số liệu, biểu đồ, so sánh bẫy.\nChia sẻ báo cáo cho người khác theo email, hoặc bật liên kết công khai để gửi cho đối tác."
+            "items": "Vào \"Báo cáo\", tạo báo cáo mới và thêm các khối: chỉ số chính, số ruồi mỗi ngày, số ruồi theo bẫy, loài côn trùng, bảng tổng hợp bẫy, số ruồi theo kỳ, ruồi vào bẫy theo giờ, ảnh mới nhất.\nChọn khoảng thời gian ở góc phải: 7 hoặc 30 ngày qua, 3, 6 hoặc 12 tháng qua, hoặc tự chọn ngày; \"Lưu làm mặc định\" giữ khoảng này cho mọi người mở báo cáo. Các số liệu được so với kỳ liền trước.\nBấm \"Xuất PDF\" để lưu báo cáo kèm biểu đồ và bảng.\nChia sẻ theo email, hoặc bật liên kết công khai cho đối tác. Ở mục \"Thời hạn chia sẻ\", chọn ngày giờ mà sau đó liên kết và người được chia sẻ mất quyền xem, hoặc để \"Không hết hạn\"."
           }
         }
       },
@@ -1318,23 +1318,37 @@
     },
     "widgetTypes": {
       "kpi": "Chỉ số chính",
-      "trend": "Xu hướng theo ngày",
+      "trend": "Số ruồi mỗi ngày",
       "species": "Loài côn trùng",
-      "cameraRanking": "Xếp hạng camera",
-      "latestSnapshot": "Ảnh chụp mới nhất"
+      "cameraRanking": "Bảng tổng hợp bẫy",
+      "latestSnapshot": "Ảnh chụp mới nhất",
+      "catchesByTrap": "Số ruồi theo bẫy",
+      "dailyTable": "Số ruồi theo kỳ",
+      "activity": "Ruồi vào bẫy theo giờ"
     },
     "kpi": {
       "cameras": "Camera",
       "online": "{count} trực tuyến",
-      "alertCameras": "Vượt ngưỡng",
-      "totalPests": "Côn trùng đếm được",
-      "peak": "Lần quét cao nhất",
-      "scans": "Lần quét"
+      "alertCameras": "Bẫy vượt ngưỡng",
+      "scans": "Ảnh đã phân tích",
+      "catches": "Ruồi vào bẫy",
+      "fliesUnit": "con",
+      "vsPrevious": "{change} so với kỳ trước ({previous})",
+      "previousValue": "Kỳ trước: {value}",
+      "ftd": "Ruồi/bẫy/ngày",
+      "avgPerDay": "Trung bình mỗi ngày",
+      "allTraps": "Tất cả các bẫy",
+      "busiestDay": "Ngày nhiều nhất",
+      "alertHint": "Số hiện có trên bẫy chạm hoặc vượt ngưỡng",
+      "noPrevious": "Chưa có dữ liệu kỳ trước"
     },
     "ranking": {
-      "total": "Tổng",
-      "peak": "Cao nhất",
-      "latest": "Mới nhất"
+      "total": "Ruồi vào bẫy",
+      "latest": "Hiện có / ngưỡng",
+      "trap": "Bẫy",
+      "ftd": "Ruồi/bẫy/ngày",
+      "change": "So với trước",
+      "busiestDay": "Ngày nhiều nhất"
     },
     "noData": "Lưu báo cáo để tải dữ liệu.",
     "noDetections": "Không phát hiện côn trùng trong khoảng thời gian này.",
@@ -1367,7 +1381,55 @@
       "by": "Bởi {owner}",
       "notFound": "Liên kết không khả dụng",
       "notFoundDesc": "Báo cáo có thể đã chuyển sang riêng tư hoặc đã có liên kết mới.",
-      "home": "Đến FlyBot"
+      "home": "Đến FlyBot",
+      "expired": "Liên kết đã hết hạn",
+      "expiredDesc": "Chủ báo cáo đã đặt thời hạn cho báo cáo này. Hãy liên hệ họ để nhận liên kết mới."
+    },
+    "ranges": {
+      "7d": "7 ngày qua",
+      "30d": "30 ngày qua",
+      "3m": "3 tháng qua",
+      "6m": "6 tháng qua",
+      "12m": "12 tháng qua",
+      "custom": "Chọn ngày"
+    },
+    "defaultRange": "Khoảng thời gian mặc định",
+    "rangeFrom": "Từ ngày",
+    "rangeTo": "Đến ngày",
+    "rangeTooLong": "Chọn tối đa {days} ngày.",
+    "saveDefaultRange": "Lưu làm mặc định",
+    "defaultRangeSaved": "Đã lưu khoảng thời gian mặc định.",
+    "activityWindow": "Ruồi theo giờ chỉ tính {days} ngày cuối của khoảng thời gian.",
+    "thisPeriod": "Kỳ này",
+    "previousPeriod": "Kỳ trước",
+    "periodUnit": {
+      "day": "Ngày",
+      "week": "Tuần",
+      "month": "Tháng"
+    },
+    "topSpecies": "Loài nhiều nhất",
+    "exportPdf": "Xuất PDF",
+    "pdfFailed": "Không tạo được file PDF.",
+    "pdf": {
+      "range": "Khoảng thời gian: {range} ({from} - {to})",
+      "generated": "Tạo lúc: {time}",
+      "figure": "Chỉ số",
+      "value": "Giá trị",
+      "hour": "Giờ",
+      "count": "Trên bẫy",
+      "time": "Thời điểm chụp"
+    },
+    "expiry": {
+      "title": "Thời hạn chia sẻ",
+      "desc": "Sau thời điểm này, liên kết công khai ngừng hoạt động và những người ở trên mất quyền xem. Bạn vẫn giữ báo cáo.",
+      "never": "Không hết hạn",
+      "onDate": "Đến ngày",
+      "pick": "Chọn ngày giờ",
+      "saved": "Đã lưu thời hạn chia sẻ.",
+      "mustBeFuture": "Hãy chọn thời điểm trong tương lai.",
+      "expired": "Đã hết hạn chia sẻ",
+      "until": "Chia sẻ đến {time}",
+      "expiredHint": "Đã hết hạn chia sẻ. Chọn ngày muộn hơn hoặc \"Không hết hạn\" để chia sẻ lại."
     }
   },
   "audit": {
@@ -1431,7 +1493,8 @@
         "unshared": "Gỡ quyền xem báo cáo",
         "published": "Bật liên kết công khai",
         "unpublished": "Tắt liên kết công khai",
-        "link_rotated": "Tạo liên kết công khai mới"
+        "link_rotated": "Tạo liên kết công khai mới",
+        "expiry_changed": "Đổi thời hạn chia sẻ"
       },
       "settings": {
         "updated": "Đổi cài đặt hệ thống"

@@ -19,6 +19,8 @@ const MAX_CAMERAS = 50;
 const MAX_WIDGETS = 20;
 const MAX_SHARES = 50;
 const WIDGET_ID_REGEX = /^[A-Za-z0-9_-]{1,40}$/;
+// Sharing can end at most this far ahead
+const MAX_EXPIRY_MS = 5 * 365 * 24 * 60 * 60 * 1000;
 
 const NOT_FOUND = { success: false, message: "Report not found." };
 const newPublicToken = () => crypto.randomBytes(18).toString('base64url');
@@ -53,20 +55,28 @@ function toSummary(dashboard, user) {
         canEdit: dashboardService.canEditDashboard(user, dashboard),
         cameraCount: (dashboard.cameraSerials || []).length,
         widgetCount: (dashboard.widgets || []).length,
+        expiresAt: dashboard.expiresAt || null,
+        expired: dashboardService.isExpired(dashboard),
         updatedAt: dashboard.updatedAt
     };
 }
+
+// The saved default range, as the client sends it back
+const rangeOf = (dashboard) => {
+    const { preset = '7d', from, to } = dashboard.range || {};
+    return preset === 'custom' ? { preset, from, to } : { preset };
+};
 
 function toDetail(dashboard, user) {
     const detail = {
         ...toSummary(dashboard, user),
         cameraSerials: dashboard.cameraSerials,
+        range: rangeOf(dashboard),
         widgets: (dashboard.widgets || []).map(w => ({
             id: w.id,
             type: w.type,
             title: w.title,
             cameraSerials: w.cameraSerials,
-            rangeDays: w.rangeDays,
             layout: { x: w.layout?.x ?? 0, y: w.layout?.y ?? 0, w: w.layout?.w ?? 12, h: w.layout?.h ?? 4 }
         }))
     };
@@ -129,8 +139,6 @@ async function validateInput(body, { editor, owner, partial = false, current = n
             if (!Array.isArray(serials) || serials.some(s => typeof s !== 'string' || !cameraSet.has(s))) {
                 return { error: "Widget cameras must be cameras of the report." };
             }
-            const rangeDays = w.rangeDays ?? 7;
-            if (!isInt(rangeDays, 1, 365)) return { error: "rangeDays must be between 1 and 365." };
             const layout = { x: 0, y: 0, w: 12, h: 4, ...(w.layout || {}) };
             if (!isInt(layout.x, 0, 23) || !isInt(layout.y, 0, 1000) || !isInt(layout.w, 1, 24) || !isInt(layout.h, 1, 20) || layout.x + layout.w > 24) {
                 return { error: "Invalid widget layout." };
@@ -141,7 +149,6 @@ async function validateInput(body, { editor, owner, partial = false, current = n
                 type: w.type,
                 title: text(w.title, 80),
                 cameraSerials: [...new Set(serials)],
-                rangeDays,
                 layout: { x: layout.x, y: layout.y, w: layout.w, h: layout.h }
             });
         }
@@ -150,6 +157,25 @@ async function validateInput(body, { editor, owner, partial = false, current = n
     if (body.visibility !== undefined) {
         if (!['private', 'public'].includes(body.visibility)) return { error: "visibility must be private or public." };
         value.visibility = body.visibility;
+    }
+
+    if (body.range !== undefined) {
+        const parsed = dashboardService.parseRange(body.range);
+        if (parsed.error) return { error: parsed.error };
+        value.range = parsed.range;
+    }
+
+    if (body.expiresAt !== undefined) {
+        if (body.expiresAt === null) {
+            value.expiresAt = null;
+        } else {
+            const at = typeof body.expiresAt === 'string' ? new Date(body.expiresAt) : null;
+            if (!at || Number.isNaN(at.getTime())) return { error: "Invalid expiry date." };
+            const unchanged = current?.expiresAt && new Date(current.expiresAt).getTime() === at.getTime();
+            if (!unchanged && at.getTime() <= Date.now()) return { error: "The expiry date must be in the future." };
+            if (at.getTime() > Date.now() + MAX_EXPIRY_MS) return { error: "The expiry date can be at most 5 years ahead." };
+            value.expiresAt = at;
+        }
     }
 
     // A public link may only show the owner's own cameras (an admin owner: any camera)
@@ -250,6 +276,7 @@ async function updateDashboard(req, res) {
         if (result.error) return sendValidationError(res, result);
 
         const wasPublic = dashboard.visibility === 'public';
+        const previousExpiry = dashboard.expiresAt ? new Date(dashboard.expiresAt).getTime() : null;
         Object.assign(dashboard, result.value);
         if (dashboard.visibility === 'public' && !dashboard.publicToken) dashboard.publicToken = newPublicToken();
         // Going private kills the old link
@@ -258,6 +285,10 @@ async function updateDashboard(req, res) {
         const isPublic = dashboard.visibility === 'public';
         if (isPublic !== wasPublic) {
             recordAudit(req, { action: isPublic ? 'dashboard.published' : 'dashboard.unpublished', target: dashboardTarget(dashboard) });
+        }
+        const expiry = dashboard.expiresAt ? new Date(dashboard.expiresAt).getTime() : null;
+        if (expiry !== previousExpiry) {
+            recordAudit(req, { action: 'dashboard.expiry_changed', target: dashboardTarget(dashboard), details: { expiresAt: dashboard.expiresAt || null } });
         }
         res.json({ success: true, dashboard: toDetail(dashboard, req.user) });
     } catch (err) {
@@ -283,6 +314,12 @@ async function deleteDashboard(req, res) {
     }
 }
 
+// ?range=30d, or ?range=custom&from=YYYY-MM-DD&to=YYYY-MM-DD; none = the report's own range
+function rangeFromQuery(query) {
+    if (!query?.range) return { range: null };
+    return dashboardService.parseRange({ preset: String(query.range), from: query.from, to: query.to });
+}
+
 /**
  * GET /api/dashboards/:id/data: data for every widget
  */
@@ -290,11 +327,14 @@ async function getDashboardData(req, res) {
     try {
         const dashboard = await findDashboard(req.params.id);
         if (!dashboardService.canViewDashboard(req.user, dashboard)) return res.status(404).json(NOT_FOUND);
+        const wanted = rangeFromQuery(req.query);
+        if (wanted.error) return res.status(400).json({ success: false, message: wanted.error });
         const serials = await dashboardService.effectiveSerials(dashboard, req.user);
-        const widgets = await dashboardService.computeWidgetData(dashboard, serials, {
-            imageUrl: (key) => `/api/s3/${key}`
+        const { range, widgets } = await dashboardService.computeWidgetData(dashboard, serials, {
+            imageUrl: (key) => `/api/s3/${key}`,
+            range: wanted.range
         });
-        res.json({ success: true, generatedAt: new Date(), widgets });
+        res.json({ success: true, generatedAt: new Date(), range, widgets });
     } catch (err) {
         sendServerError(res, err, { context: 'Dashboard data' });
     }
@@ -442,15 +482,21 @@ async function getPublicDashboard(req, res) {
     try {
         const dashboard = await findPublicDashboard(req.params.token);
         if (!dashboard) return res.status(404).json(NOT_FOUND);
-        const cacheKey = `${dashboard._id}:${dashboard.publicToken}:${new Date(dashboard.updatedAt).getTime()}`;
-        const { widgets, cameras, generatedAt } = await publicDataCache.wrap(cacheKey, async () => {
+        if (dashboardService.isExpired(dashboard)) {
+            return res.status(410).json({ success: false, code: 'EXPIRED', message: "This report link has expired." });
+        }
+        const wanted = rangeFromQuery(req.query);
+        if (wanted.error) return res.status(400).json({ success: false, message: wanted.error });
+        const rangeKey = wanted.range ? `${wanted.range.preset}:${wanted.range.from || ''}:${wanted.range.to || ''}` : 'default';
+        const cacheKey = `${dashboard._id}:${dashboard.publicToken}:${new Date(dashboard.updatedAt).getTime()}:${rangeKey}`;
+        const { widgets, range, cameras, generatedAt } = await publicDataCache.wrap(cacheKey, async () => {
             const serials = await dashboardService.effectiveSerials(dashboard, null);
             const base = `/api/public/dashboards/${encodeURIComponent(req.params.token)}/images/`;
-            const [widgetData, cameraDocs] = await Promise.all([
-                dashboardService.computeWidgetData(dashboard, serials, { imageUrl: (key) => base + key }),
+            const [computed, cameraDocs] = await Promise.all([
+                dashboardService.computeWidgetData(dashboard, serials, { imageUrl: (key) => base + key, range: wanted.range }),
                 serials.length ? Camera.find({ deviceSerial: { $in: serials } }).select('deviceSerial deviceName status').lean() : []
             ]);
-            return { widgets: widgetData, cameras: cameraDocs, generatedAt: new Date() };
+            return { ...computed, cameras: cameraDocs, generatedAt: new Date() };
         });
         const owner = dashboard.ownerId;
         res.json({
@@ -462,8 +508,11 @@ async function getPublicDashboard(req, res) {
                 // Display name only: no email on a public page
                 ownerName: owner.name || '',
                 updatedAt: dashboard.updatedAt,
+                expiresAt: dashboard.expiresAt || null,
+                range: rangeOf(dashboard),
                 widgets: toDetail(dashboard, { id: null, role: 'user' }).widgets
             },
+            range,
             cameras: cameras.map(c => ({ deviceSerial: c.deviceSerial, deviceName: c.deviceName, status: c.status })),
             widgets
         });
@@ -479,7 +528,8 @@ async function streamPublicImage(req, res) {
     try {
         const key = Array.isArray(req.params.key) ? req.params.key.join('/') : String(req.params.key || '');
         const match = key.match(SNAPSHOT_KEY_REGEX);
-        const dashboard = match ? await findPublicDashboard(req.params.token) : null;
+        const found = match ? await findPublicDashboard(req.params.token) : null;
+        const dashboard = found && !dashboardService.isExpired(found) ? found : null;
         const serials = dashboard ? await dashboardService.effectiveSerials(dashboard, null) : [];
         if (!match || !serials.includes(match[1])) {
             return res.status(404).json({ success: false, message: "File not found" });

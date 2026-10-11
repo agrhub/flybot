@@ -276,7 +276,6 @@
     "some_cameras_were_not_found": "Some cameras were not found.",
     "widget_cameras_must_be_cameras_of_the_dashboard": "Widget cameras must be cameras of the report.",
     "preharvestdays_must_be_a_whole_number_from_0": "preHarvestDays must be a whole number from 0 to 365.",
-    "rangedays_must_be_between_1_and_365": "rangeDays must be between 1 and 365.",
     "visibility_must_be_private_or_public": "visibility must be private or public.",
     "choose_at_least_one_event": "Choose at least one event.",
     "not_authenticated": "Not authenticated.",
@@ -331,6 +330,12 @@
     "password_must_be_at_most_max_characters": "Password must be at most {max} characters.",
     "the_boundary_needs_3_to_max_points": "The boundary needs 3 to {max} points.",
     "you_do_not_have_permission_to_access_camera": "You do not have permission to access camera {serial}.",
-    "you_do_not_have_permission_to_control_camera": "You do not have permission to control camera {serial} or device not found."
+    "you_do_not_have_permission_to_control_camera": "You do not have permission to control camera {serial} or device not found.",
+    "invalid_time_range": "Invalid time range.",
+    "a_time_range_can_cover_at_most_max_days": "A time range can cover at most {max} days.",
+    "invalid_expiry_date": "Invalid expiry date.",
+    "the_expiry_date_must_be_in_the_future": "The expiry date must be in the future.",
+    "the_expiry_date_can_be_at_most_5_years_ahead": "The expiry date can be at most 5 years ahead.",
+    "this_report_link_has_expired": "This report link has expired."
   }
 }

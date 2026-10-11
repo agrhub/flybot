@@ -25,47 +25,129 @@ async function snapshot(deviceSerial, summary, hoursAgo = 1) {
 }
 
 const ALL_WIDGETS = [
-    { id: 'k', type: 'kpi', rangeDays: 7 },
-    { id: 't', type: 'trend', rangeDays: 7 },
-    { id: 's', type: 'species', rangeDays: 7 },
-    { id: 'r', type: 'cameraRanking', rangeDays: 7 },
-    { id: 'l', type: 'latestSnapshot', rangeDays: 7 }
+    { id: 'k', type: 'kpi' },
+    { id: 't', type: 'trend' },
+    { id: 'c', type: 'catchesByTrap' },
+    { id: 's', type: 'species' },
+    { id: 'r', type: 'cameraRanking' },
+    { id: 'd', type: 'dailyTable' },
+    { id: 'a', type: 'activity' },
+    { id: 'l', type: 'latestSnapshot' }
 ];
 
 const create = (as, body) => request('/api/dashboards', { method: 'POST', as, body });
+const day = (n) => dailyStats.dayKeyOf(Date.now() - n * 24 * HOUR);
+const row = (serial, n, peak, total, species = 'fruit_fly') => ({
+    deviceSerial: serial, day: day(n), scans: 4, total: total ?? peak * 4, peak, min: 0,
+    species: [{ name: species, peak, total: total ?? peak * 4 }]
+});
 
 test('only admins and managers build dashboards', async () => {
     const viewer = await createUser({ role: 'user' });
     assert.equal((await create(viewer, { name: 'Mine' })).status, 403);
 });
 
-test('build a dashboard and read widget data', async () => {
+test('build a report and read widget data over its time range', async () => {
     const owner = await createUser({ role: 'manager' });
     await createCamera(owner, { deviceSerial: 'A1', deviceName: 'Plot A', alertThreshold: 10, status: 1 });
-    await createCamera(owner, { deviceSerial: 'B1', deviceName: 'Plot B', alertThreshold: 10 });
-    // A1: two scans today (peak 12), B1: one scan (3 fruit flies + 1 person, which is not a pest)
-    await snapshot('A1', { fruit_fly: 5 }, 2);
-    await snapshot('A1', { fruit_fly: 10, moth: 2 }, 1);
-    await snapshot('B1', { 'ruồi vàng': 3, person: 1 }, 1);
+    await createCamera(owner, { deviceSerial: 'B1', deviceName: 'Plot B', alertThreshold: 10, trapKind: 'lure' });
+    await models.DailyStat.insertMany([
+        // Sticky: +2 on day 7 (the week before); day 2 follows a gap (unknown), then +3 and +5
+        row('A1', 8, 2), row('A1', 7, 4), row('A1', 2, 4), row('A1', 1, 7), row('A1', 0, 12),
+        // Lure: 3 then 2 flies present on average
+        row('B1', 1, 5, 12, 'moth'), row('B1', 0, 4, 8, 'moth')
+    ]);
+    await models.Snapshot.create({
+        deviceSerial: 'A1', imageUrl: 'x', s3Key: `snapshots/A1/A1_${Date.now()}.jpg`,
+        aiProcessed: true, aiResults: { detected: true, summary: { fruit_fly: 12 } }
+    });
 
     const created = await json(await create(owner, { name: '  Farm overview ', cameraSerials: ['A1', 'B1'], widgets: ALL_WIDGETS }));
     assert.equal(created.status, 201);
     assert.equal(created.body.dashboard.name, 'Farm overview');
     assert.equal(created.body.dashboard.visibility, 'private');
+    assert.deepEqual(created.body.dashboard.range, { preset: '7d' });
     const id = created.body.dashboard.id;
 
     const { body } = await json(await request(`/api/dashboards/${id}/data`, { as: owner }));
+    assert.equal(body.range.days, 7);
     const w = body.widgets;
     assert.equal(w.k.cameras, 2);
     assert.equal(w.k.online, 1);
-    assert.equal(w.k.scans, 3);
-    assert.equal(w.k.totalPests, 15, 'per-camera daily peak, then summed: 12 + 3');
+    assert.equal(w.k.scans, 20);
+    assert.equal(w.k.catches, 13, 'sticky 3 + 5, lure 3 + 2');
+    assert.equal(w.k.ftd, 3.3, '13 over 4 trap-days');
+    assert.equal(w.k.previousCatches, 2);
+    assert.equal(w.k.changePct, 550);
+    assert.deepEqual(w.k.busiestDay, { day: day(0), value: 7 });
     assert.equal(w.k.alertCameras, 1);
     assert.equal(w.t.points.length, 7);
-    assert.equal(w.t.points.reduce((sum, p) => sum + p.value, 0), 15);
-    assert.deepEqual(w.s.species, [{ label: 'fruit_fly', value: 13 }, { label: 'moth', value: 2 }]);
-    assert.deepEqual(w.r.cameras.map(c => [c.deviceSerial, c.total, c.risk]), [['A1', 12, 'high'], ['B1', 3, 'moderate']]);
+    assert.equal(w.t.points.reduce((sum, p) => sum + (p.value || 0), 0), 13);
+    assert.equal(w.t.points.at(-1).previous, 2, 'today lines up with the same day a week earlier');
+    assert.equal(w.c.unit, 'day');
+    assert.equal(w.c.series.find(x => x.deviceSerial === 'A1').data.reduce((a, b) => a + (b || 0), 0), 8);
+    assert.deepEqual(w.s.species, [{ label: 'fruit_fly', value: 8 }, { label: 'moth', value: 5 }]);
+    assert.deepEqual(w.r.cameras.map(c => [c.deviceSerial, c.trapKind, c.total, c.ftd, c.risk]), [['A1', 'sticky', 8, 4, 'high'], ['B1', 'lure', 5, 2.5, 'low']]);
+    assert.equal(w.d.rows.length, 7);
+    assert.deepEqual([w.d.rows[0].from, w.d.rows[0].total, w.d.rows[0].topSpecies.label], [day(0), 7, 'fruit_fly']);
+    assert.equal(w.a.windowDays, 7);
+    assert.equal(w.a.cells.length, 7);
     assert.match(w.l.snapshots[0].imageUrl, /^\/api\/s3\/snapshots\/A1\//);
+
+    // Another range for this view only
+    const month = await json(await request(`/api/dashboards/${id}/data?range=30d`, { as: owner }));
+    assert.equal(month.body.range.days, 30);
+    assert.equal(month.body.widgets.k.catches, 15);
+    assert.equal(month.body.widgets.k.changePct, null, 'nothing in the month before');
+    const custom = await json(await request(`/api/dashboards/${id}/data?range=custom&from=${day(8)}&to=${day(7)}`, { as: owner }));
+    assert.deepEqual([custom.body.range.from, custom.body.range.to, custom.body.range.days], [day(8), day(7), 2]);
+    assert.equal(custom.body.widgets.k.catches, 2);
+    assert.equal((await request(`/api/dashboards/${id}/data?range=custom&from=2026-02-30&to=2026-03-02`, { as: owner })).status, 400);
+    assert.equal((await request(`/api/dashboards/${id}/data?range=custom&from=2024-01-01&to=2025-06-01`, { as: owner })).status, 400);
+    assert.equal((await request(`/api/dashboards/${id}/data?range=5y`, { as: owner })).status, 400);
+
+    // The saved default range
+    const saved = await json(await request(`/api/dashboards/${id}`, { method: 'PUT', as: owner, body: { range: { preset: '3m' } } }));
+    assert.deepEqual(saved.body.dashboard.range, { preset: '3m' });
+    const quarter = await json(await request(`/api/dashboards/${id}/data`, { as: owner }));
+    assert.equal(quarter.body.range.days, 90);
+    assert.equal(quarter.body.widgets.c.unit, 'week');
+    assert.equal(quarter.body.widgets.c.labels.length, 13);
+});
+
+test('sharing ends at the expiry date for the public link and the people it is shared with', async () => {
+    const owner = await createUser({ role: 'manager' });
+    const viewer = await createUser({ role: 'user', email: 'viewer@example.test' });
+    await createCamera(owner, { deviceSerial: 'A1' });
+    const { body } = await json(await create(owner, { name: 'Season', cameraSerials: ['A1'], visibility: 'public', widgets: [{ id: 'k', type: 'kpi' }] }));
+    const id = body.dashboard.id;
+    const token = body.dashboard.publicToken;
+    await request(`/api/dashboards/${id}/share`, { method: 'POST', as: owner, body: { email: 'viewer@example.test' } });
+
+    const past = new Date(Date.now() - HOUR).toISOString();
+    assert.equal((await request(`/api/dashboards/${id}`, { method: 'PUT', as: owner, body: { expiresAt: past } })).status, 400);
+    assert.equal((await request(`/api/dashboards/${id}`, { method: 'PUT', as: owner, body: { expiresAt: 'soon' } })).status, 400);
+    const future = new Date(Date.now() + HOUR).toISOString();
+    const set = await json(await request(`/api/dashboards/${id}`, { method: 'PUT', as: owner, body: { expiresAt: future } }));
+    assert.equal(set.body.dashboard.expiresAt, future);
+    assert.equal(set.body.dashboard.expired, false);
+    assert.equal((await request(`/api/dashboards/${id}`, { as: viewer })).status, 200);
+    assert.equal((await request(`/api/public/dashboards/${token}`)).status, 200);
+
+    // Time passes
+    await models.Dashboard.updateOne({ _id: id }, { expiresAt: new Date(Date.now() - 1000) });
+    assert.equal((await request(`/api/dashboards/${id}`, { as: viewer })).status, 404);
+    assert.equal((await json(await request('/api/dashboards', { as: viewer }))).body.dashboards.length, 0);
+    const expired = await json(await request(`/api/public/dashboards/${token}`));
+    assert.equal(expired.status, 410);
+    assert.equal(expired.body.code, 'EXPIRED');
+    // The owner keeps it and can extend or remove the end date
+    const own = await json(await request(`/api/dashboards/${id}`, { as: owner }));
+    assert.equal(own.body.dashboard.expired, true);
+    await request(`/api/dashboards/${id}`, { method: 'PUT', as: owner, body: { expiresAt: null } });
+    assert.equal((await request(`/api/dashboards/${id}`, { as: viewer })).status, 200);
+    assert.equal((await request(`/api/public/dashboards/${token}`)).status, 200);
+    assert.equal(await models.AuditLog.countDocuments({ action: 'dashboard.expiry_changed' }), 2);
 });
 
 test('input validation', async () => {

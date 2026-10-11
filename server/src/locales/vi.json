@@ -276,7 +276,6 @@
     "some_cameras_were_not_found": "Một số camera không tồn tại.",
     "widget_cameras_must_be_cameras_of_the_dashboard": "Camera của widget phải thuộc báo cáo.",
     "preharvestdays_must_be_a_whole_number_from_0": "Thời gian cách ly phải là số nguyên từ 0 đến 365 ngày.",
-    "rangedays_must_be_between_1_and_365": "Khoảng ngày phải từ 1 đến 365.",
     "visibility_must_be_private_or_public": "visibility phải là private hoặc public.",
     "choose_at_least_one_event": "Hãy chọn ít nhất một sự kiện.",
     "not_authenticated": "Chưa đăng nhập.",
@@ -331,6 +330,12 @@
     "password_must_be_at_most_max_characters": "Mật khẩu tối đa {max} ký tự.",
     "the_boundary_needs_3_to_max_points": "Ranh giới cần từ 3 đến {max} điểm.",
     "you_do_not_have_permission_to_access_camera": "Bạn không có quyền truy cập camera {serial}.",
-    "you_do_not_have_permission_to_control_camera": "Bạn không có quyền điều khiển camera {serial} hoặc không tìm thấy thiết bị."
+    "you_do_not_have_permission_to_control_camera": "Bạn không có quyền điều khiển camera {serial} hoặc không tìm thấy thiết bị.",
+    "invalid_time_range": "Khoảng thời gian không hợp lệ.",
+    "a_time_range_can_cover_at_most_max_days": "Khoảng thời gian dài tối đa {max} ngày.",
+    "invalid_expiry_date": "Ngày hết hạn không hợp lệ.",
+    "the_expiry_date_must_be_in_the_future": "Ngày hết hạn phải ở tương lai.",
+    "the_expiry_date_can_be_at_most_5_years_ahead": "Ngày hết hạn tối đa 5 năm kể từ hôm nay.",
+    "this_report_link_has_expired": "Liên kết báo cáo này đã hết hạn."
   }
 }

@@ -9,7 +9,7 @@
         '--span-md': (widget.layout?.w || 12) < 12 ? 12 : 24,
       }"
     >
-      <DashboardWidget :widget="widget" :data="data?.[widget.id] || null" :loading="loading">
+      <DashboardWidget :widget="widget" :data="data?.[widget.id] || null" :loading="loading" :range-days="rangeDays">
         <template v-if="$slots.actions" #actions>
           <slot name="actions" :widget="widget" />
         </template>
@@ -27,6 +27,7 @@ const props = defineProps({
   // Widget data keyed by widget id
   data: { type: Object, default: null },
   loading: { type: Boolean, default: false },
+  rangeDays: { type: Number, default: 0 },
 });
 
 // Row-major order (top to bottom, then left to right)
@@ -35,16 +36,19 @@ const orderedWidgets = computed(() => [...props.widgets].sort((a, b) =>
 </script>
 
 <style scoped>
+/* One column on phones: 24 columns with 23 gaps are wider than a phone screen */
 .dash-grid {
   display: grid;
-  grid-template-columns: repeat(24, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
 }
 .dash-grid__item {
-  grid-column: span 24;
   min-width: 0;
 }
 @media (min-width: 768px) {
+  .dash-grid {
+    grid-template-columns: repeat(24, minmax(0, 1fr));
+  }
   .dash-grid__item {
     grid-column: span var(--span-md);
   }

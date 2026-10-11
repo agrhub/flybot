@@ -110,7 +110,7 @@ export default {
   updateAdminSettings(data) {
     return apiClient.put('/admin/settings', data);
   },
-  // Custom dashboards
+  // Reports (custom dashboards)
   listDashboards() {
     return apiClient.get('/dashboards');
   },
@@ -126,8 +126,9 @@ export default {
   deleteDashboard(id) {
     return apiClient.delete(`/dashboards/${id}`);
   },
-  getDashboardData(id) {
-    return apiClient.get(`/dashboards/${id}/data`);
+  // query: { range, from?, to? } (utils/dashboards rangeQuery); none = the report's own range
+  getDashboardData(id, query = null) {
+    return apiClient.get(`/dashboards/${id}/data`, { params: query || {} });
   },
   rotateDashboardLink(id) {
     return apiClient.post(`/dashboards/${id}/public-token`);
@@ -139,8 +140,8 @@ export default {
     return apiClient.delete(`/dashboards/${id}/share`, { data: { email } });
   },
   // Public dashboard link: no sign-in, so no token and no redirect on errors
-  getPublicDashboard(token) {
-    return axios.get(`${API_URL}/public/dashboards/${encodeURIComponent(token)}`);
+  getPublicDashboard(token, query = null) {
+    return axios.get(`${API_URL}/public/dashboards/${encodeURIComponent(token)}`, { params: query || {} });
   },
   // Web push on this device
   getPushConfig() {

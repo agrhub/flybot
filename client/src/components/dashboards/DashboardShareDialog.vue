@@ -48,7 +48,7 @@
       </el-button>
     </div>
 
-    <el-empty v-if="!shares.length" :description="t('share.empty')" :image-size="56" />
+    <p v-if="!shares.length" class="share-meta mt-3">{{ t('share.empty') }}</p>
     <el-table v-else :data="shares" size="small" class="mt-3" style="width: 100%">
       <el-table-column :label="t('share.email')" min-width="200" prop="email" />
       <el-table-column :label="t('share.status')" width="130">
@@ -69,6 +69,30 @@
       </el-table-column>
     </el-table>
 
+    <el-divider />
+
+    <!-- End of sharing -->
+    <div class="share-label">{{ t('dashboards.expiry.title') }}</div>
+    <p class="share-meta mb-3">{{ t('dashboards.expiry.desc') }}</p>
+    <div class="flex flex-wrap items-center gap-3">
+      <el-radio-group v-model="expiryMode">
+        <el-radio value="never">{{ t('dashboards.expiry.never') }}</el-radio>
+        <el-radio value="date">{{ t('dashboards.expiry.onDate') }}</el-radio>
+      </el-radio-group>
+      <el-date-picker
+        v-if="expiryMode === 'date'"
+        v-model="expiryDate"
+        type="datetime"
+        format="DD/MM/YYYY HH:mm"
+        :disabled-date="beforeToday"
+        :default-time="endOfDay"
+        :placeholder="t('dashboards.expiry.pick')"
+        class="expiry-picker"
+      />
+      <el-button type="primary" plain :loading="savingExpiry" :disabled="!expiryChanged" @click="saveExpiry">{{ t('common.save') }}</el-button>
+    </div>
+    <el-alert v-if="dashboard?.expired" type="warning" :closable="false" show-icon class="mt-3" :title="t('dashboards.expiry.expiredHint')" />
+
     <template #footer>
       <el-button @click="emit('update:modelValue', false)">{{ t('common.close') }}</el-button>
     </template>
@@ -76,7 +100,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Share, Delete, Message, CopyDocument, RefreshRight } from '@element-plus/icons-vue';
@@ -97,6 +121,48 @@ const savingVisibility = ref(false);
 const rotating = ref(false);
 
 const shares = computed(() => props.dashboard?.sharedWith || []);
+
+// End of sharing: never, or a moment in the future
+const expiryMode = ref('never');
+const expiryDate = ref(null);
+const savingExpiry = ref(false);
+const endOfDay = new Date(2000, 0, 1, 23, 59, 0);
+const beforeToday = (date) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return date < today;
+};
+const resetExpiry = () => {
+  const at = props.dashboard?.expiresAt;
+  expiryMode.value = at ? 'date' : 'never';
+  expiryDate.value = at ? new Date(at) : null;
+};
+watch(() => [props.modelValue, props.dashboard?.expiresAt], ([open]) => {
+  if (open) resetExpiry();
+}, { immediate: true });
+const wantedExpiry = computed(() => (expiryMode.value === 'date' && expiryDate.value ? new Date(expiryDate.value).toISOString() : null));
+const expiryChanged = computed(() => {
+  if (expiryMode.value === 'date' && !expiryDate.value) return false;
+  const current = props.dashboard?.expiresAt ? new Date(props.dashboard.expiresAt).toISOString() : null;
+  return wantedExpiry.value !== current;
+});
+
+const saveExpiry = async () => {
+  if (wantedExpiry.value && new Date(wantedExpiry.value) <= new Date()) {
+    ElMessage.warning(t('dashboards.expiry.mustBeFuture'));
+    return;
+  }
+  savingExpiry.value = true;
+  try {
+    const res = await api.updateDashboard(props.dashboard.id, { expiresAt: wantedExpiry.value });
+    emit('updated', res.data.dashboard);
+    ElMessage.success(t('dashboards.expiry.saved'));
+  } catch (err) {
+    ElMessage.error(dashboardErrorText(t, err));
+  } finally {
+    savingExpiry.value = false;
+  }
+};
 const isPublic = computed(() => props.dashboard?.visibility === 'public');
 const publicUrl = computed(() => (props.dashboard?.publicToken ? `${window.location.origin}/d/${props.dashboard.publicToken}` : ''));
 
@@ -196,6 +262,9 @@ const removeShare = async (row) => {
   font-size: 14px;
   font-weight: 600;
   color: var(--el-text-color-primary);
+}
+.expiry-picker {
+  width: 190px;
 }
 .share-meta {
   margin: 2px 0 0;

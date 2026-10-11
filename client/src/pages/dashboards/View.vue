@@ -13,6 +13,7 @@
           <template v-if="!editing">
             <el-button :icon="Back" @click="router.push('/reports')">{{ t('dashboards.backToList') }}</el-button>
             <el-button :icon="Refresh" :loading="loadingData" @click="loadData">{{ t('common.refresh') }}</el-button>
+            <el-button :icon="Download" :loading="exporting" :disabled="!widgetData || !dashboard.widgets.length" @click="exportPdf">{{ t('dashboards.exportPdf') }}</el-button>
             <template v-if="dashboard.canEdit">
               <el-button :icon="Share" @click="shareVisible = true">{{ t('share.button') }}</el-button>
               <el-button type="primary" :icon="Edit" @click="startEditing">{{ t('dashboards.edit') }}</el-button>
@@ -33,14 +34,25 @@
         </template>
       </PageHeader>
 
-      <div v-if="!editing" class="flex flex-wrap items-center gap-2 mb-4">
-        <el-tag :type="dashboard.visibility === 'public' ? 'warning' : 'info'" effect="light" round size="small">
-          {{ t(`dashboards.visibility.${dashboard.visibility}`) }}
-        </el-tag>
-        <el-tag v-if="dashboard.access === 'shared'" type="info" effect="plain" round size="small">
-          {{ t('dashboards.sharedBy', { owner: dashboard.owner.name || dashboard.owner.email }) }}
-        </el-tag>
-        <span v-if="generatedAt" class="dash-meta">{{ t('dashboards.updatedAt', { time: formatTime(generatedAt) }) }}</span>
+      <div v-if="!editing" class="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <div class="flex flex-wrap items-center gap-2">
+          <el-tag :type="dashboard.visibility === 'public' ? 'warning' : 'info'" effect="light" round size="small">
+            {{ t(`dashboards.visibility.${dashboard.visibility}`) }}
+          </el-tag>
+          <el-tag v-if="dashboard.access === 'shared'" type="info" effect="plain" round size="small">
+            {{ t('dashboards.sharedBy', { owner: dashboard.owner.name || dashboard.owner.email }) }}
+          </el-tag>
+          <el-tag v-if="dashboard.expiresAt" :type="dashboard.expired ? 'danger' : 'info'" effect="plain" round size="small">
+            {{ dashboard.expired ? t('dashboards.expiry.expired') : t('dashboards.expiry.until', { time: formatDateTime(dashboard.expiresAt) }) }}
+          </el-tag>
+          <span v-if="generatedAt" class="dash-meta">{{ t('dashboards.updatedAt', { time: formatTime(generatedAt) }) }}</span>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <ReportRangePicker v-model="viewRange" />
+          <el-button v-if="dashboard.canEdit && !sameRange(viewRange, dashboard.range)" link type="primary" :loading="savingRange" @click="saveDefaultRange">
+            {{ t('dashboards.saveDefaultRange') }}
+          </el-button>
+        </div>
       </div>
 
       <!-- Editor: dashboard settings -->
@@ -87,7 +99,7 @@
         </el-empty>
       </el-card>
 
-      <DashboardGrid v-else :widgets="currentWidgets" :data="widgetData" :loading="loadingData">
+      <DashboardGrid v-else ref="gridRef" :widgets="currentWidgets" :data="widgetData" :loading="loadingData" :range-days="dataRange?.days || 0">
         <template v-if="editing" #actions="{ widget }">
           <el-tooltip :content="t('dashboards.moveUp')" placement="top">
             <el-button text circle size="small" :icon="Top" :disabled="indexOf(widget) === 0" @click="move(widget, -1)" />
@@ -121,11 +133,6 @@
             <el-option v-for="serial in draft.cameraSerials" :key="serial" :label="cameraName(serial)" :value="serial" />
           </el-select>
         </el-form-item>
-        <el-form-item v-if="editingWidget.type !== 'latestSnapshot'" :label="t('dashboards.range')">
-          <el-select v-model="editingWidget.rangeDays" class="w-full">
-            <el-option v-for="days in RANGE_OPTIONS" :key="days" :label="t('dashboards.lastDays', { days })" :value="days" />
-          </el-select>
-        </el-form-item>
         <el-form-item :label="t('dashboards.width')">
           <el-segmented v-model="editingWidget.layout.w" :options="widthOptions" />
         </el-form-item>
@@ -148,16 +155,18 @@ import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import {
-  Back, Refresh, Share, Edit, Delete, MoreFilled, Check, Plus, Top, Bottom, Setting,
+  Back, Refresh, Share, Edit, Delete, MoreFilled, Check, Plus, Top, Bottom, Setting, Download,
 } from '@element-plus/icons-vue';
 import api from '@/services/api';
 import { useCameras } from '@/composables/useCameras';
 import PageHeader from '@/components/common/PageHeader.vue';
 import DashboardGrid from '@/components/dashboards/DashboardGrid.vue';
 import DashboardShareDialog from '@/components/dashboards/DashboardShareDialog.vue';
+import ReportRangePicker from '@/components/dashboards/ReportRangePicker.vue';
 import {
-  WIDGET_TYPES, WIDGET_WIDTHS, WIDGET_HEIGHTS, RANGE_OPTIONS, newWidget, dashboardErrorText,
+  WIDGET_TYPES, WIDGET_WIDTHS, WIDGET_HEIGHTS, newWidget, dashboardErrorText, rangeQuery, sameRange,
 } from '@/utils/dashboards';
+import { exportReportPdf } from '@/utils/reportPdf';
 
 const REFRESH_MS = 5 * 60 * 1000;
 
@@ -174,8 +183,16 @@ const loading = ref(false);
 const loadingData = ref(false);
 const notFound = ref(false);
 const shareVisible = ref(false);
+// Range shown now (starts at the report's saved range) and the days the server used
+const viewRange = ref({ preset: '7d' });
+const dataRange = ref(null);
+const savingRange = ref(false);
+const exporting = ref(false);
+const gridRef = ref(null);
 
-const formatTime = (value) => new Date(value).toLocaleTimeString(locale.value === 'vi' ? 'vi-VN' : 'en-US', { hour: '2-digit', minute: '2-digit' });
+const dateLocale = computed(() => (locale.value === 'vi' ? 'vi-VN' : 'en-US'));
+const formatTime = (value) => new Date(value).toLocaleTimeString(dateLocale.value, { hour: '2-digit', minute: '2-digit' });
+const formatDateTime = (value) => new Date(value).toLocaleString(dateLocale.value, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
 const load = async () => {
   loading.value = true;
@@ -184,7 +201,10 @@ const load = async () => {
     const res = await api.getDashboard(route.params.id);
     dashboard.value = res.data.dashboard;
     dashboardCameras.value = res.data.cameras || [];
-    loadData();
+    const saved = res.data.dashboard.range || { preset: '7d' };
+    // Same range: load here; another one: the watcher below loads
+    if (sameRange(viewRange.value, saved)) loadData();
+    viewRange.value = { ...saved };
     if (route.query.edit === '1' && dashboard.value.canEdit) startEditing();
   } catch (err) {
     if (err.response?.status === 404) notFound.value = true;
@@ -198,13 +218,53 @@ const loadData = async () => {
   if (!dashboard.value) return;
   loadingData.value = true;
   try {
-    const res = await api.getDashboardData(dashboard.value.id);
+    const query = sameRange(viewRange.value, dashboard.value.range) ? null : rangeQuery(viewRange.value);
+    const res = await api.getDashboardData(dashboard.value.id, query);
     widgetData.value = res.data.widgets || {};
+    dataRange.value = res.data.range || null;
     generatedAt.value = res.data.generatedAt;
   } catch (err) {
     ElMessage.error(dashboardErrorText(t, err));
   } finally {
     loadingData.value = false;
+  }
+};
+
+watch(viewRange, (value, old) => {
+  if (dashboard.value && !sameRange(value, old)) loadData();
+}, { deep: true });
+
+const saveDefaultRange = async () => {
+  savingRange.value = true;
+  try {
+    const res = await api.updateDashboard(dashboard.value.id, { range: viewRange.value });
+    dashboard.value = res.data.dashboard;
+    ElMessage.success(t('dashboards.defaultRangeSaved'));
+  } catch (err) {
+    ElMessage.error(dashboardErrorText(t, err));
+  } finally {
+    savingRange.value = false;
+  }
+};
+
+const exportPdf = async () => {
+  exporting.value = true;
+  try {
+    await exportReportPdf({
+      t,
+      locale: locale.value,
+      report: dashboard.value,
+      range: { ...viewRange.value, ...(dataRange.value || {}) },
+      widgets: [...dashboard.value.widgets].sort((a, b) => a.layout.y - b.layout.y || a.layout.x - b.layout.x),
+      data: widgetData.value,
+      generatedAt: generatedAt.value,
+      root: gridRef.value?.$el,
+    });
+  } catch (err) {
+    console.error('Report PDF failed:', err);
+    ElMessage.error(t('dashboards.pdfFailed'));
+  } finally {
+    exporting.value = false;
   }
 };
 

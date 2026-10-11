@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 
-const WIDGET_TYPES = ['kpi', 'trend', 'species', 'cameraRanking', 'latestSnapshot'];
+const WIDGET_TYPES = ['kpi', 'trend', 'catchesByTrap', 'species', 'cameraRanking', 'dailyTable', 'activity', 'latestSnapshot'];
+// Report time ranges: last 7 or 30 days, 3, 6 or 12 months, or chosen dates
+const RANGE_PRESETS = ['7d', '30d', '3m', '6m', '12m', 'custom'];
 
 const widgetSchema = new mongoose.Schema({
     id: { type: String, required: true },
@@ -8,7 +10,7 @@ const widgetSchema = new mongoose.Schema({
     title: { type: String, default: '' },
     // Subset of the dashboard cameras; empty = all of them
     cameraSerials: { type: [String], default: [] },
-    // Look-back window for the widget's data
+    // Unused since reports have one time range; kept so older documents still validate
     rangeDays: { type: Number, default: 7, min: 1, max: 365 },
     // Grid position (24-column grid)
     layout: {
@@ -39,7 +41,16 @@ const dashboardSchema = new mongoose.Schema({
     // public = anyone with the link (read-only, no sign-in)
     visibility: { type: String, enum: ['private', 'public'], default: 'private' },
     publicToken: { type: String, default: undefined },
-    sharedWith: { type: [dashboardShareSchema], default: [] }
+    sharedWith: { type: [dashboardShareSchema], default: [] },
+    // Default time range of the report; viewers can pick another one
+    range: {
+        preset: { type: String, enum: RANGE_PRESETS, default: '7d' },
+        // Local day keys (YYYY-MM-DD) for a custom range
+        from: { type: String, default: undefined },
+        to: { type: String, default: undefined }
+    },
+    // After this moment the public link and the people it is shared with lose access (null = never)
+    expiresAt: { type: Date, default: null }
 }, { timestamps: true });
 
 dashboardSchema.index({ publicToken: 1 }, { unique: true, sparse: true });
@@ -50,3 +61,4 @@ const Dashboard = mongoose.model('Dashboard', dashboardSchema);
 
 module.exports = Dashboard;
 module.exports.WIDGET_TYPES = WIDGET_TYPES;
+module.exports.RANGE_PRESETS = RANGE_PRESETS;

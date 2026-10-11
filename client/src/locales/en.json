@@ -862,9 +862,9 @@
             "items": "Open Settings, Notifications.\nTurn on alert emails, connect Telegram, or enable push notifications on this phone or computer.\nTurn on the weekly report for a Monday summary; \"Send me this week’s report now\" shows an example.\nSet quiet hours for the night, and switch off cameras you do not follow under \"Cameras I follow\"."
           },
           "reports": {
-            "title": "Custom reports",
+            "title": "Reports",
             "desc": "Arrange the charts and numbers you care about.",
-            "items": "Open \"Reports\", create one and add widgets: numbers, charts, trap comparisons.\nShare a report by email, or turn on a public link for partners."
+            "items": "Open \"Reports\", create one and add blocks: key figures, flies per day, flies by trap, species, trap table, flies by period, flies by hour, latest photos.\nPick the time range at the top right: last 7 or 30 days, 3, 6 or 12 months, or your own dates; \"Save as default\" keeps it for everyone who opens the report. Figures are compared with the period just before.\nClick \"Export PDF\" to save the report with its charts and tables.\nShare it by email, or turn on a public link for partners. Under \"End of sharing\", pick a date and time after which the link and the people it is shared with lose access, or keep \"Never\"."
           }
         }
       },
@@ -1318,23 +1318,37 @@
     },
     "widgetTypes": {
       "kpi": "Key figures",
-      "trend": "Daily trend",
+      "trend": "Flies per day",
       "species": "Species",
-      "cameraRanking": "Camera ranking",
-      "latestSnapshot": "Latest snapshots"
+      "cameraRanking": "Trap table",
+      "latestSnapshot": "Latest snapshots",
+      "catchesByTrap": "Flies by trap",
+      "dailyTable": "Flies by period",
+      "activity": "Flies by hour"
     },
     "kpi": {
       "cameras": "Cameras",
       "online": "{count} online",
-      "alertCameras": "Over threshold",
-      "totalPests": "Insects counted",
-      "peak": "Highest scan",
-      "scans": "Scans"
+      "alertCameras": "Traps over threshold",
+      "scans": "Photos analyzed",
+      "catches": "Flies caught",
+      "fliesUnit": "flies",
+      "vsPrevious": "{change} vs previous period ({previous})",
+      "previousValue": "Previous period: {value}",
+      "ftd": "Flies/trap/day",
+      "avgPerDay": "Average per day",
+      "allTraps": "All traps together",
+      "busiestDay": "Busiest day",
+      "alertHint": "Count on the trap now at or above its threshold",
+      "noPrevious": "No data for the period before"
     },
     "ranking": {
-      "total": "Total",
-      "peak": "Peak",
-      "latest": "Latest"
+      "total": "Flies caught",
+      "latest": "Now / threshold",
+      "trap": "Trap",
+      "ftd": "Flies/trap/day",
+      "change": "vs before",
+      "busiestDay": "Busiest day"
     },
     "noData": "Save the report to load data.",
     "noDetections": "No insects detected in this period.",
@@ -1367,7 +1381,55 @@
       "by": "By {owner}",
       "notFound": "This link is not available",
       "notFoundDesc": "The report may have been made private, or a new link was created.",
-      "home": "Go to FlyBot"
+      "home": "Go to FlyBot",
+      "expired": "This link has expired",
+      "expiredDesc": "The owner set an end date for this report. Ask them for a new link."
+    },
+    "ranges": {
+      "7d": "Last 7 days",
+      "30d": "Last 30 days",
+      "3m": "Last 3 months",
+      "6m": "Last 6 months",
+      "12m": "Last 12 months",
+      "custom": "Custom dates"
+    },
+    "defaultRange": "Default time range",
+    "rangeFrom": "From",
+    "rangeTo": "To",
+    "rangeTooLong": "Choose at most {days} days.",
+    "saveDefaultRange": "Save as default",
+    "defaultRangeSaved": "Default time range saved.",
+    "activityWindow": "Hourly activity covers the last {days} days of the range.",
+    "thisPeriod": "This period",
+    "previousPeriod": "Previous period",
+    "periodUnit": {
+      "day": "Day",
+      "week": "Week",
+      "month": "Month"
+    },
+    "topSpecies": "Main species",
+    "exportPdf": "Export PDF",
+    "pdfFailed": "Could not create the PDF.",
+    "pdf": {
+      "range": "Time range: {range} ({from} - {to})",
+      "generated": "Generated: {time}",
+      "figure": "Figure",
+      "value": "Value",
+      "hour": "Hour",
+      "count": "On trap",
+      "time": "Photo time"
+    },
+    "expiry": {
+      "title": "End of sharing",
+      "desc": "After this time, the public link stops working and the people above lose access. You keep the report.",
+      "never": "Never",
+      "onDate": "On a date",
+      "pick": "Pick a date and time",
+      "saved": "End of sharing saved.",
+      "mustBeFuture": "Pick a time in the future.",
+      "expired": "Sharing ended",
+      "until": "Shared until {time}",
+      "expiredHint": "Sharing has ended. Pick a later date or choose Never to share it again."
     }
   },
   "audit": {
@@ -1431,7 +1493,8 @@
         "unshared": "Report access removed",
         "published": "Public link turned on",
         "unpublished": "Public link turned off",
-        "link_rotated": "New public link created"
+        "link_rotated": "New public link created",
+        "expiry_changed": "End of sharing changed"
       },
       "settings": {
         "updated": "System settings changed"

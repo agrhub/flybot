@@ -24,6 +24,7 @@ const AUDIT_ACTIONS = [
     'dashboard.published',
     'dashboard.unpublished',
     'dashboard.link_rotated',
+    'dashboard.expiry_changed',
     'settings.updated',
     'treatment.created',
     'treatment.updated',
