@@ -8,7 +8,7 @@ const { t, tm, locale } = useI18n();
 const route = useRoute();
 const router = useRouter();
 
-// Screenshots in /public/manual (taken from the app with sample data), per "section.step"
+// Screenshots in /public/manual/<vi|en> (taken from the app with sample data), per "section.step"
 const IMAGES = {
   'start.account': ['dashboard'],
   'start.camera': ['add-camera'],
@@ -30,7 +30,7 @@ const IMAGES = {
   'mobile.more': ['mobile-more'],
   'integrations.api': ['integrations']
 };
-const imageUrl = (name) => `/manual/${name}.webp`;
+const imageUrl = (name) => `/manual/${locale.value === 'en' ? 'en' : 'vi'}/${name}.webp`;
 const isPhone = (name) => name.startsWith('mobile-');
 
 // Sections and steps come from manual.sections in the locale files
