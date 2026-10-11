@@ -50,13 +50,45 @@ async function sendMessage(chatId, html) {
 }
 
 /**
+ * Send a file (e.g. a report PDF) with an HTML caption now. Throws on failure.
+ */
+async function sendDocument(chatId, { content, filename, contentType = 'application/pdf', caption = '' }) {
+    const form = new FormData();
+    form.append('chat_id', String(chatId));
+    form.append('document', new Blob([content], { type: contentType }), filename);
+    // Telegram captions are limited to 1024 characters
+    if (caption) {
+        form.append('caption', caption.slice(0, 1024));
+        form.append('parse_mode', 'HTML');
+    }
+    try {
+        const { data } = await axios.post(apiUrl('sendDocument'), form, { timeout: 30000 });
+        return data;
+    } catch (err) {
+        if (err.response?.data?.error_code === 403) {
+            await User.updateOne({ 'telegram.chatId': String(chatId) }, { $unset: { telegram: 1 } }).catch(() => {});
+        }
+        throw err;
+    }
+}
+
+/**
  * Send in the background with retries (alerts must never block the caller).
  */
 function queueMessage(chatId, html) {
+    queueSend(() => sendMessage(chatId, html));
+}
+
+/** Same as queueMessage, for a file. */
+function queueDocument(chatId, document) {
+    queueSend(() => sendDocument(chatId, document));
+}
+
+function queueSend(send) {
     if (!isEnabled()) return;
     const attempt = async (index) => {
         try {
-            await sendMessage(chatId, html);
+            await send();
         } catch (err) {
             // 403 (blocked) and 400 (bad chat) will not succeed on retry
             const code = err.response?.data?.error_code;
@@ -165,7 +197,9 @@ module.exports = {
     isEnabled,
     linkUrl,
     sendMessage,
+    sendDocument,
     queueMessage,
+    queueDocument,
     formatAlert,
     handleUpdate,
     startPolling,

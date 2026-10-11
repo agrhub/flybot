@@ -5,6 +5,7 @@ const emailTemplates = require('./emailTemplates');
 const dashboardService = require('./dashboardService');
 const { buildReportPdf } = require('./reportPdfService');
 const { appUrl } = require('./authTokenService');
+const telegramService = require('./telegramService');
 
 /**
  * Reports emailed on a schedule (weekly or monthly) with the report as a PDF attachment.
@@ -62,12 +63,20 @@ function summaryLines(t, dashboard, widgets) {
     ];
 }
 
+// The ways a person takes scheduled reports: email (confirmed address) and a linked Telegram chat
+const channelsOf = (user) => ({
+    email: !!user?.email && !!user.emailVerified && user.notificationPrefs?.email !== false,
+    telegram: !!user?.telegram?.chatId && user.notificationPrefs?.telegram !== false
+});
+
 /**
- * Email one person the report, with the data they may see. `range`: { preset, from?, to? }
- * (default: the report's own range). Returns false when there is nobody to send to.
+ * Send one person the report with its PDF, with the data they may see. `range`: { preset, from?,
+ * to? } (default: the report's own range). `channels`: { email, telegram } (default: email only).
+ * Returns false when nothing was sent.
  */
-async function sendReportTo(dashboard, user, { range = null, now = new Date() } = {}) {
-    if (!user?.email || user.disabled) return false;
+async function sendReportTo(dashboard, user, { range = null, now = new Date(), channels = { email: true } } = {}) {
+    if (!user || user.disabled || (!channels.email && !channels.telegram)) return false;
+    if (channels.email && !user.email) return false;
     const language = normalizeLanguage(user.language);
     const t = (key, params) => translate(language, key, params);
     const serials = await dashboardService.effectiveSerials(dashboard, user);
@@ -79,32 +88,42 @@ async function sendReportTo(dashboard, user, { range = null, now = new Date() } 
     const pdf = buildReportPdf({ dashboard, data: widgets, range: covered, language, generatedAt: now });
     const params = { name: String(dashboard.name).replace(/[\r\n\t]+/g, ' ').slice(0, 80), from: fullDay(covered.from), to: fullDay(covered.to) };
     const fileName = `FlyBot_${params.name.replace(/[^\p{L}\p{N}]+/gu, '_').slice(0, 40)}_${covered.from}_${covered.to}.pdf`;
-    mailService.queueMail(emailTemplates.scheduledReportEmail({
-        user,
-        language,
-        params,
-        lines: summaryLines(t, dashboard, widgets),
-        url: safeAppUrl(`/reports/${dashboard._id}`),
-        attachments: [{ filename: fileName, content: pdf, contentType: 'application/pdf' }]
-    }));
+    const lines = summaryLines(t, dashboard, widgets);
+    const url = safeAppUrl(`/reports/${dashboard._id}`);
+    if (channels.email) {
+        mailService.queueMail(emailTemplates.scheduledReportEmail({
+            user,
+            language,
+            params,
+            lines,
+            url,
+            attachments: [{ filename: fileName, content: pdf, contentType: 'application/pdf' }]
+        }));
+    }
+    if (channels.telegram) {
+        const esc = emailTemplates.escapeHtml;
+        const caption = [
+            `<b>${esc(t('email.scheduledReport.subject', params))}</b>`,
+            ...lines.map(esc),
+            ...(url ? [`<a href="${esc(url)}">${esc(t('email.scheduledReport.button'))}</a>`] : [])
+        ].join('\n');
+        telegramService.queueDocument(user.telegram.chatId, { content: pdf, filename: fileName, caption });
+    }
     return true;
 }
 
 /**
  * Who gets a scheduled report: the owner, plus the people it is shared with when the schedule
- * says so and sharing has not ended. Only confirmed, active accounts that take emails.
+ * says so and sharing has not ended. Active accounts with a confirmed email or a linked Telegram.
  */
 async function recipientsOf(dashboard) {
     const ids = [dashboard.ownerId?._id ?? dashboard.ownerId];
     if (dashboard.schedule?.recipients === 'all' && !dashboardService.isExpired(dashboard)) {
         ids.push(...(dashboard.sharedWith || []).map(sh => sh.userId).filter(Boolean));
     }
-    return User.find({
-        _id: { $in: ids },
-        disabled: { $ne: true },
-        emailVerified: true,
-        'notificationPrefs.email': { $ne: false }
-    }).select('email name language role disabled');
+    const users = await User.find({ _id: { $in: ids }, disabled: { $ne: true } })
+        .select('email name language role disabled emailVerified notificationPrefs telegram');
+    return users.filter(user => channelsOf(user).email || channelsOf(user).telegram);
 }
 
 /**
@@ -122,7 +141,7 @@ async function sendDueReports(now = new Date()) {
         await Dashboard.updateOne({ _id: dashboard._id }, { $set: { 'schedule.lastSentAt': now } });
         try {
             for (const user of await recipientsOf(dashboard)) {
-                if (await sendReportTo(dashboard, user, { range: PERIOD[dashboard.schedule.frequency], now })) sent++;
+                if (await sendReportTo(dashboard, user, { range: PERIOD[dashboard.schedule.frequency], now, channels: channelsOf(user) })) sent++;
             }
         } catch (err) {
             console.error(`❌ Scheduled report ${dashboard._id} failed:`, err.message);

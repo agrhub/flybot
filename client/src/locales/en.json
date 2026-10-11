@@ -1463,7 +1463,7 @@
     "schedule": {
       "menu": "Email on a schedule",
       "title": "Email on a schedule: {name}",
-      "desc": "FlyBot emails the report with its PDF on a schedule (Vietnam time).",
+      "desc": "FlyBot sends the report with its PDF by email, and by Telegram to people who linked it, on a schedule (Vietnam time).",
       "frequency": "How often",
       "frequencies": {
         "off": "Off",

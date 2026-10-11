@@ -1463,7 +1463,7 @@
     "schedule": {
       "menu": "Gửi định kỳ",
       "title": "Gửi định kỳ: {name}",
-      "desc": "FlyBot gửi báo cáo kèm file PDF qua email theo lịch (giờ Việt Nam).",
+      "desc": "FlyBot gửi báo cáo kèm file PDF qua email, và qua Telegram cho ai đã liên kết, theo lịch (giờ Việt Nam).",
       "frequency": "Tần suất",
       "frequencies": {
         "off": "Tắt",

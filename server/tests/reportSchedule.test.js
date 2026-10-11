@@ -71,3 +71,26 @@ test('send now: the report and its PDF to me', async () => {
     const stranger = await createUser({ role: 'manager' });
     assert.equal((await request(`/api/dashboards/${body.dashboard.id}/send`, { method: 'POST', as: stranger })).status, 404);
 });
+
+test('a scheduled report also goes to a linked Telegram chat, with the PDF', async () => {
+    const telegramService = require('../src/services/telegramService');
+    const sentDocs = [];
+    const original = telegramService.queueDocument;
+    telegramService.queueDocument = (chatId, doc) => sentDocs.push({ chatId, doc });
+    try {
+        const owner = await createUser({ role: 'manager', language: 'vi' });
+        await models.User.updateOne({ _id: owner._id }, { telegram: { chatId: '4242', linkedAt: new Date() } });
+        await createCamera(owner, { deviceSerial: 'A1' });
+        const { body } = await json(await request('/api/dashboards', { method: 'POST', as: owner, body: { name: 'Lô xoài', cameraSerials: ['A1'], widgets: [{ id: 'k', type: 'kpi' }] } }));
+        await request(`/api/dashboards/${body.dashboard.id}`, { method: 'PUT', as: owner, body: { schedule: { frequency: 'monthly', monthDay: 1, hour: 6 } } });
+        sentMails.length = 0;
+        assert.equal(await sendDueReports(new Date(Date.now() + 40 * DAY)), 1);
+        assert.equal(sentMails.length, 1, 'email');
+        assert.equal(sentDocs.length, 1, 'Telegram');
+        assert.equal(sentDocs[0].chatId, '4242');
+        assert.equal(sentDocs[0].doc.content.subarray(0, 4).toString(), '%PDF');
+        assert.match(sentDocs[0].doc.caption, /<b>📊 Lô xoài:/);
+    } finally {
+        telegramService.queueDocument = original;
+    }
+});
