@@ -46,4 +46,5 @@ Copy the results into the app:
 - `cdp.mjs`: headless Chrome through the DevTools protocol.
 - `shoot.mjs`: the screenshot list. Each entry has a name, a page and the clicks to make before the shot. The guide shows them through `IMAGES` in `client/src/pages/Manual.vue`.
 - `record.mjs`: the tour scenes (`ORDER`), captions in both languages, timing and bitrate.
+- `embed-video-pptx.mjs`: PDF and PowerPoint exports of a deck show a video as its still frame. `node embed-video-pptx.mjs <in.pptx> <slide> <video.mp4> <out.pptx>` turns the largest picture on that slide into the playable video (PowerPoint 2010 and later). PDF cannot play video: give it a link.
 - `frames.mjs`: frame grabber for checking a video.
