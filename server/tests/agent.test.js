@@ -17,7 +17,7 @@ test('tool declarations do not let the model choose a userId', () => {
 });
 
 test('every data tool refuses calls without a userId', async () => {
-    for (const name of ['get_cameras_status', 'get_insect_statistics', 'get_recent_snapshots', 'get_overview_metrics']) {
+    for (const name of ['get_cameras_status', 'get_insect_statistics', 'get_recent_snapshots', 'get_overview_metrics', 'get_catch_summary', 'list_reports', 'get_report_summary', 'send_report_to_me', 'get_alerts', 'get_treatments', 'compare_periods', 'get_pipeline_health']) {
         const result = await allExecutors[name]({ deviceSerial: 'CAMA', addAction: noopAction });
         assert.ok(result.error, name);
     }

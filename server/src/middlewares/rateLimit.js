@@ -65,6 +65,8 @@ function createQuota({ windowMs, max }) {
 
 // Manual captures hit the camera and the AI API: at most 3 per camera per user per minute
 const captureQuota = createQuota({ windowMs: 60 * 1000, max: 3 });
+// "Email me" builds a report and its PDF: 5 per person per hour, from the page or the assistant
+const reportSendQuota = createQuota({ windowMs: 60 * 60 * 1000, max: 5 });
 
 const emailKey = (req) => (typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '');
 
@@ -72,6 +74,7 @@ module.exports = {
     rateLimit,
     createQuota,
     captureQuota,
+    reportSendQuota,
     // Express middleware over captureQuota (user + camera)
     captureLimiter: (req, res, next) => {
         const key = `${req.user?.id}:${req.body?.deviceSerial}`;
@@ -86,8 +89,13 @@ module.exports = {
     ],
     // Share invitations send email to any address: limit per sharer
     shareLimiter: rateLimit({ windowMs: 60 * 60 * 1000, max: 30, includeIp: false, keyFn: (req) => `share:${req.user?.id || ''}` }),
-    // "Email me" builds a report and its PDF: 5 per person per hour
-    reportSendLimiter: rateLimit({ windowMs: 60 * 60 * 1000, max: 5, includeIp: false, keyFn: (req) => `report-send:${req.user?.id || ''}` }),
+    // Express middleware over reportSendQuota (per user)
+    reportSendLimiter: (req, res, next) => {
+        const key = String(req.user?.id || '');
+        if (reportSendQuota.take(key)) return next();
+        res.setHeader('Retry-After', reportSendQuota.retryAfterSeconds(key));
+        return res.status(429).json({ success: false, message: 'Too many attempts. Please try again later.' });
+    },
     // 10 login attempts per IP+email per 15 minutes, and 50 per IP overall
     loginLimiter: [
         rateLimit({ windowMs: 15 * 60 * 1000, max: 50 }),
