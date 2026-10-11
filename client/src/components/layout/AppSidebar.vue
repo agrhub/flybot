@@ -86,7 +86,7 @@ import {
   DataAnalysis,
   MapLocation,
   Setting,
-  Grid,
+  Document,
   Notebook,
   Place,
   Fold,
@@ -127,7 +127,7 @@ const handleSelect = (sectionId) => {
 const navItems = computed(() => [
   { id: 'dashboard', label: t('nav.dashboard'), icon: Odometer },
   { id: 'cameras', label: t('nav.cameras'), icon: VideoCamera },
-  { id: 'dashboards', label: t('nav.dashboards'), icon: Grid },
+  { id: 'reports', label: t('nav.reports'), icon: Document },
   { id: 'analytics', label: t('nav.analytics'), icon: DataAnalysis },
   { id: 'farms', label: t('nav.farms'), icon: Place },
   { id: 'logbook', label: t('nav.logbook'), icon: Notebook },

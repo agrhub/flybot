@@ -105,15 +105,18 @@ const router = createRouter({
           component: () => import('@/pages/cameras/index.vue'),
         },
         {
-          path: 'dashboards',
-          name: 'dashboards',
+          path: 'reports',
+          name: 'reports',
           component: () => import('@/pages/dashboards/index.vue'),
         },
         {
-          path: 'dashboards/:id',
-          name: 'dashboard-view',
+          path: 'reports/:id',
+          name: 'report-view',
           component: () => import('@/pages/dashboards/View.vue'),
         },
+        // Reports were called dashboards: keep old links working
+        { path: 'dashboards', redirect: '/reports' },
+        { path: 'dashboards/:id', redirect: (to) => `/reports/${to.params.id}` },
         {
           path: 'farms',
           name: 'farms',

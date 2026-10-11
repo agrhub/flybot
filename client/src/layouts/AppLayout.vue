@@ -115,7 +115,7 @@ const { isMobile } = useBreakpoints();
 const currentSection = computed(() => {
   const path = route.path;
   if (path.startsWith('/cameras')) return 'cameras';
-  if (path.startsWith('/dashboards')) return 'dashboards';
+  if (path.startsWith('/reports')) return 'reports';
   if (path.startsWith('/logbook')) return 'logbook';
   if (path.startsWith('/farms')) return 'farms';
   if (path.startsWith('/analytics')) return 'analytics';

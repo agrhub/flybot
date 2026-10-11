@@ -57,12 +57,12 @@
     "blog": "Tin tức",
     "helpCenter": "Trợ giúp",
     "apiDocs": "Tài liệu API",
-    "dashboards": "Bảng tùy chỉnh",
     "mainNavigation": "Điều hướng chính",
     "overviewShort": "Tổng quan",
     "more": "Thêm",
     "logbook": "Nhật ký vườn",
-    "farms": "Vườn & lô"
+    "farms": "Vườn & lô",
+    "reports": "Báo cáo"
   },
   "topbar": {
     "notifications": "Thông báo",
@@ -731,7 +731,7 @@
     "audience2Feat1": "Vườn và lô có ranh giới trên bản đồ",
     "audience2Feat2": "Tổ chức với chủ sở hữu, quản lý, thành viên",
     "audience2Feat3": "Báo cáo tuần và nhật ký xử lý theo VietGAP",
-    "audience2Feat4": "Bảng tùy chỉnh, chia sẻ bằng liên kết",
+    "audience2Feat4": "Báo cáo, chia sẻ bằng liên kết",
     "audience3": "Kỹ thuật viên & tích hợp",
     "audience3Desc": "Chuyên môn và hệ thống riêng.",
     "audience3Feat1": "Duyệt và sửa số đếm của AI",
@@ -862,9 +862,9 @@
             "items": "Vào Cài đặt, mục Thông báo.\nBật email cảnh báo, kết nối Telegram, hoặc bật thông báo đẩy trên điện thoại/máy tính đang dùng.\nBật \"Báo cáo tuần\" để nhận tóm tắt mỗi sáng thứ Hai; bấm \"Gửi báo cáo tuần này cho tôi ngay\" để xem thử.\nĐặt \"Giờ yên lặng\" để không bị làm phiền ban đêm, và tắt camera không muốn theo dõi trong \"Camera tôi theo dõi\"."
           },
           "reports": {
-            "title": "Bảng tùy chỉnh",
+            "title": "Báo cáo",
             "desc": "Tự sắp xếp các biểu đồ và chỉ số cần theo dõi.",
-            "items": "Vào \"Bảng tùy chỉnh\", tạo bảng mới và thêm các widget: số liệu, biểu đồ, so sánh bẫy.\nChia sẻ bảng cho người khác theo email, hoặc bật liên kết công khai để gửi cho đối tác."
+            "items": "Vào \"Báo cáo\", tạo báo cáo mới và thêm các widget: số liệu, biểu đồ, so sánh bẫy.\nChia sẻ báo cáo cho người khác theo email, hoặc bật liên kết công khai để gửi cho đối tác."
           }
         }
       },
@@ -879,7 +879,7 @@
           "more": {
             "title": "Menu Thêm & cài ứng dụng",
             "desc": "Nút \"Thêm\" mở các mục còn lại.",
-            "items": "Thêm gồm: Bảng tùy chỉnh, Vườn & lô, Nhật ký vườn, Cài đặt, Thêm camera, Hướng dẫn, ngôn ngữ và giao diện sáng/tối.\nĐể cài như ứng dụng: vào Cài đặt, mục Thông báo, bấm \"Cài đặt ứng dụng\" (Android, máy tính), hoặc trên iPhone dùng Safari, nút Chia sẻ, \"Thêm vào MH chính\".\nSau khi cài, bật thông báo đẩy để nhận cảnh báo ngay trên điện thoại."
+            "items": "Thêm gồm: Báo cáo, Vườn & lô, Nhật ký vườn, Cài đặt, Thêm camera, Hướng dẫn, ngôn ngữ và giao diện sáng/tối.\nĐể cài như ứng dụng: vào Cài đặt, mục Thông báo, bấm \"Cài đặt ứng dụng\" (Android, máy tính), hoặc trên iPhone dùng Safari, nút Chia sẻ, \"Thêm vào MH chính\".\nSau khi cài, bật thông báo đẩy để nhận cảnh báo ngay trên điện thoại."
           }
         }
       },
@@ -919,7 +919,7 @@
       },
       "access": {
         "title": "4. Ai có thể xem dữ liệu",
-        "body": "Bạn; những người bạn chia sẻ camera, vườn hoặc bảng tùy chỉnh; thành viên các tổ chức có camera của bạn; bất kỳ ai có liên kết công khai của bảng tùy chỉnh nếu bạn bật liên kết đó; hệ thống dùng API key và địa chỉ webhook bạn cấu hình; và quản trị viên hệ thống."
+        "body": "Bạn; những người bạn chia sẻ camera, vườn hoặc báo cáo; thành viên các tổ chức có camera của bạn; bất kỳ ai có liên kết công khai của báo cáo nếu bạn bật liên kết đó; hệ thống dùng API key và địa chỉ webhook bạn cấu hình; và quản trị viên hệ thống."
       },
       "retention": {
         "title": "5. Thời gian lưu & xoá dữ liệu",
@@ -970,7 +970,7 @@
       },
       "data": {
         "title": "7. Dữ liệu & chia sẻ",
-        "body": "Bạn giữ quyền đối với dữ liệu vườn của mình. Liên kết công khai của bảng tùy chỉnh cho phép bất kỳ ai có liên kết xem được. API key và webhook do bạn quản lý; hãy thu hồi khi không còn dùng."
+        "body": "Bạn giữ quyền đối với dữ liệu vườn của mình. Liên kết công khai của báo cáo cho phép bất kỳ ai có liên kết xem được. API key và webhook do bạn quản lý; hãy thu hồi khi không còn dùng."
       },
       "service": {
         "title": "8. Dịch vụ & thay đổi",
@@ -1097,8 +1097,8 @@
         "desc": "{sharer} đã chia sẻ camera {deviceName} với bạn."
       },
       "dashboard_shared": {
-        "title": "Bảng được chia sẻ với bạn",
-        "desc": "{sharer} đã chia sẻ bảng {dashboardName} với bạn."
+        "title": "Báo cáo được chia sẻ với bạn",
+        "desc": "{sharer} đã chia sẻ báo cáo {dashboardName} với bạn."
       },
       "card_due": {
         "title": "Đến hạn thay tấm bẫy",
@@ -1185,7 +1185,7 @@
     "users": {
       "tab": "Người dùng",
       "title": "Người dùng",
-      "subtitle": "Vai trò: quản trị viên toàn quyền, quản lý thêm và chia sẻ camera của mình và tạo bảng tùy chỉnh, người xem chỉ thấy những gì được chia sẻ.",
+      "subtitle": "Vai trò: quản trị viên toàn quyền, quản lý thêm và chia sẻ camera của mình và tạo báo cáo, người xem chỉ thấy những gì được chia sẻ.",
       "search": "Tìm theo email hoặc tên",
       "allRoles": "Tất cả vai trò",
       "account": "Tài khoản",
@@ -1202,7 +1202,7 @@
       "delete": "Xóa tài khoản",
       "roleConfirm": "Đổi vai trò của {email} thành {role}?",
       "disableConfirm": "Vô hiệu hóa {email}? Người này bị đăng xuất khỏi mọi thiết bị và không thể đăng nhập cho đến khi được kích hoạt lại.",
-      "deleteConfirm": "Xóa tài khoản {email}? Các bảng tùy chỉnh, thông báo và quyền xem camera được chia sẻ của người này sẽ bị xóa. Không thể hoàn tác.",
+      "deleteConfirm": "Xóa tài khoản {email}? Các báo cáo, thông báo và quyền xem camera được chia sẻ của người này sẽ bị xóa. Không thể hoàn tác.",
       "deleted": "Đã xóa tài khoản."
     },
     "cameras": {
@@ -1251,12 +1251,12 @@
     }
   },
   "dashboards": {
-    "title": "Bảng tùy chỉnh",
-    "subtitle": "Tự thiết kế bảng theo dõi bẫy và chia sẻ qua email hoặc liên kết công khai.",
-    "create": "Tạo bảng mới",
+    "title": "Báo cáo",
+    "subtitle": "Tự thiết kế báo cáo theo dõi bẫy và chia sẻ qua email hoặc liên kết công khai.",
+    "create": "Tạo báo cáo mới",
     "createAndEdit": "Tạo và chỉnh sửa",
-    "empty": "Chưa có bảng nào. Tạo bảng để chọn camera và biểu đồ bạn quan tâm.",
-    "emptyViewer": "Chưa có bảng nào được chia sẻ với bạn.",
+    "empty": "Chưa có báo cáo nào. Tạo báo cáo để chọn camera và biểu đồ bạn quan tâm.",
+    "emptyViewer": "Chưa có báo cáo nào được chia sẻ với bạn.",
     "noDescription": "Không có mô tả",
     "counts": "{widgets} khối · {cameras} camera",
     "sharedBy": "{owner} đã chia sẻ",
@@ -1266,7 +1266,7 @@
       "public": "Liên kết công khai"
     },
     "name": "Tên",
-    "nameRequired": "Vui lòng nhập tên bảng.",
+    "nameRequired": "Vui lòng nhập tên báo cáo.",
     "description": "Mô tả",
     "cameras": "Camera",
     "camerasPlaceholder": "Chọn camera",
@@ -1275,19 +1275,19 @@
       "overview": "Tổng quan (đủ các khối)",
       "blank": "Trống"
     },
-    "backToList": "Tất cả bảng",
+    "backToList": "Tất cả báo cáo",
     "edit": "Chỉnh sửa",
     "editing": "Đang sửa {name}",
-    "delete": "Xóa bảng",
-    "deleteConfirm": "Xóa bảng {name}? Người được chia sẻ sẽ mất quyền xem và liên kết công khai ngừng hoạt động.",
-    "deleted": "Đã xóa bảng.",
-    "saved": "Đã lưu bảng.",
-    "notFound": "Không tìm thấy bảng",
-    "notFoundDesc": "Bảng có thể đã bị xóa hoặc không còn được chia sẻ với bạn.",
+    "delete": "Xóa báo cáo",
+    "deleteConfirm": "Xóa báo cáo {name}? Người được chia sẻ sẽ mất quyền xem và liên kết công khai ngừng hoạt động.",
+    "deleted": "Đã xóa báo cáo.",
+    "saved": "Đã lưu báo cáo.",
+    "notFound": "Không tìm thấy báo cáo",
+    "notFoundDesc": "Báo cáo có thể đã bị xóa hoặc không còn được chia sẻ với bạn.",
     "updatedAt": "Cập nhật {time}",
     "addWidget": "Thêm khối",
-    "maxWidgets": "Một bảng có tối đa 20 khối.",
-    "noWidgets": "Bảng này chưa có khối nào.",
+    "maxWidgets": "Một báo cáo có tối đa 20 khối.",
+    "noWidgets": "Báo cáo này chưa có khối nào.",
     "noWidgetsEditing": "Thêm khối bằng các nút phía trên.",
     "sharedCamerasHint": "Camera được người khác chia sẻ với bạn chỉ hiển thị với người cũng có quyền xem chúng, và không dùng được trên liên kết công khai.",
     "editWidget": "Cài đặt khối",
@@ -1297,7 +1297,7 @@
     "widgetType": "Loại",
     "widgetTitle": "Tiêu đề",
     "widgetCameras": "Camera",
-    "allDashboardCameras": "Tất cả camera của bảng",
+    "allDashboardCameras": "Tất cả camera của báo cáo",
     "range": "Khoảng thời gian",
     "lastDays": "{days} ngày qua",
     "width": "Chiều rộng",
@@ -1336,22 +1336,22 @@
       "peak": "Cao nhất",
       "latest": "Mới nhất"
     },
-    "noData": "Lưu bảng để tải dữ liệu.",
+    "noData": "Lưu báo cáo để tải dữ liệu.",
     "noDetections": "Không phát hiện côn trùng trong khoảng thời gian này.",
     "noCameras": "Khối này chưa có camera.",
     "noSnapshot": "Chưa có ảnh chụp",
     "errors": {
-      "PUBLIC_FOREIGN_CAMERA": "Bảng công khai chỉ dùng được camera bạn sở hữu. Hãy bỏ: {cameras}",
+      "PUBLIC_FOREIGN_CAMERA": "Báo cáo công khai chỉ dùng được camera bạn sở hữu. Hãy bỏ: {cameras}",
       "CAMERA_NOT_FOUND": "Một số camera không khả dụng: {cameras}",
-      "SHARE_WITH_OWNER": "Người này là chủ sở hữu bảng.",
+      "SHARE_WITH_OWNER": "Người này là chủ sở hữu báo cáo.",
       "ALREADY_SHARED": "Đã chia sẻ với email này.",
-      "FORBIDDEN": "Bạn không thể thay đổi bảng này."
+      "FORBIDDEN": "Bạn không thể thay đổi báo cáo này."
     },
     "share": {
       "title": "Chia sẻ {name}",
       "publicTitle": "Liên kết công khai",
-      "publicDesc": "Bất kỳ ai có liên kết đều xem được bảng này mà không cần đăng nhập. Chỉ hiển thị camera bạn sở hữu.",
-      "publicConfirm": "Bất kỳ ai có liên kết đều xem được bảng này, kể cả ảnh chụp. Tiếp tục?",
+      "publicDesc": "Bất kỳ ai có liên kết đều xem được báo cáo này mà không cần đăng nhập. Chỉ hiển thị camera bạn sở hữu.",
+      "publicConfirm": "Bất kỳ ai có liên kết đều xem được báo cáo này, kể cả ảnh chụp. Tiếp tục?",
       "publicHint": "Tạo liên kết mới để vô hiệu hóa liên kết cũ.",
       "copy": "Sao chép",
       "copied": "Đã sao chép liên kết.",
@@ -1360,23 +1360,23 @@
       "rotateConfirm": "Liên kết hiện tại sẽ ngừng hoạt động. Tiếp tục?",
       "rotated": "Đã tạo liên kết mới.",
       "peopleTitle": "Người được chia sẻ",
-      "peopleDesc": "Người được thêm có thể xem bảng sau khi đăng nhập. Email chưa có tài khoản sẽ nhận lời mời."
+      "peopleDesc": "Người được thêm có thể xem báo cáo sau khi đăng nhập. Email chưa có tài khoản sẽ nhận lời mời."
     },
     "public": {
-      "badge": "Bảng công khai",
+      "badge": "Báo cáo công khai",
       "by": "Bởi {owner}",
       "notFound": "Liên kết không khả dụng",
-      "notFoundDesc": "Bảng có thể đã chuyển sang riêng tư hoặc đã có liên kết mới.",
+      "notFoundDesc": "Báo cáo có thể đã chuyển sang riêng tư hoặc đã có liên kết mới.",
       "home": "Đến FlyBot"
     }
   },
   "audit": {
     "tab": "Nhật ký hoạt động",
     "title": "Nhật ký hoạt động",
-    "subtitle": "Đăng nhập, thay đổi tài khoản, chia sẻ camera và bảng, thay đổi cài đặt hệ thống.",
+    "subtitle": "Đăng nhập, thay đổi tài khoản, chia sẻ camera và báo cáo, thay đổi cài đặt hệ thống.",
     "export": "Xuất CSV",
     "allCategories": "Tất cả hoạt động",
-    "search": "Tìm theo email, camera, bảng hoặc IP",
+    "search": "Tìm theo email, camera, báo cáo hoặc IP",
     "from": "Từ ngày",
     "to": "Đến ngày",
     "time": "Thời gian",
@@ -1394,7 +1394,7 @@
       "auth": "Đăng nhập & bảo mật",
       "user": "Tài khoản",
       "camera": "Camera",
-      "dashboard": "Bảng tùy chỉnh",
+      "dashboard": "Báo cáo",
       "settings": "Cài đặt hệ thống",
       "treatment": "Xử lý dịch hại",
       "farm": "Vườn",
@@ -1425,10 +1425,10 @@
         "transferred": "Chuyển quyền sở hữu camera"
       },
       "dashboard": {
-        "created": "Tạo bảng",
-        "deleted": "Xóa bảng",
-        "shared": "Chia sẻ bảng",
-        "unshared": "Gỡ quyền xem bảng",
+        "created": "Tạo báo cáo",
+        "deleted": "Xóa báo cáo",
+        "shared": "Chia sẻ báo cáo",
+        "unshared": "Gỡ quyền xem báo cáo",
         "published": "Bật liên kết công khai",
         "unpublished": "Tắt liên kết công khai",
         "link_rotated": "Tạo liên kết công khai mới"

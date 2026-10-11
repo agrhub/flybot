@@ -57,12 +57,12 @@
     "blog": "Blog",
     "helpCenter": "Help Center",
     "apiDocs": "API Docs",
-    "dashboards": "Dashboards",
     "mainNavigation": "Main navigation",
     "overviewShort": "Overview",
     "more": "More",
     "logbook": "Field log",
-    "farms": "Farms"
+    "farms": "Farms",
+    "reports": "Reports"
   },
   "topbar": {
     "notifications": "Notifications",
@@ -731,7 +731,7 @@
     "audience2Feat1": "Farms and plots with boundaries on the map",
     "audience2Feat2": "Organizations with owners, managers and members",
     "audience2Feat3": "Weekly reports and a VietGAP treatment log",
-    "audience2Feat4": "Custom dashboards, shareable by link",
+    "audience2Feat4": "Custom reports, shareable by link",
     "audience3": "Technicians & integrators",
     "audience3Desc": "Expert review and your own systems.",
     "audience3Feat1": "Review and correct AI counts",
@@ -862,9 +862,9 @@
             "items": "Open Settings, Notifications.\nTurn on alert emails, connect Telegram, or enable push notifications on this phone or computer.\nTurn on the weekly report for a Monday summary; \"Send me this week’s report now\" shows an example.\nSet quiet hours for the night, and switch off cameras you do not follow under \"Cameras I follow\"."
           },
           "reports": {
-            "title": "Custom dashboards",
+            "title": "Custom reports",
             "desc": "Arrange the charts and numbers you care about.",
-            "items": "Open \"Dashboards\", create one and add widgets: numbers, charts, trap comparisons.\nShare a dashboard by email, or turn on a public link for partners."
+            "items": "Open \"Reports\", create one and add widgets: numbers, charts, trap comparisons.\nShare a report by email, or turn on a public link for partners."
           }
         }
       },
@@ -879,7 +879,7 @@
           "more": {
             "title": "More menu & installing",
             "desc": "The \"More\" button opens everything else.",
-            "items": "More holds: Dashboards, Farms, Field log, Settings, Add camera, Guide, language and light/dark theme.\nTo install it as an app: Settings, Notifications, \"Install the app\" (Android, computer), or on iPhone use Safari, Share, \"Add to Home Screen\".\nOnce installed, enable push notifications to get alerts right on the phone."
+            "items": "More holds: Reports, Farms, Field log, Settings, Add camera, Guide, language and light/dark theme.\nTo install it as an app: Settings, Notifications, \"Install the app\" (Android, computer), or on iPhone use Safari, Share, \"Add to Home Screen\".\nOnce installed, enable push notifications to get alerts right on the phone."
           }
         }
       },
@@ -919,7 +919,7 @@
       },
       "access": {
         "title": "4. Who can see your data",
-        "body": "You; the people you share cameras, farms or dashboards with; members of organizations that hold your cameras; anyone with a dashboard public link, if you create one; systems using your API keys and webhook addresses; and system administrators."
+        "body": "You; the people you share cameras, farms or reports with; members of organizations that hold your cameras; anyone with a report public link, if you create one; systems using your API keys and webhook addresses; and system administrators."
       },
       "retention": {
         "title": "5. Retention & deletion",
@@ -970,7 +970,7 @@
       },
       "data": {
         "title": "7. Data & sharing",
-        "body": "You keep the rights to your farm data. A dashboard public link can be viewed by anyone who has it. You manage your API keys and webhooks; revoke them when no longer needed."
+        "body": "You keep the rights to your farm data. A report public link can be viewed by anyone who has it. You manage your API keys and webhooks; revoke them when no longer needed."
       },
       "service": {
         "title": "8. Service & changes",
@@ -1097,8 +1097,8 @@
         "desc": "{sharer} shared the camera {deviceName} with you."
       },
       "dashboard_shared": {
-        "title": "Dashboard shared with you",
-        "desc": "{sharer} shared the dashboard {dashboardName} with you."
+        "title": "Report shared with you",
+        "desc": "{sharer} shared the report {dashboardName} with you."
       },
       "card_due": {
         "title": "Sticky card due",
@@ -1185,7 +1185,7 @@
     "users": {
       "tab": "Users",
       "title": "Users",
-      "subtitle": "Roles: admins control everything, managers add and share their own cameras and build dashboards, viewers only see what is shared with them.",
+      "subtitle": "Roles: admins control everything, managers add and share their own cameras and build reports, viewers only see what is shared with them.",
       "search": "Search by email or name",
       "allRoles": "All roles",
       "account": "Account",
@@ -1202,7 +1202,7 @@
       "delete": "Delete account",
       "roleConfirm": "Change the role of {email} to {role}?",
       "disableConfirm": "Disable {email}? They are signed out everywhere and cannot sign in until enabled again.",
-      "deleteConfirm": "Delete the account {email}? Their dashboards, notifications and access to shared cameras are removed. This cannot be undone.",
+      "deleteConfirm": "Delete the account {email}? Their reports, notifications and access to shared cameras are removed. This cannot be undone.",
       "deleted": "Account deleted."
     },
     "cameras": {
@@ -1251,12 +1251,12 @@
     }
   },
   "dashboards": {
-    "title": "Dashboards",
-    "subtitle": "Build your own views of your traps and share them by email or with a public link.",
-    "create": "New dashboard",
+    "title": "Reports",
+    "subtitle": "Build your own trap reports and share them by email or with a public link.",
+    "create": "New report",
     "createAndEdit": "Create and edit",
-    "empty": "No dashboards yet. Create one to pick the cameras and charts you care about.",
-    "emptyViewer": "No dashboards have been shared with you yet.",
+    "empty": "No reports yet. Create one to pick the cameras and charts you care about.",
+    "emptyViewer": "No reports have been shared with you yet.",
     "noDescription": "No description",
     "counts": "{widgets} widgets · {cameras} cameras",
     "sharedBy": "Shared by {owner}",
@@ -1266,7 +1266,7 @@
       "public": "Public link"
     },
     "name": "Name",
-    "nameRequired": "Please enter a dashboard name.",
+    "nameRequired": "Please enter a report name.",
     "description": "Description",
     "cameras": "Cameras",
     "camerasPlaceholder": "Choose cameras",
@@ -1275,19 +1275,19 @@
       "overview": "Overview (all widgets)",
       "blank": "Blank"
     },
-    "backToList": "All dashboards",
+    "backToList": "All reports",
     "edit": "Edit",
     "editing": "Editing {name}",
-    "delete": "Delete dashboard",
-    "deleteConfirm": "Delete the dashboard {name}? People it is shared with lose access and the public link stops working.",
-    "deleted": "Dashboard deleted.",
-    "saved": "Dashboard saved.",
-    "notFound": "Dashboard not found",
+    "delete": "Delete report",
+    "deleteConfirm": "Delete the report {name}? People it is shared with lose access and the public link stops working.",
+    "deleted": "Report deleted.",
+    "saved": "Report saved.",
+    "notFound": "Report not found",
     "notFoundDesc": "It may have been deleted, or it is no longer shared with you.",
     "updatedAt": "Updated {time}",
     "addWidget": "Add widget",
-    "maxWidgets": "A dashboard can have at most 20 widgets.",
-    "noWidgets": "This dashboard has no widgets yet.",
+    "maxWidgets": "A report can have at most 20 widgets.",
+    "noWidgets": "This report has no widgets yet.",
     "noWidgetsEditing": "Add widgets with the buttons above.",
     "sharedCamerasHint": "Cameras that were shared with you only appear for people who can see them too, and cannot be used on a public link.",
     "editWidget": "Widget settings",
@@ -1297,7 +1297,7 @@
     "widgetType": "Type",
     "widgetTitle": "Title",
     "widgetCameras": "Cameras",
-    "allDashboardCameras": "All dashboard cameras",
+    "allDashboardCameras": "All report cameras",
     "range": "Time range",
     "lastDays": "Last {days} days",
     "width": "Width",
@@ -1336,22 +1336,22 @@
       "peak": "Peak",
       "latest": "Latest"
     },
-    "noData": "Save the dashboard to load data.",
+    "noData": "Save the report to load data.",
     "noDetections": "No insects detected in this period.",
     "noCameras": "No cameras on this widget.",
     "noSnapshot": "No snapshot yet",
     "errors": {
-      "PUBLIC_FOREIGN_CAMERA": "A public dashboard can only use cameras you own. Remove: {cameras}",
+      "PUBLIC_FOREIGN_CAMERA": "A public report can only use cameras you own. Remove: {cameras}",
       "CAMERA_NOT_FOUND": "Some cameras are not available: {cameras}",
-      "SHARE_WITH_OWNER": "This person owns the dashboard.",
+      "SHARE_WITH_OWNER": "This person owns the report.",
       "ALREADY_SHARED": "Already shared with this email.",
-      "FORBIDDEN": "You cannot change this dashboard."
+      "FORBIDDEN": "You cannot change this report."
     },
     "share": {
       "title": "Share {name}",
       "publicTitle": "Public link",
-      "publicDesc": "Anyone with the link can view this dashboard without signing in. Only cameras you own are shown.",
-      "publicConfirm": "Anyone with the link will be able to see this dashboard, including its snapshots. Continue?",
+      "publicDesc": "Anyone with the link can view this report without signing in. Only cameras you own are shown.",
+      "publicConfirm": "Anyone with the link will be able to see this report, including its snapshots. Continue?",
       "publicHint": "Create a new link to stop the old one from working.",
       "copy": "Copy",
       "copied": "Link copied.",
@@ -1360,23 +1360,23 @@
       "rotateConfirm": "The current link stops working. Continue?",
       "rotated": "New link created.",
       "peopleTitle": "People",
-      "peopleDesc": "People you add can view the dashboard after signing in. Unknown emails get an invitation."
+      "peopleDesc": "People you add can view the report after signing in. Unknown emails get an invitation."
     },
     "public": {
-      "badge": "Public dashboard",
+      "badge": "Public report",
       "by": "By {owner}",
       "notFound": "This link is not available",
-      "notFoundDesc": "The dashboard may have been made private, or a new link was created.",
+      "notFoundDesc": "The report may have been made private, or a new link was created.",
       "home": "Go to FlyBot"
     }
   },
   "audit": {
     "tab": "Activity log",
     "title": "Activity log",
-    "subtitle": "Sign-ins, account changes, camera and dashboard sharing, and system settings changes.",
+    "subtitle": "Sign-ins, account changes, camera and report sharing, and system settings changes.",
     "export": "Export CSV",
     "allCategories": "All activity",
-    "search": "Search by email, camera, dashboard or IP",
+    "search": "Search by email, camera, report or IP",
     "from": "From",
     "to": "To",
     "time": "Time",
@@ -1394,7 +1394,7 @@
       "auth": "Sign-in & security",
       "user": "Accounts",
       "camera": "Cameras",
-      "dashboard": "Dashboards",
+      "dashboard": "Reports",
       "settings": "System settings",
       "treatment": "Treatments",
       "farm": "Farms",
@@ -1425,10 +1425,10 @@
         "transferred": "Camera ownership transferred"
       },
       "dashboard": {
-        "created": "Dashboard created",
-        "deleted": "Dashboard deleted",
-        "shared": "Dashboard shared",
-        "unshared": "Dashboard access removed",
+        "created": "Report created",
+        "deleted": "Report deleted",
+        "shared": "Report shared",
+        "unshared": "Report access removed",
         "published": "Public link turned on",
         "unpublished": "Public link turned off",
         "link_rotated": "New public link created"

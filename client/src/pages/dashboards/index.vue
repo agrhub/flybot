@@ -24,7 +24,7 @@
           :key="d.id"
           shadow="hover"
           class="dash-card cursor-pointer"
-          @click="router.push(`/dashboards/${d.id}`)"
+          @click="router.push(`/reports/${d.id}`)"
         >
           <div class="flex items-start justify-between gap-3">
             <div class="min-w-0">
@@ -143,7 +143,7 @@ const create = async () => {
       widgets: form.template === 'overview' ? overviewWidgets() : [],
     });
     createVisible.value = false;
-    router.push({ path: `/dashboards/${res.data.dashboard.id}`, query: { edit: '1' } });
+    router.push({ path: `/reports/${res.data.dashboard.id}`, query: { edit: '1' } });
   } catch (err) {
     ElMessage.error(dashboardErrorText(t, err));
   } finally {

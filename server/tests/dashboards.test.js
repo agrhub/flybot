@@ -98,7 +98,7 @@ test('sharing by email: existing account and invitation', async () => {
     const shared = await json(await request(`/api/dashboards/${id}/share`, { method: 'POST', as: owner, body: { email: 'Viewer@example.test' } }));
     assert.equal(shared.body.invited, false);
     assert.equal(await models.Notification.countDocuments({ userId: viewer._id, type: 'dashboard_shared' }), 1);
-    assert.match(sentMails.at(-1).subject, /shared the dashboard Shared board/);
+    assert.match(sentMails.at(-1).subject, /shared the report Shared board/);
 
     const list = await json(await request('/api/dashboards', { as: viewer }));
     assert.equal(list.body.dashboards.length, 1);

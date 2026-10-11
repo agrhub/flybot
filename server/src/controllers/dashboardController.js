@@ -20,7 +20,7 @@ const MAX_WIDGETS = 20;
 const MAX_SHARES = 50;
 const WIDGET_ID_REGEX = /^[A-Za-z0-9_-]{1,40}$/;
 
-const NOT_FOUND = { success: false, message: "Dashboard not found." };
+const NOT_FOUND = { success: false, message: "Report not found." };
 const newPublicToken = () => crypto.randomBytes(18).toString('base64url');
 const isInt = (v, min, max) => Number.isInteger(v) && v >= min && v <= max;
 const dashboardTarget = (dashboard) => ({ type: 'dashboard', id: String(dashboard._id), label: dashboard.name });
@@ -92,7 +92,7 @@ async function validateInput(body, { editor, owner, partial = false, current = n
 
     if (!partial || body.name !== undefined) {
         const name = text(body.name, 80);
-        if (!name) return { error: "Please enter a dashboard name." };
+        if (!name) return { error: "Please enter a report name." };
         value.name = name;
     }
     if (body.description !== undefined) {
@@ -104,7 +104,7 @@ async function validateInput(body, { editor, owner, partial = false, current = n
         const serials = body.cameraSerials ?? [];
         if (!Array.isArray(serials) || serials.some(s => typeof s !== 'string')) return { error: "cameraSerials must be a list of camera serials." };
         const unique = [...new Set(serials.map(s => s.trim()).filter(Boolean))];
-        if (unique.length > MAX_CAMERAS) return { error: `A dashboard can use at most ${MAX_CAMERAS} cameras.` };
+        if (unique.length > MAX_CAMERAS) return { error: `A report can use at most ${MAX_CAMERAS} cameras.` };
         // The editor must be able to see every camera they put on the dashboard
         const visible = unique.length
             ? await Camera.find({ deviceSerial: { $in: unique }, ...viewFilter(editor) }).select('deviceSerial')
@@ -118,7 +118,7 @@ async function validateInput(body, { editor, owner, partial = false, current = n
 
     if (!partial || body.widgets !== undefined) {
         const widgets = body.widgets ?? [];
-        if (!Array.isArray(widgets) || widgets.length > MAX_WIDGETS) return { error: `A dashboard can have at most ${MAX_WIDGETS} widgets.` };
+        if (!Array.isArray(widgets) || widgets.length > MAX_WIDGETS) return { error: `A report can have at most ${MAX_WIDGETS} widgets.` };
         const ids = new Set();
         value.widgets = [];
         for (const w of widgets) {
@@ -127,7 +127,7 @@ async function validateInput(body, { editor, owner, partial = false, current = n
             if (!WIDGET_TYPES.includes(w.type)) return { error: `Widget type must be one of ${WIDGET_TYPES.join(', ')}.` };
             const serials = w.cameraSerials ?? [];
             if (!Array.isArray(serials) || serials.some(s => typeof s !== 'string' || !cameraSet.has(s))) {
-                return { error: "Widget cameras must be cameras of the dashboard." };
+                return { error: "Widget cameras must be cameras of the report." };
             }
             const rangeDays = w.rangeDays ?? 7;
             if (!isInt(rangeDays, 1, 365)) return { error: "rangeDays must be between 1 and 365." };
@@ -194,7 +194,7 @@ async function createDashboard(req, res) {
     try {
         const count = await Dashboard.countDocuments({ ownerId: req.user.id });
         if (count >= MAX_DASHBOARDS_PER_OWNER) {
-            return res.status(400).json({ success: false, message: `You can have at most ${MAX_DASHBOARDS_PER_OWNER} dashboards.` });
+            return res.status(400).json({ success: false, message: `You can have at most ${MAX_DASHBOARDS_PER_OWNER} reports.` });
         }
         const owner = await User.findById(req.user.id).select('role disabled');
         const result = await validateInput(req.body || {}, { editor: req.user, owner });
@@ -243,7 +243,7 @@ async function updateDashboard(req, res) {
         const dashboard = await findDashboard(req.params.id);
         if (!dashboardService.canViewDashboard(req.user, dashboard)) return res.status(404).json(NOT_FOUND);
         if (!dashboardService.canEditDashboard(req.user, dashboard)) {
-            return res.status(403).json({ success: false, code: 'FORBIDDEN', message: "You cannot edit this dashboard." });
+            return res.status(403).json({ success: false, code: 'FORBIDDEN', message: "You cannot edit this report." });
         }
 
         const result = await validateInput(req.body || {}, { editor: req.user, owner: dashboard.ownerId, partial: true, current: dashboard });
@@ -273,7 +273,7 @@ async function deleteDashboard(req, res) {
         const dashboard = await findDashboard(req.params.id);
         if (!dashboardService.canViewDashboard(req.user, dashboard)) return res.status(404).json(NOT_FOUND);
         if (!dashboardService.canEditDashboard(req.user, dashboard)) {
-            return res.status(403).json({ success: false, code: 'FORBIDDEN', message: "You cannot delete this dashboard." });
+            return res.status(403).json({ success: false, code: 'FORBIDDEN', message: "You cannot delete this report." });
         }
         await Dashboard.deleteOne({ _id: dashboard._id });
         recordAudit(req, { action: 'dashboard.deleted', target: dashboardTarget(dashboard), details: { owner: dashboard.ownerId?.email || '' } });
@@ -308,10 +308,10 @@ async function rotatePublicToken(req, res) {
         const dashboard = await findDashboard(req.params.id);
         if (!dashboardService.canViewDashboard(req.user, dashboard)) return res.status(404).json(NOT_FOUND);
         if (!dashboardService.canEditDashboard(req.user, dashboard)) {
-            return res.status(403).json({ success: false, code: 'FORBIDDEN', message: "You cannot edit this dashboard." });
+            return res.status(403).json({ success: false, code: 'FORBIDDEN', message: "You cannot edit this report." });
         }
         if (dashboard.visibility !== 'public') {
-            return res.status(400).json({ success: false, message: "The dashboard is not public." });
+            return res.status(400).json({ success: false, message: "The report is not public." });
         }
         dashboard.publicToken = newPublicToken();
         await dashboard.save();
@@ -334,16 +334,16 @@ async function shareDashboard(req, res) {
         const dashboard = await findDashboard(req.params.id);
         if (!dashboardService.canViewDashboard(req.user, dashboard)) return res.status(404).json(NOT_FOUND);
         if (!dashboardService.canEditDashboard(req.user, dashboard)) {
-            return res.status(403).json({ success: false, code: 'FORBIDDEN', message: "You cannot share this dashboard." });
+            return res.status(403).json({ success: false, code: 'FORBIDDEN', message: "You cannot share this report." });
         }
         if (dashboard.ownerId.email?.toLowerCase() === email) {
-            return res.status(400).json({ success: false, code: 'SHARE_WITH_OWNER', message: "This person already owns the dashboard." });
+            return res.status(400).json({ success: false, code: 'SHARE_WITH_OWNER', message: "This person already owns the report." });
         }
         if (dashboard.sharedWith.some(sh => sh.email === email)) {
-            return res.status(409).json({ success: false, code: 'ALREADY_SHARED', message: "The dashboard is already shared with this email." });
+            return res.status(409).json({ success: false, code: 'ALREADY_SHARED', message: "The report is already shared with this email." });
         }
         if (dashboard.sharedWith.length >= MAX_SHARES) {
-            return res.status(400).json({ success: false, message: `A dashboard can be shared with at most ${MAX_SHARES} people.` });
+            return res.status(400).json({ success: false, message: `A report can be shared with at most ${MAX_SHARES} people.` });
         }
 
         const recipient = await findUserByEmail(email);
@@ -368,7 +368,7 @@ async function shareDashboard(req, res) {
                 language: normalizeLanguage(recipient.language),
                 sharer,
                 params,
-                url: safeUrl(`/dashboards/${dashboard._id}`)
+                url: safeUrl(`/reports/${dashboard._id}`)
             }));
         } else if (recipient) {
             queueMail(emailTemplates.shareEmail({
@@ -378,7 +378,7 @@ async function shareDashboard(req, res) {
                 language: normalizeLanguage(recipient.language),
                 sharer,
                 params,
-                url: safeUrl(`/dashboards/${dashboard._id}`)
+                url: safeUrl(`/reports/${dashboard._id}`)
             }));
         } else {
             queueMail(emailTemplates.shareEmail({
@@ -405,12 +405,12 @@ async function unshareDashboard(req, res) {
         const dashboard = await findDashboard(req.params.id);
         if (!dashboardService.canViewDashboard(req.user, dashboard)) return res.status(404).json(NOT_FOUND);
         if (!dashboardService.canEditDashboard(req.user, dashboard)) {
-            return res.status(403).json({ success: false, code: 'FORBIDDEN', message: "You cannot share this dashboard." });
+            return res.status(403).json({ success: false, code: 'FORBIDDEN', message: "You cannot share this report." });
         }
         const before = dashboard.sharedWith.length;
         dashboard.sharedWith = dashboard.sharedWith.filter(sh => sh.email !== email);
         if (dashboard.sharedWith.length === before) {
-            return res.status(404).json({ success: false, message: "This dashboard is not shared with that email." });
+            return res.status(404).json({ success: false, message: "This report is not shared with that email." });
         }
         await dashboard.save();
         recordAudit(req, { action: 'dashboard.unshared', target: dashboardTarget(dashboard), details: { email } });

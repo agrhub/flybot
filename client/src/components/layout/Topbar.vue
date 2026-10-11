@@ -145,7 +145,7 @@ const currentSectionTitle = computed(() => {
   const map = {
     dashboard: t('nav.dashboard'),
     cameras: t('nav.cameras'),
-    dashboards: t('nav.dashboards'),
+    reports: t('nav.reports'),
     logbook: t('nav.logbook'),
     farms: t('nav.farms'),
     analytics: t('nav.analytics'),
@@ -182,7 +182,7 @@ const openNotification = (n) => {
     return;
   }
   if (n.type === 'dashboard_shared' && n.params?.dashboardId) {
-    router.push(`/dashboards/${n.params.dashboardId}`);
+    router.push(`/reports/${n.params.dashboardId}`);
     return;
   }
   if (n.type === 'org_joined') {

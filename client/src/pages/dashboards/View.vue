@@ -2,7 +2,7 @@
   <div class="w-full max-w-7xl mx-auto pb-12" v-loading="loading && !dashboard">
     <el-result v-if="notFound" icon="warning" :title="t('dashboards.notFound')" :sub-title="t('dashboards.notFoundDesc')">
       <template #extra>
-        <el-button type="primary" :icon="Back" @click="router.push('/dashboards')">{{ t('dashboards.backToList') }}</el-button>
+        <el-button type="primary" :icon="Back" @click="router.push('/reports')">{{ t('dashboards.backToList') }}</el-button>
       </template>
     </el-result>
 
@@ -11,7 +11,7 @@
       <PageHeader :title="editing ? t('dashboards.editing', { name: dashboard.name }) : dashboard.name" :subtitle="editing ? '' : dashboard.description">
         <template #actions>
           <template v-if="!editing">
-            <el-button :icon="Back" @click="router.push('/dashboards')">{{ t('dashboards.backToList') }}</el-button>
+            <el-button :icon="Back" @click="router.push('/reports')">{{ t('dashboards.backToList') }}</el-button>
             <el-button :icon="Refresh" :loading="loadingData" @click="loadData">{{ t('common.refresh') }}</el-button>
             <template v-if="dashboard.canEdit">
               <el-button :icon="Share" @click="shareVisible = true">{{ t('share.button') }}</el-button>
@@ -314,7 +314,7 @@ const onCommand = async (command) => {
   try {
     await api.deleteDashboard(dashboard.value.id);
     ElMessage.success(t('dashboards.deleted'));
-    router.push('/dashboards');
+    router.push('/reports');
   } catch (err) {
     ElMessage.error(dashboardErrorText(t, err));
   }

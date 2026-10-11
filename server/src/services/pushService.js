@@ -72,7 +72,7 @@ function buildPayload({ type, language, params = {}, deviceSerial = '' }) {
     if (!base) return null;
     const fullParams = { ...params, deviceSerial };
     let url = TARGET_PATH[type] || '/dashboard';
-    if (type === 'dashboard_shared' && params.dashboardId) url = `/dashboards/${params.dashboardId}`;
+    if (type === 'dashboard_shared' && params.dashboardId) url = `/reports/${params.dashboardId}`;
     if ((type === 'farm_shared' || type === 'plot_threshold') && params.farmId) url = `/farms/${params.farmId}`;
     return {
         type,
