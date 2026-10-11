@@ -770,7 +770,7 @@
           "account": {
             "title": "Sign in & the Overview",
             "desc": "The Overview shows how many flies arrived today, flies per trap per day, cameras online and the pest risk level.",
-            "items": "Sign up with your email and click the confirmation link in your inbox.\nAccount roles: admins run the whole system; managers add and manage cameras; viewers see what is shared with them.\n\"Flies caught today\" counts new flies on all traps, with yesterday next to it; \"Flies/trap/day (7 days)\" is the standard figure to compare weeks.\nIn the trap list, the bar compares what is on each trap now with its alert threshold; the line below shows today’s new flies and the daily average.\n\"Pest Hotspot\" appears when a trap reaches its threshold; \"Replace card\" when its glue card should be replaced."
+            "items": "Sign up with your email and click the confirmation link in your inbox.\nAccount roles: admins run the whole system; managers add and manage cameras; viewers see what is shared with them.\n\"Flies caught today\" counts new flies on all traps, with yesterday next to it; \"Flies/trap/day (7 days)\" is the standard figure to compare weeks.\nIn the trap list, the bar compares what is on each trap now with its alert threshold; the line below shows today’s new flies and the daily average.\n\"Pest Hotspot\" appears when a trap reaches its threshold; \"Replace card\" when its glue card should be replaced.\nAt the bottom, each trap shows its latest analyzed photo with every insect boxed and named; click it for the details, to confirm or correct the count."
           },
           "camera": {
             "title": "Add a camera & choose the trap type",
