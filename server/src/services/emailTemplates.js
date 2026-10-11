@@ -1,4 +1,4 @@
-const { translate } = require('../utils/i18n');
+const { translate, alertTextKey } = require('../utils/i18n');
 
 function escapeHtml(value) {
     return String(value ?? '')
@@ -105,11 +105,11 @@ function alertEmail({ user, language, type, params: rawParams, url }) {
     );
     return {
         to: user.email,
-        subject: t(`email.alerts.${type}.subject`, params),
+        subject: t(`${alertTextKey(type, rawParams)}.subject`, params),
         ...layout({
             language,
             user,
-            paragraphs: [t(`email.alerts.${type}.body`, params)],
+            paragraphs: [t(`${alertTextKey(type, rawParams)}.body`, params)],
             button: url ? { label: t('email.alerts.button'), url } : null,
             footerKey: 'email.footerAlerts'
         })

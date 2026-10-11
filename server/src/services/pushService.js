@@ -1,7 +1,7 @@
 const webpush = require('web-push');
 const { PushSubscription } = require('../models');
 const { VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT, APP_BASE_URL } = require('../config/env');
-const { translate, normalizeLanguage } = require('../utils/i18n');
+const { translate, normalizeLanguage, alertTextKey } = require('../utils/i18n');
 
 // Push services drop a message they could not deliver within this time
 const ALERT_TTL_SECONDS = 24 * 60 * 60;
@@ -68,8 +68,8 @@ const clip = (text) => {
  */
 function buildPayload({ type, language, params = {}, deviceSerial = '' }) {
     const lang = normalizeLanguage(language);
-    const base = TEXT_KEYS[type];
-    if (!base) return null;
+    if (!TEXT_KEYS[type]) return null;
+    const base = alertTextKey(type, params);
     const fullParams = { ...params, deviceSerial };
     let url = TARGET_PATH[type] || '/dashboard';
     if (type === 'dashboard_shared' && params.dashboardId) url = `/reports/${params.dashboardId}`;

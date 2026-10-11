@@ -50,7 +50,7 @@ Body:
 }
 ```
 
-`params` depends on the event. Alerts muted for a camera are not sent; quiet hours do not apply to webhooks.
+`params` depends on the event. For `pest_threshold` on a lure trap, `count` is the day's average per photo and `params.basis` is `"dailyAverage"`; on a sticky trap it is the count in the latest photo. Alerts muted for a camera are not sent; quiet hours do not apply to webhooks.
 
 ### Checking the signature
 

@@ -1089,7 +1089,8 @@
     "types": {
       "pest_threshold": {
         "title": "Pest threshold reached",
-        "desc": "{deviceName}: {count} insects (threshold {threshold})"
+        "desc": "{deviceName}: {count} insects (threshold {threshold})",
+        "descDaily": "{deviceName}: {count} insects per photo on average today (threshold {threshold})"
       },
       "camera_offline": {
         "title": "Camera offline",
@@ -1875,7 +1876,7 @@
     "lure": {
       "name": "Lure trap (no glue)",
       "short": "Lure",
-      "hint": "Only an attractant: flies come in and can fly away. A photo shows the flies present; the daily figure = average per photo.",
+      "hint": "Only an attractant: flies come in and can fly away. A photo shows the flies present; the daily figure = average per photo. The threshold alert compares the day’s average.",
       "maintenanceHint": "A lure trap has no glue card, so there is no card reminder. Log lure refills and lens cleaning."
     }
   },

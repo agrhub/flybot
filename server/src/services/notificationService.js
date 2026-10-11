@@ -1,4 +1,5 @@
-const { Camera, User, Notification } = require('../models');
+const { Camera, User, Notification, Snapshot } = require('../models');
+const { trapKindOf } = require('../constants/trap');
 const { NON_PEST_LABELS } = require('../constants/species');
 const { normalizeLanguage, translate } = require('../utils/i18n');
 const sseHub = require('../realtime/sseHub');
@@ -187,14 +188,31 @@ function countPests(summary) {
         .reduce((sum, [, value]) => sum + (Number(value) || 0), 0);
 }
 
+// Start of the local day (farm time zone, UTC+7 without daylight saving)
+const localDayStart = (now) => new Date(`${new Intl.DateTimeFormat('en-CA', { timeZone: TIMEZONE }).format(now)}T00:00:00+07:00`);
+
+/** Average pest count per analyzed photo of a camera since local midnight. */
+async function dailyAveragePests(deviceSerial, now = new Date()) {
+    const snaps = await Snapshot.find({ deviceSerial, aiProcessed: true, createdAt: { $gte: localDayStart(now), $lte: now } })
+        .select('aiResults.summary').lean();
+    if (!snaps.length) return 0;
+    const total = snaps.reduce((sum, snap) => sum + countPests(snap.aiResults?.summary), 0);
+    return Math.round((total / snaps.length) * 10) / 10;
+}
+
 /**
  * After an AI analysis: alert owners whose threshold is reached.
+ * A sticky trap compares the latest photo (the card keeps what it caught); a lure trap, where
+ * flies come and go, compares the day's average per photo so one busy photo does not alert.
  */
-function checkPestThreshold(deviceSerial, count) {
+async function checkPestThreshold(deviceSerial, count, { now = new Date() } = {}) {
+    const trap = await Camera.findOne({ deviceSerial }).select('trapKind').lean();
+    const lure = trapKindOf(trap) === 'lure';
+    const value = lure ? await dailyAveragePests(deviceSerial, now) : count;
     return notifyCameraOwners(deviceSerial, 'pest_threshold', (camera) => {
         const threshold = camera.alertThreshold || 15;
-        if (count < threshold) return null;
-        return { deviceName: cameraName(camera), count, threshold };
+        if (value < threshold) return null;
+        return { deviceName: cameraName(camera), count: value, threshold, ...(lure ? { basis: 'dailyAverage' } : {}) };
     });
 }
 
@@ -227,6 +245,7 @@ module.exports = {
     notifyUser,
     countPests,
     checkPestThreshold,
+    dailyAveragePests,
     cameraStatusChanged,
     notifyCameraOwners,
     inQuietHours,

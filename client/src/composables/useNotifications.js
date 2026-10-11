@@ -31,7 +31,8 @@ function format(notification) {
   const base = `notifications.types.${notification.type}`;
   return {
     title: t(`${base}.title`),
-    desc: t(`${base}.desc`, localizeParams(notification.params || {}))
+    // A lure-trap threshold alert is about the day's average
+    desc: t(`${base}.${notification.params?.basis === 'dailyAverage' ? 'descDaily' : 'desc'}`, localizeParams(notification.params || {}))
   };
 }
 

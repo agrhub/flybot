@@ -55,6 +55,10 @@
       "image_quality": {
         "subject": "📷 Kiểm tra camera {deviceName}: {issueText}",
         "body": "Các ảnh gần đây của {deviceName} ({deviceSerial}) có vấn đề: {issueText}. Số côn trùng đếm từ những ảnh này có thể không chính xác cho đến khi khắc phục."
+      },
+      "pest_threshold_daily": {
+        "subject": "⚠️ Cảnh báo dịch hại: trung bình {count} con tại {deviceName}",
+        "body": "Bẫy dẫn dụ {deviceName} ({deviceSerial}) có trung bình {count} con côn trùng mỗi ảnh hôm nay, bằng hoặc vượt ngưỡng cảnh báo {threshold} của bạn."
       }
     },
     "cameraShared": {

@@ -55,6 +55,10 @@
       "image_quality": {
         "subject": "📷 Check camera {deviceName}: {issueText}",
         "body": "The last photos from {deviceName} ({deviceSerial}) show a problem: {issueText}. Insect counts from these photos may be wrong until it is fixed."
+      },
+      "pest_threshold_daily": {
+        "subject": "⚠️ Pest alert: {count} insects on average at {deviceName}",
+        "body": "Lure trap {deviceName} ({deviceSerial}) has averaged {count} insects per photo today, at or above your alert threshold of {threshold}."
       }
     },
     "cameraShared": {

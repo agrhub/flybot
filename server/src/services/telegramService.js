@@ -1,7 +1,7 @@
 const axios = require('axios');
 const { User } = require('../models');
 const { TELEGRAM_BOT_TOKEN, TELEGRAM_BOT_USERNAME } = require('../config/env');
-const { translate, normalizeLanguage, SUPPORTED_LANGUAGES } = require('../utils/i18n');
+const { translate, normalizeLanguage, SUPPORTED_LANGUAGES, alertTextKey } = require('../utils/i18n');
 const { escapeHtml } = require('./emailTemplates');
 const { consumeToken } = require('./authTokenService');
 
@@ -78,8 +78,8 @@ function formatAlert({ language, type, params, url }) {
     // Params include user-chosen camera names: escape them for Telegram HTML
     const safe = Object.fromEntries(Object.entries(params || {}).map(([k, v]) => [k, escapeHtml(v)]));
     const lines = [
-        `<b>${translate(lang, `email.alerts.${type}.subject`, safe)}</b>`,
-        translate(lang, `email.alerts.${type}.body`, safe)
+        `<b>${translate(lang, `${alertTextKey(type, params)}.subject`, safe)}</b>`,
+        translate(lang, `${alertTextKey(type, params)}.body`, safe)
     ];
     if (url) lines.push(`<a href="${escapeHtml(url)}">${escapeHtml(translate(lang, 'email.alerts.button'))}</a>`);
     return lines.join('\n\n');

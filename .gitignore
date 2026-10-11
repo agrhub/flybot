@@ -9,3 +9,6 @@ tmp/
 
 # Legacy monolith (kept locally, not versioned; contains old secrets/tokens)
 origin/
+
+# Media tools: sign-in tokens of the local demo
+tools/media/demo-tokens.json

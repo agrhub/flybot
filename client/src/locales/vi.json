@@ -1089,7 +1089,8 @@
     "types": {
       "pest_threshold": {
         "title": "Vượt ngưỡng dịch hại",
-        "desc": "{deviceName}: {count} con (ngưỡng {threshold})"
+        "desc": "{deviceName}: {count} con (ngưỡng {threshold})",
+        "descDaily": "{deviceName}: trung bình {count} con mỗi ảnh hôm nay (ngưỡng {threshold})"
       },
       "camera_offline": {
         "title": "Camera mất kết nối",
@@ -1875,7 +1876,7 @@
     "lure": {
       "name": "Bẫy dẫn dụ (không keo)",
       "short": "Bẫy dẫn dụ",
-      "hint": "Chỉ có chất dẫn dụ, ruồi vào rồi có thể bay đi. Mỗi ảnh là số ruồi đang có mặt; số mỗi ngày = trung bình mỗi lần chụp.",
+      "hint": "Chỉ có chất dẫn dụ, ruồi vào rồi có thể bay đi. Mỗi ảnh là số ruồi đang có mặt; số mỗi ngày = trung bình mỗi lần chụp. Cảnh báo vượt ngưỡng so với trung bình trong ngày.",
       "maintenanceHint": "Bẫy dẫn dụ không có tấm keo nên không có nhắc thay tấm. Hãy ghi lại các lần thay mồi dẫn dụ và lau ống kính."
     }
   },

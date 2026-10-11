@@ -29,7 +29,16 @@ function translate(language, key, params = {}) {
     return text.replace(/\{(\w+)\}/g, (match, name) => (params[name] !== undefined ? String(params[name]) : match));
 }
 
+/**
+ * Locale key of an alert's subject/body. A lure-trap threshold alert compares the day's average
+ * (params.basis = 'dailyAverage') and has its own wording.
+ */
+function alertTextKey(type, params) {
+    return `email.alerts.${type}${params?.basis === 'dailyAverage' ? '_daily' : ''}`;
+}
+
 module.exports = {
+    alertTextKey,
     SUPPORTED_LANGUAGES,
     DEFAULT_LANGUAGE,
     normalizeLanguage,
