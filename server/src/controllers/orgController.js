@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { Organization, Camera, Farm } = require('../models');
+const { Organization, Camera, Farm, User } = require('../models');
 const { ORG_ROLES } = require('../models/Organization');
 const { isCameraOwner } = require('../utils/ownership');
 const { isAdmin } = require('../constants/roles');
@@ -20,10 +20,23 @@ const NOT_FOUND = { success: false, message: "Organization not found." };
 const text = (value, max) => (typeof value === 'string' ? value.trim().slice(0, max) : '');
 const orgTarget = (org) => ({ type: 'organization', id: String(org._id), label: org.name });
 
+/**
+ * Of the invited emails, those that already have an account (not yet confirmed: a confirmed
+ * account is linked when invited or when it confirms).
+ */
+async function emailsWithAccount(emails) {
+    if (!emails.length) return new Set();
+    const users = await User.find({ email: { $in: emails } })
+        .collation({ locale: 'en', strength: 2 }).select('email').lean();
+    return new Set(users.map(u => String(u.email).toLowerCase()));
+}
+
 async function toClientOrg(org, user) {
-    const [cameras, farms] = await Promise.all([
+    const invited = org.members.filter(m => !m.userId).map(m => m.email);
+    const [cameras, farms, withAccount] = await Promise.all([
         Camera.find({ orgId: org._id }).select('deviceSerial deviceName status userId').lean(),
-        Farm.countDocuments({ orgId: org._id })
+        Farm.countDocuments({ orgId: org._id }),
+        emailsWithAccount(invited)
     ]);
     return {
         id: String(org._id),
@@ -34,7 +47,8 @@ async function toClientOrg(org, user) {
             email: m.email,
             userId: m.userId ? String(m.userId) : null,
             role: m.role,
-            status: m.userId ? 'active' : 'pending',
+            // pending: no account yet; unverified: account exists, email not confirmed
+            status: m.userId ? 'active' : (withAccount.has(String(m.email).toLowerCase()) ? 'unverified' : 'pending'),
             addedAt: m.addedAt
         })),
         cameras: cameras.map(c => ({ deviceSerial: c.deviceSerial, deviceName: c.deviceName, status: c.status })),

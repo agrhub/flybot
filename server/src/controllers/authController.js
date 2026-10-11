@@ -12,6 +12,8 @@ const { recordAudit } = require('../services/auditService');
 const { normalizeLanguage, SUPPORTED_LANGUAGES } = require('../utils/i18n');
 const { queueMail } = require('../services/mailService');
 const emailTemplates = require('../services/emailTemplates');
+const avatarService = require('../services/avatarService');
+const { pipeSnapshot } = require('./s3Controller');
 const {
     PASSWORD_RESET_TTL_MINUTES,
     EMAIL_VERIFY_TTL_HOURS,
@@ -43,7 +45,7 @@ function toPublicUser(user) {
         id: user._id,
         email: user.email,
         name: user.name || user.email.split('@')[0],
-        avatar: user.avatar || '',
+        avatar: avatarService.avatarUrlOf(user),
         role: roleOf(user),
         emailVerified: !!user.emailVerified,
         language: normalizeLanguage(user.language),
@@ -480,13 +482,11 @@ async function changePassword(req, res) {
  */
 async function updateProfile(req, res) {
     const userId = req.user.id;
-    const { name, avatar, language, notificationPrefs } = req.body;
+    // The avatar has its own upload (POST /api/auth/avatar)
+    const { name, language, notificationPrefs } = req.body;
     try {
         if (typeof name !== 'undefined' && (typeof name !== 'string' || name.length > 100)) {
             return res.status(400).json({ success: false, message: "Invalid name." });
-        }
-        if (typeof avatar !== 'undefined' && typeof avatar !== 'string') {
-            return res.status(400).json({ success: false, message: "Invalid avatar." });
         }
         if (typeof language !== 'undefined' && !SUPPORTED_LANGUAGES.includes(language)) {
             return res.status(400).json({ success: false, message: "Invalid language." });
@@ -499,7 +499,6 @@ async function updateProfile(req, res) {
             return res.status(404).json({ success: false, message: "User not found." });
         }
         if (typeof name !== 'undefined') user.name = name.trim();
-        if (typeof avatar !== 'undefined') user.avatar = avatar;
         if (typeof language !== 'undefined') user.language = language;
         if (typeof notificationPrefs?.email === 'boolean') user.set('notificationPrefs.email', notificationPrefs.email);
         if (typeof notificationPrefs?.telegram === 'boolean') user.set('notificationPrefs.telegram', notificationPrefs.telegram);
@@ -522,6 +521,52 @@ async function updateProfile(req, res) {
     }
 }
 
+/**
+ * POST /api/auth/avatar (body: the JPEG, at most 2 MB). The browser crops and shrinks the picture
+ * first; the server checks it and stores a clean copy.
+ */
+async function uploadAvatar(req, res) {
+    try {
+        const { buffer, error } = avatarService.cleanImage(req.body);
+        if (error) return res.status(400).json({ success: false, message: error });
+        const user = await User.findById(req.user.id);
+        if (!user) return res.status(404).json({ success: false, message: "User not found." });
+        await avatarService.saveAvatar(user, buffer);
+        res.json({ success: true, user: toPublicUser(user) });
+    } catch (err) {
+        sendServerError(res, err, { context: 'Upload avatar' });
+    }
+}
+
+/**
+ * DELETE /api/auth/avatar
+ */
+async function deleteAvatar(req, res) {
+    try {
+        const user = await User.findById(req.user.id);
+        if (!user) return res.status(404).json({ success: false, message: "User not found." });
+        await avatarService.removeAvatar(user);
+        res.json({ success: true, user: toPublicUser(user) });
+    } catch (err) {
+        sendServerError(res, err, { context: 'Delete avatar' });
+    }
+}
+
+/**
+ * GET /api/auth/avatar: the signed-in user's own picture
+ */
+async function getAvatar(req, res) {
+    try {
+        const user = await User.findById(req.user.id).select('avatar').lean();
+        const key = avatarService.avatarKeyOf(user);
+        if (!key) return res.status(404).json({ success: false, message: "File not found" });
+        // The URL changes with every upload (?v=), so the browser may keep it
+        return pipeSnapshot(res, key, { cacheControl: 'private, max-age=604800, immutable' });
+    } catch (err) {
+        sendServerError(res, err, { context: 'Get avatar' });
+    }
+}
+
 module.exports = {
     register,
     login,
@@ -537,5 +582,8 @@ module.exports = {
     verifyEmail,
     resendVerification,
     changePassword,
-    updateProfile
+    updateProfile,
+    uploadAvatar,
+    deleteAvatar,
+    getAvatar
 };

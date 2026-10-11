@@ -84,13 +84,13 @@
 
       <!-- Profile menu -->
       <el-dropdown trigger="click" placement="bottom-end">
-        <el-avatar shape="square" :size="32" class="profile-avatar cursor-pointer" data-tour="profile">
+        <el-avatar shape="square" :size="32" class="profile-avatar cursor-pointer" data-tour="profile" :src="user?.avatar || undefined">
           {{ userInitial }}
         </el-avatar>
 
         <template #dropdown>
           <div class="profile-header px-4 py-3 flex items-center gap-3">
-            <el-avatar shape="square" :size="40" class="profile-avatar shrink-0">{{ userInitial }}</el-avatar>
+            <el-avatar shape="square" :size="40" class="profile-avatar shrink-0" :src="user?.avatar || undefined">{{ userInitial }}</el-avatar>
             <div class="min-w-0 flex-1">
               <p class="profile-name truncate">{{ userName }}</p>
               <p class="profile-email truncate">{{ userEmail }}</p>
@@ -143,7 +143,7 @@ const emit = defineEmits(['navigate', 'open-settings-tab']);
 const router = useRouter();
 const { t, locale } = useI18n();
 const { isDark, isAssistantOpen, toggleTheme, toggleAssistant } = useTheme();
-const { userName, userEmail, userInitial, logout } = useAuth();
+const { user, userName, userEmail, userInitial, logout } = useAuth();
 const { isMobile } = useBreakpoints();
 const { start: startTour } = useAppTour();
 

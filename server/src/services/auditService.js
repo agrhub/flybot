@@ -10,6 +10,7 @@ const AUDIT_ACTIONS = [
     'user.role_changed',
     'user.disabled',
     'user.enabled',
+    'user.email_verified',
     'user.deleted',
     'camera.added',
     'camera.updated',

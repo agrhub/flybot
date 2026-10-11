@@ -46,6 +46,7 @@
           <div class="min-w-0">
             <p class="org-member truncate">{{ m.email }}</p>
             <p v-if="m.status === 'pending'" class="org-meta">{{ t('orgs.pending') }}</p>
+            <p v-else-if="m.status === 'unverified'" class="org-meta">{{ t('orgs.unverified') }}</p>
           </div>
           <div class="flex items-center gap-2">
             <el-select

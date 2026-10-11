@@ -202,6 +202,12 @@ export default {
     const newPassword = args.length >= 3 ? args[2] : args[1];
     return apiClient.post('/auth/change-password', { currentPassword, newPassword });
   },
+  uploadAvatar(blob) {
+    return apiClient.post('/auth/avatar', blob, { headers: { 'Content-Type': 'image/jpeg' } });
+  },
+  deleteAvatar() {
+    return apiClient.delete('/auth/avatar');
+  },
   updateProfile(...args) {
     // Supports both (data) and legacy (userId, data)
     const data = args.length >= 2 ? args[1] : args[0];

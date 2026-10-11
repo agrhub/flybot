@@ -151,7 +151,15 @@ function photoFor(key) {
     }
     return imageCache.get(id);
 }
-s3Client.send = async (command) => ({ ContentType: 'image/jpeg', Body: Readable.from([photoFor(command?.input?.Key)]) });
+// Uploaded files other than photos (profile pictures) are kept in memory
+const uploads = new Map();
+s3Client.send = async (command) => {
+    const { Key, Body } = command?.input || {};
+    const name = command?.constructor?.name;
+    if (name === 'PutObjectCommand' && String(Key).startsWith('avatars/')) { uploads.set(Key, Body); return {}; }
+    if (name === 'DeleteObjectCommand') { uploads.delete(Key); return {}; }
+    return { ContentType: 'image/jpeg', Body: Readable.from([uploads.get(Key) || photoFor(Key)]) };
+};
 
 const DAY = 24 * HOUR_MS;
 const dayStart = (offsetDays) => { const d = new Date(Date.now() - offsetDays * DAY); d.setHours(0, 0, 0, 0); return d; };

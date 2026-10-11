@@ -65,6 +65,9 @@
 
         <el-table-column width="170" align="right">
           <template #default="{ row }">
+            <el-tooltip v-if="!row.emailVerified" :content="t('admin.users.verifyEmail')" placement="top">
+              <el-button link type="primary" :icon="CircleCheck" :loading="saving === row.id" @click="verifyEmail(row)" />
+            </el-tooltip>
             <template v-if="row.id !== authUser?.id">
               <el-button link :type="row.disabled ? 'primary' : 'warning'" :loading="saving === row.id" @click="toggleDisabled(row)">
                 {{ row.disabled ? t('admin.users.enable') : t('admin.users.disable') }}
@@ -96,7 +99,7 @@
 import { ref, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { Search, Refresh, Delete } from '@element-plus/icons-vue';
+import { Search, Refresh, Delete, CircleCheck } from '@element-plus/icons-vue';
 import api from '@/services/api';
 import { useAuth } from '@/composables/useAuth';
 import PageHeader from '@/components/common/PageHeader.vue';
@@ -182,6 +185,19 @@ const toggleDisabled = async (row) => {
     }
   }
   update(row, { disabled: !row.disabled });
+};
+
+const verifyEmail = async (row) => {
+  try {
+    await ElMessageBox.confirm(t('admin.users.verifyEmailConfirm', { email: row.email }), t('admin.users.verifyEmail'), {
+      type: 'warning',
+      confirmButtonText: t('common.confirm'),
+      cancelButtonText: t('common.cancel'),
+    });
+  } catch {
+    return;
+  }
+  update(row, { emailVerified: true });
 };
 
 const removeUser = async (row) => {

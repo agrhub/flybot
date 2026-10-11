@@ -104,3 +104,33 @@ test('an invited email joins on verification', async () => {
     const camera = await models.Camera.findOne({ deviceSerial: 'INV' }).lean();
     assert.deepEqual(camera.sharedWith.map(sh => String(sh.userId)), [String(later._id)]);
 });
+
+test('an existing but unconfirmed account shows as unverified until an admin confirms it', async () => {
+    const owner = await createUser({ role: 'manager' });
+    const admin = await createUser({ role: 'admin' });
+    const org = await newOrg(owner);
+    await createCamera(owner, { deviceSerial: 'UNV', orgId: org.id });
+    const member = await createUser({ email: 'Old.User@example.test', emailVerified: false });
+    await request(`/api/orgs/${org.id}/members`, { method: 'POST', as: owner, body: { email: 'old.user@example.test' } });
+    await request(`/api/orgs/${org.id}/members`, { method: 'POST', as: owner, body: { email: 'nobody@example.test' } });
+
+    const statusOf = async () => {
+        const list = (await json(await request('/api/orgs', { as: owner }))).body.organizations;
+        return Object.fromEntries(list[0].members.map(m => [m.email, m.status]));
+    };
+    const before = await statusOf();
+    assert.equal(before['old.user@example.test'], 'unverified');
+    assert.equal(before['nobody@example.test'], 'pending');
+
+    // Only "true" is accepted, and only admins
+    assert.equal((await request(`/api/admin/users/${member._id}`, { method: 'PUT', as: admin, body: { emailVerified: false } })).status, 400);
+    assert.equal((await request(`/api/admin/users/${member._id}`, { method: 'PUT', as: owner, body: { emailVerified: true } })).status, 403);
+    const res = await json(await request(`/api/admin/users/${member._id}`, { method: 'PUT', as: admin, body: { emailVerified: true } }));
+    assert.equal(res.status, 200);
+    assert.equal(res.body.user.emailVerified, true);
+
+    assert.equal((await statusOf())['old.user@example.test'], 'active');
+    const camera = await models.Camera.findOne({ deviceSerial: 'UNV' }).lean();
+    assert.ok(camera.sharedWith.some(sh => String(sh.userId) === String(member._id)), 'the member gets the organization cameras');
+    assert.ok(await models.AuditLog.exists({ action: 'user.email_verified' }));
+});

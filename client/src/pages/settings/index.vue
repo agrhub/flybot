@@ -102,12 +102,32 @@
 
           <el-card shadow="never">
             <div class="flex items-center gap-4 mb-6">
-              <el-avatar :size="64" shape="square" class="settings-avatar">
+              <el-avatar :size="64" shape="square" class="settings-avatar" :src="authUser?.avatar || undefined">
                 {{ profileForm.name ? profileForm.name.charAt(0).toUpperCase() : 'U' }}
               </el-avatar>
               <div>
                 <p class="settings-label">{{ t('settings.avatarLabel') }}</p>
                 <p class="settings-meta mt-1">{{ t('settings.avatarHint') }}</p>
+                <div class="flex flex-wrap items-center gap-2 mt-2">
+                  <el-upload
+                    :show-file-list="false"
+                    :accept="AVATAR_TYPES.join(',')"
+                    :before-upload="checkAvatar"
+                    :http-request="uploadAvatar"
+                  >
+                    <el-button size="small" :icon="Upload" :loading="avatarBusy === 'upload'">
+                      {{ authUser?.avatar ? t('settings.avatarChange') : t('settings.avatarUpload') }}
+                    </el-button>
+                  </el-upload>
+                  <el-button
+                    v-if="authUser?.avatar"
+                    size="small"
+                    link
+                    type="danger"
+                    :loading="avatarBusy === 'remove'"
+                    @click="removeAvatar"
+                  >{{ t('settings.avatarRemove') }}</el-button>
+                </div>
               </div>
             </div>
 
@@ -737,8 +757,10 @@ import {
   Camera,
   Tools,
   Tickets,
-  DataLine
+  DataLine,
+  Upload
 } from '@element-plus/icons-vue';
+import { AVATAR_MAX_BYTES, AVATAR_TYPES, toAvatarBlob } from '@/utils/avatarImage';
 import { useNotifications } from '@/composables/useNotifications';
 
 const route = useRoute();
@@ -1057,6 +1079,45 @@ onMounted(() => {
   } catch (e) {}
 });
 
+const avatarBusy = ref(null);
+
+const checkAvatar = (file) => {
+  if (!AVATAR_TYPES.includes(file.type)) {
+    ElNotification({ title: t('common.error'), message: t('settings.avatarType'), type: 'warning' });
+    return false;
+  }
+  if (file.size > AVATAR_MAX_BYTES) {
+    ElNotification({ title: t('common.error'), message: t('settings.avatarTooBig'), type: 'warning' });
+    return false;
+  }
+  return true;
+};
+
+const uploadAvatar = async ({ file }) => {
+  avatarBusy.value = 'upload';
+  try {
+    const res = await api.uploadAvatar(await toAvatarBlob(file));
+    setAuth(res.data.user);
+    ElNotification({ title: t('common.success'), message: t('settings.avatarSaved'), type: 'success' });
+  } catch (err) {
+    ElNotification({ title: t('common.error'), message: err.response?.data?.message || t('settings.avatarFailed'), type: 'error' });
+  } finally {
+    avatarBusy.value = null;
+  }
+};
+
+const removeAvatar = async () => {
+  avatarBusy.value = 'remove';
+  try {
+    const res = await api.deleteAvatar();
+    setAuth(res.data.user);
+  } catch (err) {
+    ElNotification({ title: t('common.error'), message: err.response?.data?.message || t('settings.avatarFailed'), type: 'error' });
+  } finally {
+    avatarBusy.value = null;
+  }
+};
+
 const saveProfile = async () => {
   try {
     const user = JSON.parse(localStorage.getItem('user')) || {};
@@ -1065,7 +1126,7 @@ const saveProfile = async () => {
     savingProfile.value = true;
     const res = await api.updateProfile(user.id, { name: profileForm.name });
     if (res.data?.success) {
-      localStorage.setItem('user', JSON.stringify(res.data.user));
+      setAuth(res.data.user);
       ElNotification({ title: t('common.success'), message: t('settings.saveProfile') + ' ✓', type: 'success' });
     } else {
       ElNotification({ title: t('common.error'), message: res.data?.message || t('settings.saveFailed'), type: 'error' });

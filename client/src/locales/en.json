@@ -76,7 +76,7 @@
     "appearance": "Language & theme"
   },
   "auth": {
-    "tagline": "Smart Trap & Vision AI Studio",
+    "tagline": "Smart insect traps with AI counting",
     "accountEmail": "Account Email",
     "password": "Password",
     "loginBtn": "Sign In to Studio",
@@ -583,6 +583,13 @@
     "profileSub": "Manage personal profile, display name and credentials",
     "avatarLabel": "Profile Avatar",
     "avatarHint": "JPG, PNG max 2MB.",
+    "avatarUpload": "Upload photo",
+    "avatarChange": "Change photo",
+    "avatarRemove": "Remove",
+    "avatarSaved": "Profile photo updated.",
+    "avatarFailed": "The photo could not be saved. Please try again.",
+    "avatarType": "Please choose a JPG or PNG image.",
+    "avatarTooBig": "The image must be 2 MB or smaller.",
     "namePlaceholder": "Enter full name...",
     "passwordSub": "Change password periodically to enhance security",
     "newPasswordHint": "At least 6 characters...",
@@ -1299,6 +1306,8 @@
       "active": "Active",
       "disabled": "Disabled",
       "unverified": "Email not confirmed",
+      "verifyEmail": "Mark email as confirmed",
+      "verifyEmailConfirm": "Mark {email} as confirmed? Only do this if you know the address belongs to this person. Pending invitations to it take effect right away.",
       "joined": "Joined",
       "enable": "Enable",
       "disable": "Disable",
@@ -1726,6 +1735,7 @@
         "role_changed": "Role changed",
         "disabled": "Account disabled",
         "enabled": "Account enabled",
+        "email_verified": "Email confirmed by an admin",
         "deleted": "Account deleted"
       },
       "camera": {
@@ -2040,6 +2050,7 @@
     "added": "Member added.",
     "invited": "Invitation sent. They get access once they create an account and confirm this email.",
     "pending": "Invited, no account yet",
+    "unverified": "Has an account, email not confirmed yet. Access starts once it is confirmed.",
     "remove": "Remove",
     "removeConfirm": "Remove {email} from the organization?",
     "leave": "Leave",

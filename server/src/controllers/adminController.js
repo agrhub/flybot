@@ -4,6 +4,7 @@ const { ROLES, roleOf } = require('../constants/roles');
 const { sendServerError } = require('../utils/http');
 const { recordAudit, AUDIT_ACTIONS, CATEGORIES } = require('../services/auditService');
 const trainingSync = require('../services/trainingSync');
+const { claimPendingShares } = require('./shareController');
 
 const MAX_PAGE_SIZE = 100;
 const escapeRegex = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -72,13 +73,17 @@ async function wouldRemoveLastAdmin(target) {
 async function updateUser(req, res) {
     try {
         const { userId } = req.params;
-        const { role, disabled } = req.body;
+        const { role, disabled, emailVerified } = req.body;
         if (!mongoose.isValidObjectId(userId)) return res.status(404).json({ success: false, message: "User not found." });
         if (role !== undefined && !ROLES.includes(role)) {
             return res.status(400).json({ success: false, message: `role must be one of ${ROLES.join(', ')}.` });
         }
         if (disabled !== undefined && typeof disabled !== 'boolean') {
             return res.status(400).json({ success: false, message: "disabled must be true or false." });
+        }
+        // Admins can confirm an address for the user (never take a confirmation back)
+        if (emailVerified !== undefined && emailVerified !== true) {
+            return res.status(400).json({ success: false, message: "emailVerified can only be set to true." });
         }
 
         const target = await User.findById(userId);
@@ -95,6 +100,8 @@ async function updateUser(req, res) {
 
         const previousRole = roleOf(target);
         const wasDisabled = !!target.disabled;
+        const wasVerified = !!target.emailVerified;
+        if (emailVerified === true) target.emailVerified = true;
         if (role !== undefined) target.role = role;
         if (disabled !== undefined) {
             target.disabled = disabled;
@@ -107,6 +114,8 @@ async function updateUser(req, res) {
             }
         }
         await target.save();
+        // Invitations sent to this address while it was unconfirmed become real access now
+        if (emailVerified === true && !wasVerified) await claimPendingShares(target);
 
         const auditTarget = { type: 'user', id: String(target._id), label: target.email };
         if (role !== undefined && role !== previousRole) {
@@ -114,6 +123,9 @@ async function updateUser(req, res) {
         }
         if (disabled !== undefined && disabled !== wasDisabled) {
             recordAudit(req, { action: disabled ? 'user.disabled' : 'user.enabled', target: auditTarget });
+        }
+        if (emailVerified === true && !wasVerified) {
+            recordAudit(req, { action: 'user.email_verified', target: auditTarget });
         }
 
         const counts = await cameraCountsFor([target._id]);
@@ -198,6 +210,9 @@ async function deleteUser(req, res) {
         await require('../services/ezvizRamService').deleteAccount(target)
             .catch(err => console.warn('⚠️ EZVIZ sub-account not deleted:', err.message));
         await User.deleteOne({ _id: target._id });
+        const avatarService = require('../services/avatarService');
+        const avatarKey = avatarService.avatarKeyOf(target);
+        if (avatarKey) await avatarService.removeFile(avatarKey);
         recordAudit(req, { action: 'user.deleted', target: { type: 'user', id: String(target._id), label: target.email }, details: { role: roleOf(target) } });
         res.json({ success: true });
     } catch (err) {

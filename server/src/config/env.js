@@ -23,8 +23,18 @@ if (foundEnv) {
 }
 
 // Configure Google Application Credentials for Vertex AI
-if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-    const credPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+// Stray quotes around the value (e.g. ''./key.json') would otherwise become part of the path
+const configuredCred = (process.env.GOOGLE_APPLICATION_CREDENTIALS || '').trim().replace(/^['"]+|['"]+$/g, '');
+const defaultGcpPaths = [
+    path.resolve(process.cwd(), 'gcp-service-account.json'),
+    path.resolve(process.cwd(), '../gcp-service-account.json'),
+    path.resolve(__dirname, 'gcp-service-account.json'),
+    path.resolve(__dirname, '../gcp-service-account.json'),
+    path.resolve(__dirname, '../../gcp-service-account.json'),
+    path.resolve(__dirname, '../../../gcp-service-account.json')
+];
+if (configuredCred) {
+    const credPath = configuredCred;
     const candidateCredPaths = [
         path.resolve(process.cwd(), credPath),
         path.resolve(process.cwd(), '..', credPath),
@@ -34,20 +44,10 @@ if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
         path.resolve(__dirname, '../../..', credPath)
     ];
     const foundCred = candidateCredPaths.find(p => fs.existsSync(p));
-    if (foundCred) {
-        process.env.GOOGLE_APPLICATION_CREDENTIALS = foundCred;
-    } else {
-        process.env.GOOGLE_APPLICATION_CREDENTIALS = path.resolve(credPath);
-    }
+    const fallback = foundCred ? null : defaultGcpPaths.find(p => fs.existsSync(p));
+    if (fallback) console.warn(`⚠️ GOOGLE_APPLICATION_CREDENTIALS file "${credPath}" not found; using ${fallback}`);
+    process.env.GOOGLE_APPLICATION_CREDENTIALS = foundCred || fallback || path.resolve(credPath);
 } else {
-    const defaultGcpPaths = [
-        path.resolve(process.cwd(), 'gcp-service-account.json'),
-        path.resolve(process.cwd(), '../gcp-service-account.json'),
-        path.resolve(__dirname, 'gcp-service-account.json'),
-        path.resolve(__dirname, '../gcp-service-account.json'),
-        path.resolve(__dirname, '../../gcp-service-account.json'),
-        path.resolve(__dirname, '../../../gcp-service-account.json')
-    ];
     const foundDefaultGcp = defaultGcpPaths.find(p => fs.existsSync(p));
     if (foundDefaultGcp) {
         process.env.GOOGLE_APPLICATION_CREDENTIALS = foundDefaultGcp;

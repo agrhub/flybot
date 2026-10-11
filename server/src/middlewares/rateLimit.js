@@ -70,8 +70,12 @@ const reportSendQuota = createQuota({ windowMs: 60 * 60 * 1000, max: 5 });
 
 const emailKey = (req) => (typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '');
 
+// Avatar changes: 20 per person per 10 minutes
+const avatarLimiter = rateLimit({ windowMs: 10 * 60 * 1000, max: 20, includeIp: false, keyFn: (req) => `avatar:${req.user?.id}` });
+
 module.exports = {
     rateLimit,
+    avatarLimiter,
     createQuota,
     captureQuota,
     reportSendQuota,

@@ -44,7 +44,7 @@ const LIVE_STILL = `
 // stand-in model picks the tool from the question)
 const ASK = (question, wait = 6000) => `
   const panel = () => document.getElementById('smart-trap-assistant-sidebar');
-  if (!panel() || getComputedStyle(panel()).display === 'none') { [...document.querySelectorAll('button')].find(b => b.innerText.includes('Assistant')).click(); await sleep(1200); }
+  if (!panel() || getComputedStyle(panel()).display === 'none') { document.querySelector('[data-tour="assistant"]').click(); await sleep(1200); }
   panel().querySelector('.assistant-header button').click(); await sleep(800);
   const input = panel().querySelector('form input');
   input.value = ${JSON.stringify(question)}; input.dispatchEvent(new Event('input', { bubbles: true })); await sleep(300);
@@ -70,7 +70,7 @@ const MOBILE = [390, 844];
 const shots = [
     { name: 'dashboard', url: '/dashboard', settle: 6000 },
     { name: 'diagnosis', url: '/dashboard', action: `
-        const b = [...document.querySelectorAll('button')].find(b => b.closest('.el-card')?.innerText.includes('Copilot') && b.querySelector('.el-icon'));
+        const b = [...document.querySelectorAll('.el-card button')].find(b => b.innerText.includes(${JSON.stringify(W('Chẩn đoán lại bằng AI', 'Re-evaluate with AI'))}));
         b.click(); for (let i = 0; i < 40 && !document.querySelector('.dd-panel'); i++) await sleep(300);
         await sleep(1500); document.querySelectorAll('.el-notification').forEach(n => n.remove());
         document.querySelector('.dd-panel').closest('.el-card').scrollIntoView({ block: 'start' }); await sleep(600);` },

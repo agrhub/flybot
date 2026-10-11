@@ -69,7 +69,10 @@ function request(path, { method = 'GET', body, headers = {}, as } = {}) {
     // A fresh client IP per request keeps per-IP rate limits out of the way
     const init = { method, headers: { 'X-Forwarded-For': `10.50.${Math.floor(++ipCounter / 250)}.${ipCounter % 250}`, ...headers } };
     if (as) init.headers.Authorization = `Bearer ${tokenFor(as)}`;
-    if (body !== undefined) {
+    if (Buffer.isBuffer(body)) {
+        // Raw upload (e.g. an image): the caller sets Content-Type
+        init.body = body;
+    } else if (body !== undefined) {
         init.headers['Content-Type'] = 'application/json';
         init.body = JSON.stringify(body);
     }

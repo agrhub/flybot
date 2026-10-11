@@ -15,8 +15,8 @@
         <div class="min-w-0 flex-1">
           <div class="flex items-center gap-1.5 min-w-0">
             <span class="assistant-title truncate">{{ t('assistant.title') }}</span>
-            <el-tag type="success" effect="light" size="small" class="font-mono">
-              #{{ activeContext }}
+            <el-tag v-if="contextLabel" type="success" effect="light" size="small">
+              {{ contextLabel }}
             </el-tag>
           </div>
           <div class="flex items-center gap-1.5 mt-0.5 min-w-0">
@@ -238,6 +238,8 @@ const props = defineProps({
 const emit = defineEmits(['navigate', 'select-camera']);
 
 const { t, te } = useI18n();
+// The page the assistant answers about, by its menu name
+const contextLabel = computed(() => (te(`nav.${props.activeContext}`) ? t(`nav.${props.activeContext}`) : ''));
 const { isAssistantOpen, closeAssistant, assistantQuestion } = useTheme();
 // Desktop: a column next to the page; tablet: panel over it; phone: full screen
 const { isDesktop } = useBreakpoints();
