@@ -67,6 +67,10 @@ export default {
   sendContact(data) {
     return apiClient.post('/public/contact', data);
   },
+  // New camera with its trap kind ("sticky" | "lure")
+  createCamera(data) {
+    return apiClient.post('/user/add-camera', data);
+  },
   getAuthConfig() {
     return apiClient.get('/auth/config');
   },
@@ -384,13 +388,19 @@ export default {
     if (endDate) params.append('endDate', endDate);
     return apiClient.get(`/ai/results?${params.toString()}`);
   },
-  getStatistics(deviceSerial = 'all', mode = 'hour', startDate = null, endDate = null) {
+  getStatistics(deviceSerial = 'all', mode = 'hour', startDate = null, endDate = null, metric = null) {
     const params = new URLSearchParams();
+    // metric "catches": insects caught per day instead of the count on the traps
+    if (metric) params.append('metric', metric);
     if (deviceSerial) params.append('deviceSerial', deviceSerial);
     if (mode) params.append('mode', mode);
     if (startDate) params.append('startDate', startDate);
     if (endDate) params.append('endDate', endDate);
     return apiClient.get(`/ai/statistics?${params.toString()}`);
+  },
+  // Analytics insights: per-trap table, daily catches, activity by hour, temperatures
+  getInsights(deviceSerial = 'all', days = 14) {
+    return apiClient.get('/ai/insights', { params: { deviceSerial, days } });
   },
   // This period vs the previous one, overall and per camera (days: 7 | 14 | 30)
   getComparison(days = 7) {

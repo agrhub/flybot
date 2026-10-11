@@ -1,6 +1,11 @@
 const { Snapshot } = require('../../models');
 const { viewableCameras } = require('../../utils/ownership');
 const dailyStats = require('../../services/dailyStats');
+const catchStats = require('../../services/catchStats');
+const { latestProcessedByCamera } = require('../../services/snapshotQueries');
+const { countPests } = require('../../services/notificationService');
+const { thresholdOf, riskLevel } = require('../../constants/risk');
+const { trapKindOf } = require('../../constants/trap');
 
 const getInsectStatisticsDeclaration = {
     name: 'get_insect_statistics',
@@ -186,16 +191,69 @@ async function executeGetOverviewMetrics({ userId, user }) {
         const rollup = await dailyStats.rows(allowedSerials, dailyStats.startKeyForDays(30));
         const speciesAgg = dailyStats.speciesTotals(rollup, 'total').map(sp => ({ _id: sp.name, total: sp.value }));
 
-        let totalInsects = 0;
-        speciesAgg.forEach(s => totalInsects += s.total);
+        const catches = await catchStats.overview(allowedSerials);
 
         return {
             totalSnapshots,
             last24hCount,
-            totalInsects,
+            // Insects that arrived on the traps (daily rise of sticky cards; flies present on average for lure traps)
+            insectsCaughtLast30Days: catches.periods.month.total,
+            insectsCaughtLast7Days: catches.last7,
+            fliesPerTrapPerDayLast7Days: catches.ftd7,
             topSpecies: speciesAgg.length > 0 ? speciesAgg[0]._id : 'Unknown',
             speciesPeriod: 'last 30 days',
-            speciesDistribution: speciesAgg.map(s => ({ species: s._id, count: s.total }))
+            // Share of each species among detections (relative only)
+            speciesShare: speciesAgg.map(s => ({ species: s._id, sharePct: Math.round((s.total / (speciesAgg.reduce((a, b) => a + b.total, 0) || 1)) * 100) }))
+        };
+    } catch (err) {
+        return { error: err.message };
+    }
+}
+
+const getCatchSummaryDeclaration = {
+    name: 'get_catch_summary',
+    description: 'Per-trap pest pressure: count on the trap now vs its alert threshold, insects caught today and over 7 days, flies per trap per day (FTD) and the change vs the previous 7 days, plus the farm totals. Use it for "how bad is it", "which trap is worst", "is it rising".',
+    parameters: { type: 'OBJECT', properties: {} }
+};
+
+async function executeGetCatchSummary({ userId, user }) {
+    try {
+        if (!userId) return { error: 'Not authenticated.' };
+        const cams = await viewableCameras(user).select('deviceSerial deviceName status alertThreshold trapKind cardReplacedAt').lean();
+        const unique = [...new Map(cams.map(c => [c.deviceSerial, c])).values()];
+        if (!unique.length) return { traps: [], note: 'No cameras.' };
+        const serials = unique.map(c => c.deviceSerial);
+        const [catches, latest] = await Promise.all([catchStats.overview(serials), latestProcessedByCamera(serials)]);
+        const traps = unique.map(cam => {
+            const snap = latest.get(cam.deviceSerial);
+            const onTrap = snap ? countPests(snap.summary instanceof Map ? Object.fromEntries(snap.summary) : snap.summary) : 0;
+            const c = catches.perCamera[cam.deviceSerial] || {};
+            return {
+                name: cam.deviceName || cam.deviceSerial,
+                serial: cam.deviceSerial,
+                trapKind: trapKindOf(cam),
+                online: cam.status === 1,
+                onTrapNow: onTrap,
+                alertThreshold: thresholdOf(cam),
+                risk: riskLevel(onTrap, thresholdOf(cam)),
+                caughtToday: c.today ?? null,
+                caughtLast7Days: c.last7 ?? null,
+                fliesPerTrapPerDay7: c.ftd7 ?? null,
+                changeVsPrevious7DaysPct: c.changePct ?? null,
+                cardAgeDays: cam.cardReplacedAt ? Math.floor((Date.now() - new Date(cam.cardReplacedAt).getTime()) / 86400000) : null
+            };
+        }).sort((a, b) => (b.fliesPerTrapPerDay7 ?? -1) - (a.fliesPerTrapPerDay7 ?? -1));
+        return {
+            farm: {
+                caughtToday: catches.today,
+                caughtYesterday: catches.yesterday,
+                caughtLast7Days: catches.last7,
+                caughtPrevious7Days: catches.prev7,
+                fliesPerTrapPerDay7: catches.ftd7,
+                changePct: catches.changePct
+            },
+            traps,
+            notes: 'sticky = glue card, counts accumulate until the card is replaced; lure = no glue, a photo shows the flies present at that moment (daily figure = average per photo). Alert thresholds compare the count in the latest photo.'
         };
     } catch (err) {
         return { error: err.message };
@@ -204,11 +262,13 @@ async function executeGetOverviewMetrics({ userId, user }) {
 
 module.exports = {
     analyticsDeclarations: [
+        getCatchSummaryDeclaration,
         getInsectStatisticsDeclaration,
         getRecentSnapshotsDeclaration,
         getOverviewMetricsDeclaration
     ],
     analyticsExecutors: {
+        get_catch_summary: executeGetCatchSummary,
         get_insect_statistics: executeGetInsectStatistics,
         get_recent_snapshots: executeGetRecentSnapshots,
         get_overview_metrics: executeGetOverviewMetrics

@@ -53,6 +53,7 @@ const cameraOut = (cam, latest) => ({
     deviceSerial: cam.deviceSerial,
     name: cam.deviceName,
     online: cam.status === 1,
+    trapKind: cam.trapKind || 'sticky',
     latitude: Number.isFinite(cam.latitude) ? cam.latitude : null,
     longitude: Number.isFinite(cam.longitude) ? cam.longitude : null,
     alertThreshold: thresholdOf(cam),

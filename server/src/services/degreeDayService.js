@@ -1,6 +1,7 @@
 const { MaintenanceEvent } = require('../models');
 const dailyStats = require('./dailyStats');
-const { dailyCatches } = require('./treatmentService');
+const { dailyValues } = require('./treatmentService');
+const { trapKindOf } = require('../constants/trap');
 const weatherService = require('./weatherService');
 
 /**
@@ -126,7 +127,8 @@ async function forCameras(cameras, now = new Date()) {
     const catchesByDay = new Map();
     for (const serial of serials) {
         const cardDays = new Set(cardEvents.filter(e => e.deviceSerial === serial).map(e => dailyStats.dayKeyOf(e.at)));
-        const catches = dailyCatches(rows.filter(r => r.deviceSerial === serial), cardDays, fromKey, today);
+        const camera = cameras.find(c => c.deviceSerial === serial);
+        const catches = dailyValues(rows.filter(r => r.deviceSerial === serial), cardDays, fromKey, today, trapKindOf(camera));
         for (const [day, value] of catches) {
             if (value === null) continue;
             catchesByDay.set(day, (catchesByDay.get(day) || 0) + value);

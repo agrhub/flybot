@@ -160,6 +160,8 @@ models.AuditLog.create = async (data) => data;
 
 // SystemSetting: nothing saved, so the environment defaults apply
 models.SystemSetting.findOne = () => query(() => null);
+// No maintenance events (card changes) in the stub store
+models.MaintenanceEvent.find = () => query(() => []);
 // No webhooks in the stub store
 models.Webhook.find = () => query(() => []);
 

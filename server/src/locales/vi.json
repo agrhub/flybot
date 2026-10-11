@@ -314,6 +314,7 @@
     "days_must_be_one_of_list": "Số ngày phải là một trong: {list}.",
     "role_must_be_one_of_list": "Vai trò phải là một trong: {list}.",
     "type_must_be_one_of_list": "Loại phải là một trong: {list}.",
+    "trapkind_must_be_one_of_list": "Loại bẫy phải là một trong: {list}.",
     "widget_type_must_be_one_of_list": "Loại widget phải là một trong: {list}.",
     "field_must_be_at_most_max_characters": "{field} tối đa {max} ký tự.",
     "a_dashboard_can_have_at_most_max_widgets": "Mỗi bảng tùy chỉnh có tối đa {max} widget.",

@@ -248,7 +248,32 @@
         "dry": "dry air shortens adult fly lifespan",
         "moderate": "normal conditions"
       }
-    }
+    },
+    "catchesToday": "Flies caught today",
+    "catchesYesterday": "Yesterday: {count}",
+    "catchesHint": "All traps, since midnight",
+    "ftd7": "Flies/trap/day (7 days)",
+    "ftdUnit": "per trap per day",
+    "ftdPrev": "Previous week: {value}{change}",
+    "ftdHint": "The standard fruit fly monitoring figure",
+    "riskBasis": "Against each trap threshold",
+    "onTrapNow": "on trap",
+    "presentNow": "present",
+    "camCatches": "Today +{today} · {ftd}/day",
+    "camPresence": "Today avg {today} · {ftd}/day",
+    "catchStatsTitle": "Flies caught",
+    "catchStatsDesc": "New flies per day, all traps",
+    "statTotal": "Flies caught",
+    "statTotalUnit": "flies",
+    "statFtd": "Flies/trap/day",
+    "statAvgDay": "Average per day",
+    "statAvgDayUnit": "flies/day (all traps)",
+    "statMaxDay": "Busiest day",
+    "catchChartTitle": "Flies caught in the last 14 days",
+    "catchChartDesc": "New flies per day, stacked by trap",
+    "moreAnalytics": "Detailed analytics",
+    "forecastBasis": "Following {name}: forecast new flies per day (+) added to the count on the glue card, against the trap threshold.",
+    "forecastBasisLure": "Following {name}: forecast average flies present per day, against the trap threshold."
   },
   "cameras": {
     "title": "Camera Surveillance & Management",
@@ -423,8 +448,8 @@
     "period7Days": "Past 7 Days",
     "period30Days": "Past 30 Days",
     "periodCustom": "Custom Range...",
-    "realtimeDensityTrap": "Trap Realtime Density",
-    "realtimeHotspotMax": "Hotspot Realtime Peak (Max)",
+    "realtimeDensityTrap": "On the trap now",
+    "realtimeHotspotMax": "Highest on any trap",
     "insectsUnit": "insects",
     "peakAcrossTraps": "Peak across camera traps",
     "startDate": "Start date",
@@ -467,12 +492,12 @@
       "title": "Period comparison",
       "subtitle": "Last {days} days vs the {days} days before, all cameras",
       "days": "{days} days",
-      "totalInsects": "Insects counted",
-      "avgPerScan": "Average per scan",
-      "peak": "Highest count",
+      "totalInsects": "Flies caught",
+      "avgPerScan": "Flies/trap/day",
+      "peak": "Highest on a trap",
       "vsPrevious": "{change} vs previous period",
       "noPrevious": "No data in the previous period",
-      "ranking": "Cameras ranked by insects counted",
+      "ranking": "Cameras ranked by flies caught",
       "camera": "Camera",
       "scans": "Scans",
       "change": "Change"
@@ -496,7 +521,14 @@
       "exportEmpty": "No corrected snapshots in the last 90 days.",
       "exported": "Exported {count} corrected snapshots."
     },
-    "exportMenu": "Export"
+    "exportMenu": "Export",
+    "catchesChart": "New flies per day",
+    "catchesChartHint": "Flies arriving each day (rise on the glue card; average present for lure traps)",
+    "onTrapChartHint": "Count in the photos: on a glue card it grows until the card is replaced; dashed lines mark card changes",
+    "metricCatches": "New flies",
+    "metricOnTrap": "On trap",
+    "catchesInPeriod": "Flies caught in the period",
+    "catchesInPeriodDesc": "Total new flies in the chosen range"
   },
   "settings": {
     "title": "System Settings",
@@ -1022,7 +1054,9 @@
     "heatmap": "Heatmap",
     "noLocation": "No location",
     "setLocation": "Set location",
-    "plots": "Plots"
+    "plots": "Plots",
+    "popupToday": "Today",
+    "popupFtd": "Flies/trap/day"
   },
   "species": {
     "fruitFly": "Fruit Fly",
@@ -1740,5 +1774,53 @@
   },
   "legal": {
     "contactFallback": "the Contact page"
+  },
+  "trapKind": {
+    "label": "Trap type",
+    "sticky": {
+      "name": "Sticky trap (glue card)",
+      "short": "Sticky",
+      "hint": "Flies stick to the card, so the count grows until the card is replaced. Daily catch = the rise."
+    },
+    "lure": {
+      "name": "Lure trap (no glue)",
+      "short": "Lure",
+      "hint": "Only an attractant: flies come in and can fly away. A photo shows the flies present; the daily figure = average per photo.",
+      "maintenanceHint": "A lure trap has no glue card, so there is no card reminder. Log lure refills and lens cleaning."
+    }
+  },
+  "insights": {
+    "tab": "Insights",
+    "howToRead": "Sticky traps: the daily catch is the rise on the glue card (card-change days are not counted). Lure traps: the average number of flies present per photo. \"Flies per trap per day\" is the standard figure to compare traps and weeks.",
+    "dailyTitle": "Flies per day by trap",
+    "dailyDesc": "Last {days} days, stacked by trap",
+    "catchesAxis": "Flies per day",
+    "weatherTitle": "Temperature and flies",
+    "weatherDesc": "Daily high and low at the trap location, next to the total flies",
+    "weatherMissing": "Add a GPS location to a camera to see temperatures",
+    "tempAxis": "Temperature (°C)",
+    "tempMax": "High (°C)",
+    "tempMin": "Low (°C)",
+    "activityTitle": "Flies arriving by hour",
+    "activityDesc": "The darker, the more flies arrived in that hour (last 14 days)",
+    "activityPeak": "Most flies arrive around {from}:00 to {to}:00, a good time to bait or check traps",
+    "activityCell": "{day}, {hour}:00: {value}",
+    "less": "Less",
+    "more": "More",
+    "tableTitle": "Trap summary",
+    "tableDesc": "Sorted by flies per trap per day over the last 7 days; click a row to open the camera",
+    "days": "{n} days",
+    "col": {
+      "trap": "Trap",
+      "kind": "Type",
+      "onTrap": "Now / threshold",
+      "today": "Today",
+      "total": "{days} days",
+      "ftd": "Flies/trap/day",
+      "change": "vs before",
+      "trend": "14 days",
+      "card": "Card age",
+      "photo": "Photo"
+    }
   }
 }

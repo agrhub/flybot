@@ -111,7 +111,18 @@
         />
       </el-tab-pane>
 
-      <!-- Tab 2: Snapshot History & Inspection -->
+      <!-- Tab 2: Insights (per-trap table, daily catches, activity by hour, weather) -->
+      <el-tab-pane name="insights">
+        <template #label>
+          <span class="inline-flex items-center gap-1.5">
+            <el-icon><DataAnalysis /></el-icon>
+            <span>{{ t('insights.tab') }}</span>
+          </span>
+        </template>
+        <InsightsTab :camera="selectedCamera" :active="activeSubTab === 'insights'" />
+      </el-tab-pane>
+
+      <!-- Tab 3: Snapshot History & Inspection -->
       <el-tab-pane name="history">
         <template #label>
           <span class="inline-flex items-center gap-1.5">
@@ -136,12 +147,13 @@ import { useI18n } from 'vue-i18n';
 import { useCameras } from '@/composables/useCameras';
 import StatisticsTab from './tabs/StatisticsTab.vue';
 import HistoryTab from './tabs/HistoryTab.vue';
+import InsightsTab from './tabs/InsightsTab.vue';
 import api from '@/services/api';
 import { loadPdf, loadExcelWriter } from '@/utils/lazyLibs';
 import { useBreakpoints } from '@/composables/useBreakpoints';
 import { formatSummary, normalizeSummary } from '@/utils/species';
 import { ElNotification } from 'element-plus';
-import { Calendar, Document, Download, Files, List, TrendCharts, VideoCamera } from '@element-plus/icons-vue';
+import { Calendar, Document, Download, Files, List, TrendCharts, VideoCamera, DataAnalysis } from '@element-plus/icons-vue';
 import PageHeader from '@/components/common/PageHeader.vue';
 
 const { t, locale } = useI18n();

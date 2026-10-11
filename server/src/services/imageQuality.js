@@ -147,7 +147,7 @@ async function baselineFor(deviceSerial) {
  * @param {{ sharpness, contrast } | null} baseline
  * @param {number} count  insects counted by the AI
  */
-function assess(m, baseline, count = 0, { daylight = true } = {}) {
+function assess(m, baseline, count = 0, { daylight = true, sticky = true } = {}) {
     const issues = new Set();
     if (m.brightness < DARK_BRIGHTNESS) {
         if (daylight) issues.add('dark');
@@ -158,7 +158,8 @@ function assess(m, baseline, count = 0, { daylight = true } = {}) {
         if (edgeRatio(baseline) > 0 && edgeRatio(m) < edgeRatio(baseline) * BLUR_RATIO) issues.add('blurry');
         if (baseline.contrast > 0 && m.contrast < baseline.contrast * HAZE_RATIO) issues.add('low_contrast');
     }
-    if ((m.coverage !== null && m.coverage !== undefined && m.coverage >= FULL_COVERAGE) || count >= FULL_COUNT) issues.add('card_full');
+    // Only a glue card fills up
+    if (sticky && ((m.coverage !== null && m.coverage !== undefined && m.coverage >= FULL_COVERAGE) || count >= FULL_COUNT)) issues.add('card_full');
     return ISSUES.filter(issue => issues.has(issue));
 }
 
@@ -174,7 +175,8 @@ async function checkSnapshot(snapshot, buffer, { count = 0 } = {}) {
     metrics.coverage = coverageOf(snapshot.aiResults?.insects, sample.imageWidth, sample.imageHeight);
     const baseline = await baselineFor(snapshot.deviceSerial);
     const hour = Number(new Intl.DateTimeFormat('en-GB', { timeZone: TIMEZONE, hour: '2-digit', hourCycle: 'h23' }).format(snapshot.createdAt || new Date()));
-    const issues = assess(metrics, baseline, count, { daylight: hour >= DAYLIGHT_HOURS[0] && hour < DAYLIGHT_HOURS[1] });
+    const sticky = !(await Camera.exists({ deviceSerial: snapshot.deviceSerial, trapKind: 'lure' }));
+    const issues = assess(metrics, baseline, count, { daylight: hour >= DAYLIGHT_HOURS[0] && hour < DAYLIGHT_HOURS[1], sticky });
     const quality = { ...metrics, issues, checkedAt: new Date() };
 
     const previous = await Snapshot.findOne({

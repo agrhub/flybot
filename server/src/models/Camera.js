@@ -37,7 +37,10 @@ const cameraSchema = new mongoose.Schema({
     latitude: { type: Number, default: null }, // GPS Latitude
     longitude: { type: Number, default: null }, // GPS Longitude
     locationAddress: { type: String, default: '' }, // Orchard address or plot name
-    trapType: { type: String, default: 'Yellow Sticky Trap' }, // Trap modality
+    trapType: { type: String, default: 'Yellow Sticky Trap' }, // Trap modality (free text)
+    // How counts behave (constants/trap.js): "sticky" glue card (counts accumulate) or
+    // "lure" trap without glue (a photo shows the flies present at that moment)
+    trapKind: { type: String, enum: ['sticky', 'lure'], default: 'sticky' },
     cropType: { type: String, default: 'Mango Orchard' }, // Agricultural crop
     // Pest alert fires when one scan counts at least this many insects
     alertThreshold: { type: Number, default: 15, min: 1 },

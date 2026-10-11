@@ -1,5 +1,7 @@
-const { DailyStat, MaintenanceEvent } = require('../models');
+const { DailyStat, MaintenanceEvent, Camera } = require('../models');
 const { dayKeyOf, DAY_MS } = require('./dailyStats');
+
+const { trapKindOf } = require('../constants/trap');
 
 const DEFAULT_WINDOW_DAYS = 7;
 // Fewer days than this after the treatment: too early to judge
@@ -35,6 +37,23 @@ function dailyCatches(rows, cardDays, fromKey, toKey) {
     return catches;
 }
 
+/**
+ * A trap's daily figure, by trap kind (constants/trap.js):
+ *  sticky - insects caught that day (dailyCatches)
+ *  lure   - flies present on average per photo that day (rows need total and scans)
+ * Returns Map(day -> value|null) for every day from fromKey to toKey.
+ */
+function dailyValues(rows, cardDays, fromKey, toKey, kind = 'sticky') {
+    if (kind !== 'lure') return dailyCatches(rows, cardDays, fromKey, toKey);
+    const byDay = new Map(rows.map(r => [r.day, r]));
+    const values = new Map();
+    for (let day = fromKey; day <= toKey; day = addDays(day, 1)) {
+        const r = byDay.get(day);
+        values.set(day, r && r.scans ? Math.round((r.total / r.scans) * 10) / 10 : null);
+    }
+    return values;
+}
+
 const average = (values) => {
     const known = values.filter(v => v !== null);
     return known.length ? Math.round((known.reduce((a, b) => a + b, 0) / known.length) * 10) / 10 : null;
@@ -59,7 +78,7 @@ async function effectOf(treatment, serials, { windowDays = DEFAULT_WINDOW_DAYS, 
     const toKey = lastAfter < todayKey ? lastAfter : todayKey;
 
     const [rows, cardEvents] = await Promise.all([
-        DailyStat.find({ deviceSerial: { $in: serials }, day: { $gte: fromKey, $lte: toKey } }).select('deviceSerial day peak').lean(),
+        DailyStat.find({ deviceSerial: { $in: serials }, day: { $gte: fromKey, $lte: toKey } }).select('deviceSerial day peak total scans').lean(),
         MaintenanceEvent.find({
             deviceSerial: { $in: serials },
             type: 'card_replaced',
@@ -68,6 +87,7 @@ async function effectOf(treatment, serials, { windowDays = DEFAULT_WINDOW_DAYS, 
         }).select('deviceSerial at').lean()
     ]);
 
+    const kinds = new Map((await Camera.find({ deviceSerial: { $in: serials } }).select('deviceSerial trapKind').lean()).map(c => [c.deviceSerial, trapKindOf(c)]));
     const beforeKeys = [];
     for (let i = windowDays; i >= 1; i--) beforeKeys.push(addDays(treatedDay, -i));
     const afterKeys = [];
@@ -78,7 +98,7 @@ async function effectOf(treatment, serials, { windowDays = DEFAULT_WINDOW_DAYS, 
 
     const cameras = serials.map(serial => {
         const cardDays = new Set(cardEvents.filter(e => e.deviceSerial === serial).map(e => dayKeyOf(e.at)));
-        const catches = dailyCatches(rows.filter(r => r.deviceSerial === serial), cardDays, fromKey, toKey);
+        const catches = dailyValues(rows.filter(r => r.deviceSerial === serial), cardDays, fromKey, toKey, kinds.get(serial));
         const before = average(beforeKeys.map(k => catches.get(k) ?? null));
         const after = average(afterKeys.map(k => catches.get(k) ?? null));
         return { deviceSerial: serial, before, after, changePct: percentChange(before, after) };
@@ -103,5 +123,6 @@ async function effectOf(treatment, serials, { windowDays = DEFAULT_WINDOW_DAYS, 
 module.exports = {
     DEFAULT_WINDOW_DAYS,
     dailyCatches,
+    dailyValues,
     effectOf
 };

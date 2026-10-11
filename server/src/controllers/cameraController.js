@@ -7,6 +7,7 @@ const { sendServerError } = require('../utils/http');
 const { recordAudit } = require('../services/auditService');
 const { latestSnapshotTimeByCamera } = require('../services/snapshotQueries');
 const { CARD_REMINDER_DAYS, cardDueAt } = require('../services/maintenanceService');
+const { TRAP_KINDS, DEFAULT_TRAP_KIND } = require('../constants/trap');
 
 const cameraTarget = (camera) => ({ type: 'camera', id: camera.deviceSerial, label: camera.deviceName });
 const { viewFilter, viewableCameras, findViewableCamera, findManageableCamera, findOwnedCamera, canManageCamera } = require('../utils/ownership');
@@ -100,7 +101,10 @@ async function getUserCameras(req, res) {
 async function addCamera(req, res) {
     try {
         const userId = req.user.id;
-        const { deviceSerial, validateCode, deviceName: customName } = req.body;
+        const { deviceSerial, validateCode, deviceName: customName, trapKind } = req.body;
+        if (trapKind !== undefined && !TRAP_KINDS.includes(trapKind)) {
+            return res.status(400).json({ success: false, message: `trapKind must be one of ${TRAP_KINDS.join(', ')}.` });
+        }
         if (!deviceSerial || !validateCode) {
             return res.status(400).json({ success: false, message: "Missing deviceSerial or validateCode." });
         }
@@ -167,7 +171,8 @@ async function addCamera(req, res) {
             validateCode: validateCode.trim(),
             deviceName: deviceName.trim(),
             status,
-            alertThreshold: defaultAlertThreshold
+            alertThreshold: defaultAlertThreshold,
+            trapKind: trapKind || DEFAULT_TRAP_KIND
         });
 
         await newCamera.save();
@@ -221,7 +226,10 @@ async function deleteCamera(req, res) {
  */
 async function updateCamera(req, res) {
     const userId = req.user.id;
-    const { deviceSerial, deviceName, validateCode, alertThreshold, captureIntervalMinutes, captureDaytimeOnly, cardReminderDays } = req.body;
+    const { deviceSerial, deviceName, validateCode, alertThreshold, captureIntervalMinutes, captureDaytimeOnly, cardReminderDays, trapKind } = req.body;
+    if (trapKind !== undefined && !TRAP_KINDS.includes(trapKind)) {
+        return res.status(400).json({ success: false, message: `trapKind must be one of ${TRAP_KINDS.join(', ')}.` });
+    }
     if (!deviceSerial) return res.status(400).json({ success: false, message: "Missing deviceSerial." });
     if (typeof alertThreshold !== 'undefined' &&
         (!Number.isInteger(alertThreshold) || alertThreshold < 1 || alertThreshold > 10000)) {
@@ -241,7 +249,7 @@ async function updateCamera(req, res) {
         if (!camera) {
             return res.status(404).json({ success: false, message: "Device not found or permission denied." });
         }
-        const AUDITED_FIELDS = ['deviceName', 'validateCode', 'alertThreshold', 'captureIntervalMinutes', 'captureDaytimeOnly', 'cardReminderDays'];
+        const AUDITED_FIELDS = ['deviceName', 'validateCode', 'alertThreshold', 'captureIntervalMinutes', 'captureDaytimeOnly', 'cardReminderDays', 'trapKind'];
         const before = Object.fromEntries(AUDITED_FIELDS.map(field => [field, camera[field]]));
         if (typeof deviceName !== 'undefined') {
             camera.deviceName = deviceName.trim();
@@ -258,6 +266,7 @@ async function updateCamera(req, res) {
         if (typeof captureDaytimeOnly !== 'undefined') {
             camera.captureDaytimeOnly = captureDaytimeOnly;
         }
+        if (typeof trapKind !== 'undefined') camera.trapKind = trapKind;
         if (typeof cardReminderDays !== 'undefined') {
             camera.cardReminderDays = cardReminderDays;
         }
@@ -266,7 +275,7 @@ async function updateCamera(req, res) {
         if (changed.length) {
             // The verification code is a secret: record that it changed, not its value
             const details = { fields: changed };
-            for (const field of ['deviceName', 'alertThreshold', 'captureIntervalMinutes', 'captureDaytimeOnly', 'cardReminderDays']) {
+            for (const field of ['deviceName', 'alertThreshold', 'captureIntervalMinutes', 'captureDaytimeOnly', 'cardReminderDays', 'trapKind']) {
                 if (changed.includes(field)) details[field] = camera[field];
             }
             recordAudit(req, { action: 'camera.updated', target: cameraTarget(camera), details });

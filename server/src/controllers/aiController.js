@@ -14,6 +14,8 @@ const dailyStats = require('../services/dailyStats');
 const { cardDueAt } = require('../services/maintenanceService');
 const weatherService = require('../services/weatherService');
 const degreeDayService = require('../services/degreeDayService');
+const catchStats = require('../services/catchStats');
+const { trapKindOf, isSticky } = require('../constants/trap');
 
 /**
  * Get AI detection history with pagination (filter by specific camera or all cameras)
@@ -269,6 +271,19 @@ async function getAiStatistics(req, res) {
         // Daily and monthly charts come from the daily rollup; hourly (at most 7 days) from snapshots
         if (mode !== 'hour') {
             const serials = typeof matchQuery.deviceSerial === 'string' ? [matchQuery.deviceSerial] : matchQuery.deviceSerial.$in;
+            // Insects caught per day (rise of each card) instead of the count on the cards
+            if (req.query.metric === 'catches') {
+                const end = endDate || new Date();
+                const spanDays = Math.max(1, Math.ceil((end - startDate) / 86400000) + 1);
+                const data = await catchStats.catchesBySerial(serials, Math.min(spanDays, 400), end);
+                return res.json({
+                    success: true,
+                    mode: mode || 'day',
+                    metric: 'catches',
+                    deviceSerial: deviceSerial || 'all',
+                    data: catchStats.speciesCatchSeries(data, mode === 'month' ? 'month' : 'day')
+                });
+            }
             const rollup = await dailyStats.rows(serials, dailyStats.dayKeyOf(startDate), endDate ? dailyStats.dayKeyOf(endDate) : null);
             return res.json({
                 success: true,
@@ -471,6 +486,7 @@ async function getAiOverview(req, res) {
                 latitude: Number.isFinite(cam.latitude) ? cam.latitude : null,
                 longitude: Number.isFinite(cam.longitude) ? cam.longitude : null,
                 trapType: cam.trapType || 'Yellow Sticky Trap',
+                trapKind: trapKindOf(cam),
                 cropType: cam.cropType || 'Mango Orchard',
                 currentCount,
                 riskLevel: camRisk,
@@ -517,12 +533,18 @@ async function getAiOverview(req, res) {
             ? `${speciesAgg[0]._id} (${Math.round((speciesAgg[0].total / (allTimeSum || 1)) * 100)}%)`
             : '--';
 
-        // 5. Past 7-day trend: insects counted per day (all scans, all cameras)
-        const trendByDay = new Map();
-        for (const r of rollup7) trendByDay.set(r.day, (trendByDay.get(r.day) || 0) + r.total);
-        const trendAgg = [...trendByDay.keys()].sort().map(day => {
+        // 5. Catches: insects that arrived per day (rise of each card), the figure to act on
+        const catches = await catchStats.overview(cameraSerials);
+        for (const row of cameraRealtimeList) {
+            Object.assign(row, catches.perCamera[row.deviceSerial] || {});
+            const cam = cameraMap.get(row.deviceSerial);
+            const since = cam?.cardReplacedAt || null;
+            row.cardAgeDays = since ? Math.floor((Date.now() - new Date(since).getTime()) / 86400000) : null;
+        }
+        // Past 7 days of catches (all cameras), for the trend line
+        const trendAgg = catches.series14.slice(-7).map(({ day, total }) => {
             const [, m, d] = day.split('-');
-            return { _id: `${d}/${m}`, count: trendByDay.get(day) };
+            return { _id: `${d}/${m}`, count: total };
         });
 
         // Overall risk index
@@ -547,7 +569,18 @@ async function getAiOverview(req, res) {
                 topSpecies,
                 speciesSummary,
                 speciesBreakdown: speciesAgg,
-                trend7Days: trendAgg.length > 0 ? trendAgg : []
+                trend7Days: trendAgg,
+                catches: {
+                    today: catches.today,
+                    yesterday: catches.yesterday,
+                    last7: catches.last7,
+                    prev7: catches.prev7,
+                    ftd7: catches.ftd7,
+                    ftdPrev7: catches.ftdPrev7,
+                    changePct: catches.changePct,
+                    periods: catches.periods,
+                    series14: catches.series14
+                }
             }
         });
     } catch (err) {
@@ -642,8 +675,8 @@ async function getAiDiagnosis(req, res) {
         }
         const peak = current.reduce((best, c) => (c.ratio > best.ratio ? c : best), current[0]);
         const overallRisk = worstRisk(current.map(c => c.risk));
-        // Forecast risk is judged against the most sensitive camera's threshold
-        const referenceThreshold = Math.min(...current.map(c => c.threshold));
+        // The forecast follows the most loaded trap, against its own threshold
+        const referenceThreshold = peak.threshold;
         const affectedTraps = current.filter(c => c.risk !== 'low').map(c => c.cam.deviceName || c.cam.deviceSerial);
 
         // 2. History: highest single-trap count per day over the last HISTORY_DAYS days
@@ -660,18 +693,28 @@ async function getAiDiagnosis(req, res) {
             .filter(sp => sp.value > 0)
             .map(sp => ({ _id: sp.name, total: sp.value }));
 
-        const points = daily
-            .map(d => ({ dayIndex: windowKeys.indexOf(d._id), value: d.peak || 0 }))
-            .filter(p => p.dayIndex >= 0)
-            .sort((a, b) => a.dayIndex - b.dayIndex);
-        const hasDetections = peak.count > 0 || points.some(p => p.value > 0);
+        // Trend of the most loaded trap's daily catches (a card's count only grows, so its own
+        // trend says nothing); the forecast adds them to what is on the card now (no card change)
+        const { dayKeys: catchKeys, cameras: catchMap } = await catchStats.catchesBySerial([peak.cam.deviceSerial], HISTORY_DAYS, now);
+        const peakCatches = catchMap.get(peak.cam.deviceSerial).total;
+        const points = catchKeys
+            .map((day, dayIndex) => ({ dayIndex, value: peakCatches.get(day) }))
+            .filter(p => p.value !== null && p.value !== undefined);
+        const hasDetections = peak.count > 0 || points.some(p => p.value > 0) || daily.some(d => d.peak > 0);
 
         const trend = forecastService.forecast(points, HISTORY_DAYS, FORECAST_DAYS);
-        const forecastDays = trend.projected.map((projectedCount, i) => ({
-            date: dayLabel(new Date(now.getTime() + (i + 1) * 86400000)),
-            projectedCount,
-            risk: riskLevel(projectedCount, referenceThreshold)
-        }));
+        // Sticky: catches pile up on the card. Lure: each day stands alone (flies present)
+        const sticky = isSticky(peak.cam);
+        let onCard = peak.count;
+        const forecastDays = trend.projected.map((catches, i) => {
+            onCard = sticky ? onCard + catches : catches;
+            return {
+                date: dayLabel(new Date(now.getTime() + (i + 1) * 86400000)),
+                projectedCount: onCard,
+                projectedCatches: catches,
+                risk: riskLevel(onCard, peak.threshold)
+            };
+        });
 
         // 3. Weather at the peak trap (or any trap with GPS)
         const located = [peak.cam, ...cameras].find(c => Number.isFinite(c.latitude) && Number.isFinite(c.longitude));
@@ -702,6 +745,7 @@ async function getAiDiagnosis(req, res) {
                 weather,
                 weatherFactor: factor,
                 degreeDays,
+                trapKind: trapKindOf(peak.cam),
                 forecast: {
                     trajectory: trend.trajectory,
                     confidence: trend.confidence, // 'low' | 'medium' | 'high'
@@ -886,41 +930,42 @@ async function getAiComparison(req, res) {
             });
         }
 
-        // Whole local days from the rollup: "last 7 days" = today and the 6 days before it
-        const currentKey = dailyStats.startKeyForDays(days);
-        const rollup = await dailyStats.rows(cameras.map(c => c.deviceSerial), dailyStats.startKeyForDays(2 * days));
-        const rows = [];
-        for (const r of rollup) {
-            rows.push({ _id: { serial: r.deviceSerial, isCurrent: r.day >= currentKey }, total: r.total, scans: r.scans, peak: r.peak });
-        }
+        // Whole local days: "last 7 days" = today and the 6 days before it.
+        // totalInsects = insects caught (rise of each card), avgPerScan = flies per trap per day (FTD)
+        const serials = cameras.map(c => c.deviceSerial);
+        const [{ dayKeys, cameras: catchMap }, rollup] = await Promise.all([
+            catchStats.catchesBySerial(serials, 2 * days),
+            dailyStats.rows(serials, dailyStats.startKeyForDays(2 * days))
+        ]);
+        const currentKeys = dayKeys.slice(-days);
+        const previousKeys = dayKeys.slice(0, dayKeys.length - days);
+        const currentKey = currentKeys[0];
+        const scansOf = (list) => list.reduce((s, r) => s + r.scans, 0);
+        const peakOf = (list) => list.reduce((m, r) => Math.max(m, r.peak || 0), 0);
 
-        const summarize = (list) => {
-            const totalInsects = list.reduce((s, r) => s + r.total, 0);
-            const scans = list.reduce((s, r) => s + r.scans, 0);
-            return {
-                totalInsects,
-                scans,
-                avgPerScan: scans > 0 ? Math.round((totalInsects / scans) * 10) / 10 : 0,
-                peakCount: list.reduce((m, r) => Math.max(m, r.peak || 0), 0)
-            };
+        const summarize = (entries, keys, rows) => {
+            const c = catchStats.summarize(entries, keys);
+            return { totalInsects: c.total, scans: scansOf(rows), avgPerScan: c.ftd ?? 0, peakCount: peakOf(rows), trapDays: c.trapDays };
         };
-        const currentRows = rows.filter(r => r._id.isCurrent);
-        const previousRows = rows.filter(r => !r._id.isCurrent);
-        const current = { start: currentStart, end: now, ...summarize(currentRows) };
-        const previous = { start: previousStart, end: currentStart, ...summarize(previousRows) };
+        const curRows = rollup.filter(r => r.day >= currentKey);
+        const prevRows = rollup.filter(r => r.day < currentKey);
+        const allEntries = [...catchMap.values()];
+        const current = { start: currentStart, end: now, ...summarize(allEntries, currentKeys, curRows) };
+        const previous = { start: previousStart, end: currentStart, ...summarize(allEntries, previousKeys, prevRows) };
 
         const cameraRows = cameras.map(cam => {
-            const cur = summarize(currentRows.filter(r => r._id.serial === cam.deviceSerial));
-            const prev = summarize(previousRows.filter(r => r._id.serial === cam.deviceSerial));
+            const one = [catchMap.get(cam.deviceSerial)];
+            const cur = summarize(one, currentKeys, curRows.filter(r => r.deviceSerial === cam.deviceSerial));
+            const prev = summarize(one, previousKeys, prevRows.filter(r => r.deviceSerial === cam.deviceSerial));
             return {
                 deviceSerial: cam.deviceSerial,
                 deviceName: cam.deviceName || cam.deviceSerial,
                 alertThreshold: thresholdOf(cam),
                 ...cur,
-                // Risk of the period's peak against this camera's threshold
+                // Risk of the period's highest card count against this camera's threshold
                 riskLevel: riskLevel(cur.peakCount, thresholdOf(cam)),
                 previousTotal: prev.totalInsects,
-                changePct: percentChange(cur.totalInsects, prev.totalInsects)
+                changePct: cur.trapDays && prev.trapDays ? percentChange(cur.totalInsects, prev.totalInsects) : null
             };
         }).sort((a, b) => b.totalInsects - a.totalInsects);
 
@@ -941,6 +986,81 @@ async function getAiComparison(req, res) {
         });
     } catch (err) {
         sendServerError(res, err, { context: 'AI comparison' });
+    }
+}
+
+/**
+ * GET /api/ai/insights?deviceSerial=all&days=14
+ * Analytics, Insights tab: per-trap table, daily catches per trap, catches by hour of day,
+ * and daily temperatures next to catches.
+ */
+async function getAiInsights(req, res) {
+    try {
+        const days = Math.min(Math.max(parseInt(req.query.days, 10) || 14, 7), 30);
+        const all = await viewableCameras(req.user).lean();
+        let cameras = [...new Map(all.map(c => [c.deviceSerial, c])).values()];
+        if (req.query.deviceSerial && req.query.deviceSerial !== 'all') {
+            cameras = cameras.filter(c => c.deviceSerial === req.query.deviceSerial);
+            if (!cameras.length) return res.status(403).json({ success: false, message: "You do not have permission to access this camera." });
+        }
+        if (!cameras.length) return res.json({ success: true, insights: { days: [], traps: [], activity: null, weather: null } });
+        const serials = cameras.map(c => c.deviceSerial);
+
+        const { Farm, Plot } = require('../models');
+        const [catches, latest, activity, plots, farms] = await Promise.all([
+            catchStats.catchesBySerial(serials, days),
+            latestProcessedByCamera(serials),
+            catchStats.activityByHour(serials, Math.min(days, 14)),
+            Plot.find({ _id: { $in: cameras.map(c => c.plotId).filter(Boolean) } }).select('name farmId').lean(),
+            Farm.find({ _id: { $in: cameras.map(c => c.farmId).filter(Boolean) } }).select('name').lean()
+        ]);
+        const plotName = new Map(plots.map(p => [String(p._id), p.name]));
+        const farmName = new Map(farms.map(f => [String(f._id), f.name]));
+        const keys = catches.dayKeys;
+        const half = Math.min(7, Math.floor(keys.length / 2));
+
+        const traps = cameras.map(cam => {
+            const byDay = catches.cameras.get(cam.deviceSerial).total;
+            const one = [{ total: byDay }];
+            const recent = catchStats.summarize(one, keys.slice(-half));
+            const before = catchStats.summarize(one, keys.slice(-2 * half, -half));
+            const snap = latest.get(cam.deviceSerial);
+            const onCard = snap ? countPests(snap.summary instanceof Map ? Object.fromEntries(snap.summary) : snap.summary) : 0;
+            return {
+                deviceSerial: cam.deviceSerial,
+                deviceName: cam.deviceName || cam.deviceSerial,
+                plot: cam.plotId ? plotName.get(String(cam.plotId)) || null : null,
+                farm: cam.farmId ? farmName.get(String(cam.farmId)) || null : null,
+                online: cam.status === 1,
+                trapKind: trapKindOf(cam),
+                onCard,
+                alertThreshold: thresholdOf(cam),
+                riskLevel: riskLevel(onCard, thresholdOf(cam)),
+                today: byDay.get(keys.at(-1)) ?? null,
+                total: catchStats.summarize(one, keys).total,
+                ftd: recent.ftd,
+                changePct: recent.trapDays && before.trapDays ? catchStats.percentChange(recent.total, before.total) : null,
+                cardAgeDays: cam.cardReplacedAt ? Math.floor((Date.now() - new Date(cam.cardReplacedAt).getTime()) / 86400000) : null,
+                lastScanAt: snap?.createdAt || null,
+                imageIssues: cam.imageQuality?.issues || [],
+                daily: keys.map(day => byDay.get(day) ?? null)
+            };
+        }).sort((a, b) => (b.ftd ?? -1) - (a.ftd ?? -1));
+
+        // Daily min/max temperature at the first trap with GPS (Open-Meteo, cached)
+        let weather = null;
+        const located = cameras.find(c => Number.isFinite(c.latitude) && Number.isFinite(c.longitude));
+        if (located) {
+            const temps = await weatherService.getDailyTemperatures(located.latitude, located.longitude).catch(() => null);
+            if (temps) {
+                const byDay = new Map(temps.map(t => [t.day, t]));
+                weather = keys.map(day => ({ day, min: byDay.get(day)?.min ?? null, max: byDay.get(day)?.max ?? null }));
+            }
+        }
+
+        res.json({ success: true, insights: { days: keys, traps, activity, weather } });
+    } catch (err) {
+        sendServerError(res, err, { context: 'AI insights' });
     }
 }
 
@@ -999,6 +1119,7 @@ async function clearChatSession(req, res) {
 }
 
 module.exports = {
+    getAiInsights,
     getAiResults,
     analyzeRoboflowSnapshot,
     getAiStatistics,

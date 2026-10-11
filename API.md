@@ -21,13 +21,13 @@ Every answer is `{ "success": true, "data": ... }`. Errors are `{ "success": fal
 | Request | Returns |
 |---|---|
 | `GET /me` | `{ email, role }` of the key's account |
-| `GET /cameras` | Every camera: `deviceSerial`, `name`, `online`, `latitude`, `longitude`, `alertThreshold`, `farmId`, `plotId`, `organizationId`, `latest: { at, count, counts }` |
+| `GET /cameras` | Every camera: `deviceSerial`, `name`, `online`, `trapKind` (`sticky` glue card or `lure` without glue), `latitude`, `longitude`, `alertThreshold`, `farmId`, `plotId`, `organizationId`, `latest: { at, count, counts }` |
 | `GET /cameras/{serial}` | One camera, same fields |
 | `GET /cameras/{serial}/daily?days=30` | One row per day (farm time zone, up to 365 days): `day`, `scans`, `peak`, `total`, `species[{ name, peak, total }]` |
 | `GET /cameras/{serial}/snapshots?limit=50&before=ISO` | Analyzed photos, newest first (up to 200): `id`, `at`, `count`, `counts`, `reviewed`, `imageIssues` |
 | `GET /alerts?since=ISO&limit=100` | Your alerts, newest first (up to 500): `id`, `event`, `severity`, `deviceSerial`, `params`, `createdAt` |
 
-`count` is the number of insects in a photo (people and other non-pests excluded). On a sticky card it is cumulative, so `peak` per day is the card's highest count that day.
+`count` is the number of insects in a photo (people and other non-pests excluded). On a sticky trap it is cumulative until the card is replaced, so `peak` per day is the card's highest count and the day's catch is the rise over the day before. On a lure trap (no glue) it is the flies present at that moment, so use `total / scans` for the day's average.
 
 ## Webhooks
 

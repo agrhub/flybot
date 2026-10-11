@@ -2,7 +2,8 @@ const { User, Camera, DailyStat, MaintenanceEvent, Treatment } = require('../mod
 const { viewableCameras } = require('../utils/ownership');
 const { translate, normalizeLanguage } = require('../utils/i18n');
 const { dayKeyOf, DAY_MS } = require('./dailyStats');
-const { dailyCatches } = require('./treatmentService');
+const { dailyValues } = require('./treatmentService');
+const { trapKindOf } = require('../constants/trap');
 const { cardDueAt } = require('./maintenanceService');
 const { queueMail } = require('./mailService');
 const emailTemplates = require('./emailTemplates');
@@ -25,7 +26,7 @@ const percentChange = (current, previous) => (previous > 0 ? Math.round(((curren
  * Insects are catches per day (rise of the sticky-card count), summed over the week.
  */
 async function buildWeeklyReport(user, now = new Date()) {
-    const cameras = await viewableCameras(user).select('deviceSerial deviceName status cardReplacedAt cardReminderDays addedAt').lean();
+    const cameras = await viewableCameras(user).select('deviceSerial deviceName status cardReplacedAt cardReminderDays addedAt trapKind').lean();
     if (!cameras.length) return null;
     const serials = cameras.map(c => c.deviceSerial);
 
@@ -36,14 +37,14 @@ async function buildWeeklyReport(user, now = new Date()) {
     const fromKey = addDays(prevStart, -1);
 
     const [rows, cardEvents, treatments] = await Promise.all([
-        DailyStat.find({ deviceSerial: { $in: serials }, day: { $gte: fromKey, $lte: lastKey } }).select('deviceSerial day peak').lean(),
+        DailyStat.find({ deviceSerial: { $in: serials }, day: { $gte: fromKey, $lte: lastKey } }).select('deviceSerial day peak total scans').lean(),
         MaintenanceEvent.find({ deviceSerial: { $in: serials }, type: 'card_replaced', at: { $gte: new Date(now.getTime() - 16 * DAY_MS) } }).select('deviceSerial at').lean(),
         Treatment.countDocuments({ cameraSerials: { $in: serials }, at: { $gte: new Date(`${weekStart}T00:00:00+07:00`), $lte: now } })
     ]);
 
     const perCamera = cameras.map(cam => {
         const cardDays = new Set(cardEvents.filter(e => e.deviceSerial === cam.deviceSerial).map(e => dayKeyOf(e.at)));
-        const catches = dailyCatches(rows.filter(r => r.deviceSerial === cam.deviceSerial), cardDays, fromKey, lastKey);
+        const catches = dailyValues(rows.filter(r => r.deviceSerial === cam.deviceSerial), cardDays, fromKey, lastKey, trapKindOf(cam));
         let current = 0;
         let previous = 0;
         for (const [day, value] of catches) {

@@ -643,6 +643,12 @@
             show-password
           />
         </el-form-item>
+        <el-form-item :label="t('trapKind.label')">
+          <el-select v-model="editForm.trapKind" class="w-full">
+            <el-option v-for="kind in ['sticky', 'lure']" :key="kind" :value="kind" :label="t(`trapKind.${kind}.name`)" />
+          </el-select>
+          <p class="text-xs mt-1" style="color: var(--el-text-color-secondary)">{{ t(`trapKind.${editForm.trapKind}.hint`) }}</p>
+        </el-form-item>
         <el-form-item :label="t('settings.captureInterval')">
           <el-select v-model="editForm.captureIntervalMinutes" class="w-full">
             <el-option
@@ -1016,6 +1022,7 @@ const savingCamera = ref(false);
 const CAPTURE_INTERVALS = [15, 30, 60, 120];
 
 const editForm = reactive({
+  trapKind: 'sticky',
   captureIntervalMinutes: 30,
   captureDaytimeOnly: false,
   deviceSerial: '',
@@ -1102,6 +1109,7 @@ const openEditCameraModal = (cam) => {
   editForm.deviceName = cam.deviceName || '';
   editForm.validateCode = cam.validateCode || '';
   editForm.captureIntervalMinutes = cam.captureIntervalMinutes || 30;
+  editForm.trapKind = cam.trapKind || 'sticky';
   editForm.captureDaytimeOnly = !!cam.captureDaytimeOnly;
   editCameraDialogVisible.value = true;
 };
@@ -1114,7 +1122,8 @@ const handleSaveEditCamera = async () => {
       deviceName: editForm.deviceName,
       validateCode: editForm.validateCode,
       captureIntervalMinutes: editForm.captureIntervalMinutes,
-      captureDaytimeOnly: editForm.captureDaytimeOnly
+      captureDaytimeOnly: editForm.captureDaytimeOnly,
+      trapKind: editForm.trapKind
     });
     if (res.data?.success) {
       ElNotification({ title: t('common.success'), message: t('settings.cameraUpdated'), type: 'success' });

@@ -18,6 +18,8 @@ const cameraName = (camera) => camera.deviceName || camera.deviceSerial;
  * When the card on this camera is due for replacement (null when reminders are off).
  */
 function cardDueAt(camera) {
+    // Lure traps have no sticky card to replace
+    if (camera?.trapKind === 'lure') return null;
     const days = camera.cardReminderDays ?? DEFAULT_CARD_REMINDER_DAYS;
     if (!days) return null;
     const since = camera.cardReplacedAt || camera.addedAt;
@@ -58,6 +60,8 @@ async function deleteEvent(event) {
  */
 async function detectCardChange(deviceSerial, snapshot, count) {
     try {
+        // Without glue the count goes up and down all day: a drop is not a new card
+        if (await Camera.exists({ deviceSerial, trapKind: 'lure' })) return null;
         const previous = await Snapshot.findOne({
             deviceSerial,
             aiProcessed: true,
@@ -98,8 +102,8 @@ async function detectCardChange(deviceSerial, snapshot, count) {
  * Daily: remind the people who see a camera when its card is due (once a day at most).
  */
 async function sendCardReminders(now = new Date()) {
-    const cameras = await Camera.find({ cardReminderDays: { $ne: 0 } })
-        .select('deviceSerial deviceName cardReplacedAt cardReminderDays addedAt').lean();
+    const cameras = await Camera.find({ cardReminderDays: { $ne: 0 }, trapKind: { $ne: 'lure' } })
+        .select('deviceSerial deviceName cardReplacedAt cardReminderDays addedAt trapKind').lean();
     let sent = 0;
     for (const camera of cameras) {
         const due = cardDueAt(camera);

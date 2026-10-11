@@ -248,7 +248,32 @@
         "dry": "không khí khô làm ruồi trưởng thành sống ngắn hơn",
         "moderate": "điều kiện bình thường"
       }
-    }
+    },
+    "catchesToday": "Ruồi vào bẫy hôm nay",
+    "catchesYesterday": "Hôm qua: {count} con",
+    "catchesHint": "Tổng các bẫy, tính từ nửa đêm",
+    "ftd7": "Ruồi/bẫy/ngày (7 ngày)",
+    "ftdUnit": "con/bẫy/ngày",
+    "ftdPrev": "Tuần trước: {value}{change}",
+    "ftdHint": "Chỉ số chuẩn theo dõi ruồi đục quả",
+    "riskBasis": "So với ngưỡng của từng bẫy",
+    "onTrapNow": "trên bẫy",
+    "presentNow": "đang có",
+    "camCatches": "Hôm nay +{today} · {ftd} con/ngày",
+    "camPresence": "Hôm nay TB {today} · {ftd} con/ngày",
+    "catchStatsTitle": "Thống kê ruồi vào bẫy",
+    "catchStatsDesc": "Số ruồi mới theo ngày, tất cả các bẫy",
+    "statTotal": "Tổng ruồi vào bẫy",
+    "statTotalUnit": "con",
+    "statFtd": "Ruồi/bẫy/ngày",
+    "statAvgDay": "Trung bình mỗi ngày",
+    "statAvgDayUnit": "con/ngày (tất cả bẫy)",
+    "statMaxDay": "Ngày nhiều nhất",
+    "catchChartTitle": "Ruồi vào bẫy 14 ngày qua",
+    "catchChartDesc": "Số ruồi mới mỗi ngày, cột chồng theo từng bẫy",
+    "moreAnalytics": "Phân tích chi tiết",
+    "forecastBasis": "Theo dõi {name}: dự báo số ruồi mới mỗi ngày (+) cộng dồn vào số trên tấm keo, so với ngưỡng của bẫy.",
+    "forecastBasisLure": "Theo dõi {name}: dự báo số ruồi hiện diện trung bình mỗi ngày, so với ngưỡng của bẫy."
   },
   "cameras": {
     "title": "Quản Lý & Xem Camera",
@@ -423,8 +448,8 @@
     "period7Days": "7 ngày qua",
     "period30Days": "30 ngày qua",
     "periodCustom": "Tùy chọn ngày...",
-    "realtimeDensityTrap": "Mật độ Realtime bẫy",
-    "realtimeHotspotMax": "Điểm nóng Realtime (Max)",
+    "realtimeDensityTrap": "Hiện có trên bẫy",
+    "realtimeHotspotMax": "Cao nhất trên các bẫy",
     "insectsUnit": "cá thể",
     "peakAcrossTraps": "Đỉnh điểm giữa các camera",
     "startDate": "Từ ngày",
@@ -467,12 +492,12 @@
       "title": "So sánh theo kỳ",
       "subtitle": "{days} ngày gần nhất so với {days} ngày trước đó, tất cả camera",
       "days": "{days} ngày",
-      "totalInsects": "Tổng số côn trùng",
-      "avgPerScan": "Trung bình mỗi lần quét",
-      "peak": "Số đếm cao nhất",
+      "totalInsects": "Ruồi vào bẫy",
+      "avgPerScan": "Ruồi/bẫy/ngày",
+      "peak": "Cao nhất trên bẫy",
       "vsPrevious": "{change} so với kỳ trước",
       "noPrevious": "Kỳ trước không có dữ liệu",
-      "ranking": "Xếp hạng camera theo số côn trùng",
+      "ranking": "Xếp hạng camera theo số ruồi vào bẫy",
       "camera": "Camera",
       "scans": "Lần quét",
       "change": "Thay đổi"
@@ -496,7 +521,14 @@
       "exportEmpty": "Chưa có ảnh nào được sửa trong 90 ngày qua.",
       "exported": "Đã xuất {count} ảnh đã sửa."
     },
-    "exportMenu": "Xuất báo cáo"
+    "exportMenu": "Xuất báo cáo",
+    "catchesChart": "Số ruồi mới mỗi ngày",
+    "catchesChartHint": "Ruồi vào bẫy trong ngày (phần tăng trên tấm keo; trung bình hiện diện với bẫy dẫn dụ)",
+    "onTrapChartHint": "Số đếm trong ảnh: trên tấm keo tăng dần đến khi thay tấm; đường gạch đánh dấu ngày thay",
+    "metricCatches": "Ruồi mới",
+    "metricOnTrap": "Trên bẫy",
+    "catchesInPeriod": "Ruồi vào bẫy trong kỳ",
+    "catchesInPeriodDesc": "Tổng số ruồi mới trong khoảng đã chọn"
   },
   "settings": {
     "title": "Cài Đặt Hệ Thống",
@@ -1022,7 +1054,9 @@
     "heatmap": "Bản đồ nhiệt",
     "noLocation": "Chưa có vị trí",
     "setLocation": "Đặt vị trí",
-    "plots": "Lô"
+    "plots": "Lô",
+    "popupToday": "Hôm nay",
+    "popupFtd": "Ruồi/bẫy/ngày"
   },
   "species": {
     "fruitFly": "Ruồi vàng",
@@ -1740,5 +1774,53 @@
   },
   "legal": {
     "contactFallback": "trang Liên hệ"
+  },
+  "trapKind": {
+    "label": "Loại bẫy",
+    "sticky": {
+      "name": "Bẫy dính (tấm keo)",
+      "short": "Bẫy dính",
+      "hint": "Ruồi dính lại trên tấm keo nên số đếm tăng dần đến khi thay tấm. Số bắt mỗi ngày = phần tăng thêm."
+    },
+    "lure": {
+      "name": "Bẫy dẫn dụ (không keo)",
+      "short": "Bẫy dẫn dụ",
+      "hint": "Chỉ có chất dẫn dụ, ruồi vào rồi có thể bay đi. Mỗi ảnh là số ruồi đang có mặt; số mỗi ngày = trung bình mỗi lần chụp.",
+      "maintenanceHint": "Bẫy dẫn dụ không có tấm keo nên không có nhắc thay tấm. Hãy ghi lại các lần thay mồi dẫn dụ và lau ống kính."
+    }
+  },
+  "insights": {
+    "tab": "Phân tích chuyên sâu",
+    "howToRead": "Bẫy dính: số bắt mỗi ngày là phần tăng thêm trên tấm keo (ngày thay tấm không tính). Bẫy dẫn dụ: số ruồi hiện diện trung bình mỗi lần chụp. \"Ruồi/bẫy/ngày\" là chỉ số chuẩn để so sánh giữa các bẫy và các tuần.",
+    "dailyTitle": "Số ruồi mỗi ngày theo bẫy",
+    "dailyDesc": "{days} ngày gần nhất, cột chồng theo từng bẫy",
+    "catchesAxis": "Ruồi mỗi ngày",
+    "weatherTitle": "Nhiệt độ và số ruồi",
+    "weatherDesc": "Nhiệt độ cao nhất, thấp nhất mỗi ngày tại vị trí bẫy, đặt cạnh tổng số ruồi",
+    "weatherMissing": "Thêm vị trí GPS cho camera để xem nhiệt độ",
+    "tempAxis": "Nhiệt độ (°C)",
+    "tempMax": "Cao nhất (°C)",
+    "tempMin": "Thấp nhất (°C)",
+    "activityTitle": "Ruồi vào bẫy theo giờ",
+    "activityDesc": "Màu càng đậm, càng nhiều ruồi vào bẫy trong giờ đó (14 ngày gần nhất)",
+    "activityPeak": "Ruồi vào bẫy nhiều nhất khoảng {from}h đến {to}h, thời điểm tốt để phun bả hoặc kiểm tra bẫy",
+    "activityCell": "{day}, {hour}h: {value} con",
+    "less": "Ít",
+    "more": "Nhiều",
+    "tableTitle": "Tổng hợp từng bẫy",
+    "tableDesc": "Xếp theo ruồi/bẫy/ngày 7 ngày gần nhất; bấm một dòng để mở camera",
+    "days": "{n} ngày",
+    "col": {
+      "trap": "Bẫy",
+      "kind": "Loại",
+      "onTrap": "Hiện có / ngưỡng",
+      "today": "Hôm nay",
+      "total": "{days} ngày",
+      "ftd": "Ruồi/bẫy/ngày",
+      "change": "So với trước",
+      "trend": "14 ngày",
+      "card": "Tuổi tấm keo",
+      "photo": "Ảnh"
+    }
   }
 }

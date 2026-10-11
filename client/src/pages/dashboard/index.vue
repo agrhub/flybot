@@ -8,24 +8,24 @@
 
     <!-- Key metrics -->
     <section class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-      <!-- Realtime hotspot (peak camera) -->
+      <!-- Insects that arrived today, all traps -->
       <StatCard
-        :label="t('dashboard.hotspotPeak')"
-        :value="overviewData.peakRealtimeInsects"
+        :label="t('dashboard.catchesToday')"
+        :value="catches.today ?? '--'"
         :unit="t('dashboard.individualsUnit')"
-        :description="overviewData.peakCamera?.deviceName || '--'"
+        :description="catches.yesterday !== null && catches.yesterday !== undefined ? t('dashboard.catchesYesterday', { count: catches.yesterday }) : t('dashboard.catchesHint')"
         :icon="Lightning"
         type="warning"
       />
 
-      <!-- Realtime insect total across the orchard -->
+      <!-- Flies per trap per day over the last 7 days -->
       <StatCard
-        :label="t('dashboard.realtimeTotal')"
-        :value="overviewData.totalRealtimeInsects"
-        :unit="t('dashboard.fruitFlyUnit')"
-        :description="t('dashboard.avgPerTrap', { count: (overviewData.totalRealtimeInsects / (cameras.length || 1)).toFixed(1) })"
+        :label="t('dashboard.ftd7')"
+        :value="catches.ftd7 ?? '--'"
+        :unit="t('dashboard.ftdUnit')"
+        :description="ftdChangeText"
         :icon="DataAnalysis"
-        type="success"
+        :type="catches.changePct > 15 ? 'danger' : catches.changePct < -15 ? 'success' : 'primary'"
       />
 
       <!-- Cameras online -->
@@ -40,7 +40,7 @@
       <!-- AI outbreak risk index -->
       <StatCard
         :label="t('dashboard.riskIndex')"
-        :description="t('dashboard.aiCopilotAgentBadge')"
+        :description="t('dashboard.riskBasis')"
         :icon="Warning"
         :type="riskTagType"
       >
@@ -79,7 +79,8 @@
                 <span class="item-name truncate">{{ cam.deviceName || cam.deviceSerial }}</span>
                 <span class="meta-text font-mono truncate">({{ cam.deviceSerial }})</span>
               </div>
-              <div class="shrink-0">
+              <div class="shrink-0 text-right">
+                <span class="meta-text mr-1">{{ cam.trapKind === 'lure' ? t('dashboard.presentNow') : t('dashboard.onTrapNow') }}</span>
                 <span class="item-count" :class="`is-${levelTagType(cam.riskLevel)}`">{{ cam.currentCount }}</span>
                 <span class="meta-text ml-1">/ {{ cam.alertThreshold }} {{ t('dashboard.insectsShort') }}</span>
               </div>
@@ -93,7 +94,10 @@
             />
 
             <div class="flex items-center justify-between gap-3 mt-2">
-              <span class="meta-text truncate">{{ cam.locationAddress || t('map.noAddress') }}</span>
+              <span class="meta-text truncate">
+                {{ t(cam.trapKind === 'lure' ? 'dashboard.camPresence' : 'dashboard.camCatches', { today: cam.today ?? '--', ftd: cam.ftd7 ?? '--' }) }}
+                · {{ cam.locationAddress || t('map.noAddress') }}
+              </span>
               <div class="flex items-center gap-1.5 shrink-0">
                 <el-tag v-if="cam.cardDueAt && new Date(cam.cardDueAt) <= new Date()" type="warning" effect="plain" round size="small">
                   {{ t('maintenance.overdue') }}
@@ -116,8 +120,8 @@
       <!-- Min / Max / Avg statistics -->
       <el-card shadow="never" body-class="flex flex-col h-full">
         <template #header>
-          <h3 class="section-title">{{ t('dashboard.minMaxAvgTitle') }}</h3>
-          <p class="section-desc">{{ t('dashboard.minMaxAvgDesc') }}</p>
+          <h3 class="section-title">{{ t('dashboard.catchStatsTitle') }}</h3>
+          <p class="section-desc">{{ t('dashboard.catchStatsDesc') }}</p>
         </template>
 
         <el-radio-group v-model="selectedPeriod" size="small" class="period-switch mb-4">
@@ -128,27 +132,27 @@
 
         <div class="grid grid-cols-2 gap-3">
           <div class="mini-stat">
-            <span class="meta-text">{{ t('dashboard.statMin') }}</span>
-            <div class="mini-stat__value is-success">{{ currentPeriodStats.min }}</div>
-            <span class="meta-text">{{ t('dashboard.individualsPerScan') }}</span>
+            <span class="meta-text">{{ t('dashboard.statTotal') }}</span>
+            <div class="mini-stat__value is-primary">{{ currentPeriodStats.total ?? 0 }}</div>
+            <span class="meta-text">{{ t('dashboard.statTotalUnit') }}</span>
           </div>
 
           <div class="mini-stat">
-            <span class="meta-text">{{ t('dashboard.statMax') }}</span>
-            <div class="mini-stat__value is-danger">{{ currentPeriodStats.max }}</div>
-            <span class="meta-text">{{ t('dashboard.peakRecorded') }}</span>
+            <span class="meta-text">{{ t('dashboard.statFtd') }}</span>
+            <div class="mini-stat__value is-success">{{ currentPeriodStats.ftd ?? '--' }}</div>
+            <span class="meta-text">{{ t('dashboard.ftdUnit') }}</span>
           </div>
 
           <div class="mini-stat">
-            <span class="meta-text">{{ t('dashboard.statAvg') }}</span>
-            <div class="mini-stat__value is-primary">{{ currentPeriodStats.avg }}</div>
-            <span class="meta-text">{{ t('dashboard.cycleAverage') }}</span>
+            <span class="meta-text">{{ t('dashboard.statAvgDay') }}</span>
+            <div class="mini-stat__value">{{ currentPeriodStats.avgPerDay ?? '--' }}</div>
+            <span class="meta-text">{{ t('dashboard.statAvgDayUnit') }}</span>
           </div>
 
           <div class="mini-stat">
-            <span class="meta-text">{{ t('dashboard.statScans') }}</span>
-            <div class="mini-stat__value">{{ currentPeriodStats.totalScans }}</div>
-            <span class="meta-text">{{ t('dashboard.aiProcessedRuns') }}</span>
+            <span class="meta-text">{{ t('dashboard.statMaxDay') }}</span>
+            <div class="mini-stat__value is-danger">{{ currentPeriodStats.maxDay?.value ?? '--' }}</div>
+            <span class="meta-text">{{ currentPeriodStats.maxDay ? shortDay(currentPeriodStats.maxDay.day) : '--' }}</span>
           </div>
         </div>
 
@@ -160,6 +164,26 @@
         </div>
       </el-card>
     </section>
+
+    <!-- Daily catches over two weeks, per trap -->
+    <el-card shadow="never">
+      <template #header>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="min-w-0">
+            <h3 class="section-title">{{ t('dashboard.catchChartTitle') }}</h3>
+            <p class="section-desc">{{ t('dashboard.catchChartDesc') }}</p>
+          </div>
+          <el-button link type="primary" :icon="DataAnalysis" @click="router.push('/analytics')">{{ t('dashboard.moreAnalytics') }}</el-button>
+        </div>
+      </template>
+      <CatchBarChart
+        :labels="catchChart.labels"
+        :series="catchChart.series"
+        :height="260"
+        :y-title="t('dashboard.statTotalUnit')"
+        :empty-text="t('dashboard.noRealtimeData')"
+      />
+    </el-card>
 
     <!-- AI agricultural copilot: deep diagnosis & IPM recommendations -->
     <el-card shadow="never">
@@ -216,6 +240,7 @@
             </div>
           </div>
 
+          <p class="meta-text mb-1">{{ t(diagnosisResult.trapKind === 'lure' ? 'dashboard.forecastBasisLure' : 'dashboard.forecastBasis', { name: diagnosisResult.peakCamera?.deviceName || '' }) }}</p>
           <div class="flex flex-wrap items-center gap-x-4 gap-y-1 meta-text">
             <span v-if="diagnosisResult.peakCamera">
               {{ t('dashboard.diagnosis.peakTrap', {
@@ -245,6 +270,7 @@
               class="flex flex-col items-center gap-1.5 h-full justify-end"
             >
               <span class="meta-text font-semibold">{{ day.projectedCount }}</span>
+              <span v-if="day.projectedCatches !== undefined && diagnosisResult.trapKind !== 'lure'" class="forecast-add">+{{ day.projectedCatches }}</span>
               <div
                 class="forecast-bar w-full"
                 :style="{
@@ -380,6 +406,7 @@ import {
 } from '@element-plus/icons-vue';
 import PageHeader from '@/components/common/PageHeader.vue';
 import StatCard from '@/components/common/StatCard.vue';
+import CatchBarChart from '@/components/charts/CatchBarChart.vue';
 import DegreeDayPanel from '@/components/dashboard/DegreeDayPanel.vue';
 import { speciesShare } from '@/utils/species';
 
@@ -462,9 +489,23 @@ const periodOptions = computed(() => [
   { key: 'month', label: t('dashboard.periodMonth') }
 ]);
 
-const currentPeriodStats = computed(() => {
-  const stats = overviewData.value.historicalStats || {};
-  return stats[selectedPeriod.value] || { min: 0, max: 0, avg: 0, totalScans: 0 };
+// Catches: insects that arrived per day (see server/src/services/catchStats.js)
+const catches = computed(() => overviewData.value.catches || {});
+const currentPeriodStats = computed(() => catches.value.periods?.[selectedPeriod.value] || {});
+const shortDay = (key) => (key ? `${key.slice(8, 10)}/${key.slice(5, 7)}` : '');
+const ftdChangeText = computed(() => {
+  const c = catches.value;
+  if (c.ftdPrev7 === null || c.ftdPrev7 === undefined) return t('dashboard.ftdHint');
+  const change = c.changePct === null || c.changePct === undefined ? '' : ` (${c.changePct > 0 ? '+' : ''}${c.changePct}%)`;
+  return t('dashboard.ftdPrev', { value: c.ftdPrev7, change });
+});
+const catchChart = computed(() => {
+  const series14 = catches.value.series14 || [];
+  const names = new Map((overviewData.value.cameraRealtimeList || []).map(c => [c.deviceSerial, c.deviceName || c.deviceSerial]));
+  return {
+    labels: series14.map(d => shortDay(d.day)),
+    series: [...names.keys()].map(serial => ({ label: names.get(serial), data: series14.map(d => d.byCamera?.[serial] ?? null) }))
+  };
 });
 
 const riskLabel = computed(() => {
@@ -629,6 +670,10 @@ onMounted(async () => {
   padding-bottom: 2px;
   white-space: normal;
   line-height: 1.4;
+}
+.forecast-add {
+  font-size: 11px;
+  color: var(--el-text-color-secondary);
 }
 .forecast-bar {
   border-radius: 4px 4px 0 0;

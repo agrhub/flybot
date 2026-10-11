@@ -7,7 +7,7 @@
           <el-tag v-if="cardState" :type="cardState.type" effect="light" round size="small">{{ cardState.label }}</el-tag>
         </div>
         <div v-if="canManage" class="flex flex-wrap items-center gap-2">
-          <el-button type="primary" size="small" :icon="RefreshRight" :loading="saving" @click="record('card_replaced')">
+          <el-button v-if="!isLure" type="primary" size="small" :icon="RefreshRight" :loading="saving" @click="record('card_replaced')">
             {{ t('maintenance.cardReplaced') }}
           </el-button>
           <el-dropdown trigger="click" @command="openDialog">
@@ -23,8 +23,13 @@
     </template>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <!-- Lure trap: nothing accumulates, only upkeep is logged -->
+      <div v-if="isLure" class="md:col-span-1">
+        <el-tag effect="plain" round size="small">{{ t('trapKind.lure.name') }}</el-tag>
+        <p class="trap-meta mt-2">{{ t('trapKind.lure.maintenanceHint') }}</p>
+      </div>
       <!-- Current card -->
-      <div class="md:col-span-1">
+      <div v-else class="md:col-span-1">
         <el-descriptions :column="1" size="small">
           <el-descriptions-item :label="t('maintenance.cardSince')">
             <span class="trap-value">{{ card?.replacedAt ? formatDate(card.replacedAt) : t('maintenance.never') }}</span>
@@ -110,7 +115,7 @@ const props = defineProps({
   camera: { type: Object, default: null },
 });
 
-const TYPES = ['card_replaced', 'lure_replaced', 'lens_cleaned', 'other'];
+const ALL_TYPES = ['card_replaced', 'lure_replaced', 'lens_cleaned', 'other'];
 const REMINDER_DAYS = [0, 3, 5, 7, 10, 14, 21, 30];
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -124,6 +129,9 @@ const saving = ref(false);
 const savingReminder = ref(false);
 
 const canManage = computed(() => props.camera?.canManage !== false);
+// Lure traps (no glue) have no sticky card to replace or remind about
+const isLure = computed(() => props.camera?.trapKind === 'lure');
+const TYPES = computed(() => (isLure.value ? ALL_TYPES.filter(type => type !== 'card_replaced') : ALL_TYPES));
 const dateLocale = () => (locale.value === 'vi' ? 'vi-VN' : 'en-US');
 const formatDate = (v) => new Date(v).toLocaleDateString(dateLocale());
 const formatDateTime = (v) => new Date(v).toLocaleString(dateLocale(), { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -132,7 +140,7 @@ const cardAgeDays = computed(() => (card.value?.replacedAt ? Math.floor((Date.no
 
 // Overdue / due within a day / fine
 const cardState = computed(() => {
-  if (!card.value?.dueAt) return null;
+  if (isLure.value || !card.value?.dueAt) return null;
   const left = new Date(card.value.dueAt) - Date.now();
   if (left <= 0) return { type: 'danger', label: t('maintenance.overdue') };
   if (left <= DAY_MS) return { type: 'warning', label: t('maintenance.dueSoon') };

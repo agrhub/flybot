@@ -100,7 +100,8 @@ function stubSnapshots({ latestCount, dailyPeaks, topSpecies = 'fruit_fly' }) {
 
 test('diagnosis uses the camera threshold, real counts and no placeholder numbers', async () => {
     store.cameras[0].alertThreshold = 20;
-    stubSnapshots({ latestCount: 12, dailyPeaks: [4, 6, 7, 9, 10, 11, 12] });
+    // Card count by day: catches (the daily rise) 1, 1, 2, 2, 3, 2 -> rising
+    stubSnapshots({ latestCount: 12, dailyPeaks: [1, 2, 3, 5, 7, 10, 12] });
 
     const res = await app.request('/api/ai/diagnose', { method: 'POST', headers: bearer(ALICE), body: {} });
     assert.equal(res.status, 200);
@@ -112,7 +113,10 @@ test('diagnosis uses the camera threshold, real counts and no placeholder number
     assert.equal(diagnosis.referenceThreshold, 20);
     assert.equal(diagnosis.dominantPest, 'fruit_fly');
     assert.equal(diagnosis.forecast.trajectory, 'surging');
-    assert.equal(diagnosis.forecast.dataDays, 7);
+    assert.equal(diagnosis.forecast.dataDays, 6, 'the first day has no day before it');
+    // The forecast adds the expected catches to what is on the card now
+    const counts = diagnosis.forecast.days.map(d => d.projectedCount);
+    assert.ok(counts[0] >= 12 && counts.every((c, i) => i === 0 || c >= counts[i - 1]), String(counts));
     assert.ok(['low', 'medium', 'high'].includes(diagnosis.forecast.confidence));
     assert.equal(diagnosis.forecast.days.length, 7);
     assert.equal(diagnosis.weather, null, 'no GPS on the camera, so no weather lookup');
@@ -141,32 +145,32 @@ test('high risk triggers the full plan', async () => {
 
 // ---------- Comparison endpoint ----------
 
-test('comparison: period totals, % change and per-camera ranking', async () => {
+test('comparison: catches (rise of each card), FTD, % change and per-camera ranking', async () => {
     store.cameras.push({ userId: ALICE, deviceSerial: 'CAMB', deviceName: 'Lot B', alertThreshold: 10 });
-    // Daily rollup: today is in the current week, 9 days ago in the previous one
+    // Daily rollup peaks; catches are the rise over the day before
     const fmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
-    const today = fmt.format(new Date());
-    const lastWeek = fmt.format(new Date(Date.now() - 9 * 86400000));
+    const day = (n) => fmt.format(new Date(Date.now() - n * 86400000));
+    const row = (serial, n, peak) => ({ deviceSerial: serial, day: day(n), total: peak * 10, scans: 10, peak, min: 0, species: [] });
     store.dailyStats = [
-        { deviceSerial: 'CAMA', day: today, total: 60, scans: 20, peak: 9, min: 0, species: [] },
-        { deviceSerial: 'CAMA', day: lastWeek, total: 40, scans: 20, peak: 6, min: 0, species: [] },
-        { deviceSerial: 'CAMB', day: today, total: 90, scans: 10, peak: 14, min: 0, species: [] }
+        row('CAMA', 1, 5), row('CAMA', 0, 9),   // current week: +4
+        row('CAMA', 9, 2), row('CAMA', 8, 6),   // previous week: +4
+        row('CAMB', 1, 10), row('CAMB', 0, 15)  // current week: +5
     ];
     const res = await app.request('/api/ai/comparison?days=7', { headers: bearer(ALICE) });
     assert.equal(res.status, 200);
     const { comparison } = await res.json();
 
-    assert.equal(comparison.current.totalInsects, 150);
-    assert.equal(comparison.previous.totalInsects, 40);
-    assert.equal(comparison.change.totalInsects, 275);
-    assert.equal(comparison.current.avgPerScan, 5);
-    assert.equal(comparison.current.peakCount, 14);
+    assert.equal(comparison.current.totalInsects, 9, 'insects caught, not a sum over every photo');
+    assert.equal(comparison.previous.totalInsects, 4);
+    assert.equal(comparison.change.totalInsects, 125);
+    assert.equal(comparison.current.avgPerScan, 4.5, 'flies per trap per day');
+    assert.equal(comparison.current.peakCount, 15);
 
-    assert.deepEqual(comparison.cameras.map(c => c.deviceSerial), ['CAMB', 'CAMA'], 'sorted by total');
+    assert.deepEqual(comparison.cameras.map(c => c.deviceSerial), ['CAMB', 'CAMA'], 'sorted by catches');
     const lotB = comparison.cameras[0];
-    assert.equal(lotB.riskLevel, 'high', 'peak 14 vs its threshold 10');
+    assert.equal(lotB.riskLevel, 'high', 'card count 15 vs its threshold 10');
     assert.equal(lotB.changePct, null, 'nothing in the previous period to compare with');
-    assert.equal(comparison.cameras[1].changePct, 50);
+    assert.equal(comparison.cameras[1].changePct, 0);
 });
 
 test('comparison validates the period', async () => {

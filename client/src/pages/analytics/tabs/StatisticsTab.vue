@@ -20,9 +20,10 @@
       />
 
       <StatCard
-        :label="t('analytics.scanCountCard')"
-        :value="scanCount.toLocaleString()"
-        :description="t('analytics.dataPointsUnit')"
+        :label="t('analytics.catchesInPeriod')"
+        :value="periodCatches === null ? '--' : Math.round(periodCatches).toLocaleString()"
+        :unit="t('analytics.insectsUnit')"
+        :description="t('analytics.catchesInPeriodDesc')"
         :icon="DataLine"
       />
 
@@ -49,13 +50,25 @@
       <el-card shadow="never" class="lg:col-span-2">
         <template #header>
           <div class="flex flex-wrap items-center justify-between gap-3">
-            <span class="section-title">{{ t('analytics.densityChart') }}</span>
-            <el-segmented
-              :model-value="currentMode"
-              :options="modes"
-              size="small"
-              @change="setMode"
-            />
+            <div class="min-w-0">
+              <span class="section-title">{{ metric === 'catches' ? t('analytics.catchesChart') : t('analytics.densityChart') }}</span>
+              <p class="metric-hint">{{ metric === 'catches' ? t('analytics.catchesChartHint') : t('analytics.onTrapChartHint') }}</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <el-segmented
+                v-if="currentMode !== 'hour'"
+                :model-value="metric"
+                :options="metricOptions"
+                size="small"
+                @change="setMetric"
+              />
+              <el-segmented
+                :model-value="currentMode"
+                :options="modes"
+                size="small"
+                @change="setMode"
+              />
+            </div>
           </div>
         </template>
 
@@ -126,6 +139,18 @@ const modes = computed(() => [
 ])
 
 const currentMode = ref('day')
+// "catches": insects caught per day (rise of each sticky card; average present for lure traps)
+// "card": the count in the photos, what alert thresholds compare
+const metric = ref('catches')
+const metricOptions = computed(() => [
+  { label: t('analytics.metricCatches'), value: 'catches' },
+  { label: t('analytics.metricOnTrap'), value: 'card' }
+])
+const setMetric = (value) => {
+  metric.value = value
+  fetchStatistics()
+}
+const periodCatches = ref(null)
 const loading = ref(false)
 const statsData = ref([])
 
@@ -250,7 +275,15 @@ const fetchStatistics = async () => {
   loading.value = true
   try {
     loadCardMarkers(serial)
-    const res = await api.getStatistics(serial, currentMode.value, props.startDate, props.endDate)
+    const useCatches = metric.value === 'catches' && currentMode.value !== 'hour'
+    const [res, catchRes] = await Promise.all([
+      api.getStatistics(serial, currentMode.value, props.startDate, props.endDate, useCatches ? 'catches' : null),
+      // Catches over the period, for the summary card and the trend
+      useCatches ? Promise.resolve(null) : api.getStatistics(serial, 'day', props.startDate, props.endDate, 'catches').catch(() => null)
+    ])
+    const catchSeries = useCatches ? (res.data?.data || []) : (catchRes?.data?.data || [])
+    periodCatches.value = catchSeries.reduce((sum, item) => sum + (item.insects || []).reduce((a, b) => a + (b.value || 0), 0), 0)
+    computeTrend(catchSeries)
     if (res.data?.success) {
       statsData.value = res.data.data || []
       processStats(statsData.value)
@@ -312,24 +345,21 @@ const processStats = (data) => {
     speciesList.value = []
   }
 
-  // Forecast trend
-  if (data.length >= 2) {
-    const last = (data[data.length - 1].insects || []).reduce((a, b) => a + (b.value || 0), 0)
-    const prev = (data[data.length - 2].insects || []).reduce((a, b) => a + (b.value || 0), 0)
-    if (last > prev * 1.1) {
-      forecastStatus.value = 'up'
-      forecastIcon.value = 'up'
-    } else if (last < prev * 0.9) {
-      forecastStatus.value = 'down'
-      forecastIcon.value = 'down'
-    } else {
-      forecastStatus.value = 'stable'
-      forecastIcon.value = 'stable'
-    }
-  } else {
+}
+
+// Short-term trend from daily catches: the last 3 days against the 3 before
+const computeTrend = (catchSeries) => {
+  const totals = catchSeries.map(item => (item.insects || []).reduce((a, b) => a + (b.value || 0), 0))
+  if (totals.length < 4) {
     forecastStatus.value = 'stable'
     forecastIcon.value = ''
+    return
   }
+  const recent = totals.slice(-3).reduce((a, b) => a + b, 0)
+  const before = totals.slice(-6, -3).reduce((a, b) => a + b, 0)
+  const status = recent > before * 1.15 + 1 ? 'up' : recent < before * 0.85 - 1 ? 'down' : 'stable'
+  forecastStatus.value = status
+  forecastIcon.value = status
 }
 
 const renderCharts = (data) => {
@@ -508,5 +538,10 @@ onUnmounted(() => {
   font-size: 15px;
   font-weight: 600;
   color: var(--el-text-color-primary);
+}
+.metric-hint {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
 }
 </style>

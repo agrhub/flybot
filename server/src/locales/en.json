@@ -314,6 +314,7 @@
     "days_must_be_one_of_list": "days must be one of {list}.",
     "role_must_be_one_of_list": "role must be one of {list}.",
     "type_must_be_one_of_list": "type must be one of {list}.",
+    "trapkind_must_be_one_of_list": "trapKind must be one of {list}.",
     "widget_type_must_be_one_of_list": "Widget type must be one of {list}.",
     "field_must_be_at_most_max_characters": "{field} must be at most {max} characters.",
     "a_dashboard_can_have_at_most_max_widgets": "A dashboard can have at most {max} widgets.",

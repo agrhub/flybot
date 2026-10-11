@@ -318,6 +318,9 @@ const enrichedCameras = computed(() => {
       longitude: cam.longitude ?? live?.longitude ?? null,
       locationAddress: cam.locationAddress || live?.locationAddress || '',
       currentCount: live?.currentCount ?? 0,
+      today: live?.today ?? null,
+      ftd7: live?.ftd7 ?? null,
+      trapKind: live?.trapKind || cam.trapKind || 'sticky',
       // Computed by the API against each camera's own alert threshold
       riskLevel: live?.riskLevel || 'low',
       alertThreshold: live?.alertThreshold,
@@ -805,7 +808,8 @@ const renderMarkers = () => {
 
         <!-- Density & orchard info -->
         <div class="popup-info-box">
-          <div><b>${t('dashboard.realtimeByCamera')}:</b> <span style="color: ${getPinColor(cam.riskLevel)}; font-weight: 600;">${cam.currentCount} ${t('dashboard.insectsShort')}</span></div>
+          <div><b>${cam.trapKind === 'lure' ? t('dashboard.presentNow') : t('dashboard.onTrapNow')}:</b> <span style="color: ${getPinColor(cam.riskLevel)}; font-weight: 600;">${cam.currentCount} / ${cam.alertThreshold ?? '--'} ${t('dashboard.insectsShort')}</span></div>
+          <div><b>${t('map.popupToday')}:</b> ${cam.today ?? '--'} · <b>${t('map.popupFtd')}:</b> ${cam.ftd7 ?? '--'}</div>
           <div><b>${t('map.cropType')}:</b> ${escapeHtml(cam.cropType)}</div>
           <div class="map-popup__ellipsis"><b>${t('map.orchardAddress')}:</b> ${escapeHtml(cam.locationAddress || t('map.noAddress'))}</div>
         </div>
@@ -871,7 +875,8 @@ const focusCamera = (cam) => {
   }
 };
 
-// Density heatmap: intensity is the trap's count relative to its own alert threshold
+// Heatmap: where flies arrive fastest (flies per trap per day over 7 days, relative to the
+// busiest trap); traps without that history fall back to their count against their threshold
 const renderHeatmap = () => {
   if (!map) return;
   if (heatLayer) {
@@ -880,9 +885,14 @@ const renderHeatmap = () => {
   }
   if (!showHeatmap.value || typeof L.heatLayer !== 'function') return;
   const points = locatedCameras.value
-    .filter(c => c.currentCount > 0)
-    .map(c => [Number(c.latitude), Number(c.longitude), Math.min(1, c.currentCount / (c.alertThreshold || 15))]);
-  heatLayer = L.heatLayer(points, { radius: 40, blur: 30, maxZoom: 17, minOpacity: 0.35 }).addTo(map);
+    .filter(c => (c.ftd7 ?? c.currentCount) > 0);
+  const maxFtd = Math.max(0, ...points.map(c => c.ftd7 || 0));
+  const heat = points.map(c => [
+    Number(c.latitude),
+    Number(c.longitude),
+    maxFtd > 0 && c.ftd7 !== null ? Math.max(0.15, c.ftd7 / maxFtd) : Math.min(1, c.currentCount / (c.alertThreshold || 15))
+  ]);
+  heatLayer = L.heatLayer(heat, { radius: 40, blur: 30, maxZoom: 17, minOpacity: 0.35 }).addTo(map);
 };
 
 watch(showHeatmap, renderHeatmap);

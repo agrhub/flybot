@@ -13,6 +13,7 @@ router.post('/analyze-roboflow/:snapshotId', aiController.analyzeRoboflowSnapsho
 router.get('/statistics', aiController.getAiStatistics);
 router.get('/overview', aiController.getAiOverview);
 router.get('/comparison', aiController.getAiComparison);
+router.get('/insights', aiController.getAiInsights);
 router.put('/snapshots/:snapshotId/review', aiController.reviewSnapshot);
 router.get('/reviews/export', aiController.exportReviews);
 router.post('/diagnose', aiController.getAiDiagnosis);

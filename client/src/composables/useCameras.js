@@ -13,7 +13,8 @@ const isAddCameraOpen = ref(false);
 const addingCamera = ref(false);
 const newCameraForm = reactive({
   deviceSerial: '',
-  validateCode: ''
+  validateCode: '',
+  trapKind: 'sticky'
 });
 
 export function useCameras() {
@@ -68,6 +69,7 @@ export function useCameras() {
   const openAddCameraModal = () => {
     newCameraForm.deviceSerial = '';
     newCameraForm.validateCode = '';
+    newCameraForm.trapKind = 'sticky';
     isAddCameraOpen.value = true;
   };
 
@@ -97,7 +99,7 @@ export function useCameras() {
 
     addingCamera.value = true;
     try {
-      const res = await api.addCamera(serial, code);
+      const res = await api.createCamera({ deviceSerial: serial, validateCode: code, trapKind: newCameraForm.trapKind });
       if (res.data?.success) {
         ElNotification({
           title: t('common.success'),
