@@ -1,7 +1,7 @@
 {
   "email": {
     "greeting": "Xin chào {name},",
-    "footer": "Đây là email tự động từ FlyBot Smart Trap Studio.",
+    "footer": "Đây là email tự động từ FlyBot.",
     "footerAlerts": "Bạn nhận email cảnh báo vì đang bật thông báo qua email. Có thể tắt trong Cài đặt → Thông báo.",
     "linkFallback": "Nếu nút không hoạt động, hãy sao chép đường dẫn này vào trình duyệt:",
     "passwordReset": {

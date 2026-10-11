@@ -1,6 +1,6 @@
 {
   "common": {
-    "brandStudio": "Smart Trap Studio",
+    "brandStudio": "FlyBot Studio",
     "brandName": "FlyBot",
     "studioTag": "STUDIO",
     "collapse": "Thu gọn menu",
@@ -35,9 +35,9 @@
   },
   "nav": {
     "home": "Trang chủ",
-    "dashboard": "Dashboard",
+    "dashboard": "Tổng quan",
     "cameras": "Camera",
-    "analytics": "Analytics",
+    "analytics": "Phân tích",
     "map": "Bản đồ",
     "settings": "Cài đặt",
     "engine": "Tính năng",
@@ -49,7 +49,7 @@
     "contact": "Liên hệ",
     "signIn": "Đăng nhập",
     "getStarted": "Bắt đầu",
-    "launchStudio": "Vào Studio",
+    "launchStudio": "Vào ứng dụng",
     "capabilities": "Tính năng",
     "showcase": "Ứng dụng",
     "about": "Giới thiệu",
@@ -67,7 +67,7 @@
   "topbar": {
     "notifications": "Thông báo",
     "noNotifications": "Không có thông báo mới",
-    "assistant": "Assistant",
+    "assistant": "Trợ lý",
     "lightMode": "Chuyển sang chế độ Sáng",
     "darkMode": "Chuyển sang chế độ Tối",
     "changePassword": "Đổi mật khẩu",
@@ -76,10 +76,10 @@
     "appearance": "Ngôn ngữ & giao diện"
   },
   "auth": {
-    "tagline": "Smart Trap & Vision AI Studio",
+    "tagline": "Bẫy côn trùng thông minh, AI nhận dạng",
     "accountEmail": "Email tài khoản",
     "password": "Mật khẩu",
-    "loginBtn": "Đăng nhập Studio",
+    "loginBtn": "Đăng nhập",
     "noAccount": "Chưa có tài khoản?",
     "registerNow": "Đăng ký ngay",
     "newEmail": "Email mới",
@@ -88,7 +88,7 @@
     "hasAccount": "Đã có tài khoản?",
     "backToLogin": "Quay lại đăng nhập",
     "loginSuccess": "Đăng nhập thành công",
-    "welcomeBack": "Chào mừng trở lại FlyBot Studio",
+    "welcomeBack": "Chào mừng trở lại FlyBot",
     "registerSuccess": "Đăng ký thành công",
     "registerSuccessMsg": "Tài khoản đã sẵn sàng! Vui lòng đăng nhập.",
     "loginFailed": "Đăng nhập thất bại",
@@ -122,10 +122,10 @@
     "welcome": "Chào mừng trở lại",
     "title": "Giám sát côn trùng thông minh",
     "activeCameras": "Camera Hoạt Động",
-    "insectsCount": "Côn Trùng Realtime",
-    "hotspotPeak": "Điểm Nóng Realtime (Max)",
+    "insectsCount": "Côn trùng hiện tại",
+    "hotspotPeak": "Điểm nóng (cao nhất)",
     "hotspotSubtitle": "Bẫy có mật độ cao nhất hiện tại",
-    "realtimeTotal": "Tổng Realtime Toàn Vườn",
+    "realtimeTotal": "Tổng hiện tại toàn vườn",
     "realtimeTotalDesc": "Mật độ thời gian thực trên các bẫy",
     "riskIndex": "Chỉ Số Nguy Cơ Dịch Hại",
     "onlinePct": "Trực tuyến",
@@ -138,7 +138,7 @@
     "scans24h": "Lượt Quét 24h Qua",
     "scansUnit": "lần quét",
     "scans24hDesc": "Tự động phân tích ảnh từ các bẫy thông minh",
-    "totalS3Snapshots": "Tổng Snapshot Lưu Trữ S3",
+    "totalS3Snapshots": "Tổng ảnh đã lưu",
     "recordsUnit": "bản ghi",
     "s3Desc": "Đồng bộ tự động & quản lý vòng đời dữ liệu",
     "cameraRoster": "Danh Sách Bẫy Côn Trùng",
@@ -149,7 +149,7 @@
     "viewAll": "Xem tất cả",
     "hoursUnit": "giờ",
     "pointsUnit": "lần",
-    "realtimeByCamera": "Mật Độ Realtime Từng Camera",
+    "realtimeByCamera": "Mật độ hiện tại từng camera",
     "realtimeByCameraDesc": "So sánh số lượng cá thể ruồi vàng hiện tại giữa các bẫy",
     "minMaxAvgTitle": "Thống Kê Biến Động (Min / Max / Avg)",
     "minMaxAvgDesc": "Dữ liệu số lượng nhận dạng thực tế từ các lần quét",
@@ -160,9 +160,9 @@
     "statMax": "Cao nhất (Max)",
     "statAvg": "Trung bình (Avg)",
     "statScans": "Lượt quét AI",
-    "aiAgentTitle": "Chẩn Đoán Nông Học & Dự Báo Dịch Hại (AI Copilot)",
+    "aiAgentTitle": "Chẩn đoán nông học & dự báo dịch hại bằng AI",
     "aiAgentSubtitle": "Mô hình AI dự báo bùng phát ruồi vàng và gợi ý biện pháp xử lý chuẩn IPM",
-    "runDiagnosis": "Chẩn đoán lại với AI Agent",
+    "runDiagnosis": "Chẩn đoán lại bằng AI",
     "runningDiagnosis": "AI đang phân tích dữ liệu...",
     "recommendationsTitle": "Biện Pháp Xử Lý Khuyến Nghị",
     "trajectoryTitle": "Dự Báo Xu Hướng 7 Ngày Tới",
@@ -185,7 +185,7 @@
     "cycleAverage": "trung bình chu kỳ",
     "aiProcessedRuns": "lượt AI xử lý",
     "dominantSpeciesLabel": "Loài chiếm ưu thế:",
-    "aiCopilotAgentBadge": "AI Agricultural Copilot Agent",
+    "aiCopilotAgentBadge": "Trợ lý AI nông học",
     "modelConfidence": "Độ tin cậy mô hình:",
     "appliedZone": "Vùng áp dụng:",
     "noCamerasPrompt": "Chưa có camera nào được kết nối. Nhấn 'Thêm camera' để bắt đầu giám sát.",
@@ -285,7 +285,7 @@
     "gridView": "Lưới Đa Camera (Grid)",
     "addCameraBtn": "Thêm camera",
     "newCameraModal": "Thêm Camera Mới",
-    "serialNumber": "Serial Number (SN)",
+    "serialNumber": "Số serial (SN)",
     "validateCode": "Mã xác thực (Verification Code)",
     "updateCode": "Cập nhật mã",
     "deviceName": "Tên thiết bị",
@@ -417,7 +417,7 @@
     "subtitle": "Phân tích mật độ côn trùng gây hại, đối tượng phát hiện và xuất báo cáo",
     "allCameras": "Tất cả camera (Tổng hợp)",
     "tabTrends": "Biểu đồ & Xu Hướng",
-    "tabHistory": "Lịch sử Snapshot",
+    "tabHistory": "Lịch sử nhận diện",
     "exportPdf": "Xuất Báo Cáo PDF",
     "exportXlsx": "Xuất Báo Cáo Excel (XLSX)",
     "time": "Thời gian",
@@ -479,7 +479,7 @@
       "colScanTime": "Thời gian quét",
       "colDevice": "Thiết bị",
       "colSerial": "Serial camera",
-      "colSnapshot": "Ảnh snapshot",
+      "colSnapshot": "Ảnh",
       "colCount": "Số lượng",
       "colInsectCount": "Số lượng côn trùng",
       "colSpecies": "Phân loại loài",
@@ -589,14 +589,14 @@
     "confirmPasswordHint": "Nhập lại mật khẩu mới...",
     "preferencesSub": "Tùy biến giao diện và ngôn ngữ hiển thị theo sở thích",
     "currentTheme": "Hiện tại",
-    "darkTheme": "Chế độ Tối (Dark)",
-    "lightTheme": "Chế độ Sáng (Light)",
+    "darkTheme": "Chế độ tối",
+    "lightTheme": "Chế độ sáng",
     "langSub": "Ngôn ngữ giao diện ứng dụng",
     "storageSub": "Thông tin hạ tầng lưu trữ S3 MinIO và mô hình phân tích Google Vertex AI",
     "storageModel": "Mô hình AI Thị giác",
     "storageRetention": "Chu kỳ lưu trữ tự động",
     "termsSub": "Quy định sử dụng hệ thống giám sát và bảo mật dữ liệu nông nghiệp",
-    "termsP1": "Hệ thống FlyBot Smart Trap Studio thu thập hình ảnh phục vụ mục đích phân tích mật độ dịch hại nông nghiệp và giám sát vườn trồng thông minh.",
+    "termsP1": "Hệ thống FlyBot thu thập hình ảnh phục vụ mục đích phân tích mật độ dịch hại nông nghiệp và giám sát vườn trồng thông minh.",
     "termsP2": "Toàn bộ dữ liệu snapshot và luồng video được bảo mật theo tiêu chuẩn mã hóa đám mây EZVIZ Open Platform và lưu trữ cục bộ trên MinIO S3 cluster.",
     "notificationsTab": "Thông báo",
     "notificationsSub": "Chọn cách nhận cảnh báo dịch hại và camera",
@@ -876,7 +876,7 @@
           "count": {
             "title": "Xem AI đếm trên ảnh",
             "desc": "Mỗi ảnh được AI đếm; khung xanh đánh dấu từng con kèm độ tin cậy.",
-            "items": "Vào Analytics, mở tab \"Lịch sử Snapshot\", hoặc mở một camera và kéo xuống \"Lịch sử nhận diện của camera\".\nBảng có bộ lọc riêng: camera (chọn nhiều), thời gian, trạng thái cảnh báo (Cảnh báo, Cần chú ý, Bình thường) và trạng thái duyệt.\nCột \"Trạng thái cảnh báo\" so số đếm của ảnh với ngưỡng của camera; khi chọn nhiều camera, bảng có thêm cột Camera.\nBấm biểu tượng con mắt ở một dòng để mở ảnh: khung nhận diện, số lượng theo loài và biểu đồ tỷ lệ.\n\"Xuất dữ liệu\" lưu mọi bản ghi khớp bộ lọc (không chỉ trang đang xem), kèm ảnh có khung nhận diện: \"PDF kèm ảnh\" hoặc \"Excel kèm ảnh\" (mỗi camera một sheet)."
+            "items": "Vào Phân tích, mở tab \"Lịch sử nhận diện\", hoặc mở một camera và kéo xuống \"Lịch sử nhận diện của camera\".\nBảng có bộ lọc riêng: camera (chọn nhiều), thời gian, trạng thái cảnh báo (Cảnh báo, Cần chú ý, Bình thường) và trạng thái duyệt.\nCột \"Trạng thái cảnh báo\" so số đếm của ảnh với ngưỡng của camera; khi chọn nhiều camera, bảng có thêm cột Camera.\nBấm biểu tượng con mắt ở một dòng để mở ảnh: khung nhận diện, số lượng theo loài và biểu đồ tỷ lệ.\n\"Xuất dữ liệu\" lưu mọi bản ghi khớp bộ lọc (không chỉ trang đang xem), kèm ảnh có khung nhận diện: \"PDF kèm ảnh\" hoặc \"Excel kèm ảnh\" (mỗi camera một sheet)."
           },
           "review": {
             "title": "Xác nhận hoặc sửa số đếm",
@@ -895,8 +895,8 @@
           },
           "forecast": {
             "title": "Chẩn đoán AI & dự báo",
-            "desc": "Khung AI Copilot ở Tổng quan tổng hợp nguy cơ, xu hướng và biện pháp gợi ý.",
-            "items": "Bấm \"Chẩn đoán lại với AI Agent\" ở cuối trang Tổng quan.\n\"Dự báo xu hướng 7 ngày tới\" theo dõi bẫy nhiều ruồi nhất: dự báo số ruồi mới mỗi ngày (+) rồi cộng dồn vào số trên tấm keo, màu theo ngưỡng của bẫy.\n\"Đợt ruồi trưởng thành tiếp theo\": tính theo độ-ngày từ đợt bắt nhiều nhất, kèm tiến độ và thời gian một thế hệ.\n\"Biện pháp xử lý khuyến nghị\": gợi ý theo nguyên tắc quản lý dịch hại tổng hợp. Đây là ước tính để tham khảo, hãy kiểm tra thực tế tại vườn."
+            "desc": "Khung chẩn đoán AI ở Tổng quan tổng hợp nguy cơ, xu hướng và biện pháp gợi ý.",
+            "items": "Bấm \"Chẩn đoán lại bằng AI\" ở cuối trang Tổng quan.\n\"Dự báo xu hướng 7 ngày tới\" theo dõi bẫy nhiều ruồi nhất: dự báo số ruồi mới mỗi ngày (+) rồi cộng dồn vào số trên tấm keo, màu theo ngưỡng của bẫy.\n\"Đợt ruồi trưởng thành tiếp theo\": tính theo độ-ngày từ đợt bắt nhiều nhất, kèm tiến độ và thời gian một thế hệ.\n\"Biện pháp xử lý khuyến nghị\": gợi ý theo nguyên tắc quản lý dịch hại tổng hợp. Đây là ước tính để tham khảo, hãy kiểm tra thực tế tại vườn."
           }
         }
       },
@@ -950,7 +950,7 @@
         "steps": {
           "ask": {
             "title": "Hỏi bằng lời",
-            "desc": "Bấm nút \"Assistant\" ở góc trên để mở trợ lý; menu trái tự thu gọn cho rộng chỗ.",
+            "desc": "Bấm nút \"Trợ lý\" ở góc trên để mở trợ lý; menu trái tự thu gọn cho rộng chỗ.",
             "items": "Hỏi như nói chuyện: \"Bẫy nào nặng nhất?\", \"Tuần này so với tuần trước?\", \"Hôm nay có cảnh báo gì?\", \"Lần phun tuần trước có hiệu quả không?\", \"Tóm tắt báo cáo mùa vụ\".\nTrợ lý tự tra số liệu thật của bạn trước khi trả lời, dùng cùng cách tính ruồi vào bẫy như các trang khác.\nTrợ lý chỉ thấy camera và báo cáo bạn được xem; quản trị viên hỏi được cả tình trạng luồng chụp ảnh.\nTrợ lý có thể mở đúng trang hoặc tab bạn cần, chụp ảnh mới từ camera, hoặc gửi một báo cáo PDF về email của bạn."
           },
           "cards": {
@@ -976,7 +976,7 @@
           "app": {
             "title": "Giao diện điện thoại",
             "desc": "FlyBot tự chuyển sang giao diện như ứng dụng khi mở trên điện thoại.",
-            "items": "Thanh dưới cùng: Tổng quan, Camera, Analytics, Bản đồ và Thêm.\nCác trang dài được xếp thành từng thẻ dọc, dễ cuộn bằng một tay."
+            "items": "Thanh dưới cùng: Tổng quan, Camera, Phân tích, Bản đồ và Thêm.\nCác trang dài được xếp thành từng thẻ dọc, dễ cuộn bằng một tay."
           },
           "more": {
             "title": "Menu Thêm & cài ứng dụng",
@@ -2240,7 +2240,7 @@
         "desc": "Xem trực tiếp, xem lại theo dòng thời gian, chụp ngay, bảo trì bẫy và lịch sử nhận diện của từng camera."
       },
       "analytics": {
-        "title": "Analytics",
+        "title": "Phân tích",
         "desc": "Biểu đồ, phân tích chuyên sâu và lịch sử nhận diện. Mỗi khối có bộ lọc riêng; xuất PDF hoặc Excel kèm ảnh."
       },
       "reports": {
