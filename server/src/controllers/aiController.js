@@ -1228,6 +1228,63 @@ async function rateChatMessage(req, res) {
     }
 }
 
+const CONFIRM_ACTIONS = {
+    // A sticky card replaced: the same checks as POST /api/user/camera/maintenance
+    async card_change(req, payload) {
+        const { findManageableCamera } = require('../utils/ownership');
+        const camera = await findManageableCamera(req.user, String(payload.deviceSerial || ''));
+        if (!camera) return { error: "Camera not found or you cannot manage it." };
+        const at = new Date(payload.at);
+        if (isNaN(at) || at > new Date(Date.now() + 5 * 60 * 1000) || at < new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)) {
+            return { error: "Invalid date (up to 90 days back, not in the future)." };
+        }
+        await require('../services/maintenanceService').recordEvent({ deviceSerial: camera.deviceSerial, type: 'card_replaced', at, note: payload.note || '', user: req.user });
+        return {};
+    },
+    // A logbook treatment: the same checks as POST /api/treatments
+    async treatment(req, payload) {
+        const { Treatment } = require('../models');
+        const { validateInput } = require('./treatmentController');
+        const checked = await validateInput(payload, req.user);
+        if (checked.error) return { error: checked.error };
+        const treatment = await Treatment.create({ ...checked.value, createdBy: req.user.id, createdByEmail: req.user.email });
+        require('../services/auditService').recordAudit(req, {
+            action: 'treatment.created',
+            target: { type: 'treatment', id: String(treatment._id), label: `${treatment.type}${treatment.product ? `: ${treatment.product}` : ''}` },
+            details: { cameras: treatment.cameraSerials, at: treatment.at.toISOString(), via: 'assistant' }
+        });
+        return {};
+    }
+};
+
+/**
+ * POST /api/ai/chat/confirm { sessionId, messageId, cardIndex, decision: 'confirm' | 'cancel' }
+ * Runs (or drops) a change the assistant proposed, from the card stored with its answer: what the
+ * browser sends is only which card, never what to record.
+ */
+async function confirmChatAction(req, res) {
+    try {
+        const { sessionId, messageId, cardIndex, decision } = req.body || {};
+        if (!SESSION_ID_REGEX.test(String(sessionId || '')) || typeof messageId !== 'string'
+            || !Number.isInteger(cardIndex) || cardIndex < 0 || cardIndex > 9 || !['confirm', 'cancel'].includes(decision)) {
+            return res.status(400).json({ success: false, message: "Invalid request." });
+        }
+        const userId = req.user.id;
+        const card = await agent.claimCard(userId, sessionId, messageId.slice(0, 100), cardIndex, decision === 'cancel' ? 'cancelled' : 'running');
+        if (!card) return res.status(409).json({ success: false, message: "This has already been handled." });
+        if (decision === 'cancel') return res.json({ success: true, state: 'cancelled' });
+
+        const run = CONFIRM_ACTIONS[card.action];
+        const outcome = run ? await run(req, card.payload || {}).catch(err => ({ error: err.message })) : { error: "Unknown action." };
+        const state = outcome.error ? 'failed' : 'done';
+        await agent.finishCard(userId, sessionId, messageId, cardIndex, { state, message: outcome.error || '' });
+        if (outcome.error) return res.status(400).json({ success: false, state, message: outcome.error });
+        res.json({ success: true, state });
+    } catch (err) {
+        sendServerError(res, err, { context: 'Confirm assistant action' });
+    }
+}
+
 async function clearChatSession(req, res) {
     try {
         const { sessionId = 'default-session' } = req.body || {};
@@ -1253,5 +1310,6 @@ module.exports = {
     chatWithAssistantStream,
     getChatHistory,
     rateChatMessage,
+    confirmChatAction,
     clearChatSession
 };

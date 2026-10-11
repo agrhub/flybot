@@ -125,7 +125,8 @@ async function chatWithAgent({
     // Inject UI context header into current query
     const tabStr = uiContext.tab ? `Current View: "${uiContext.tab}"` : 'View: dashboard';
     const cameraStr = uiContext.deviceSerial ? `Selected Camera: "${uiContext.deviceSerial}"` : 'Camera: all';
-    const userPrompt = `[UI Context | ${tabStr}, ${cameraStr}]\n${message}`;
+    const photoStr = typeof uiContext.snapshotId === 'string' && /^[a-f0-9]{24}$/.test(uiContext.snapshotId) ? `, Selected Photo: "${uiContext.snapshotId}"` : '';
+    const userPrompt = `[UI Context | ${tabStr}, ${cameraStr}${photoStr}]\n${message}`;
 
     const historyLengthBefore = sessionHistory.length;
     sessionHistory.push({ role: 'user', parts: [{ text: userPrompt }] });
@@ -292,7 +293,37 @@ async function chatWithAgent({
     };
 }
 
+// ---------- Confirm cards ----------
+
+/**
+ * Take a pending confirm card of this user's answer, once: it moves to `next` ('running' or
+ * 'cancelled') only from 'pending', so a double click or a second tab cannot run it twice.
+ * Returns the card as it was stored, or null.
+ */
+async function claimCard(userId, sessionId, messageId, index, next) {
+    const at = `m.cards.${index}`;
+    const res = await ChatSession.updateOne(
+        { userId, sessionId },
+        { $set: { [`messages.$[m].cards.${index}.state`]: next } },
+        { arrayFilters: [{ 'm.id': messageId, 'm.role': 'assistant', [`${at}.type`]: 'confirm', [`${at}.state`]: 'pending' }] }
+    );
+    if (!res.modifiedCount) return null;
+    const doc = await ChatSession.findOne({ userId, sessionId }).select('messages').lean();
+    return doc?.messages.find(m => m.id === messageId)?.cards?.[index] || null;
+}
+
+/** How a confirmed card ended: state 'done' or 'failed', and the line shown on it. */
+async function finishCard(userId, sessionId, messageId, index, { state, message = '' }) {
+    await ChatSession.updateOne(
+        { userId, sessionId },
+        { $set: { [`messages.$[m].cards.${index}.state`]: state, [`messages.$[m].cards.${index}.result`]: String(message).slice(0, 300) } },
+        { arrayFilters: [{ 'm.id': messageId }] }
+    );
+}
+
 module.exports = {
+    claimCard,
+    finishCard,
     trimHistory,
     visibleText,
     setModelClient,

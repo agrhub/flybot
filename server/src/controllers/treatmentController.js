@@ -216,6 +216,7 @@ async function deleteTreatment(req, res) {
 }
 
 module.exports = {
+    validateInput,
     listTreatments,
     getEffect,
     createTreatment,

@@ -358,7 +358,10 @@
     "only_people_a_report_is_shared_with_can_change_this": "Chỉ người được chia sẻ báo cáo mới đổi được mục này.",
     "message_not_found": "Không tìm thấy tin nhắn.",
     "invalid_chat_session": "Cuộc trò chuyện không hợp lệ.",
-    "invalid_rating": "Đánh giá không hợp lệ."
+    "invalid_rating": "Đánh giá không hợp lệ.",
+    "this_has_already_been_handled": "Mục này đã được xử lý rồi.",
+    "unknown_action": "Thao tác không hợp lệ.",
+    "invalid_request": "Yêu cầu không hợp lệ."
   },
   "reportPdf": {
     "range": "Khoảng thời gian: {from} - {to} ({days} ngày)",
@@ -425,5 +428,19 @@
     "suggest2": "🪰 Bẫy nào đang có nhiều ruồi nhất?",
     "suggest3": "📡 Camera nào đang mất kết nối?",
     "suggest4": "📈 Mật độ tuần này so với tuần trước"
+  },
+  "morningBrief": {
+    "title": "FlyBot – Bản tin sáng",
+    "yesterday": "Hôm qua: {count} con vào bẫy trên {cameras} bẫy.",
+    "noData": "Hôm qua chưa có số liệu ruồi vào bẫy ({cameras} bẫy).",
+    "ftd": "Ruồi/bẫy/ngày 7 ngày qua: {ftd}{change}.",
+    "over": "Vượt ngưỡng: {list}.",
+    "near": "Gần ngưỡng: {list}.",
+    "allClear": "Mọi bẫy đều dưới ngưỡng.",
+    "cardsDue": "Tấm keo đến hạn thay: {list}.",
+    "offline": "Camera mất kết nối: {list}.",
+    "alerts": "{count} cảnh báo trong 24 giờ qua.",
+    "button": "Mở FlyBot",
+    "footer": "Bạn nhận bản tin này vì đã bật \"Bản tin sáng\". Tắt trong Cài đặt › Thông báo."
   }
 }

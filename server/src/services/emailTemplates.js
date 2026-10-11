@@ -157,6 +157,24 @@ function weeklyReportEmail({ user, language, lines, url }) {
 }
 
 /**
+ * The morning brief by email (services/morningBriefService.js), for people without Telegram.
+ */
+function morningBriefEmail({ user, language, title, lines, url }) {
+    const t = (key, params) => translate(language, key, params);
+    return {
+        to: user.email,
+        subject: title,
+        ...layout({
+            language,
+            user,
+            paragraphs: lines,
+            button: url ? { label: t('morningBrief.button'), url } : null,
+            footerKey: 'morningBrief.footer'
+        })
+    };
+}
+
+/**
  * A report sent on its schedule (or on request), with the report as a PDF attachment.
  */
 function scheduledReportEmail({ user, language, params, lines = [], url, attachments }) {
@@ -197,6 +215,7 @@ module.exports = {
     contactEmail,
     shareEmail,
     weeklyReportEmail,
+    morningBriefEmail,
     scheduledReportEmail,
     escapeHtml,
     passwordResetEmail,

@@ -40,7 +40,7 @@ Copy the results into the app:
 
 ## Files
 
-- `demo-server.js`: demo API with seeded data (users, farms, four traps, weeks of photos, a report, recordings). It writes the sign-in tokens to `demo-tokens.json` (not versioned). The assistant answers without Vertex: a stand-in model picks a real tool from the question (photos, week comparison, last 24 hours, reports, alerts; otherwise the trap summary) and streams a short answer from its result, so the chat panel, its cards and ratings can be shown.
+- `demo-server.js`: demo API with seeded data (users, farms, four traps, weeks of photos, a report, recordings). It writes the sign-in tokens to `demo-tokens.json` (not versioned). The assistant answers without Vertex: a stand-in model picks a real tool from the question (photos, week comparison, last 24 hours, reports, alerts, "đã thay" / "replaced" for a card change to confirm, a photo asked about from its window; otherwise the trap summary), with a canned look at photos and streams a short answer from its result, so the chat panel, its cards and ratings can be shown.
 - `trapImage.js`: draws the synthetic sticky-card photos and their detection boxes.
 - `demo-client.mjs`: Vite dev server for the demo.
 - `cdp.mjs`: headless Chrome through the DevTools protocol.

@@ -507,6 +507,9 @@ export default {
   getChatHistory(sessionId) {
     return apiClient.get('/ai/chat/history', { params: { sessionId } });
   },
+  confirmChatAction(sessionId, messageId, cardIndex, decision) {
+    return apiClient.post('/ai/chat/confirm', { sessionId, messageId, cardIndex, decision });
+  },
   rateChatMessage(sessionId, messageId, rating) {
     return apiClient.post('/ai/chat/feedback', { sessionId, messageId, rating });
   },

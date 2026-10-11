@@ -693,7 +693,10 @@
       "get_treatments": "reading the logbook",
       "compare_periods": "comparing periods",
       "get_pipeline_health": "checking the capture pipeline",
-      "navigate_ui": "opening the page"
+      "navigate_ui": "opening the page",
+      "inspect_photo": "looking at the photo",
+      "propose_card_change": "preparing the card change",
+      "propose_treatment": "preparing the logbook entry"
     },
     "cards": {
       "count": "{n} insects",
@@ -712,8 +715,27 @@
         "hour": "Catches by hour, last 24 hours",
         "day": "Catches by day, last 30 days",
         "month": "Catches by month, last 12 months"
+      },
+      "confirm": {
+        "card_change": "Record a sticky card change",
+        "treatment": "Add to the farm logbook",
+        "trap": "Trap:",
+        "when": "When:",
+        "kind": "Treatment:",
+        "product": "Product:",
+        "traps": "Traps in the area:",
+        "ok": "Confirm",
+        "cancel": "Cancel",
+        "state": {
+          "done": "Recorded",
+          "cancelled": "Cancelled",
+          "failed": "Could not record",
+          "running": "Recording..."
+        }
       }
-    }
+    },
+    "askAboutPhoto": "Ask the assistant about this photo",
+    "photoQuestion": "Have a look at this photo: what is on it, does the count look right, is anything wrong with the photo?"
   },
   "home": {
     "tagline": "SMART STICKY TRAPS & AI INSECT COUNTING",
@@ -1367,7 +1389,8 @@
         "weeklyReports": "Weekly report",
         "cardReminders": "Sticky card reminders",
         "trainingSync": "AI training upload",
-        "ezvizPolicies": "EZVIZ sub-account access"
+        "ezvizPolicies": "EZVIZ sub-account access",
+        "morningBriefs": "Morning brief"
       },
       "jobSchedules": {
         "capture": "Every 5 minutes",
@@ -1379,7 +1402,8 @@
         "weeklyReports": "Mondays, 7:30",
         "cardReminders": "Daily, 7:00",
         "trainingSync": "Every 15 minutes",
-        "ezvizPolicies": "Hourly, at :17"
+        "ezvizPolicies": "Hourly, at :17",
+        "morningBriefs": "Daily, 6:30"
       },
       "results": {
         "cameras": "{n} camera(s)",
@@ -1948,6 +1972,10 @@
     "follow": {
       "title": "Cameras I follow",
       "desc": "Turn a camera off to stop all of its notifications for you (other people are not affected)."
+    },
+    "morning": {
+      "title": "Morning brief",
+      "desc": "Every morning at 6:30: yesterday's catches, traps over or near their threshold, sticky cards due, cameras offline. On Telegram when linked, otherwise by email."
     }
   },
   "degreeDays": {

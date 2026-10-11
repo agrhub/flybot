@@ -2,6 +2,8 @@ import { ref, watch } from 'vue';
 
 const isDark = ref(localStorage.getItem('smart_trap_theme') !== 'light'); // Default to dark mode
 const isAssistantOpen = ref(false);
+// A question to put to the assistant from elsewhere in the app ({ text, snapshotId? })
+const assistantQuestion = ref(null);
 
 export function useTheme() {
   const initTheme = () => {
@@ -34,6 +36,12 @@ export function useTheme() {
     isAssistantOpen.value = true;
   };
 
+  // Open the assistant and ask it something (e.g. about the photo being viewed)
+  const askAssistant = (question) => {
+    assistantQuestion.value = { ...question, at: Date.now() };
+    isAssistantOpen.value = true;
+  };
+
   // Watch and apply
   watch(isDark, () => {
     initTheme();
@@ -46,6 +54,8 @@ export function useTheme() {
     toggleTheme,
     toggleAssistant,
     closeAssistant,
-    openAssistant
+    openAssistant,
+    askAssistant,
+    assistantQuestion
   };
 }

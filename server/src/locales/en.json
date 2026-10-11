@@ -358,7 +358,10 @@
     "only_people_a_report_is_shared_with_can_change_this": "Only people a report is shared with can change this.",
     "message_not_found": "Message not found.",
     "invalid_chat_session": "Invalid chat session.",
-    "invalid_rating": "Invalid rating."
+    "invalid_rating": "Invalid rating.",
+    "this_has_already_been_handled": "This has already been handled.",
+    "unknown_action": "Unknown action.",
+    "invalid_request": "Invalid request."
   },
   "reportPdf": {
     "range": "Period: {from} - {to} ({days} days)",
@@ -425,5 +428,19 @@
     "suggest2": "🪰 Which trap has the most flies?",
     "suggest3": "📡 Which cameras are offline?",
     "suggest4": "📈 This week compared with last week"
+  },
+  "morningBrief": {
+    "title": "FlyBot – Morning brief",
+    "yesterday": "Yesterday: {count} insects caught on {cameras} traps.",
+    "noData": "No catch figures for yesterday ({cameras} traps).",
+    "ftd": "Flies per trap per day, last 7 days: {ftd}{change}.",
+    "over": "Over threshold: {list}.",
+    "near": "Near threshold: {list}.",
+    "allClear": "Every trap is under its threshold.",
+    "cardsDue": "Sticky cards due: {list}.",
+    "offline": "Cameras offline: {list}.",
+    "alerts": "{count} alert(s) in the last 24 hours.",
+    "button": "Open FlyBot",
+    "footer": "You get this brief because \"Morning brief\" is on. Turn it off in Settings › Notifications."
   }
 }

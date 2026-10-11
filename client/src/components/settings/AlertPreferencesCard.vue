@@ -14,6 +14,17 @@
     </div>
   </el-card>
 
+  <!-- Morning brief -->
+  <el-card shadow="never" class="mb-4">
+    <div class="flex items-start justify-between gap-4">
+      <div class="min-w-0">
+        <span class="pref-label">{{ t('alertPrefs.morning.title') }}</span>
+        <p class="pref-meta mt-1">{{ t('alertPrefs.morning.desc') }}</p>
+      </div>
+      <el-switch :model-value="!!prefs.morningBrief" :loading="saving === 'morning'" @change="(v) => save('morning', { morningBrief: v })" />
+    </div>
+  </el-card>
+
   <!-- Quiet hours -->
   <el-card shadow="never" class="mb-4">
     <div class="flex items-start justify-between gap-4">

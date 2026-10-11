@@ -47,6 +47,29 @@
     </el-tag>
   </div>
 
+  <!-- A change the assistant proposed: recorded only on Confirm -->
+  <div v-else-if="card.type === 'confirm'" class="card-block card-block--confirm">
+    <div class="card-title">{{ t(`assistant.cards.confirm.${card.action}`) }}</div>
+    <div v-if="card.action === 'card_change'" class="confirm-lines">
+      <div><span class="card-meta">{{ t('assistant.cards.confirm.trap') }}</span> {{ card.summary.trap }}</div>
+      <div><span class="card-meta">{{ t('assistant.cards.confirm.when') }}</span> {{ formatTime(card.summary.at) }}</div>
+    </div>
+    <div v-else class="confirm-lines">
+      <div><span class="card-meta">{{ t('assistant.cards.confirm.kind') }}</span> {{ te(`logbook.types.${card.summary.type}`) ? t(`logbook.types.${card.summary.type}`) : card.summary.type }}</div>
+      <div v-if="card.summary.product"><span class="card-meta">{{ t('assistant.cards.confirm.product') }}</span> {{ card.summary.product }}</div>
+      <div><span class="card-meta">{{ t('assistant.cards.confirm.when') }}</span> {{ formatTime(card.summary.at) }}</div>
+      <div><span class="card-meta">{{ t('assistant.cards.confirm.traps') }}</span> {{ (card.summary.traps || []).join(', ') }}</div>
+    </div>
+    <div v-if="card.state === 'pending' || card.state === 'running' || !card.state" class="flex items-center gap-2 mt-2">
+      <el-button size="small" type="primary" :icon="Check" :loading="busy" @click="emit('decide', 'confirm')">{{ t('assistant.cards.confirm.ok') }}</el-button>
+      <el-button size="small" :disabled="busy" @click="emit('decide', 'cancel')">{{ t('assistant.cards.confirm.cancel') }}</el-button>
+    </div>
+    <el-tag v-else :type="{ done: 'success', cancelled: 'info', failed: 'danger' }[card.state]" size="small" effect="light" class="mt-2">
+      {{ t(`assistant.cards.confirm.state.${card.state}`) }}
+    </el-tag>
+    <div v-if="card.result" class="card-meta mt-1 is-danger">{{ card.result }}</div>
+  </div>
+
   <!-- One report's key figures -->
   <div v-else-if="card.type === 'report'" class="card-block">
     <div class="flex items-start justify-between gap-2">
@@ -68,7 +91,7 @@
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
-import { Document } from '@element-plus/icons-vue';
+import { Document, Check } from '@element-plus/icons-vue';
 import api from '@/services/api';
 import CatchBarChart from '@/components/charts/CatchBarChart.vue';
 
@@ -77,11 +100,13 @@ import CatchBarChart from '@/components/charts/CatchBarChart.vue';
  * photos, chart, compare or report.
  */
 const props = defineProps({
-  card: { type: Object, required: true }
+  card: { type: Object, required: true },
+  // A confirm card while its decision is being sent
+  busy: { type: Boolean, default: false }
 });
-const emit = defineEmits(['open']);
+const emit = defineEmits(['open', 'decide']);
 
-const { t } = useI18n();
+const { t, te } = useI18n();
 const router = useRouter();
 
 const previewList = computed(() => (props.card.items || []).map(item => api.getImageUrl(item.imageKey)));
@@ -109,6 +134,16 @@ const openReport = () => {
   border: 1px solid var(--el-border-color-lighter);
   border-radius: var(--el-border-radius-base);
   background-color: var(--el-bg-color);
+}
+.card-block--confirm {
+  border-color: var(--el-color-primary-light-5);
+}
+.confirm-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13px;
+  color: var(--el-text-color-primary);
 }
 .card-title {
   font-size: 13px;

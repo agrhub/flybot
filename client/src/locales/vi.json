@@ -693,7 +693,10 @@
       "get_treatments": "đọc nhật ký vườn",
       "compare_periods": "so sánh hai kỳ",
       "get_pipeline_health": "kiểm tra luồng chụp ảnh",
-      "navigate_ui": "mở trang"
+      "navigate_ui": "mở trang",
+      "inspect_photo": "xem ảnh",
+      "propose_card_change": "chuẩn bị ghi nhận thay tấm keo",
+      "propose_treatment": "chuẩn bị ghi nhật ký xử lý"
     },
     "cards": {
       "count": "{n} con",
@@ -712,8 +715,27 @@
         "hour": "Ruồi vào bẫy theo giờ, 24 giờ qua",
         "day": "Ruồi vào bẫy theo ngày, 30 ngày qua",
         "month": "Ruồi vào bẫy theo tháng, 12 tháng qua"
+      },
+      "confirm": {
+        "card_change": "Ghi nhận đã thay tấm keo",
+        "treatment": "Ghi vào nhật ký vườn",
+        "trap": "Bẫy:",
+        "when": "Thời điểm:",
+        "kind": "Biện pháp:",
+        "product": "Thuốc / vật tư:",
+        "traps": "Bẫy trong khu vực:",
+        "ok": "Xác nhận",
+        "cancel": "Hủy",
+        "state": {
+          "done": "Đã ghi nhận",
+          "cancelled": "Đã hủy",
+          "failed": "Không ghi được",
+          "running": "Đang ghi..."
+        }
       }
-    }
+    },
+    "askAboutPhoto": "Hỏi trợ lý về ảnh này",
+    "photoQuestion": "Xem giúp ảnh này: có những gì, số đếm có đúng không, ảnh có vấn đề gì không?"
   },
   "home": {
     "tagline": "BẪY DÍNH THÔNG MINH & AI ĐẾM CÔN TRÙNG",
@@ -1367,7 +1389,8 @@
         "weeklyReports": "Báo cáo tuần",
         "cardReminders": "Nhắc thay tấm keo",
         "trainingSync": "Gửi ảnh huấn luyện AI",
-        "ezvizPolicies": "Quyền tài khoản phụ EZVIZ"
+        "ezvizPolicies": "Quyền tài khoản phụ EZVIZ",
+        "morningBriefs": "Bản tin sáng"
       },
       "jobSchedules": {
         "capture": "Mỗi 5 phút",
@@ -1379,7 +1402,8 @@
         "weeklyReports": "Thứ Hai, 7:30",
         "cardReminders": "Hằng ngày, 7:00",
         "trainingSync": "Mỗi 15 phút",
-        "ezvizPolicies": "Mỗi giờ, phút 17"
+        "ezvizPolicies": "Mỗi giờ, phút 17",
+        "morningBriefs": "Hằng ngày, 6:30"
       },
       "results": {
         "cameras": "{n} camera",
@@ -1948,6 +1972,10 @@
     "follow": {
       "title": "Camera tôi theo dõi",
       "desc": "Tắt một camera để không nhận bất kỳ thông báo nào của nó (không ảnh hưởng người khác)."
+    },
+    "morning": {
+      "title": "Bản tin sáng",
+      "desc": "Mỗi sáng 6:30: số ruồi vào bẫy hôm qua, bẫy vượt hoặc gần ngưỡng, tấm keo đến hạn, camera mất kết nối. Gửi qua Telegram nếu đã liên kết, nếu không thì qua email."
     }
   },
   "degreeDays": {

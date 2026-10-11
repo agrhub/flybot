@@ -101,7 +101,14 @@
 
           <!-- Result cards: photos, chart, comparison, report -->
           <div v-if="msg.cards && msg.cards.length" class="space-y-2">
-            <AssistantCard v-for="(card, cIdx) in msg.cards" :key="cIdx" :card="card" @open="onCardOpen" />
+            <AssistantCard
+              v-for="(card, cIdx) in msg.cards"
+              :key="cIdx"
+              :card="card"
+              :busy="deciding === `${msg.id}:${cIdx}`"
+              @open="onCardOpen"
+              @decide="(decision) => decide(msg, cIdx, decision)"
+            />
           </div>
 
           <!-- Was this answer right? -->
@@ -231,7 +238,7 @@ const props = defineProps({
 const emit = defineEmits(['navigate', 'select-camera']);
 
 const { t, te } = useI18n();
-const { isAssistantOpen, closeAssistant } = useTheme();
+const { isAssistantOpen, closeAssistant, assistantQuestion } = useTheme();
 // Desktop: a column next to the page; tablet: panel over it; phone: full screen
 const { isDesktop } = useBreakpoints();
 
@@ -337,6 +344,36 @@ const rate = async (msg, rating) => {
   }
 };
 
+// Confirm or cancel a change the assistant proposed; the server runs it from the stored card
+const deciding = ref(null);
+const decide = async (msg, index, decision) => {
+  if (!msg.id || deciding.value) return;
+  deciding.value = `${msg.id}:${index}`;
+  const card = msg.cards[index];
+  try {
+    const res = await api.confirmChatAction(sessionId.value, msg.id, index, decision);
+    card.state = res.data.state;
+    card.result = '';
+  } catch (err) {
+    const data = err.response?.data || {};
+    // Already handled elsewhere (another tab): show what the server has
+    if (err.response?.status === 409) await loadHistory();
+    else {
+      card.state = data.state || card.state;
+      card.result = data.message || t('assistant.unavailable');
+    }
+  } finally {
+    deciding.value = null;
+  }
+};
+
+// A question sent from elsewhere in the app (e.g. "Ask the assistant about this photo")
+watch(assistantQuestion, (question) => {
+  if (!question?.text || isThinking.value) return;
+  sendMessage(question.text, { snapshotId: question.snapshotId });
+  assistantQuestion.value = null;
+});
+
 // Opening a report from a card: on a phone the panel covers the page
 const onCardOpen = () => {
   if (!isDesktop.value) closeAssistant();
@@ -368,7 +405,7 @@ const handleSend = () => {
   sendMessage(q);
 };
 
-const sendMessage = async (text) => {
+const sendMessage = async (text, extraContext = {}) => {
   messages.value.push({ role: 'user', content: text });
   isThinking.value = true;
   activeTool.value = null;
@@ -380,7 +417,8 @@ const sendMessage = async (text) => {
 
   const uiContext = {
     tab: props.activeContext,
-    deviceSerial: props.selectedCamera?.deviceSerial || 'all'
+    deviceSerial: props.selectedCamera?.deviceSerial || 'all',
+    ...(extraContext.snapshotId ? { snapshotId: extraContext.snapshotId } : {})
   };
 
   const onEvent = (type, data) => {

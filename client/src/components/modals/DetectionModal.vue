@@ -120,6 +120,7 @@
     </div>
 
     <template #footer>
+      <el-button :icon="ChatDotRound" @click="askAboutPhoto">{{ t('assistant.askAboutPhoto') }}</el-button>
       <el-button @click="closeModal">{{ t('analytics.closeWindow') }}</el-button>
     </template>
   </el-dialog>
@@ -132,7 +133,8 @@ import api from '@/services/api'
 import { drawDetections } from '@/utils/detectionImage'
 import { useI18n } from 'vue-i18n'
 import { ElNotification } from 'element-plus'
-import { Check, EditPen, Delete, Plus } from '@element-plus/icons-vue'
+import { Check, EditPen, Delete, Plus, ChatDotRound } from '@element-plus/icons-vue'
+import { useTheme } from '@/utils/theme'
 import { FRUIT_FLY, speciesName, normalizeSummary, formatSummary } from '@/utils/species'
 import { useCameras } from '@/composables/useCameras'
 
@@ -143,6 +145,14 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'updated'])
 const { t, locale } = useI18n()
+const { askAssistant } = useTheme()
+
+// The assistant looks at this photo (inspect_photo) and answers in the chat panel
+const askAboutPhoto = () => {
+  if (!props.item?._id) return
+  askAssistant({ text: t('assistant.photoQuestion'), snapshotId: String(props.item._id) })
+  closeModal()
+}
 
 // ---------- Human review ----------
 const REVIEW_TAG = { pending: 'info', confirmed: 'success', corrected: 'warning' }

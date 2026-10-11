@@ -264,7 +264,37 @@ async function analyzeSnapshot(base64Image, snapshotId, imageUrl = null) {
     return !!(await Snapshot.exists({ _id: snapshotId, aiProcessed: true }));
 }
 
+/**
+ * Look at one trap photo and answer a question about it (the assistant's inspect_photo tool).
+ * `context` is what the detection already found, so the answer can agree or point out a miss.
+ * Returns the answer text.
+ */
+async function describePhoto(imageBuffer, question, { context = '', language = 'en' } = {}) {
+    const abort = new AbortController();
+    const timer = setTimeout(() => abort.abort(), 30000);
+    try {
+        const response = await vertexAI.models.generateContent({
+            model: VERTEX_MODEL || 'gemini-2.5-flash',
+            contents: [{
+                role: 'user',
+                parts: [
+                    { inlineData: { mimeType: 'image/jpeg', data: imageBuffer.toString('base64') } },
+                    { text: `${context ? `What the automatic detection found: ${context}\n` : ''}Question: ${question}` }
+                ]
+            }],
+            config: {
+                systemInstruction: `You look at a photo from an insect trap camera (a yellow sticky card or a lure trap) for a farm manager. Describe only what you can see: insects and their likely kind, how crowded the card is, dirt, glare, blur, a lens or card problem. Say plainly when something cannot be told from the photo. Answer in ${language === 'vi' ? 'Vietnamese' : 'English'}, in at most 6 short sentences.`,
+                abortSignal: abort.signal
+            }
+        });
+        return (response.text || '').trim();
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
 module.exports = {
+    describePhoto,
     getImageDimensions,
     analyzeInsects,
     analyzeInsectsRoboflow,

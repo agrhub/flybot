@@ -21,6 +21,7 @@ router.post('/chat', chatLimiter, aiController.chatWithAssistant);
 router.post('/chat/stream', chatLimiter, aiController.chatWithAssistantStream);
 router.get('/chat/history', aiController.getChatHistory);
 router.post('/chat/feedback', aiController.rateChatMessage);
+router.post('/chat/confirm', aiController.confirmChatAction);
 router.post('/chat/clear', aiController.clearChatSession);
 
 module.exports = router;

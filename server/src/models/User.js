@@ -21,6 +21,8 @@ const userSchema = new mongoose.Schema({
         telegram: { type: Boolean, default: true },
         // Monday summary of the past week
         weeklyReport: { type: Boolean, default: true },
+        // Short summary every morning at 06:30 (Telegram, else email); off unless turned on
+        morningBrief: { type: Boolean, default: false },
         // No push / Telegram during these local hours (in-app and email still arrive)
         quietHours: {
             enabled: { type: Boolean, default: false },

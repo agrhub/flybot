@@ -75,6 +75,7 @@ ezvizService.getPlaybackAddress = async () => ({ responseData: { code: '500', ms
 // Assistant without Vertex: picks a real tool from the question, then writes a short answer from
 // its result, streamed in small pieces like the model does
 const QUESTION_TOOLS = [
+    [/đã thay|replaced/i, 'propose_card_change', { deviceSerial: 'BC1001' }],
     [/ảnh|photo|picture/i, 'get_recent_snapshots', { limit: 4 }],
     [/tuần|week|so sánh|compare/i, 'compare_periods', { days: 7 }],
     [/giờ|hour|24/i, 'get_insect_statistics', { mode: 'hour' }],
@@ -94,6 +95,8 @@ function demoAnswer(name, result) {
     if (name === 'compare_periods') return L(`7 ngày qua có **${result.current.caught} con** vào bẫy, so với ${result.previous.caught ?? '--'} con tuần trước (${result.changePct > 0 ? '+' : ''}${result.changePct ?? '--'}%).`, `The last 7 days caught **${result.current.caught} insects**, against ${result.previous.caught ?? '--'} the week before (${result.changePct > 0 ? '+' : ''}${result.changePct ?? '--'}%).`);
     if (name === 'get_insect_statistics') return L(`Trong 24 giờ qua có **${round(result.records.reduce((s, r) => s + r.caught, 0))} con** vào bẫy, nhiều nhất vào buổi trưa.`, `**${round(result.records.reduce((s, r) => s + r.caught, 0))} insects** were caught over the last 24 hours, most around midday.`);
     if (name === 'list_reports') return L(`Bạn có ${result.total} báo cáo: ${result.reports.map(r => `**${r.name}**`).join(', ')}.`, `You have ${result.total} report(s): ${result.reports.map(r => `**${r.name}**`).join(', ')}.`);
+    if (name === 'inspect_photo') return result.observation;
+    if (name === 'propose_card_change') return L('Tôi đã chuẩn bị ghi nhận thay tấm keo. Kiểm tra thông tin rồi bấm **Xác nhận**.', 'I have prepared the card change. Check the details and press **Confirm**.');
     if (name === 'get_alerts') return L(`Có ${result.alerts.length} cảnh báo trong 7 ngày qua; ${result.cardsDue.length} tấm keo đến hạn thay.`, `${result.alerts.length} alert(s) over the last 7 days; ${result.cardsDue.length} sticky card(s) due.`);
     const worst = result.traps?.[0];
     return worst
@@ -101,6 +104,11 @@ function demoAnswer(name, result) {
         : L('Chưa có số liệu.', 'No data yet.');
 }
 const round = (n) => Math.round(n * 10) / 10;
+// The vision model's look at a photo, without Vertex
+req('src/services/aiService').describePhoto = async () => L(
+    'Tấm keo có nhiều ruồi vàng, phân bố đều; vài con nằm sát nhau nên có thể đếm thiếu 1–2 con. Ảnh rõ, không bị lóa hay bẩn ống kính.',
+    'The card holds many fruit flies, evenly spread; a few touch each other, so the count may be 1–2 short. The photo is sharp, with no glare or dirty lens.'
+);
 req('src/agent/agent').setModelClient({
     stream: async ({ contents }) => {
         const last = contents.at(-1);
@@ -110,6 +118,11 @@ req('src/agent/agent').setModelClient({
             return textChunks(`${demoAnswer(response.name, response.response)}\n[SUGGESTIONS]${suggestions}[/SUGGESTIONS]`);
         }
         const question = last.parts?.[0]?.text || '';
+        const photo = question.match(/Selected Photo: "([a-f0-9]{24})"/);
+        if (photo) {
+            await sleep(300);
+            return (async function* () { yield { candidates: [{ content: { role: 'model', parts: [{ functionCall: { name: 'inspect_photo', args: { snapshotId: photo[1] } } }] } }] }; })();
+        }
         const [, name, args] = QUESTION_TOOLS.find(([re]) => re.test(question)) || [null, 'get_catch_summary', {}];
         await sleep(300);
         return (async function* () { yield { candidates: [{ content: { role: 'model', parts: [{ functionCall: { name, args } }] } }] }; })();
