@@ -33,7 +33,10 @@
       <el-table v-else :data="shares" size="small" style="width: 100%">
         <el-table-column :label="t('share.email')" min-width="200">
           <template #default="{ row }">
-            <span class="truncate">{{ row.email }}</span>
+            <div class="flex items-center gap-2 min-w-0">
+              <UserAvatar :src="row.avatar" :label="row.email" :size="24" />
+              <span class="truncate">{{ row.email }}</span>
+            </div>
           </template>
         </el-table-column>
         <el-table-column :label="t('share.status')" width="160">
@@ -67,6 +70,7 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 import { Share, Delete, Message } from '@element-plus/icons-vue';
 import api from '@/services/api';
 import ShareStatus from '@/components/common/ShareStatus.vue';
+import UserAvatar from '@/components/common/UserAvatar.vue';
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },

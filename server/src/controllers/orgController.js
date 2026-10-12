@@ -10,6 +10,7 @@ const mailService = require('../services/mailService');
 const emailTemplates = require('../services/emailTemplates');
 const notificationService = require('../services/notificationService');
 const orgService = require('../services/orgService');
+const { avatarUrlsFor } = require('../services/avatarService');
 const { EMAIL_REGEX, normalizeEmail, findUserByEmail, safeUrl, emailsWithAccount, sendConfirmReminder } = require('./shareController');
 
 const MAX_ORGS_PER_USER = 20;
@@ -22,10 +23,11 @@ const orgTarget = (org) => ({ type: 'organization', id: String(org._id), label: 
 
 async function toClientOrg(org, user) {
     const invited = org.members.filter(m => !m.userId).map(m => m.email);
-    const [cameras, farms, withAccount] = await Promise.all([
+    const [cameras, farms, withAccount, avatars] = await Promise.all([
         Camera.find({ orgId: org._id }).select('deviceSerial deviceName status userId').lean(),
         Farm.countDocuments({ orgId: org._id }),
-        emailsWithAccount(invited)
+        emailsWithAccount(invited),
+        avatarUrlsFor(org.members.map(m => m.userId))
     ]);
     return {
         id: String(org._id),
@@ -38,7 +40,8 @@ async function toClientOrg(org, user) {
             role: m.role,
             // pending: no account yet; unverified: account exists, email not confirmed
             status: m.userId ? 'active' : (withAccount.has(String(m.email).toLowerCase()) ? 'unverified' : 'pending'),
-            addedAt: m.addedAt
+            addedAt: m.addedAt,
+            avatar: (m.userId && avatars.get(String(m.userId))) || ''
         })),
         cameras: cameras.map(c => ({ deviceSerial: c.deviceSerial, deviceName: c.deviceName, status: c.status })),
         farmCount: farms,

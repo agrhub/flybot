@@ -70,3 +70,27 @@ test('the profile form cannot point the avatar elsewhere', async () => {
     const me = await json(await request('/api/auth/me', { as: user }));
     assert.equal(me.body.user.avatar, '');
 });
+
+test('others see a picture only when they share something with its owner', async () => {
+    stored.clear();
+    const owner = await createUser({ role: 'manager' });
+    const friend = await createUser();
+    const stranger = await createUser();
+    const admin = await createUser({ role: 'admin' });
+    await upload(friend, image(64, 64));
+    const url = (await json(await request('/api/auth/me', { as: friend }))).body.user.avatar;
+    assert.ok(url);
+    const otherUrl = `/api/auth/avatars/${friend._id}`;
+
+    assert.equal((await request(otherUrl, { as: owner })).status, 404, 'nothing shared yet');
+    await models.Camera.create({ deviceSerial: 'AV1', userId: owner._id, sharedWith: [{ email: friend.email, userId: friend._id }] });
+    assert.equal((await request(otherUrl, { as: owner })).status, 200, 'owner of a camera shared with them');
+    assert.equal((await request(`/api/auth/avatars/${owner._id}`, { as: friend })).status, 404, 'the owner has no picture');
+    assert.equal((await request(otherUrl, { as: stranger })).status, 404);
+    assert.equal((await request(otherUrl, { as: admin })).status, 200);
+    assert.equal((await request('/api/auth/avatars/not-an-id', { as: admin })).status, 404);
+
+    // Share lists carry the address
+    const shares = (await json(await request('/api/user/camera/shares?deviceSerial=AV1', { as: owner }))).body.shares;
+    assert.ok(shares[0].avatar.startsWith(`/api/auth/avatars/${friend._id}?v=`));
+});

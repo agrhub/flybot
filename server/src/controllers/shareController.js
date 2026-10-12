@@ -32,8 +32,16 @@ async function emailsWithAccount(emails) {
  * account but has not confirmed its email (access starts once they do).
  */
 async function withAccountStatus(shares) {
-    const found = await emailsWithAccount(shares.filter(s => s.status === 'pending').map(s => s.email));
-    return shares.map(s => (s.status === 'pending' && found.has(String(s.email).toLowerCase()) ? { ...s, status: 'unverified' } : s));
+    const { avatarUrlsFor } = require('../services/avatarService');
+    const [found, avatars] = await Promise.all([
+        emailsWithAccount(shares.filter(s => s.status === 'pending').map(s => s.email)),
+        avatarUrlsFor(shares.map(s => s.userId))
+    ]);
+    return shares.map(s => ({
+        ...s,
+        status: s.status === 'pending' && found.has(String(s.email).toLowerCase()) ? 'unverified' : s.status,
+        avatar: (s.userId && avatars.get(String(s.userId))) || ''
+    }));
 }
 
 /**

@@ -43,20 +43,23 @@
       <template v-for="(m, idx) in org.members" :key="m.email">
         <el-divider v-if="idx > 0" class="!my-0" />
         <div class="py-2 flex flex-wrap items-center justify-between gap-2">
-          <div class="min-w-0">
-            <p class="org-member truncate">{{ m.email }}</p>
-            <p v-if="m.status === 'pending'" class="org-meta">{{ t('orgs.pending') }}</p>
-            <p v-else-if="m.status === 'unverified'" class="org-meta">
-              {{ t('orgs.unverified') }}
-              <el-button
-                v-if="org.canManage"
-                link
-                type="primary"
-                size="small"
-                :loading="busy === `remind:${org.id}:${m.email}`"
-                @click="remindMember(org, m)"
-              >{{ t('orgs.remind') }}</el-button>
-            </p>
+          <div class="min-w-0 flex items-start gap-2">
+            <UserAvatar :src="m.avatar" :label="m.email" :size="28" />
+            <div class="min-w-0">
+              <p class="org-member truncate">{{ m.email }}</p>
+              <p v-if="m.status === 'pending'" class="org-meta">{{ t('orgs.pending') }}</p>
+              <p v-else-if="m.status === 'unverified'" class="org-meta">
+                {{ t('orgs.unverified') }}
+                <el-button
+                  v-if="org.canManage"
+                  link
+                  type="primary"
+                  size="small"
+                  :loading="busy === `remind:${org.id}:${m.email}`"
+                  @click="remindMember(org, m)"
+                >{{ t('orgs.remind') }}</el-button>
+              </p>
+            </div>
           </div>
           <div class="flex items-center gap-2">
             <el-select
@@ -118,6 +121,7 @@ import api from '@/services/api';
 import PageHeader from '@/components/common/PageHeader.vue';
 import { useAuth } from '@/composables/useAuth';
 import { useCameras } from '@/composables/useCameras';
+import UserAvatar from '@/components/common/UserAvatar.vue';
 
 const { t } = useI18n();
 const { user, isAdmin, canManageCameras } = useAuth();

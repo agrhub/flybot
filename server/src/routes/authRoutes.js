@@ -43,6 +43,7 @@ router.delete('/sessions/:sessionId', authenticate, authController.revokeSession
 router.post('/change-password', authenticate, passwordChangeLimiter, authController.changePassword);
 router.post('/profile', authenticate, authController.updateProfile);
 router.get('/avatar', authenticate, authController.getAvatar);
+router.get('/avatars/:userId', authenticate, authController.getUserAvatar);
 router.post('/avatar', authenticate, avatarLimiter, readAvatarBody, authController.uploadAvatar);
 router.delete('/avatar', authenticate, avatarLimiter, authController.deleteAvatar);
 

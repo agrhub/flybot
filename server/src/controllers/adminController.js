@@ -5,6 +5,7 @@ const { sendServerError } = require('../utils/http');
 const { recordAudit, AUDIT_ACTIONS, CATEGORIES } = require('../services/auditService');
 const trainingSync = require('../services/trainingSync');
 const { claimPendingShares } = require('./shareController');
+const { memberAvatarUrl } = require('../services/avatarService');
 
 const MAX_PAGE_SIZE = 100;
 const escapeRegex = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -17,6 +18,7 @@ function toAdminUser(user, cameraCount = 0) {
         role: roleOf(user),
         disabled: !!user.disabled,
         emailVerified: !!user.emailVerified,
+        avatar: memberAvatarUrl(user),
         createdAt: user.createdAt,
         cameraCount
     };

@@ -50,7 +50,14 @@
 
     <p v-if="!shares.length" class="share-meta mt-3">{{ t('share.empty') }}</p>
     <el-table v-else :data="shares" size="small" class="mt-3" style="width: 100%">
-      <el-table-column :label="t('share.email')" min-width="200" prop="email" />
+      <el-table-column :label="t('share.email')" min-width="200">
+        <template #default="{ row }">
+          <div class="flex items-center gap-2 min-w-0">
+            <UserAvatar :src="row.avatar" :label="row.email" :size="24" />
+            <span class="truncate">{{ row.email }}</span>
+          </div>
+        </template>
+      </el-table-column>
       <el-table-column :label="t('share.status')" width="160">
         <template #default="{ row }">
           <ShareStatus :status="row.status" :email="row.email" />
@@ -103,6 +110,7 @@ import { Share, Delete, Message, CopyDocument, RefreshRight } from '@element-plu
 import api from '@/services/api';
 import { dashboardErrorText } from '@/utils/dashboards';
 import ShareStatus from '@/components/common/ShareStatus.vue';
+import UserAvatar from '@/components/common/UserAvatar.vue';
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },

@@ -22,12 +22,15 @@
       <el-table v-loading="loading" :data="users" row-key="id" style="width: 100%">
         <el-table-column :label="t('admin.users.account')" min-width="200">
           <template #default="{ row }">
-            <div class="min-w-0">
-              <div class="flex items-center gap-2 min-w-0">
-                <span class="admin-strong truncate">{{ row.name }}</span>
-                <el-tag v-if="row.id === authUser?.id" type="info" effect="plain" size="small">{{ t('admin.users.you') }}</el-tag>
+            <div class="flex items-center gap-2 min-w-0">
+              <UserAvatar :src="row.avatar" :label="row.name || row.email" :size="32" />
+              <div class="min-w-0">
+                <div class="flex items-center gap-2 min-w-0">
+                  <span class="admin-strong truncate">{{ row.name }}</span>
+                  <el-tag v-if="row.id === authUser?.id" type="info" effect="plain" size="small">{{ t('admin.users.you') }}</el-tag>
+                </div>
+                <div class="admin-meta truncate">{{ row.email }}</div>
               </div>
-              <div class="admin-meta truncate">{{ row.email }}</div>
             </div>
           </template>
         </el-table-column>
@@ -104,6 +107,7 @@ import api from '@/services/api';
 import { useAuth } from '@/composables/useAuth';
 import PageHeader from '@/components/common/PageHeader.vue';
 import { adminErrorText } from './adminErrors';
+import UserAvatar from '@/components/common/UserAvatar.vue';
 
 const ROLES = ['admin', 'manager', 'user'];
 

@@ -22,6 +22,41 @@ function avatarUrlOf(user) {
     return key ? `/api/auth/avatar?v=${key.split('/').pop().replace('.jpg', '')}` : '';
 }
 
+/** The address other people load someone's picture from (see canSeeAvatar). */
+function memberAvatarUrl(user) {
+    const key = avatarKeyOf(user);
+    return key ? `/api/auth/avatars/${user._id}?v=${key.split('/').pop().replace('.jpg', '')}` : '';
+}
+
+/** Picture addresses of these users, by id (users without a picture are left out). */
+async function avatarUrlsFor(ids) {
+    const { User } = require('../models');
+    const unique = [...new Set(ids.filter(Boolean).map(String))];
+    if (!unique.length) return new Map();
+    const users = await User.find({ _id: { $in: unique }, avatar: { $ne: '' } }).select('avatar').lean();
+    return new Map(users.map(u => [String(u._id), memberAvatarUrl(u)]).filter(([, url]) => url));
+}
+
+/**
+ * Whether the viewer may see this user's picture: themselves, admins, people in the same
+ * organization, and the two sides of a camera, farm or report share.
+ */
+async function canSeeAvatar(viewer, targetId) {
+    const { Organization, Camera, Farm, Dashboard } = require('../models');
+    const { isAdmin } = require('../constants/roles');
+    const me = String(viewer.id);
+    const other = String(targetId);
+    if (me === other || isAdmin(viewer)) return true;
+    const between = (ownerField) => ({ $or: [{ [ownerField]: me, 'sharedWith.userId': other }, { [ownerField]: other, 'sharedWith.userId': me }] });
+    const found = await Promise.all([
+        Organization.exists({ members: { $all: [{ $elemMatch: { userId: me } }, { $elemMatch: { userId: other } }] } }),
+        Camera.exists(between('userId')),
+        Farm.exists(between('ownerId')),
+        Dashboard.exists(between('ownerId'))
+    ]);
+    return found.some(Boolean);
+}
+
 /**
  * Check the upload is a real JPEG of a sensible size and encode it again: what is stored holds
  * only the pixels (no camera or location details from the original file).
@@ -78,6 +113,9 @@ module.exports = {
     AVATAR_MAX_SIDE,
     avatarKeyOf,
     avatarUrlOf,
+    memberAvatarUrl,
+    avatarUrlsFor,
+    canSeeAvatar,
     cleanImage,
     saveAvatar,
     removeAvatar,

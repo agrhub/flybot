@@ -567,6 +567,24 @@ async function getAvatar(req, res) {
     }
 }
 
+/**
+ * GET /api/auth/avatars/:userId: someone else's picture, for people who see them in a member or
+ * share list (same 404 otherwise, so accounts cannot be probed)
+ */
+async function getUserAvatar(req, res) {
+    try {
+        const { userId } = req.params;
+        const notFound = () => res.status(404).json({ success: false, message: "File not found" });
+        if (!mongoose.isValidObjectId(userId)) return notFound();
+        const user = await User.findById(userId).select('avatar').lean();
+        const key = avatarService.avatarKeyOf(user);
+        if (!key || !(await avatarService.canSeeAvatar(req.user, userId))) return notFound();
+        return pipeSnapshot(res, key, { cacheControl: 'private, max-age=604800, immutable' });
+    } catch (err) {
+        sendServerError(res, err, { context: 'Get user avatar' });
+    }
+}
+
 module.exports = {
     register,
     login,
@@ -586,5 +604,6 @@ module.exports = {
     sendVerificationEmail,
     uploadAvatar,
     deleteAvatar,
-    getAvatar
+    getAvatar,
+    getUserAvatar
 };
