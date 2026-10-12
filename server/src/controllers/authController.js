@@ -54,6 +54,7 @@ function toPublicUser(user) {
             telegram: user.notificationPrefs?.telegram !== false,
             weeklyReport: user.notificationPrefs?.weeklyReport !== false,
             morningBrief: !!user.notificationPrefs?.morningBrief,
+            vietgapMonthly: !!user.notificationPrefs?.vietgapMonthly,
             quietHours: {
                 enabled: !!user.notificationPrefs?.quietHours?.enabled,
                 start: user.notificationPrefs?.quietHours?.start || '21:00',
@@ -82,7 +83,7 @@ const TIME_REGEX = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 function validNotificationPrefs(prefs) {
     if (typeof prefs !== 'object' || prefs === null) return false;
-    for (const key of ['email', 'telegram', 'weeklyReport', 'morningBrief']) {
+    for (const key of ['email', 'telegram', 'weeklyReport', 'morningBrief', 'vietgapMonthly']) {
         if (prefs[key] !== undefined && typeof prefs[key] !== 'boolean') return false;
     }
     const q = prefs.quietHours;
@@ -504,6 +505,7 @@ async function updateProfile(req, res) {
         if (typeof notificationPrefs?.telegram === 'boolean') user.set('notificationPrefs.telegram', notificationPrefs.telegram);
         if (typeof notificationPrefs?.weeklyReport === 'boolean') user.set('notificationPrefs.weeklyReport', notificationPrefs.weeklyReport);
         if (typeof notificationPrefs?.morningBrief === 'boolean') user.set('notificationPrefs.morningBrief', notificationPrefs.morningBrief);
+        if (typeof notificationPrefs?.vietgapMonthly === 'boolean') user.set('notificationPrefs.vietgapMonthly', notificationPrefs.vietgapMonthly);
         if (notificationPrefs?.quietHours) {
             for (const key of ['enabled', 'start', 'end']) {
                 if (notificationPrefs.quietHours[key] !== undefined) user.set(`notificationPrefs.quietHours.${key}`, notificationPrefs.quietHours[key]);

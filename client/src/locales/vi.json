@@ -949,7 +949,7 @@
           "channels": {
             "title": "Kênh nhận & giờ yên lặng",
             "desc": "Chọn cách nhận cảnh báo khi không mở ứng dụng.",
-            "items": "Vào Cài đặt, mục Thông báo.\nBật email cảnh báo, kết nối Telegram, hoặc bật thông báo đẩy trên điện thoại/máy tính đang dùng.\nBật \"Báo cáo tuần\" để nhận tóm tắt mỗi sáng thứ Hai; bấm \"Gửi báo cáo tuần này cho tôi ngay\" để xem thử.\nĐặt \"Giờ yên lặng\" để không bị làm phiền ban đêm, và tắt camera không muốn theo dõi trong \"Camera tôi theo dõi\".\nBật \"Bản tin sáng\" để nhận lúc 6:30 mỗi sáng: số ruồi vào bẫy hôm qua, bẫy vượt hoặc gần ngưỡng, tấm keo đến hạn, camera mất kết nối (qua Telegram, hoặc email nếu chưa liên kết Telegram)."
+            "items": "Vào Cài đặt, mục Thông báo.\nBật email cảnh báo, kết nối Telegram, hoặc bật thông báo đẩy trên điện thoại/máy tính đang dùng.\nBật \"Báo cáo tuần\" để nhận tóm tắt mỗi sáng thứ Hai; bấm \"Gửi báo cáo tuần này cho tôi ngay\" để xem thử.\nĐặt \"Giờ yên lặng\" để không bị làm phiền ban đêm, và tắt camera không muốn theo dõi trong \"Camera tôi theo dõi\".\nBật \"Bản tin sáng\" để nhận lúc 6:30 mỗi sáng: số ruồi vào bẫy hôm qua, bẫy vượt hoặc gần ngưỡng, tấm keo đến hạn, camera mất kết nối (qua Telegram, hoặc email nếu chưa liên kết Telegram).\nBật \"Sổ VietGAP hằng tháng\" để nhận sổ sử dụng thuốc BVTV tháng trước (PDF) vào ngày 1 hằng tháng; trong Sổ ghi chép, bấm \"Gửi sổ tháng trước\" để nhận ngay."
           },
           "reports": {
             "title": "Báo cáo",
@@ -1442,7 +1442,8 @@
         "cardReminders": "Nhắc thay tấm keo",
         "trainingSync": "Gửi ảnh huấn luyện AI",
         "ezvizPolicies": "Quyền tài khoản phụ EZVIZ",
-        "morningBriefs": "Bản tin sáng"
+        "morningBriefs": "Bản tin sáng",
+        "vietgapMonthly": "Sổ VietGAP hằng tháng"
       },
       "jobSchedules": {
         "capture": "Mỗi 5 phút",
@@ -1455,7 +1456,8 @@
         "cardReminders": "Hằng ngày, 7:00",
         "trainingSync": "Mỗi 15 phút",
         "ezvizPolicies": "Mỗi giờ, phút 17",
-        "morningBriefs": "Hằng ngày, 6:30"
+        "morningBriefs": "Hằng ngày, 6:30",
+        "vietgapMonthly": "Hằng tháng, ngày 1 lúc 7:00"
       },
       "results": {
         "cameras": "{n} camera",
@@ -1955,7 +1957,11 @@
       "phi": "Thời gian cách ly (ngày)",
       "harvestFrom": "Ngày được thu hoạch",
       "note": "Ghi chú"
-    }
+    },
+    "sendMonthly": "Gửi sổ tháng trước",
+    "sendMonthlyHint": "Gửi sổ ghi chép sử dụng thuốc BVTV tháng trước (PDF) tới email và Telegram của bạn",
+    "monthlySent": "Đang gửi sổ tháng {month} ({count} lần xử lý).",
+    "monthlyEmpty": "Tháng {month} chưa ghi lần xử lý nào: không có gì để gửi."
   },
   "farms": {
     "title": "Vườn & lô",
@@ -2031,6 +2037,10 @@
     "morning": {
       "title": "Bản tin sáng",
       "desc": "Mỗi sáng 6:30: số ruồi vào bẫy hôm qua, bẫy vượt hoặc gần ngưỡng, tấm keo đến hạn, camera mất kết nối. Gửi qua Telegram nếu đã liên kết, nếu không thì qua email."
+    },
+    "vietgap": {
+      "title": "Sổ VietGAP hằng tháng",
+      "desc": "Ngày 1 hằng tháng lúc 7:00: sổ ghi chép sử dụng thuốc BVTV của tháng trước dạng PDF, gửi qua email và Telegram nếu đã liên kết. Tháng không có lần xử lý nào thì không gửi."
     }
   },
   "degreeDays": {

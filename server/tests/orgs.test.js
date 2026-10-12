@@ -135,6 +135,15 @@ test('an existing but unconfirmed account shows as unverified until an admin con
     assert.ok(await models.AuditLog.exists({ action: 'user.email_verified' }));
 });
 
+// Audit entries are written in the background, after the answer
+async function auditWritten(action) {
+    for (let i = 0; i < 50; i++) {
+        if (await models.AuditLog.exists({ action })) return true;
+        await new Promise(resolve => setTimeout(resolve, 20));
+    }
+    return false;
+}
+
 test('owners can remind an unconfirmed member to confirm their email', async () => {
     const owner = await createUser({ role: 'manager' });
     const outsider = await createUser({ role: 'manager' });
@@ -151,7 +160,7 @@ test('owners can remind an unconfirmed member to confirm their email', async () 
     assert.equal(sentMails.length, before + 1);
     assert.equal(sentMails.at(-1).to, 'late@example.test');
     assert.match(sentMails.at(-1).text, /verify-email\?token=/);
-    assert.ok(await models.AuditLog.exists({ action: 'org.member_reminded' }));
+    assert.ok(await auditWritten('org.member_reminded'));
 
     assert.equal((await json(await remind('ghost@example.test'))).body.code, 'NO_ACCOUNT');
     assert.equal((await json(await remind(done.email))).body.code, 'ALREADY_ACTIVE');
@@ -181,7 +190,7 @@ test('share lists mark unconfirmed accounts, and the sharer can remind them', as
     assert.equal(sentMails.length, before + 1);
     assert.equal((await json(await remind('nobody-yet@example.test'))).body.code, 'NO_ACCOUNT');
     assert.equal((await remind('slow@example.test', stranger)).status, 404, 'only whoever invited them');
-    assert.ok(await models.AuditLog.exists({ action: 'user.confirm_reminded' }));
+    assert.ok(await auditWritten('user.confirm_reminded'));
 
     // Farms and reports use the same status
     const farm = await models.Farm.create({ ownerId: owner._id, name: 'F' });

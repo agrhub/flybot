@@ -25,6 +25,17 @@
     </div>
   </el-card>
 
+  <!-- Monthly pesticide-use record (VietGAP) -->
+  <el-card shadow="never" class="mb-4">
+    <div class="flex items-start justify-between gap-4">
+      <div class="min-w-0">
+        <span class="pref-label">{{ t('alertPrefs.vietgap.title') }}</span>
+        <p class="pref-meta mt-1">{{ t('alertPrefs.vietgap.desc') }}</p>
+      </div>
+      <el-switch :model-value="!!prefs.vietgapMonthly" :loading="saving === 'vietgap'" @change="(v) => save('vietgap', { vietgapMonthly: v })" />
+    </div>
+  </el-card>
+
   <!-- Quiet hours -->
   <el-card shadow="never" class="mb-4">
     <div class="flex items-start justify-between gap-4">

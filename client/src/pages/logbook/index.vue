@@ -3,6 +3,9 @@
     <PageHeader :title="t('logbook.title')" :subtitle="t('logbook.subtitle')">
       <template #actions>
         <el-button :icon="Download" :loading="exporting" @click="exportVietGap">{{ t('logbook.export') }}</el-button>
+        <el-tooltip :content="t('logbook.sendMonthlyHint')" placement="bottom">
+          <el-button :icon="Message" :loading="sendingRecord" @click="sendMonthlyRecord">{{ t('logbook.sendMonthly') }}</el-button>
+        </el-tooltip>
         <el-button v-if="canManageCameras" type="primary" :icon="Plus" @click="openForm()">{{ t('logbook.add') }}</el-button>
       </template>
     </PageHeader>
@@ -176,7 +179,7 @@
 import { ref, reactive, computed, onMounted, h, defineComponent } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { ElMessage, ElMessageBox, ElTag } from 'element-plus';
-import { Plus, Download, Edit, Delete, VideoCamera } from '@element-plus/icons-vue';
+import { Plus, Download, Edit, Delete, VideoCamera, Message } from '@element-plus/icons-vue';
 import api from '@/services/api';
 import { useAuth } from '@/composables/useAuth';
 import { useCameras } from '@/composables/useCameras';
@@ -335,6 +338,22 @@ const openEffect = async (row) => {
     ElMessage.error(errorText(err));
   } finally {
     effectLoading.value = false;
+  }
+};
+
+// ---------- Last month's record as a PDF, by email (and Telegram) ----------
+const sendingRecord = ref(false);
+const sendMonthlyRecord = async () => {
+  sendingRecord.value = true;
+  try {
+    const res = await api.sendVietGapRecord();
+    const { sent, count, month } = res.data;
+    if (sent) ElMessage.success(t('logbook.monthlySent', { month, count }));
+    else ElMessage.info(t('logbook.monthlyEmpty', { month }));
+  } catch (err) {
+    ElMessage.error(errorText(err));
+  } finally {
+    sendingRecord.value = false;
   }
 };
 

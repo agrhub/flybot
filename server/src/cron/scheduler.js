@@ -6,6 +6,7 @@ const { sendCardReminders } = require('../services/maintenanceService');
 const { sendWeeklyReports } = require('../services/reportService');
 const { sendDueReports } = require('../services/reportScheduleService');
 const { sendMorningBriefs } = require('../services/morningBriefService');
+const { sendMonthlyVietGapLogs } = require('../services/vietgapService');
 const { syncPending: syncTrainingData } = require('../services/trainingSync');
 const { resyncAll: resyncEzvizPolicies } = require('../services/ezvizRamService');
 const { TIMEZONE } = require('../services/captureSchedule');
@@ -40,6 +41,7 @@ const statusSyncJob = exclusive('Camera status sync', syncCameraStatus, 'statusS
 const cardReminderJob = exclusive('Card reminders', async () => ({ sent: await sendCardReminders() }), 'cardReminders');
 const weeklyReportJob = exclusive('Weekly reports', async () => ({ sent: await sendWeeklyReports() }), 'weeklyReports');
 const morningBriefJob = exclusive('Morning briefs', () => sendMorningBriefs(), 'morningBriefs');
+const vietgapJob = exclusive('VietGAP records', () => sendMonthlyVietGapLogs(), 'vietgapMonthly');
 const scheduledReportJob = exclusive('Scheduled reports', async () => ({ sent: await sendDueReports() }), 'scheduledReports');
 const pestCountJob = exclusive('Pest count backfill', async () => ({
     photos: await require('../services/migrations').backfillPestCounts({ since: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) })
@@ -86,6 +88,11 @@ function startCronJobs() {
     // Morning brief for those who turned it on: every day, local time
     cron.schedule('30 6 * * *', () => {
         morningBriefJob();
+    }, { timezone: TIMEZONE });
+
+    // Last month's pesticide-use record (VietGAP) for those who turned it on: the 1st, local time
+    cron.schedule('0 7 1 * *', () => {
+        vietgapJob();
     }, { timezone: TIMEZONE });
 
     // Weekly report: Monday morning, local time

@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { Treatment, Camera } = require('../models');
+const { Treatment, Camera, User } = require('../models');
 const { TREATMENT_TYPES } = require('../models/Treatment');
 const { getViewableSerials, canManageCamera } = require('../utils/ownership');
 const { sendServerError } = require('../utils/http');
@@ -215,7 +215,25 @@ async function deleteTreatment(req, res) {
     }
 }
 
+/**
+ * POST /api/treatments/vietgap/send: last month's record to the signed-in person now
+ * (email and linked Telegram), the same PDF as the monthly one.
+ */
+async function sendVietGapRecord(req, res) {
+    try {
+        const user = await User.findById(req.user.id).select('email name role language emailVerified notificationPrefs telegram disabled');
+        const result = await require('../services/vietgapService').sendVietGapLog(user);
+        if (result.reason === 'no_channel') {
+            return res.status(400).json({ success: false, code: 'NO_CHANNEL', message: "Confirm your email or link Telegram to receive the record." });
+        }
+        res.json({ success: true, sent: result.sent, count: result.count, month: result.month });
+    } catch (err) {
+        sendServerError(res, err, { context: 'Send VietGAP record' });
+    }
+}
+
 module.exports = {
+    sendVietGapRecord,
     validateInput,
     listTreatments,
     getEffect,

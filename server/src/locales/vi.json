@@ -370,7 +370,8 @@
     "invalid_rating": "Đánh giá không hợp lệ.",
     "this_has_already_been_handled": "Mục này đã được xử lý rồi.",
     "unknown_action": "Thao tác không hợp lệ.",
-    "invalid_request": "Yêu cầu không hợp lệ."
+    "invalid_request": "Yêu cầu không hợp lệ.",
+    "confirm_your_email_or_link_telegram_to_receive_the_record": "Hãy xác nhận email hoặc liên kết Telegram để nhận sổ."
   },
   "reportPdf": {
     "range": "Khoảng thời gian: {from} - {to} ({days} ngày)",
@@ -451,5 +452,37 @@
     "alerts": "{count} cảnh báo trong 24 giờ qua.",
     "button": "Mở FlyBot",
     "footer": "Bạn nhận bản tin này vì đã bật \"Bản tin sáng\". Tắt trong Cài đặt › Thông báo."
+  },
+  "vietgap": {
+    "title": "Sổ ghi chép sử dụng thuốc BVTV tháng {month}",
+    "subtitle": "{owner} · {count} lần xử lý · FlyBot lập ngày {date}",
+    "intro": "Sổ ghi chép sử dụng thuốc BVTV tháng {month} của bạn ({count} lần xử lý), dùng cho hồ sơ VietGAP / GlobalGAP.",
+    "attached": "Sổ được đính kèm dạng PDF.",
+    "button": "Mở Nhật ký vườn",
+    "emailFooter": "Bạn nhận email này vào ngày 1 hằng tháng vì đã bật Sổ VietGAP hằng tháng (Cài đặt, Thông báo).",
+    "footer": "FlyBot · Sổ ghi chép sử dụng thuốc BVTV (VietGAP) · giờ theo giờ Việt Nam (UTC+7)",
+    "col": {
+      "index": "STT",
+      "date": "Ngày",
+      "traps": "Lô / bẫy",
+      "type": "Biện pháp",
+      "product": "Tên thuốc",
+      "activeIngredient": "Hoạt chất",
+      "dose": "Liều lượng",
+      "area": "Diện tích",
+      "operator": "Người thực hiện",
+      "phi": "Cách ly (ngày)",
+      "harvestFrom": "Được thu hoạch từ",
+      "note": "Ghi chú"
+    },
+    "types": {
+      "spray": "Phun thuốc",
+      "bait": "Bả protein",
+      "lure": "Mồi / pheromone",
+      "biological": "Biện pháp sinh học",
+      "sanitation": "Vệ sinh vườn",
+      "bagging": "Bao trái",
+      "other": "Khác"
+    }
   }
 }

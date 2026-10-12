@@ -949,7 +949,7 @@
           "channels": {
             "title": "Channels & quiet hours",
             "desc": "Choose how alerts reach you when the app is closed.",
-            "items": "Open Settings, Notifications.\nTurn on alert emails, connect Telegram, or enable push notifications on this phone or computer.\nTurn on the weekly report for a Monday summary; \"Send me this week’s report now\" shows an example.\nSet quiet hours for the night, and switch off cameras you do not follow under \"Cameras I follow\".\nTurn on \"Morning brief\" for a summary at 6:30 every morning: yesterday's catches, traps over or near their threshold, cards due, cameras offline (on Telegram, or by email without Telegram)."
+            "items": "Open Settings, Notifications.\nTurn on alert emails, connect Telegram, or enable push notifications on this phone or computer.\nTurn on the weekly report for a Monday summary; \"Send me this week’s report now\" shows an example.\nSet quiet hours for the night, and switch off cameras you do not follow under \"Cameras I follow\".\nTurn on \"Morning brief\" for a summary at 6:30 every morning: yesterday's catches, traps over or near their threshold, cards due, cameras offline (on Telegram, or by email without Telegram).\nTurn on \"Monthly VietGAP record\" to get last month's pesticide use record (PDF) on the 1st of each month; in the Logbook, \"Email last month\" sends it right away."
           },
           "reports": {
             "title": "Reports",
@@ -1442,7 +1442,8 @@
         "cardReminders": "Sticky card reminders",
         "trainingSync": "AI training upload",
         "ezvizPolicies": "EZVIZ sub-account access",
-        "morningBriefs": "Morning brief"
+        "morningBriefs": "Morning brief",
+        "vietgapMonthly": "Monthly VietGAP record"
       },
       "jobSchedules": {
         "capture": "Every 5 minutes",
@@ -1455,7 +1456,8 @@
         "cardReminders": "Daily, 7:00",
         "trainingSync": "Every 15 minutes",
         "ezvizPolicies": "Hourly, at :17",
-        "morningBriefs": "Daily, 6:30"
+        "morningBriefs": "Daily, 6:30",
+        "vietgapMonthly": "Monthly, the 1st at 7:00"
       },
       "results": {
         "cameras": "{n} camera(s)",
@@ -1955,7 +1957,11 @@
       "phi": "PHI (days)",
       "harvestFrom": "Harvest from",
       "note": "Note"
-    }
+    },
+    "sendMonthly": "Email last month",
+    "sendMonthlyHint": "Send last month's pesticide use record (PDF) to your email and Telegram",
+    "monthlySent": "The {month} record ({count} treatment(s)) is on its way.",
+    "monthlyEmpty": "No treatment recorded in {month}: nothing to send."
   },
   "farms": {
     "title": "Farms",
@@ -2031,6 +2037,10 @@
     "morning": {
       "title": "Morning brief",
       "desc": "Every morning at 6:30: yesterday's catches, traps over or near their threshold, sticky cards due, cameras offline. On Telegram when linked, otherwise by email."
+    },
+    "vietgap": {
+      "title": "Monthly VietGAP record",
+      "desc": "On the 1st of each month at 7:00: last month's pesticide use record as a PDF, by email and on Telegram if linked. Nothing is sent for a month without treatments."
     }
   },
   "degreeDays": {

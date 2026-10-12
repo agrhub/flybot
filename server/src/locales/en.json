@@ -370,7 +370,8 @@
     "invalid_rating": "Invalid rating.",
     "this_has_already_been_handled": "This has already been handled.",
     "unknown_action": "Unknown action.",
-    "invalid_request": "Invalid request."
+    "invalid_request": "Invalid request.",
+    "confirm_your_email_or_link_telegram_to_receive_the_record": "Confirm your email or link Telegram to receive the record."
   },
   "reportPdf": {
     "range": "Period: {from} - {to} ({days} days)",
@@ -451,5 +452,37 @@
     "alerts": "{count} alert(s) in the last 24 hours.",
     "button": "Open FlyBot",
     "footer": "You get this brief because \"Morning brief\" is on. Turn it off in Settings › Notifications."
+  },
+  "vietgap": {
+    "title": "Pesticide use record {month}",
+    "subtitle": "{owner} · {count} treatment(s) · made by FlyBot on {date}",
+    "intro": "Your pesticide use record for {month} ({count} treatment(s)), kept for VietGAP / GlobalGAP.",
+    "attached": "The record is attached as a PDF.",
+    "button": "Open the field log",
+    "emailFooter": "You receive this on the 1st of every month because you turned on the monthly VietGAP record (Settings, Notifications).",
+    "footer": "FlyBot · Pesticide use record (VietGAP) · times in farm time (UTC+7)",
+    "col": {
+      "index": "No.",
+      "date": "Date",
+      "traps": "Plot / traps",
+      "type": "Treatment",
+      "product": "Product",
+      "activeIngredient": "Active ingredient",
+      "dose": "Dose",
+      "area": "Area",
+      "operator": "Applied by",
+      "phi": "Pre-harvest (days)",
+      "harvestFrom": "Harvest from",
+      "note": "Note"
+    },
+    "types": {
+      "spray": "Spray",
+      "bait": "Protein bait",
+      "lure": "Lure / pheromone",
+      "biological": "Biological control",
+      "sanitation": "Orchard sanitation",
+      "bagging": "Fruit bagging",
+      "other": "Other"
+    }
   }
 }

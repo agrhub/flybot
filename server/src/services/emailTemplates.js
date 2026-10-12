@@ -175,6 +175,25 @@ function morningBriefEmail({ user, language, title, lines, url }) {
 }
 
 /**
+ * The monthly pesticide-use record (VietGAP), as a PDF attachment.
+ */
+function vietgapEmail({ user, language, params, url, attachments }) {
+    const t = (key, p) => translate(language, key, p);
+    return {
+        to: user.email,
+        subject: t('vietgap.title', params),
+        ...layout({
+            language,
+            user,
+            paragraphs: [t('vietgap.intro', params), t('vietgap.attached')],
+            button: url ? { label: t('vietgap.button'), url } : null,
+            footerKey: 'vietgap.emailFooter'
+        }),
+        attachments
+    };
+}
+
+/**
  * A report sent on its schedule (or on request), with the report as a PDF attachment.
  */
 function scheduledReportEmail({ user, language, params, lines = [], url, attachments }) {
@@ -216,6 +235,7 @@ module.exports = {
     shareEmail,
     weeklyReportEmail,
     morningBriefEmail,
+    vietgapEmail,
     scheduledReportEmail,
     escapeHtml,
     passwordResetEmail,
