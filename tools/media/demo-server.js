@@ -269,6 +269,13 @@ async function seedShowcase() {
         product: L('Thu gom trái rụng', 'Collect fallen fruit'), area: L('Lô bưởi B', 'Pomelo plot B'), operator: L('Chị Lan', 'Lan'), note: L('Chôn sâu 40 cm', 'Buried 40 cm deep'), createdBy: manager._id, createdByEmail: manager.email
     });
 
+    // Still inside its pre-harvest interval: the overview shows the area as not yet harvestable
+    await models.Treatment.create({
+        cameraSerials: ['BC1004'], type: 'spray', at: new Date(dayStart(2).getTime() + 6 * HOUR_MS),
+        product: L('Radiant 60SC', 'Radiant 60SC'), activeIngredient: 'Spinetoram', dose: L('15 ml / 16 lít nước', '15 ml per 16 L water'), area: L('Lô thanh long C', 'Dragon fruit plot C'),
+        operator: L('Anh Tư', 'Tu'), preHarvestDays: 7, createdBy: manager._id, createdByEmail: manager.email
+    });
+
     // Last month's treatments, for the monthly VietGAP record
     const lastMonth = (day, hour) => { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - 1); d.setDate(day); d.setHours(hour, 0, 0, 0); return d; };
     await models.Treatment.create({

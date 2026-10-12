@@ -7,7 +7,8 @@ import path from 'node:path';
 const CHROME = process.env.CHROME_PATH || 'C:/Program Files/Google/Chrome/Application/chrome.exe';
 // Removed and recreated on every launch
 const PROFILE = process.env.FLYBOT_SHOT_PROFILE || path.join(os.tmpdir(), 'flybot-shot-profile');
-const PORT = 9333;
+// Set FLYBOT_CDP_PORT to run two of these scripts at once
+const PORT = Number(process.env.FLYBOT_CDP_PORT) || 9333;
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
 // keepProfile: reuse the previous run's profile (service worker, caches); args: extra Chrome flags

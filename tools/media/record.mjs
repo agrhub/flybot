@@ -24,13 +24,14 @@ const TEXT = {
             diagnosis: 'Dự báo đợt ruồi tiếp theo theo độ-ngày và gợi ý xử lý',
             notifications: 'Cảnh báo vượt ngưỡng, tăng đột biến, mất kết nối',
             map: 'Vườn và lô trên bản đồ, màu theo mức nguy cơ',
-            logbook: 'Nhật ký xử lý: so sánh trước và sau, xuất sổ VietGAP',
+            logbook: 'Nhật ký xử lý: hiệu quả trước và sau, thời gian cách ly, sổ VietGAP',
+            'alert-settings': 'Sổ VietGAP tự gửi ngày 1 hằng tháng, nhắc khi được thu hoạch',
             organizations: 'Tổ chức nhiều thành viên với phân quyền',
             'report-schedule': 'Gửi báo cáo kèm PDF qua email và Telegram theo lịch',
             assistant: 'Trợ lý FlyBot trả lời bằng số liệu thật, kèm ảnh và biểu đồ',
             'assistant-confirm': 'Trợ lý chuẩn bị, bạn bấm Xác nhận mới được ghi',
             'app-tour': 'Hướng dẫn nhanh ngay khi mở ứng dụng lần đầu',
-            mobile: 'Dùng trên điện thoại như một ứng dụng'
+            mobile: 'Dùng trên điện thoại như một ứng dụng, cả khi mất sóng'
         }
     },
     en: {
@@ -51,18 +52,19 @@ const TEXT = {
             diagnosis: 'Degree-day forecast of the next fly wave, with suggested actions',
             notifications: 'Alerts for thresholds, sudden rises and offline cameras',
             map: 'Farms and plots on the map, colored by risk',
-            logbook: 'Treatment log: before and after, VietGAP export',
+            logbook: 'Treatment log: before and after, pre-harvest intervals, VietGAP record',
+            'alert-settings': 'The VietGAP record every month, and a notice when harvest is allowed',
             organizations: 'Organizations with members and roles',
             'report-schedule': 'Reports with their PDF by email and Telegram on a schedule',
             assistant: 'The FlyBot assistant answers from your figures, with photos and charts',
             'assistant-confirm': 'The assistant prepares, your Confirm records it',
             'app-tour': 'A quick tour the first time you open the app',
-            mobile: 'Works on the phone like an app'
+            mobile: 'Works on the phone like an app, even without signal'
         }
     }
 }[LANG];
 
-const ORDER = ['app-tour', 'dashboard', 'dashboard-cameras', 'catch-chart', 'playback', 'detection', 'history-export', 'analytics', 'insights', 'reports', 'report-schedule', 'assistant', 'assistant-confirm', 'diagnosis', 'notifications', 'map', 'logbook'];
+const ORDER = ['app-tour', 'dashboard', 'dashboard-cameras', 'catch-chart', 'playback', 'detection', 'history-export', 'analytics', 'insights', 'reports', 'report-schedule', 'assistant', 'assistant-confirm', 'diagnosis', 'notifications', 'map', 'logbook', 'alert-settings'];
 const dataUrl = (name) => `data:image/webp;base64,${fs.readFileSync(path.join(SHOTS, `${name}.webp`)).toString('base64')}`;
 const scenes = ORDER.map(name => ({ kind: 'shot', img: dataUrl(name), caption: TEXT.scenes[name] }));
 scenes.push({ kind: 'phones', imgs: [dataUrl('mobile-dashboard'), dataUrl('mobile-cameras'), dataUrl('mobile-more')], caption: TEXT.scenes.mobile });

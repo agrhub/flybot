@@ -6,9 +6,9 @@ FlyBot watches sticky and lure traps through EZVIZ cameras, counts the insects o
 
 Website: <https://ezviz.agrhub.com> · Contact: <contact@agrhub.com>
 
-[![FlyBot product tour, 82 seconds](docs/images/tour-poster.webp)](https://ezviz.agrhub.com/media/flybot-tour-en.mp4)
+[![FlyBot product tour, 86 seconds](docs/images/tour-poster.webp)](https://ezviz.agrhub.com/media/flybot-tour-en.mp4)
 
-Product tour (1080p, 82 s): [English](https://ezviz.agrhub.com/media/flybot-tour-en.mp4) · [Tiếng Việt](https://ezviz.agrhub.com/media/flybot-tour-vi.mp4). The files are also in the repository: [client/public/media](client/public/media).
+Product tour (1080p, 86 s): [English](https://ezviz.agrhub.com/media/flybot-tour-en.mp4) · [Tiếng Việt](https://ezviz.agrhub.com/media/flybot-tour-vi.mp4). The files are also in the repository: [client/public/media](client/public/media).
 
 ## Features
 

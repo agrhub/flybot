@@ -69,7 +69,7 @@ const MOBILE = [390, 844];
 
 const shots = [
     { name: 'dashboard', url: '/dashboard', settle: 6000 },
-    { name: 'diagnosis', url: '/dashboard', action: `
+    { name: 'diagnosis', url: '/dashboard', settle: 4000, action: `
         const b = [...document.querySelectorAll('.el-card button')].find(b => b.innerText.includes(${JSON.stringify(W('Chẩn đoán lại bằng AI', 'Re-evaluate with AI'))}));
         b.click(); for (let i = 0; i < 40 && !document.querySelector('.dd-panel'); i++) await sleep(300);
         await sleep(1500); document.querySelectorAll('.el-notification').forEach(n => n.remove());
@@ -99,13 +99,13 @@ const shots = [
         const c = [...document.querySelectorAll('.el-card')].find(e => e.innerText.includes(${JSON.stringify(W('Bảo trì bẫy', 'Trap maintenance'))}));
         c?.scrollIntoView({ block: 'start' }); await sleep(800);` },
     { name: 'camera-settings', url: '/settings?tab=cameras' },
-    { name: 'analytics', url: '/analytics', settle: 4000 },
+    { name: 'analytics', url: '/analytics', settle: 12000 },
     { name: 'history', url: '/analytics', action: `
         await click('.el-tabs__item', ${JSON.stringify(W('Lịch sử', 'History'))}, 3000);` },
     { name: 'history-export', url: '/analytics', action: `
         await click('.el-tabs__item', ${JSON.stringify(W('Lịch sử', 'History'))}, 3000);
         await click('.history-card button', ${JSON.stringify(W('Xuất dữ liệu', 'Export'))}, 1200);` },
-    { name: 'widget-filter', url: '/analytics', settle: 4000, action: `
+    { name: 'widget-filter', url: '/analytics', settle: 8000, action: `
         const b = [...document.querySelectorAll('button[aria-label]')].find(x => x.getAttribute('aria-label') === ${JSON.stringify(W('Bộ lọc của khối này', 'This widget’s filters'))});
         b.click(); await sleep(1200);` },
     { name: 'reports', url: '/reports', action: `
