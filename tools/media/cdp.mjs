@@ -18,6 +18,8 @@ export async function launch({ keepProfile = false, args = [] } = {}) {
         '--headless=new', `--remote-debugging-port=${PORT}`, `--user-data-dir=${PROFILE}`,
         '--no-first-run', '--no-default-browser-check', '--hide-scrollbars', '--mute-audio',
         '--disable-extensions', '--disable-background-networking', '--disable-sync',
+        // No crash handler: it outlives Chrome on Windows and keeps the profile folder locked
+        '--disable-crash-reporter', '--disable-breakpad',
         '--autoplay-policy=no-user-gesture-required', '--window-size=1440,900', 'about:blank'
     ], { stdio: 'ignore' });
     let target;

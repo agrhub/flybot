@@ -66,6 +66,7 @@ Screenshots in Vietnamese are in [client/public/manual/vi](client/public/manual/
 
 ```
 client/            Vue web app (pages, components, locales vi/en, guide screenshots in public/manual)
+  tests/           Vitest unit and component tests, end-to-end smoke test on the demo
 server/            Express API, cron jobs (capture, AI retry, reports, cleanup), assistant agent
   src/agent/       FlyBot assistant: prompts, tools, Gemini streaming loop
   tests/           node:test suite with an in-memory MongoDB
@@ -97,7 +98,8 @@ Optional: SMTP settings for emails, `TELEGRAM_BOT_TOKEN` for Telegram alerts, VA
 | Command | What it does |
 |---|---|
 | `npm run dev` | API and web app with reload |
-| `npm test` | Server test suite (in-memory MongoDB, no external services) |
+| `npm test` | Server and web app tests (in-memory MongoDB, no external services) |
+| `npm run test:e2e` | The demo in headless Chrome: every main page and the main flows |
 | `npm run build` | Web app into `client/dist`, server bundle into `server/dist` |
 | `npm start` | Production server from `server/dist` |
 

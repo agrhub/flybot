@@ -9,7 +9,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:e2e": "node --test --test-concurrency=1 tests/e2e/smoke.test.mjs"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.1",
@@ -32,8 +34,11 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.3",
+    "@vue/test-utils": "^2.5.1",
+    "happy-dom": "^18.0.1",
     "unplugin-vue-components": "^28.8.0",
     "vite": "^7.3.0",
-    "vite-plugin-vue-devtools": "^8.0.5"
+    "vite-plugin-vue-devtools": "^8.0.5",
+    "vitest": "^3.2.7"
   }
 }

@@ -34,6 +34,17 @@ TMP=/path/with/space TEMP=/path/with/space node --test --test-concurrency=1 test
 
 Add a test with every server change: access rules, validation and the happy path. Build the web app (`npm run build:client`) before sending a change.
 
+The web app has two kinds of tests:
+
+```bash
+npm run test:client      # Vitest: utilities, translations, components (a few seconds)
+npm run test:e2e         # the demo in headless Chrome: every main page and the main flows
+```
+
+`test:client` also checks that Vietnamese and English have the same keys and placeholders, that every message compiles (write `{'@'}` for a literal @) and that every `t('...')` key used in the code exists. Component tests live in `client/tests/unit` and mock `@/services/api`.
+
+`test:e2e` starts the demo from `tools/media` (in-memory database, ports 3013 and 3010, which must be free), opens every main page with a manager account and fails on any script error, then checks the overview, the field log and the notification settings, and that pages fit a phone screen. It needs Google Chrome (`CHROME_PATH` if it is elsewhere) and about 500 MB of temporary disk space. If another in-memory MongoDB is running and the test cannot replace the cached `mongod`, point it at that file with `MONGOMS_SYSTEM_BINARY`.
+
 ## Trying the UI without real data
 
 `tools/media` runs a demo: an API with an in-memory database and sample farms, cameras and photos, plus the web app pointed at it. The same tools take the guide screenshots and record the product tour. See [tools/media/README.md](tools/media/README.md).

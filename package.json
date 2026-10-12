@@ -15,7 +15,9 @@
     "build": "npm run build:client && npm run build:server",
     "build:client": "npm run build -w client",
     "build:server": "npm run build -w server",
-    "test": "npm run test -w server"
+    "test": "npm run test -w server && npm run test -w client",
+    "test:client": "npm run test -w client",
+    "test:e2e": "npm run test:e2e -w client"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"
