@@ -886,6 +886,11 @@
             "desc": "Every photo is counted by the AI; blue boxes mark each insect with its confidence.",
             "items": "In Analytics open the \"Detection History\" tab, or open a camera and scroll to its detection history.\nThe table has its own filters: cameras (several at once), dates, alarm status (Alarm, Warning, Normal) and review status.\n\"Alarm status\" compares each photo’s count with the camera threshold; with several cameras the table adds a Camera column.\nClick the eye icon on a row to open the photo: detection boxes, counts per species and a ratio chart.\n\"Export\" saves every record matching the filters (not only the page on screen) with the annotated photos: \"PDF with photos\" or \"Excel with photos\" (one sheet per camera)."
           },
+          "accuracy": {
+            "title": "How accurate the AI count is",
+            "desc": "The fruit fly model was trained on more than 1,500 trap photos with over 85,000 flies marked by hand.",
+            "items": "On a separate set of test photos, the AI finds about 92 of every 100 flies in a photo, and about 93 of every 100 boxes it draws are fruit flies.\nCounts are less reliable when a photo is blurred, too dark, has glare or a dirty lens, when the card is so full that flies overlap, or when other insects look like fruit flies. The camera's \"Photo quality\" shows these cases.\nBefore an important decision (spraying, a report for a partner), open the photo to check the boxes, or click \"Ask the assistant about this photo\" to have the AI look again.\nEach time you click \"Confirm result\" or \"Correct counts\", an admin can send that photo back to retrain the AI, so it counts better on photos from your own farm."
+          },
           "review": {
             "title": "Confirm or correct counts",
             "desc": "Technicians check the AI results so the numbers can be trusted.",

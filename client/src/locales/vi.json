@@ -886,6 +886,11 @@
             "desc": "Mỗi ảnh được AI đếm; khung xanh đánh dấu từng con kèm độ tin cậy.",
             "items": "Vào Phân tích, mở tab \"Lịch sử nhận diện\", hoặc mở một camera và kéo xuống \"Lịch sử nhận diện của camera\".\nBảng có bộ lọc riêng: camera (chọn nhiều), thời gian, trạng thái cảnh báo (Cảnh báo, Cần chú ý, Bình thường) và trạng thái duyệt.\nCột \"Trạng thái cảnh báo\" so số đếm của ảnh với ngưỡng của camera; khi chọn nhiều camera, bảng có thêm cột Camera.\nBấm biểu tượng con mắt ở một dòng để mở ảnh: khung nhận diện, số lượng theo loài và biểu đồ tỷ lệ.\n\"Xuất dữ liệu\" lưu mọi bản ghi khớp bộ lọc (không chỉ trang đang xem), kèm ảnh có khung nhận diện: \"PDF kèm ảnh\" hoặc \"Excel kèm ảnh\" (mỗi camera một sheet)."
           },
+          "accuracy": {
+            "title": "AI đếm chính xác tới đâu",
+            "desc": "Mô hình nhận dạng ruồi vàng được huấn luyện trên hơn 1.500 ảnh tấm bẫy, với hơn 85.000 con ruồi đã được đánh dấu.",
+            "items": "Trên bộ ảnh kiểm thử riêng, AI tìm được khoảng 92 trên 100 con ruồi có trong ảnh, và khoảng 93 trên 100 khung AI đánh dấu đúng là ruồi vàng.\nSố đếm dễ lệch khi ảnh mờ, quá tối, lóa, ống kính bẩn, tấm keo đã quá dày ruồi chồng lên nhau, hoặc có côn trùng khác trông giống ruồi vàng. Mục \"Chất lượng ảnh\" của camera báo các trường hợp này.\nTrước quyết định quan trọng (phun thuốc, báo cáo cho đối tác), hãy mở ảnh để xem các khung nhận diện, hoặc bấm \"Hỏi trợ lý về ảnh này\" để AI xem lại ảnh.\nMỗi lần bạn bấm \"Xác nhận đúng\" hoặc \"Sửa số đếm\", quản trị viên có thể gửi ảnh đó về để huấn luyện lại AI, giúp AI đếm tốt hơn trên chính ảnh từ vườn của bạn."
+          },
           "review": {
             "title": "Xác nhận hoặc sửa số đếm",
             "desc": "Kỹ thuật viên kiểm tra kết quả AI để số liệu đáng tin hơn.",
