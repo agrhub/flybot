@@ -12,3 +12,5 @@ origin/
 
 # Media tools: sign-in tokens of the local demo
 tools/media/demo-tokens.json
+# Written by the deploy script from .env (holds real settings)
+deploy/cloudrun.env.generated.yaml

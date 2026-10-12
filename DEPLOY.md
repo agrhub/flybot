@@ -13,7 +13,7 @@ One Docker image (`Dockerfile`) runs on both targets. The server serves the API 
 
 ## Cloud Run: automated deploy script
 
-The scripts below do everything in the Cloud Run sections that follow: enable APIs, create the service account, repository, permissions and secrets, fill `deploy/cloudrun.env.yaml` from `.env`, build, deploy and check `/health`. They are safe to re-run; anything that already exists is skipped.
+The scripts below do everything in the Cloud Run sections that follow: enable APIs, create the service account, repository, permissions and secrets, generate the Cloud Run settings from `deploy/cloudrun.env.yaml` and `.env`, build, deploy and check `/health`. They are safe to re-run; anything that already exists is skipped.
 
 Requirements: Node.js, and the Google Cloud CLI logged in with `gcloud auth login`.
 
@@ -104,7 +104,9 @@ gcloud iam service-accounts add-iam-policy-binding flybot-run@PROJECT_ID.iam.gse
 Newer projects may run builds as the Compute Engine default service account instead (`PROJECT_NUMBER-compute@developer.gserviceaccount.com`). If the deploy step fails with a permission error, grant the same roles to that account.
 
 ### 4. Settings
-Fill in the `TODO` values in `deploy/cloudrun.env.yaml`. Everything in that file is non-secret.
+`deploy/cloudrun.env.yaml` lists the non-secret settings Cloud Run gets, with defaults. On every run the deploy script writes `deploy/cloudrun.env.generated.yaml` (ignored by git, uploaded to Cloud Build) with each of these keys taken from `.env` when it is set there, otherwise from the template; `.env` changes reach the next deploy without editing anything. A `TODO` value must be set in one of the two.
+
+The deploy-specific keys `NODE_ENV`, `APP_BASE_URL`, `COOKIE_SECURE`, `TRUST_PROXY`, `ENABLE_CRON` and `ALLOW_REGISTRATION` always come from the template, since the local `.env` holds development values for them. Secrets never go in either file. Deploying by hand with `gcloud builds submit`, fill the `TODO` values in the template itself (it is the default `_ENV_VARS_FILE`).
 
 For email (password reset, email confirmation, alert emails), fill `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER` and `MAIL_FROM`, and store `SMTP_PASS` as the `flybot-smtp-pass` secret. Then add `,SMTP_PASS=flybot-smtp-pass:latest` to `_EXTRA_SECRETS`. The deploy script does all of this from `.env`. `APP_BASE_URL` must be the public URL of the app; the deploy script sets it to the Cloud Run URL when it is empty.
 

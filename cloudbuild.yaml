@@ -7,6 +7,8 @@ substitutions:
   _MAPS_KEY: ""
   # Optional secrets, e.g. ",SMTP_PASS=flybot-smtp-pass:latest" (set by the deploy script when present)
   _EXTRA_SECRETS: ""
+  # The deploy script passes the file it generates from the template and .env
+  _ENV_VARS_FILE: deploy/cloudrun.env.yaml
 
 steps:
   - id: build
@@ -38,7 +40,7 @@ steps:
       - --min-instances=1
       - --max-instances=1
       - --no-cpu-throttling
-      - --env-vars-file=deploy/cloudrun.env.yaml
+      - --env-vars-file=${_ENV_VARS_FILE}
       - --set-secrets=JWT_SECRET=flybot-jwt-secret:latest,MONGO_URI=flybot-mongo-uri:latest,APP_KEY=flybot-ezviz-app-key:latest,SECRET_KEY=flybot-ezviz-secret-key:latest,S3_ACCESS_KEY=flybot-s3-access-key:latest,S3_SECRET_KEY=flybot-s3-secret-key:latest,ROBOFLOW_API_KEY=flybot-roboflow-api-key:latest${_EXTRA_SECRETS}
 
 images:
