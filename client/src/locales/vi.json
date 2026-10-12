@@ -949,7 +949,7 @@
           "channels": {
             "title": "Kênh nhận & giờ yên lặng",
             "desc": "Chọn cách nhận cảnh báo khi không mở ứng dụng.",
-            "items": "Vào Cài đặt, mục Thông báo.\nBật email cảnh báo, kết nối Telegram, hoặc bật thông báo đẩy trên điện thoại/máy tính đang dùng.\nBật \"Báo cáo tuần\" để nhận tóm tắt mỗi sáng thứ Hai; bấm \"Gửi báo cáo tuần này cho tôi ngay\" để xem thử.\nĐặt \"Giờ yên lặng\" để không bị làm phiền ban đêm, và tắt camera không muốn theo dõi trong \"Camera tôi theo dõi\".\nBật \"Bản tin sáng\" để nhận lúc 6:30 mỗi sáng: số ruồi vào bẫy hôm qua, bẫy vượt hoặc gần ngưỡng, tấm keo đến hạn, camera mất kết nối (qua Telegram, hoặc email nếu chưa liên kết Telegram).\nBật \"Sổ VietGAP hằng tháng\" để nhận sổ sử dụng thuốc BVTV tháng trước (PDF) vào ngày 1 hằng tháng; trong Sổ ghi chép, bấm \"Gửi sổ tháng trước\" để nhận ngay."
+            "items": "Vào Cài đặt, mục Thông báo.\nBật email cảnh báo, kết nối Telegram, hoặc bật thông báo đẩy trên điện thoại/máy tính đang dùng.\nBật \"Báo cáo tuần\" để nhận tóm tắt mỗi sáng thứ Hai; bấm \"Gửi báo cáo tuần này cho tôi ngay\" để xem thử.\nĐặt \"Giờ yên lặng\" để không bị làm phiền ban đêm, và tắt camera không muốn theo dõi trong \"Camera tôi theo dõi\".\nBật \"Bản tin sáng\" để nhận lúc 6:30 mỗi sáng: số ruồi vào bẫy hôm qua, bẫy vượt hoặc gần ngưỡng, tấm keo đến hạn, camera mất kết nối (qua Telegram, hoặc email nếu chưa liên kết Telegram).\nBật \"Sổ VietGAP hằng tháng\" để nhận sổ sử dụng thuốc BVTV tháng trước (PDF) vào ngày 1 hằng tháng; trong Nhật ký vườn, bấm \"Gửi sổ tháng trước\" để nhận ngay."
           },
           "reports": {
             "title": "Báo cáo",

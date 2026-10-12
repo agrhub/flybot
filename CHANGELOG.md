@@ -16,8 +16,8 @@
 ### Reports
 - "Custom dashboards" renamed **Reports**: 7 days to 12 months or custom ranges with comparison to the period before, new blocks, PDF export, share expiry, and scheduled weekly or monthly sending by email and Telegram.
 
-### Logbook (VietGAP)
-- **Monthly VietGAP record**: turn it on under Settings, Notifications to get last month's pesticide use record as a PDF on the 1st at 07:00, by email and on Telegram. **Email last month** in the Logbook sends it right away.
+### Field log (VietGAP)
+- **Monthly VietGAP record**: turn it on under Settings, Notifications to get last month's pesticide use record as a PDF on the 1st at 07:00, by email and on Telegram. **Email last month** in the Field log sends it right away.
 
 ### Works without signal
 - The installed app opens in the field without a connection and shows the last data seen, with the time it was saved. Actions that need the network say so instead of failing silently. Saved data is cleared on sign-out.

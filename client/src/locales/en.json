@@ -949,7 +949,7 @@
           "channels": {
             "title": "Channels & quiet hours",
             "desc": "Choose how alerts reach you when the app is closed.",
-            "items": "Open Settings, Notifications.\nTurn on alert emails, connect Telegram, or enable push notifications on this phone or computer.\nTurn on the weekly report for a Monday summary; \"Send me this week’s report now\" shows an example.\nSet quiet hours for the night, and switch off cameras you do not follow under \"Cameras I follow\".\nTurn on \"Morning brief\" for a summary at 6:30 every morning: yesterday's catches, traps over or near their threshold, cards due, cameras offline (on Telegram, or by email without Telegram).\nTurn on \"Monthly VietGAP record\" to get last month's pesticide use record (PDF) on the 1st of each month; in the Logbook, \"Email last month\" sends it right away."
+            "items": "Open Settings, Notifications.\nTurn on alert emails, connect Telegram, or enable push notifications on this phone or computer.\nTurn on the weekly report for a Monday summary; \"Send me this week’s report now\" shows an example.\nSet quiet hours for the night, and switch off cameras you do not follow under \"Cameras I follow\".\nTurn on \"Morning brief\" for a summary at 6:30 every morning: yesterday's catches, traps over or near their threshold, cards due, cameras offline (on Telegram, or by email without Telegram).\nTurn on \"Monthly VietGAP record\" to get last month's pesticide use record (PDF) on the 1st of each month; in the Field log, \"Email last month\" sends it right away."
           },
           "reports": {
             "title": "Reports",

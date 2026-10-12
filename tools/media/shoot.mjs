@@ -157,7 +157,8 @@ const shots = [
         const bell = [...document.querySelectorAll('header button, .el-badge')].find(b => b.querySelector('svg') && (b.getAttribute('aria-label') || '').toLowerCase().includes(${JSON.stringify(W('thông báo', 'notification'))})) || document.querySelector('.el-badge');
         bell.click(); await sleep(1500);` },
     { name: 'alert-settings', url: '/settings?tab=notifications', action: `
-        const c = [...document.querySelectorAll('.el-card')].find(e => e.innerText.includes(${JSON.stringify(W('Báo cáo tuần', 'Weekly report'))}));
+        // The innermost card: the settings panel around it contains the same text
+        const c = [...document.querySelectorAll('.el-card')].filter(e => e.innerText.includes(${JSON.stringify(W('Báo cáo tuần', 'Weekly report'))})).pop();
         for (let i = 0; i < 40 && document.querySelector('.el-loading-mask'); i++) await sleep(500);
         c?.scrollIntoView({ block: 'start' }); await sleep(600);` },
     { name: 'organizations', url: '/settings?tab=organizations' },

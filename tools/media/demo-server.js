@@ -269,6 +269,19 @@ async function seedShowcase() {
         product: L('Thu gom trái rụng', 'Collect fallen fruit'), area: L('Lô bưởi B', 'Pomelo plot B'), operator: L('Chị Lan', 'Lan'), note: L('Chôn sâu 40 cm', 'Buried 40 cm deep'), createdBy: manager._id, createdByEmail: manager.email
     });
 
+    // Last month's treatments, for the monthly VietGAP record
+    const lastMonth = (day, hour) => { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - 1); d.setDate(day); d.setHours(hour, 0, 0, 0); return d; };
+    await models.Treatment.create({
+        cameraSerials: ['BC1001', 'BC1002', 'BC1003'], type: 'spray', at: lastMonth(8, 6),
+        product: L('Radiant 60SC', 'Radiant 60SC'), activeIngredient: 'Spinetoram', dose: L('15 ml / 16 lít nước', '15 ml per 16 L water'), area: L('Lô xoài A và bưởi B (2 ha)', 'Mango A and pomelo B (2 ha)'),
+        operator: L('Anh Tư', 'Tu'), preHarvestDays: 7, note: L('Phun ướt đều tán, trời lặng gió', 'Even cover, no wind'), createdBy: manager._id, createdByEmail: manager.email
+    });
+    await models.Treatment.create({
+        cameraSerials: ['BC1002'], type: 'lure', at: lastMonth(21, 16),
+        product: L('Bẫy Vizubon-D', 'Vizubon-D lure'), activeIngredient: 'Methyl eugenol', dose: L('2 ml mỗi bẫy', '2 ml per trap'), area: L('Lô xoài A', 'Mango plot A'),
+        operator: L('Chị Lan', 'Lan'), preHarvestDays: 0, createdBy: manager._id, createdByEmail: manager.email
+    });
+
     // Organization with the technician as a member
     await req('src/services/orgService').migrateToOrganizations();
     const org = await models.Organization.findOne();
