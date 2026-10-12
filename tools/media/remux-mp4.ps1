@@ -1,10 +1,12 @@
 # Re-encode a video recorded in Chrome (fragmented MP4, no duration in its header) into a plain
 # MP4 that PowerPoint and Windows players accept, with Windows' own encoder (no ffmpeg needed).
-# Usage: powershell -NoProfile -File remux-mp4.ps1 <in.mp4> <out.mp4> [bitrate, default 1200000]
+# Usage: powershell -NoProfile -File remux-mp4.ps1 <in.mp4> <out.mp4> [bitrate, default 1200000] [width height, default 1280 720]
 param(
     [Parameter(Mandatory = $true)][string]$In,
     [Parameter(Mandatory = $true)][string]$Out,
-    [int]$Bitrate = 1200000
+    [int]$Bitrate = 1200000,
+    [int]$Width = 1280,
+    [int]$Height = 720
 )
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Runtime.WindowsRuntime
@@ -28,12 +30,13 @@ $source = Await-Operation ([Windows.Storage.StorageFile]::GetFileFromPathAsync($
 $folder = Await-Operation ([Windows.Storage.StorageFolder]::GetFolderFromPathAsync([System.IO.Path]::GetDirectoryName($outFull))) ([Windows.Storage.StorageFolder])
 $target = Await-Operation ($folder.CreateFileAsync([System.IO.Path]::GetFileName($outFull), [Windows.Storage.CreationCollisionOption]::ReplaceExisting)) ([Windows.Storage.StorageFile])
 
-# H.264 at 1280x720, no sound (the tour has none)
-$profile = [Windows.Media.MediaProperties.MediaEncodingProfile]::CreateMp4([Windows.Media.MediaProperties.VideoEncodingQuality]::HD720p)
+# H.264, no sound (the tour has none)
+$quality = if ($Height -ge 1080) { [Windows.Media.MediaProperties.VideoEncodingQuality]::HD1080p } else { [Windows.Media.MediaProperties.VideoEncodingQuality]::HD720p }
+$profile = [Windows.Media.MediaProperties.MediaEncodingProfile]::CreateMp4($quality)
 $profile.Audio = $null
 $profile.Video.Bitrate = $Bitrate
-$profile.Video.Width = 1280
-$profile.Video.Height = 720
+$profile.Video.Width = $Width
+$profile.Video.Height = $Height
 
 $transcoder = New-Object Windows.Media.Transcoding.MediaTranscoder
 $prepared = Await-Operation ($transcoder.PrepareFileTranscodeAsync($source, $target, $profile)) ([Windows.Media.Transcoding.PrepareTranscodeResult])

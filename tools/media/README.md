@@ -30,6 +30,8 @@ node record.mjs shots video vi
 
 For English, restart step 1 with `DEMO_LANG=en`, then run `node shoot.mjs shots-en all en` and `node record.mjs shots-en video en`.
 
+For a sharp product tour, take its screenshots at twice the resolution (`FLYBOT_SHOT_SCALE=2 FLYBOT_SHOT_QUALITY=92 node shoot.mjs shots-2x <scenes> vi`) and record from those. `record.mjs` draws at 1920x1080 (`FLYBOT_VIDEO_SCALE`, default 1.5 x 1280x720) at 8 Mbps (`FLYBOT_VIDEO_BITRATE`); `FLYBOT_POSTER_ONLY=1` writes only the still frame.
+
 Copy the results into the app:
 
 - `shots/*.webp` → `client/public/manual/vi/`
@@ -46,6 +48,7 @@ Copy the results into the app:
 - `cdp.mjs`: headless Chrome through the DevTools protocol.
 - `shoot.mjs`: the screenshot list. Each entry has a name, a page and the clicks to make before the shot. The guide shows them through `IMAGES` in `client/src/pages/Manual.vue`.
 - `record.mjs`: the tour scenes (`ORDER`), captions in both languages, timing and bitrate.
-- `remux-mp4.ps1`: Chrome records a fragmented MP4 with no duration in its header, which PowerPoint cannot play and browsers cannot seek. After `record.mjs`, re-encode each video with Windows' own encoder: `powershell -NoProfile -ExecutionPolicy Bypass -File remux-mp4.ps1 <in.mp4> <out.mp4> 700000` (the last number is the bitrate).
+- `remux-mp4.ps1`: Chrome records a fragmented MP4 with no duration in its header, which PowerPoint cannot play and browsers cannot seek. After `record.mjs`, re-encode each video with Windows' own encoder: `powershell -NoProfile -ExecutionPolicy Bypass -File remux-mp4.ps1 <in.mp4> <out.mp4> 3500000 1920 1080` (bitrate, width, height). The website copy uses 3.5 Mbps (about 35 MB); a copy for a deck artifact (20 MB limit per file) 1.8 Mbps.
 - `embed-video-pptx.mjs`: PDF and PowerPoint exports of a deck show a video as its still frame. `node embed-video-pptx.mjs <in.pptx> <slide> <video.mp4> <out.pptx>` turns the largest picture on that slide into the playable video (PowerPoint 2010 and later). PDF cannot play video: give it a link.
+- `link-video-pptx.mjs`: instead of embedding, `node link-video-pptx.mjs <in.pptx> <slide> <https://…/video.mp4> <out.pptx>` makes the largest picture on that slide (and a play button on it) open the online video, so a new video on the website needs no new deck. PowerPoint does not play a linked .mp4 URL inside the slide (only YouTube, Vimeo or Stream), so it opens in the browser.
 - `frames.mjs`: frame grabber for checking a video.

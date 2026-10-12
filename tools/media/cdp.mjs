@@ -54,7 +54,8 @@ export async function launch() {
         send,
         on: (fn) => { listeners.add(fn); return () => listeners.delete(fn); },
         async viewport(width, height, mobile = false) {
-            await send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile });
+            // FLYBOT_SHOT_SCALE=2 takes sharper (larger) screenshots, e.g. as video sources
+            await send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: Number(process.env.FLYBOT_SHOT_SCALE) || 1, mobile });
             if (mobile) await send('Emulation.setUserAgentOverride', { userAgent: 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Mobile Safari/537.36' });
             else await send('Emulation.setUserAgentOverride', { userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36' });
         },
@@ -70,7 +71,7 @@ export async function launch() {
             return r.result?.value;
         },
         // clip: [x, y, width, height] in CSS pixels, for a part of the page
-        async shot(file, { format = 'webp', quality = 82, clip = null } = {}) {
+        async shot(file, { format = 'webp', quality = Number(process.env.FLYBOT_SHOT_QUALITY) || 82, clip = null } = {}) {
             const { data } = await send('Page.captureScreenshot', { format, quality, ...(clip ? { clip: { x: clip[0], y: clip[1], width: clip[2], height: clip[3], scale: 1 } } : {}) });
             fs.writeFileSync(file, Buffer.from(data, 'base64'));
             return fs.statSync(file).size;

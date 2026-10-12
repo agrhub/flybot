@@ -67,9 +67,15 @@ const dataUrl = (name) => `data:image/webp;base64,${fs.readFileSync(path.join(SH
 const scenes = ORDER.map(name => ({ kind: 'shot', img: dataUrl(name), caption: TEXT.scenes[name] }));
 scenes.push({ kind: 'phones', imgs: [dataUrl('mobile-dashboard'), dataUrl('mobile-cameras'), dataUrl('mobile-more')], caption: TEXT.scenes.mobile });
 
+const SCALE = Number(process.env.FLYBOT_VIDEO_SCALE) || 1.5;
+const BITRATE = Number(process.env.FLYBOT_VIDEO_BITRATE) || 8000000;
+// FLYBOT_POSTER_ONLY=1: only the still frame, no recording
+const POSTER_ONLY = process.env.FLYBOT_POSTER_ONLY === '1';
+
 const page = await launch();
 try {
-    await page.viewport(1280, 720);
+    // Laid out at 1280x720 and drawn at SCALE (1.5 = 1920x1080); sharp with shots taken at FLYBOT_SHOT_SCALE=2
+    await page.viewport(1280 * SCALE, 720 * SCALE);
     await page.goto('about:blank', 300);
     const result = await page.eval(`
         const W = 1280, H = 720, FPS = 30;
@@ -81,9 +87,11 @@ try {
             if (s.imgs) s.images = await Promise.all(s.imgs.map(load));
         }
         const canvas = document.createElement('canvas');
-        canvas.width = W; canvas.height = H;
+        canvas.width = W * ${SCALE}; canvas.height = H * ${SCALE};
         document.body.appendChild(canvas);
         const ctx = canvas.getContext('2d');
+        ctx.scale(${SCALE}, ${SCALE});
+        ctx.imageSmoothingQuality = 'high';
         const GREEN = '#3ecf8e', DARK = '#0f1714';
         const ease = (x) => x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2;
 
@@ -162,13 +170,16 @@ try {
             if (edge < FADE && i > 0 && i < timeline.length) { ctx.fillStyle = 'rgba(0,0,0,' + (1 - edge / FADE) * 0.85 + ')'; ctx.fillRect(0, 0, W, H); }
         }
 
-        frame(INTRO * 0.55);
-        const poster = canvas.toDataURL('image/webp', 0.85);
+        // Still frame: the overview screen, so a play button on top hides nothing important
+        frame(INTRO + SCENE * 1.45);
+        const poster = canvas.toDataURL('image/webp', 0.9);
+        if (${POSTER_ONLY}) return { poster: poster.split(',')[1], seconds: total };
 
-        const types = ['video/mp4;codecs=avc1.42E01F', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm'];
+        // avc1.640028: H.264 High at level 4.0, which allows 1080p (42E01F stops at 720p)
+        const types = ['video/mp4;codecs=avc1.640028', 'video/mp4;codecs=avc1.42E01F', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm'];
         const mime = types.find(m => MediaRecorder.isTypeSupported(m));
         const stream = canvas.captureStream(FPS);
-        const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 800000 });
+        const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: ${BITRATE} });
         const chunks = [];
         rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
         const done = new Promise(res => rec.onstop = res);
@@ -188,12 +199,16 @@ try {
         const b64 = await new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result.split(',')[1]); r.readAsDataURL(blob); });
         return { mime, b64, poster: poster.split(',')[1], seconds: total };
     `);
-    const ext = result.mime.includes('mp4') ? 'mp4' : 'webm';
     fs.mkdirSync(OUT, { recursive: true });
-    const file = path.join(OUT, `flybot-tour-${LANG}.${ext}`);
-    fs.writeFileSync(file, Buffer.from(result.b64, 'base64'));
     fs.writeFileSync(path.join(OUT, `flybot-tour-${LANG}-poster.webp`), Buffer.from(result.poster, 'base64'));
-    console.log(`${file} ${result.mime} ${Math.round(fs.statSync(file).size / 1024)} KB, ${result.seconds.toFixed(1)} s`);
+    if (POSTER_ONLY) {
+        console.log(`${path.join(OUT, `flybot-tour-${LANG}-poster.webp`)} written`);
+    } else {
+        const ext = result.mime.includes('mp4') ? 'mp4' : 'webm';
+        const file = path.join(OUT, `flybot-tour-${LANG}.${ext}`);
+        fs.writeFileSync(file, Buffer.from(result.b64, 'base64'));
+        console.log(`${file} ${result.mime} ${Math.round(fs.statSync(file).size / 1024)} KB, ${result.seconds.toFixed(1)} s`);
+    }
 } finally {
     await page.close();
 }
