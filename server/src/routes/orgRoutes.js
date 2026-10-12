@@ -13,6 +13,7 @@ router.post('/', requireRole('admin', 'manager'), orgController.createOrg);
 router.put('/:id', orgController.updateOrg);
 router.delete('/:id', orgController.deleteOrg);
 router.post('/:id/members', shareLimiter, orgController.addMember);
+router.post('/:id/members/remind', shareLimiter, orgController.remindMember);
 router.put('/:id/members', orgController.updateMember);
 router.delete('/:id/members', orgController.removeMember);
 router.put('/:id/cameras', orgController.setCameras);

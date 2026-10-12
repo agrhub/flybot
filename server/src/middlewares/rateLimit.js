@@ -70,12 +70,16 @@ const reportSendQuota = createQuota({ windowMs: 60 * 60 * 1000, max: 5 });
 
 const emailKey = (req) => (typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '');
 
+// Confirmation reminders actually sent: 3 per day to the same address, whoever sends them
+const remindQuota = createQuota({ windowMs: 24 * 60 * 60 * 1000, max: 3 });
+
 // Avatar changes: 20 per person per 10 minutes
 const avatarLimiter = rateLimit({ windowMs: 10 * 60 * 1000, max: 20, includeIp: false, keyFn: (req) => `avatar:${req.user?.id}` });
 
 module.exports = {
     rateLimit,
     avatarLimiter,
+    remindQuota,
     createQuota,
     captureQuota,
     reportSendQuota,

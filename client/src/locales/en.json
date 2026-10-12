@@ -1779,6 +1779,7 @@
         "member_added": "Add member",
         "member_updated": "Change member role",
         "member_removed": "Remove member",
+        "member_reminded": "Remind member to confirm email",
         "cameras_changed": "Move cameras"
       },
       "integration": {
@@ -2051,6 +2052,8 @@
     "invited": "Invitation sent. They get access once they create an account and confirm this email.",
     "pending": "Invited, no account yet",
     "unverified": "Has an account, email not confirmed yet. Access starts once it is confirmed.",
+    "remind": "Remind them to confirm",
+    "reminded": "Confirmation email sent again to {email}.",
     "remove": "Remove",
     "removeConfirm": "Remove {email} from the organization?",
     "leave": "Leave",

@@ -318,6 +318,9 @@ export default {
   deleteOrg(id) {
     return apiClient.delete(`/orgs/${id}`);
   },
+  remindOrgMember(id, email) {
+    return apiClient.post(`/orgs/${id}/members/remind`, { email });
+  },
   addOrgMember(id, data) {
     return apiClient.post(`/orgs/${id}/members`, data);
   },

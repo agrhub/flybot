@@ -583,6 +583,7 @@ module.exports = {
     resendVerification,
     changePassword,
     updateProfile,
+    sendVerificationEmail,
     uploadAvatar,
     deleteAvatar,
     getAvatar

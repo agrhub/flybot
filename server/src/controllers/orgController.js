@@ -10,6 +10,7 @@ const mailService = require('../services/mailService');
 const emailTemplates = require('../services/emailTemplates');
 const notificationService = require('../services/notificationService');
 const orgService = require('../services/orgService');
+const { remindQuota } = require('../middlewares/rateLimit');
 const { EMAIL_REGEX, normalizeEmail, findUserByEmail, safeUrl } = require('./shareController');
 
 const MAX_ORGS_PER_USER = 20;
@@ -192,6 +193,38 @@ async function addMember(req, res) {
 }
 
 /**
+ * POST /api/orgs/:id/members/remind { email }: owners and managers send the confirmation email
+ * again to a member who has an account but has not confirmed its address yet.
+ */
+async function remindMember(req, res) {
+    try {
+        const email = normalizeEmail(req.body.email);
+        const org = await loadOrg(req, res, { manage: true });
+        if (!org) return;
+        const member = org.members.find(m => m.email === email);
+        if (!member) return res.status(404).json({ success: false, message: "Member not found." });
+        const account = member.userId ? null : await findUserByEmail(email);
+        if (member.userId || account?.emailVerified) {
+            return res.status(400).json({ success: false, code: 'ALREADY_ACTIVE', message: "This member already has access." });
+        }
+        if (!account) {
+            return res.status(400).json({ success: false, code: 'NO_ACCOUNT', message: "This person has not created an account yet." });
+        }
+        // Counted only when a reminder really goes out, so refused attempts cannot use up the day
+        if (!remindQuota.take(email)) {
+            res.setHeader('Retry-After', remindQuota.retryAfterSeconds(email));
+            return res.status(429).json({ success: false, message: "A reminder was already sent to this address today. Please try again tomorrow." });
+        }
+        // Lazy: authController loads this module's dependencies
+        await require('./authController').sendVerificationEmail(account);
+        recordAudit(req, { action: 'org.member_reminded', target: orgTarget(org), details: { email } });
+        res.json({ success: true });
+    } catch (err) {
+        sendServerError(res, err, { context: 'Remind organization member' });
+    }
+}
+
+/**
  * PUT /api/orgs/:id/members { email, role } and DELETE /api/orgs/:id/members { email }
  * Managers change members only; owners change anyone. The last owner stays.
  * Anyone may leave (delete themselves), except the last owner.
@@ -277,6 +310,7 @@ module.exports = {
     updateOrg,
     deleteOrg,
     addMember,
+    remindMember,
     updateMember: (req, res) => changeMember(req, res, false),
     removeMember: (req, res) => changeMember(req, res, true),
     setCameras

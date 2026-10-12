@@ -46,7 +46,17 @@
           <div class="min-w-0">
             <p class="org-member truncate">{{ m.email }}</p>
             <p v-if="m.status === 'pending'" class="org-meta">{{ t('orgs.pending') }}</p>
-            <p v-else-if="m.status === 'unverified'" class="org-meta">{{ t('orgs.unverified') }}</p>
+            <p v-else-if="m.status === 'unverified'" class="org-meta">
+              {{ t('orgs.unverified') }}
+              <el-button
+                v-if="org.canManage"
+                link
+                type="primary"
+                size="small"
+                :loading="busy === `remind:${org.id}:${m.email}`"
+                @click="remindMember(org, m)"
+              >{{ t('orgs.remind') }}</el-button>
+            </p>
           </div>
           <div class="flex items-center gap-2">
             <el-select
@@ -197,6 +207,19 @@ const addMember = async (org) => {
     replace(res.data.organization);
     invite[org.id].email = '';
     ElMessage.success(res.data.invited ? t('orgs.invited') : t('orgs.added'));
+  } catch (err) {
+    ElMessage.error(errorText(err));
+  } finally {
+    busy.value = null;
+  }
+};
+
+// Send the confirmation email again to a member whose account is not confirmed yet
+const remindMember = async (org, m) => {
+  busy.value = `remind:${org.id}:${m.email}`;
+  try {
+    await api.remindOrgMember(org.id, m.email);
+    ElMessage.success(t('orgs.reminded', { email: m.email }));
   } catch (err) {
     ElMessage.error(errorText(err));
   } finally {

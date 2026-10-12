@@ -134,3 +134,32 @@ test('an existing but unconfirmed account shows as unverified until an admin con
     assert.ok(camera.sharedWith.some(sh => String(sh.userId) === String(member._id)), 'the member gets the organization cameras');
     assert.ok(await models.AuditLog.exists({ action: 'user.email_verified' }));
 });
+
+test('owners can remind an unconfirmed member to confirm their email', async () => {
+    const owner = await createUser({ role: 'manager' });
+    const outsider = await createUser({ role: 'manager' });
+    const org = await newOrg(owner);
+    await createUser({ email: 'late@example.test', emailVerified: false, language: 'vi' });
+    const done = await createUser({ email: 'done@example.test' });
+    for (const email of ['late@example.test', 'ghost@example.test', done.email]) {
+        await request(`/api/orgs/${org.id}/members`, { method: 'POST', as: owner, body: { email } });
+    }
+    const remind = (email, as = owner) => request(`/api/orgs/${org.id}/members/remind`, { method: 'POST', as, body: { email } });
+
+    const before = sentMails.length;
+    assert.equal((await remind('late@example.test')).status, 200);
+    assert.equal(sentMails.length, before + 1);
+    assert.equal(sentMails.at(-1).to, 'late@example.test');
+    assert.match(sentMails.at(-1).text, /verify-email\?token=/);
+    assert.ok(await models.AuditLog.exists({ action: 'org.member_reminded' }));
+
+    assert.equal((await json(await remind('ghost@example.test'))).body.code, 'NO_ACCOUNT');
+    assert.equal((await json(await remind(done.email))).body.code, 'ALREADY_ACTIVE');
+    assert.equal((await remind('nobody@example.test')).status, 404);
+    assert.equal((await remind('late@example.test', outsider)).status, 404, 'only the organization\'s managers');
+
+    // At most 3 a day to the same address
+    await remind('late@example.test');
+    await remind('late@example.test');
+    assert.equal((await remind('late@example.test')).status, 429);
+});

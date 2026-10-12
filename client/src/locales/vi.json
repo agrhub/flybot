@@ -1779,6 +1779,7 @@
         "member_added": "Thêm thành viên",
         "member_updated": "Đổi vai trò thành viên",
         "member_removed": "Gỡ thành viên",
+        "member_reminded": "Nhắc thành viên xác nhận email",
         "cameras_changed": "Chuyển camera"
       },
       "integration": {
@@ -2051,6 +2052,8 @@
     "invited": "Đã gửi lời mời. Người này có quyền truy cập khi tạo tài khoản và xác nhận email này.",
     "pending": "Đã mời, chưa có tài khoản",
     "unverified": "Đã có tài khoản, chưa xác nhận email. Có quyền truy cập ngay khi xác nhận.",
+    "remind": "Nhắc xác nhận email",
+    "reminded": "Đã gửi lại email xác nhận tới {email}.",
     "remove": "Gỡ",
     "removeConfirm": "Gỡ {email} khỏi tổ chức?",
     "leave": "Rời tổ chức",
