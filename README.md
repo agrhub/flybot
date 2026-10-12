@@ -9,7 +9,7 @@ Website: <https://ezviz.agrhub.com> · Contact: <contact@agrhub.com>
 ## Features
 
 - **Catches per trap per day.** Sticky traps count the daily rise on the glue card; lure traps count the average per photo. Flies per trap per day compare traps and weeks fairly.
-- **AI detection** with Roboflow (insect boxes and species) and Google Vertex AI (Gemini) for diagnosis and photo review. People can confirm or correct each count; corrected photos can go back to Roboflow for retraining.
+- **AI detection** with an RF-DETR model trained on Roboflow ([camos/fruit-fly-wmcqi](https://universe.roboflow.com/camos/fruit-fly-wmcqi), 96% mAP@50 on the test split; insect boxes and species) and Google Vertex AI (Gemini) for diagnosis and photo review. People can confirm or correct each count; corrected photos can go back to Roboflow for retraining.
 - **Cameras:** live view, SD-card playback on a timeline, scheduled captures, image-quality checks and a card-replacement reminder.
 - **Alerts** by email, Telegram and push notification, with per-trap thresholds, quiet hours and a 06:30 morning brief.
 - **Analytics and reports:** charts per trap, hour and period, a 7-day forecast and degree-day outlook, report builder with scheduled PDF emails, shareable links with expiry, PDF/Excel export with the detection boxes.
@@ -37,6 +37,7 @@ server/            Express API, cron jobs (capture, AI retry, reports, cleanup),
   tests/           node:test suite with an in-memory MongoDB
   scripts/         maintenance scripts (rebuild stats, find orphan files, VAPID keys...)
 deploy/            Cloud Run deploy script and settings template
+docs/              AI model and dataset
 tools/media/       demo server, screenshot and product-tour recording tools
 tools/perf/        performance benchmarks
 API.md             public API and webhooks
@@ -79,6 +80,7 @@ The script sets up the Google Cloud project, stores secrets in Secret Manager, b
 
 - [DEPLOY.md](DEPLOY.md): deployment, settings and post-deploy checks
 - [API.md](API.md): public API and webhooks
+- [docs/AI_MODEL.md](docs/AI_MODEL.md): the fruit fly detection model, its dataset and scores, and how to retrain it
 - [server/README.md](server/README.md): server configuration, roles, push notifications
 - [client/UI_GUIDELINES.md](client/UI_GUIDELINES.md): UI rules for the web app
 - [tools/media/README.md](tools/media/README.md): demo, screenshots and product-tour video
