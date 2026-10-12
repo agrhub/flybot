@@ -21,6 +21,8 @@ const cameraSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', index: true },
     // A physical device can be registered only once; others get access through sharing
     deviceSerial: { type: String, required: true, unique: true },
+    // Camera platform the device is reached through: EZVIZ Open Platform or CamOS (AI cameras)
+    provider: { type: String, enum: ['ezviz', 'camos'], default: 'ezviz' },
     sharedWith: { type: [shareSchema], default: [] },
     validateCode: { type: String, default: '' },
     deviceName: { type: String, default: 'Camera' },

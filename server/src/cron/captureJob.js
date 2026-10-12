@@ -2,7 +2,8 @@ const axios = require('axios');
 const { Camera, Snapshot } = require('../models');
 const { S3_PUBLIC_URL, CAPTURE_CONCURRENCY } = require('../config/env');
 const { runPool } = require('../utils/concurrency');
-const ezvizService = require('../services/ezvizService');
+const cameraProvider = require('../services/cameraProvider');
+const dailyStats = require('../services/dailyStats');
 const s3Service = require('../services/s3Service');
 const aiService = require('../services/aiService');
 const notificationService = require('../services/notificationService');
@@ -39,85 +40,98 @@ async function captureAndSaveSnapshot(deviceSerial) {
         // Record the attempt first, so an offline camera is retried on its normal cadence, not every tick
         await Camera.updateMany({ deviceSerial }, { $set: { lastCaptureAt: new Date() } });
 
-        const captureRes = await ezvizService.captureDevice(deviceSerial);
-
-        if (captureRes.code != '200') {
+        const shot = await cameraProvider.captureImage(deviceSerial);
+        if (!shot) {
             console.log(`Can't get image from device ${deviceSerial}`);
             return null;
         }
 
-        if (captureRes.code === '200' && captureRes.data?.picUrl) {
-            const picUrl = captureRes.data.picUrl;
-
-            // 1. Download image
-            const imageRes = await axios.get(picUrl, { responseType: 'arraybuffer', timeout: 30000, maxContentLength: 20 * 1024 * 1024 });
-            const buffer = Buffer.from(imageRes.data, 'binary');
-            const base64Image = buffer.toString('base64');
-
-            // 2. Upload to S3
-            const fileName = `${deviceSerial}_${Date.now()}.jpg`;
-            const s3Key = `snapshots/${deviceSerial}/${fileName}`;
-
-            await s3Service.uploadSnapshot(s3Key, buffer, 'image/jpeg');
-
-            const finalUrl = `${S3_PUBLIC_URL || ''}/${s3Key}`;
-
-            // 3. Save to Database
-            const newSnapshot = new Snapshot({
-                deviceSerial: deviceSerial,
-                imageUrl: finalUrl,
-                s3Key: s3Key
-            });
-            let savedDoc;
-            try {
-                savedDoc = await newSnapshot.save();
-            } catch (saveErr) {
-                // Nothing would point to the file: remove it rather than leave it in the bucket
-                await s3Service.deleteS3Object(s3Key).catch((delErr) => {
-                    console.warn(`⚠️ Could not remove unsaved photo ${s3Key}:`, delErr.message);
-                });
-                throw saveErr;
-            }
-
-            // 3.1. Save thumbnail image to Camera for display across cameras and settings pages
-            try {
-                await Camera.updateMany(
-                    { deviceSerial: deviceSerial },
-                    {
-                        $set: {
-                            thumbnailUrl: finalUrl,
-                            picUrl: finalUrl,
-                            lastSync: new Date()
-                        }
-                    }
-                );
-                console.log(`🖼️ Updated camera thumbnail for ${deviceSerial}: ${finalUrl}`);
-            } catch (camErr) {
-                console.warn(`⚠️ Failed to update camera thumbnail for ${deviceSerial}:`, camErr.message);
-            }
-
-            // 4. Send to AI for processing
-            await aiService.analyzeSnapshot(base64Image, savedDoc._id, picUrl);
-
-            console.log(`📸 Snapshot saved & sent to AI: ${deviceSerial}`);
-
-            // 5. Alerts: pest threshold reached, or AI analysis failing repeatedly
-            await checkAlerts(deviceSerial, savedDoc._id);
-
-            // 6. Photo quality: dark, blurry, dirty lens or a full sticky card
-            try {
-                const analyzed = await Snapshot.findById(savedDoc._id).lean();
-                const count = analyzed?.aiProcessed ? notificationService.countPests(analyzed.aiResults?.summary) : 0;
-                await imageQuality.checkSnapshot(analyzed || savedDoc, buffer, { count });
-            } catch (qualityErr) {
-                console.error(`⚠️ Image quality check failed (${deviceSerial}):`, qualityErr.message);
-            }
-            return savedDoc;
-        }
+        const imageRes = await axios.get(shot.picUrl, { responseType: 'arraybuffer', timeout: 30000, maxContentLength: 20 * 1024 * 1024 });
+        const buffer = Buffer.from(imageRes.data, 'binary');
+        return await ingestPhoto(deviceSerial, buffer, { picUrl: shot.picUrl });
     } catch (error) {
         console.error(`❌ Snapshot error (${deviceSerial}):`, error.message);
     }
     return null;
+}
+
+/**
+ * Store a camera photo and run the rest of the pipeline: S3, snapshot, camera thumbnail, AI,
+ * alerts and photo quality. Photos a CamOS camera sends by itself come with `takenAt`, the
+ * `deviceEventId` they are stored under once, and `deviceAi` when the camera already counted
+ * (then no AI call). The thumbnail and alerts follow only the camera's latest photo, so a photo
+ * delivered late raises no stale alert. Throws on storage errors (a duplicate event: code 11000).
+ */
+async function ingestPhoto(deviceSerial, buffer, { picUrl = null, takenAt = null, deviceEventId, deviceAi = null } = {}) {
+    // 1. Upload to S3
+    const fileName = `${deviceSerial}_${Date.now()}.jpg`;
+    const s3Key = `snapshots/${deviceSerial}/${fileName}`;
+
+    await s3Service.uploadSnapshot(s3Key, buffer, 'image/jpeg');
+
+    const finalUrl = `${S3_PUBLIC_URL || ''}/${s3Key}`;
+
+    // 2. Save to Database
+    const newSnapshot = new Snapshot({
+        deviceSerial: deviceSerial,
+        imageUrl: finalUrl,
+        s3Key: s3Key,
+        ...(takenAt && { createdAt: takenAt }),
+        ...(deviceEventId && { deviceEventId }),
+        ...(deviceAi && { aiProcessed: true, aiProvider: 'device', aiResults: deviceAi })
+    });
+    let savedDoc;
+    try {
+        savedDoc = await newSnapshot.save();
+    } catch (saveErr) {
+        // Nothing would point to the file: remove it rather than leave it in the bucket
+        await s3Service.deleteS3Object(s3Key).catch((delErr) => {
+            console.warn(`⚠️ Could not remove unsaved photo ${s3Key}:`, delErr.message);
+        });
+        throw saveErr;
+    }
+    const isLatest = !takenAt || !(await Snapshot.exists({ deviceSerial, createdAt: { $gt: takenAt } }));
+
+    // 2.1. Save thumbnail image to Camera for display across cameras and settings pages
+    if (isLatest) {
+        try {
+            await Camera.updateMany(
+                { deviceSerial: deviceSerial },
+                {
+                    $set: {
+                        thumbnailUrl: finalUrl,
+                        picUrl: finalUrl,
+                        lastSync: new Date()
+                    }
+                }
+            );
+            console.log(`🖼️ Updated camera thumbnail for ${deviceSerial}: ${finalUrl}`);
+        } catch (camErr) {
+            console.warn(`⚠️ Failed to update camera thumbnail for ${deviceSerial}:`, camErr.message);
+        }
+    }
+
+    // 3. AI: the camera's own count, or the configured AI
+    if (deviceAi) {
+        await dailyStats.refreshForSnapshot(savedDoc);
+        console.log(`📸 Snapshot saved with the camera's count: ${deviceSerial}`);
+    } else {
+        await aiService.analyzeSnapshot(buffer.toString('base64'), savedDoc._id, picUrl);
+        console.log(`📸 Snapshot saved & sent to AI: ${deviceSerial}`);
+    }
+
+    // 4. Alerts: pest threshold reached, or AI analysis failing repeatedly
+    if (isLatest) await checkAlerts(deviceSerial, savedDoc._id);
+
+    // 5. Photo quality: dark, blurry, dirty lens or a full sticky card
+    try {
+        const analyzed = await Snapshot.findById(savedDoc._id).lean();
+        const count = analyzed?.aiProcessed ? notificationService.countPests(analyzed.aiResults?.summary) : 0;
+        await imageQuality.checkSnapshot(analyzed || savedDoc, buffer, { count });
+    } catch (qualityErr) {
+        console.error(`⚠️ Image quality check failed (${deviceSerial}):`, qualityErr.message);
+    }
+    return savedDoc;
 }
 
 /**
@@ -232,6 +246,7 @@ module.exports = {
     AI_RETRY,
     retryFailedAnalyses,
     captureAndSaveSnapshot,
+    ingestPhoto,
     autoCaptureDueCameras,
     backfillCameraThumbnails
 };

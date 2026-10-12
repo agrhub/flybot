@@ -31,7 +31,13 @@ if (TRUST_PROXY) {
 app.use(cors({ origin: CORS_ORIGINS.length > 0 ? CORS_ORIGINS : false, credentials: true }));
 // Messages in the app's language (X-Language); first, so error handlers are covered too
 app.use(require('./middlewares/localizeMessages').localizeMessages);
-app.use(express.json({ limit: '1mb' }));
+app.use(express.json({
+    limit: '1mb',
+    // Signed webhooks are checked against the exact bytes received
+    verify: (req, res, buf) => {
+        if (req.originalUrl.startsWith('/api/camos/webhook')) req.rawBody = buf;
+    }
+}));
 
 // Security headers. No full CSP yet: the EZVIZ player, Tailwind CDN, Google Fonts and Maps
 // load from several origins; framing and sniffing are still blocked.

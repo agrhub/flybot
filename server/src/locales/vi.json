@@ -397,7 +397,12 @@
     "send_the_rows_to_import": "Hãy gửi các dòng cần nhập.",
     "at_most_max_rows_at_a_time": "Mỗi lần tối đa {max} dòng.",
     "choose_the_members_to_remind": "Hãy chọn thành viên cần nhắc.",
-    "at_most_max_members_at_a_time": "Mỗi lần tối đa {max} thành viên."
+    "at_most_max_members_at_a_time": "Mỗi lần tối đa {max} thành viên.",
+    "provider_must_be_one_of_list": "Nền tảng camera phải là một trong: {list}.",
+    "ai_cameras_are_not_available_yet": "Camera AI chưa được hỗ trợ.",
+    "the_camera_service_did_not_respond": "Dịch vụ camera không phản hồi. Vui lòng thử lại sau.",
+    "invalid_signature": "Chữ ký không hợp lệ.",
+    "invalid_event": "Sự kiện không hợp lệ."
   },
   "reportPdf": {
     "range": "Khoảng thời gian: {from} - {to} ({days} ngày)",

@@ -113,6 +113,8 @@ For email (password reset, email confirmation, alert emails), fill `SMTP_HOST`, 
 
 To send reviewed photos to Roboflow for retraining, set `ROBOFLOW_UPLOAD_PROJECT` to the project ID (the dataset slug in the project URL) and `ROBOFLOW_UPLOAD_CLASS` to its class name (default `fruit_fly`). Uploads need the workspace's **private** API key. If `ROBOFLOW_API_KEY` is a publishable key, set `ROBOFLOW_UPLOAD_API_KEY` too: the deploy script stores it as the `flybot-roboflow-upload-key` secret (by hand: add `,ROBOFLOW_UPLOAD_API_KEY=flybot-roboflow-upload-key:latest` to `_EXTRA_SECRETS`). An admin then turns it on under Settings → System.
 
+For AI cameras on the CamOS platform, set `CAMOS_API_URL` (the Open API endpoint, ending in `/openapi/v1`) and `CAMOS_APP_ID`, and store `CAMOS_SECRET_KEY` and `CAMOS_WEBHOOK_SECRET` as secrets (for example `flybot-camos-secret-key` and `flybot-camos-webhook-secret`, added to `_EXTRA_SECRETS` as `,CAMOS_SECRET_KEY=flybot-camos-secret-key:latest,CAMOS_WEBHOOK_SECRET=flybot-camos-webhook-secret:latest`). On the CamOS side, register the webhook `https://YOUR_FLYBOT_DOMAIN/api/camos/webhook` for the events `device.online`, `device.offline`, `app_detection`, `person`, `object` and `capture`. Without these settings, adding an AI camera answers "AI cameras are not available yet."
+
 ### 5. Deploy
 ```bash
 gcloud builds submit --config cloudbuild.yaml --substitutions=_MAPS_KEY=YOUR_BROWSER_MAPS_KEY

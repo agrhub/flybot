@@ -31,6 +31,9 @@ const snapshotSchema = new mongoose.Schema({
     // Pest total of aiResults.summary, kept in step with it, so filters by count (alarm status)
     // need not add up the summary of every photo. Older photos get it in the background after start-up.
     pestCount: { type: Number, default: undefined },
+    // Id of the CamOS event the photo came from (detection on the camera), so a webhook
+    // delivered twice stores the photo once
+    deviceEventId: { type: String, default: undefined },
     // Later attempts at the AI analysis after the one at capture failed (cron/captureJob.js)
     aiRetries: { type: Number, default: undefined },
     // Photo quality (services/imageQuality.js): measurements and the problems found
@@ -70,6 +73,8 @@ snapshotSchema.index({ deviceSerial: 1, aiProcessed: 1, createdAt: -1 });
 snapshotSchema.index({ deviceSerial: 1, createdAt: -1 });
 // Review export: only reviewed snapshots have these fields
 snapshotSchema.index({ 'review.status': 1, 'review.reviewedAt': -1 }, { sparse: true });
+// One photo per CamOS event
+snapshotSchema.index({ deviceEventId: 1 }, { unique: true, sparse: true });
 // Training upload queue
 snapshotSchema.index({ 'trainingSync.status': 1 }, { sparse: true });
 // History filtered by alarm status: count range per camera

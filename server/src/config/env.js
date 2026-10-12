@@ -119,6 +119,13 @@ const config = {
         "sg": "https://isgpopen.ezvizlife.com",
         "vi": "https://ivnopen.ezvizlife.com"
     },
+    // CamOS camera platform (AI cameras): the Open API endpoint and the app credentials an
+    // admin issues on the CamOS console, and the secret of the webhook FlyBot registered there.
+    // Unset = CamOS cameras off.
+    CAMOS_API_URL: (process.env.CAMOS_API_URL || "").trim().replace(/\/+$/, ""),
+    CAMOS_APP_ID: (process.env.CAMOS_APP_ID || "").trim(),
+    CAMOS_SECRET_KEY: (process.env.CAMOS_SECRET_KEY || "").trim(),
+    CAMOS_WEBHOOK_SECRET: (process.env.CAMOS_WEBHOOK_SECRET || "").trim(),
     RETENTION_CYCLE: parseInt(process.env.RETENTION_CYCLE || '3', 10),
 
     // S3

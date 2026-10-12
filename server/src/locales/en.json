@@ -397,7 +397,12 @@
     "send_the_rows_to_import": "Send the rows to import.",
     "at_most_max_rows_at_a_time": "At most {max} rows at a time.",
     "choose_the_members_to_remind": "Choose the members to remind.",
-    "at_most_max_members_at_a_time": "At most {max} members at a time."
+    "at_most_max_members_at_a_time": "At most {max} members at a time.",
+    "provider_must_be_one_of_list": "provider must be one of {list}.",
+    "ai_cameras_are_not_available_yet": "AI cameras are not available yet.",
+    "the_camera_service_did_not_respond": "The camera service did not respond. Please try again later.",
+    "invalid_signature": "Invalid signature.",
+    "invalid_event": "Invalid event."
   },
   "reportPdf": {
     "range": "Period: {from} - {to} ({days} days)",

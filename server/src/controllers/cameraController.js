@@ -3,6 +3,7 @@ const { CAPTURE_INTERVALS } = require('../services/captureSchedule');
 const { countPests } = require('../services/notificationService');
 const ezvizService = require('../services/ezvizService');
 const ezvizRamService = require('../services/ezvizRamService');
+const camosService = require('../services/camosService');
 const { sendServerError } = require('../utils/http');
 const { recordAudit } = require('../services/auditService');
 const { latestSnapshotTimeByCamera } = require('../services/snapshotQueries');
@@ -11,6 +12,8 @@ const { TRAP_KINDS, DEFAULT_TRAP_KIND } = require('../constants/trap');
 
 const cameraTarget = (camera) => ({ type: 'camera', id: camera.deviceSerial, label: camera.deviceName });
 const thresholdService = require('../services/thresholdService');
+// Camera.provider values
+const CAMERA_PROVIDERS = ['ezviz', 'camos'];
 const { viewFilter, viewableCameras, findViewableCamera, findManageableCamera, findOwnedCamera, canManageCamera } = require('../utils/ownership');
 
 /**
@@ -47,8 +50,9 @@ function toClientCamera(camera, user) {
     return obj;
 }
 
-// Each viewer's own active stream id per camera ("userId:serial" -> urlId), so switching
-// streams only closes that viewer's previous stream, never someone else's
+// Each viewer's own active stream per camera ("userId:serial" -> EZVIZ urlId, or
+// { camosStreamId } for a CamOS camera), so switching streams only closes that viewer's
+// previous stream, never someone else's
 const activeStreamSessions = new Map();
 const sessionKey = (userId, deviceSerial) => `${userId}:${deviceSerial}`;
 
@@ -59,10 +63,27 @@ const sessionKey = (userId, deviceSerial) => `${userId}:${deviceSerial}`;
 async function closePreviousStream(userId, deviceSerial, body) {
     const key = sessionKey(userId, deviceSerial);
     // Only the stream id the server handed to this user: a client-supplied id could stop someone else's stream
-    const urlId = activeStreamSessions.get(key) || '';
+    const session = activeStreamSessions.get(key) || '';
     activeStreamSessions.delete(key);
-    if (!urlId) return null;
-    return ezvizService.disableLiveAddress({ deviceSerial, urlId, channelNo: body.channelNo || 1 });
+    if (!session) return null;
+    if (session.camosStreamId) {
+        return camosService.stopLive(deviceSerial, session.camosStreamId).catch((err) => {
+            console.warn(`[CamOS] stopLive error (${deviceSerial}):`, err.code || err.message);
+            return null;
+        });
+    }
+    return ezvizService.disableLiveAddress({ deviceSerial, urlId: session, channelNo: body.channelNo || 1 });
+}
+
+/**
+ * A CamOS error on a stream endpoint, in their { code, msg } shape: the camera's own state
+ * (offline, busy) is passed on, anything else is a generic "video unavailable".
+ */
+function sendCamosStreamError(res, err) {
+    if (err.code === 'DEVICE_OFFLINE') return res.status(409).json({ code: "409", msg: "The camera is offline." });
+    if (err.code === 'DEVICE_BUSY') return res.status(409).json({ code: "409", msg: "The camera is busy. Please try again in a moment." });
+    console.error('❌ CamOS stream request failed:', err.code, err.message);
+    return res.status(503).json(PLAYER_UNAVAILABLE);
 }
 
 /**
@@ -102,9 +123,12 @@ async function getUserCameras(req, res) {
 async function addCamera(req, res) {
     try {
         const userId = req.user.id;
-        const { deviceSerial, validateCode, deviceName: customName, trapKind } = req.body;
+        const { deviceSerial, validateCode, deviceName: customName, trapKind, provider = 'ezviz' } = req.body;
         if (trapKind !== undefined && !TRAP_KINDS.includes(trapKind)) {
             return res.status(400).json({ success: false, message: `trapKind must be one of ${TRAP_KINDS.join(', ')}.` });
+        }
+        if (!CAMERA_PROVIDERS.includes(provider)) {
+            return res.status(400).json({ success: false, message: `provider must be one of ${CAMERA_PROVIDERS.join(', ')}.` });
         }
         if (!deviceSerial || !validateCode) {
             return res.status(400).json({ success: false, message: "Missing deviceSerial or validateCode." });
@@ -122,6 +146,9 @@ async function addCamera(req, res) {
                 code: 'CAMERA_TAKEN',
                 message: "This camera is already registered to another account. Ask its owner to share it with you."
             });
+        }
+        if (provider === 'camos') {
+            return await addCamosCamera(req, res, { existing, deviceSerial, validateCode: validateCode.trim(), customName, trapKind });
         }
         if (existing) {
             existing.validateCode = validateCode.trim();
@@ -199,6 +226,65 @@ async function addCamera(req, res) {
 }
 
 /**
+ * Add (or add again) an AI camera: activate it on CamOS with the serial and code from its
+ * label. The answer carries `provision` (token, expiry, MQTT host) for the network QR code the
+ * camera scans; adding the same camera again gives a fresh one, to set up its Wi-Fi again.
+ */
+async function addCamosCamera(req, res, { existing, deviceSerial, validateCode, customName, trapKind }) {
+    if (!camosService.isConfigured()) {
+        return res.status(503).json({ success: false, code: 'CAMOS_UNAVAILABLE', message: "AI cameras are not available yet." });
+    }
+    if (existing && existing.provider !== 'camos') {
+        return res.status(409).json({ success: false, code: 'CAMERA_TAKEN', message: "This camera is already registered to another account. Ask its owner to share it with you." });
+    }
+
+    let device;
+    try {
+        device = await camosService.activateDevice({ serial: deviceSerial, verifyCode: validateCode, name: customName?.trim() || undefined });
+    } catch (err) {
+        // Unknown serial and wrong code answer the same, so serials cannot be probed
+        if (err.code === 'VERIFY_CODE_INVALID' || err.code === 'NOT_FOUND') {
+            return res.status(400).json({ success: false, message: "Invalid serial number or verification code." });
+        }
+        if (err.code === 'ALREADY_ACTIVATED') {
+            return res.status(409).json({ success: false, code: 'CAMERA_TAKEN', message: "This camera is already registered to another account. Ask its owner to share it with you." });
+        }
+        if (err.code === 'TOO_MANY_ATTEMPTS') {
+            return res.status(429).json({ success: false, message: "Too many attempts. Please try again later." });
+        }
+        console.error(`❌ CamOS activation failed (${deviceSerial}):`, err.code, err.message);
+        return res.status(502).json({ success: false, code: 'CAMOS_ERROR', message: "The camera service did not respond. Please try again later." });
+    }
+    const provision = { token: device.provisionToken, expiresAt: device.provisionExpiresAt, mqttHost: device.mqttHost };
+
+    if (existing) {
+        existing.validateCode = validateCode;
+        if (customName) existing.deviceName = customName.trim();
+        await existing.save();
+        return res.json({ success: true, message: "Device information updated successfully.", camera: toClientCamera(existing, req.user), provision });
+    }
+
+    const { defaultAlertThreshold } = await require('../services/settingsService').getSettings();
+    const newCamera = new Camera({
+        userId: req.user.id,
+        deviceSerial,
+        provider: 'camos',
+        validateCode,
+        deviceName: (customName || device.name || ("Camera " + deviceSerial)).trim(),
+        model: device.model || '',
+        deviceVersion: device.fw || '',
+        status: device.online ? 1 : 0,
+        alertThreshold: defaultAlertThreshold,
+        trapKind: trapKind || DEFAULT_TRAP_KIND
+    });
+    await newCamera.save();
+    await require('../services/orgService').adoptCamera(req.user, newCamera)
+        .catch(err => console.warn('⚠️ Camera not added to an organization:', err.message));
+    recordAudit(req, { action: 'camera.added', target: cameraTarget(newCamera), details: { provider: 'camos' } });
+    res.json({ success: true, message: "Camera added successfully.", camera: toClientCamera(newCamera, req.user), provision });
+}
+
+/**
  * Delete camera
  */
 async function deleteCamera(req, res) {
@@ -217,6 +303,11 @@ async function deleteCamera(req, res) {
             details: { owner: String(deleted.userId) === String(req.user.id) ? 'self' : String(deleted.userId), sharedWith: (deleted.sharedWith || []).length }
         });
         res.json({ success: true, message: "Device removed successfully." });
+        // Give an AI camera back to CamOS (reset on the device), so it can be added again by anyone
+        if (deleted.provider === 'camos') {
+            camosService.deactivateDevice(deleted.deviceSerial)
+                .catch(err => console.warn(`⚠️ CamOS deactivation failed (${deleted.deviceSerial}):`, err.code || err.message));
+        }
     } catch (err) {
         sendServerError(res, err);
     }
@@ -354,11 +445,23 @@ async function getLiveStream(req, res) {
             return res.status(403).json({ code: "403", msg: "You do not have permission to access this camera." });
         }
 
-        let code = (camera.validateCode || '').trim();
-        // check camera setting first
-
         // Invalidate / disable old active stream using urlId from client or server cache
         await closePreviousStream(userId, deviceSerial, req.body);
+
+        if (camera.provider === 'camos') {
+            try {
+                const live = await camosService.startLive(deviceSerial, {
+                    quality: Number(req.body.quality) === 2 ? 'sub' : 'auto',
+                    externalUserId: String(userId)
+                });
+                if (live?.streamId) activeStreamSessions.set(sessionKey(userId, deviceSerial), { camosStreamId: live.streamId });
+                return res.json({ code: "200", data: { provider: 'camos', ...live } });
+            } catch (err) {
+                return sendCamosStreamError(res, err);
+            }
+        }
+
+        let code = (camera.validateCode || '').trim();
 
         const isEncrypt = (camera.isEncrypt === 1);
         console.log("isEncrypt: ", isEncrypt);
@@ -466,6 +569,15 @@ async function getRecords(req, res) {
             return res.status(403).json({ code: "403", msg: "You do not have permission to access this camera." });
         }
 
+        if (camera.provider === 'camos') {
+            try {
+                const records = await camosService.listSdRecords(deviceSerial, { from: Number(startTime), to: Number(endTime) });
+                return res.json({ code: "200", data: { provider: 'camos', segments: records?.segments || [] } });
+            } catch (err) {
+                return sendCamosStreamError(res, err);
+            }
+        }
+
         const data = await ezvizService.getLocalRecords({ deviceSerial, startTime, endTime });
         res.json(data);
     } catch (error) {
@@ -491,6 +603,20 @@ async function getPlaybackStream(req, res) {
 
         // Invalidate / disable old active stream with urlId
         await closePreviousStream(userId, deviceSerial, req.body);
+
+        if (camera.provider === 'camos') {
+            // The camera uploads the recording; the client follows the job until it has a URL
+            try {
+                const job = await camosService.requestSdPlayback(deviceSerial, {
+                    start: Number(startTime),
+                    end: Number(stopTime),
+                    externalUserId: String(userId)
+                });
+                return res.json({ code: "200", data: { provider: 'camos', ...job } });
+            } catch (err) {
+                return sendCamosStreamError(res, err);
+            }
+        }
 
         const { responseData, token, areaDomain } = await ezvizService.getPlaybackAddress({
             deviceSerial,
