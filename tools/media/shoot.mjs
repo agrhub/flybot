@@ -187,6 +187,12 @@ try {
         await page.viewport(...(s.size || DESKTOP), !!s.mobile);
         await page.goto(BASE + s.url, s.settle || 2500);
         try {
+            // The assistant panel can stay open from an earlier shot: only its own shots show it
+            if (!/assistant|chat/.test(s.name)) {
+                await page.eval(`const panel = document.getElementById('smart-trap-assistant-sidebar');
+                    if (panel && panel.offsetParent) { panel.querySelectorAll('.el-button.is-circle')[1]?.click(); /* header: new chat, close */ await new Promise(r => setTimeout(r, 600)); }
+                    return true;`);
+            }
             if (s.action) await page.eval(H + s.action);
             await page.eval("document.querySelectorAll('.el-notification, .el-message').forEach(n => n.remove()); return true;");
             await sleep(400);
