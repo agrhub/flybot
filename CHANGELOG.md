@@ -35,7 +35,7 @@
 
 ### Guide and media
 - In-app quick tour, a rewritten Guide with screenshots in both languages, and an 82-second product tour video in 1080p that starts playing right away.
-- Presentation decks export to PowerPoint in one step (`tools/media/prepare-deck-pptx.mjs`), with a version that embeds the video and one that links to it; pictures are PNG so they show in Google Slides and Drive.
+- Presentation decks export to PowerPoint in one step (`tools/media/prepare-deck-pptx.mjs`), in Arial, with the tour video linked rather than embedded (about 5 MB each); pictures are PNG so they show in Google Slides and Drive.
 
 ### Reliability and speed
 - Every call to EZVIZ, storage and AI has a time limit, so one stuck camera no longer stops the captures. Failed AI analyses are retried for 6 hours.

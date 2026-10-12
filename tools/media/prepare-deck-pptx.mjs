@@ -4,8 +4,9 @@
 // 2. Vietnamese text tagged vi-VN (the export tags everything en-US)
 // 3. text boxes the export laid over each other (two-column grids) moved apart
 // 4. WebP and SVG pictures turned into PNG: Google Slides and Drive's preview show neither
-// 5. "<name> (video).pptx" with the tour embedded and "<name> (link).pptx" opening it online
-// Usage: node prepare-deck-pptx.mjs <exported.pptx> <vi|en> <video.mp4> <video URL> [slide with the video, default 4]
+// 5. the tour video linked, not embedded: the file stays small, Google Slides (which cannot play
+//    embedded video) shows it the same way, and a new video on the website needs no new deck
+// Usage: node prepare-deck-pptx.mjs <exported.pptx> <vi|en> <video URL> <out.pptx> [slide with the video, default 4]
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
@@ -17,9 +18,9 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
 const { unzipSync, zipSync, strFromU8, strToU8 } = require(require.resolve('fflate', { paths: [path.join(here, '../..')] }));
 
-const [, , input, lang, video, url, slideArg = '4'] = process.argv;
-if (!input || !['vi', 'en'].includes(lang) || !video || !/^https?:\/\//.test(url || '')) {
-    console.error('Usage: node prepare-deck-pptx.mjs <exported.pptx> <vi|en> <video.mp4> <video URL> [slide]');
+const [, , input, lang, url, output, slideArg = '4'] = process.argv;
+if (!input || !['vi', 'en'].includes(lang) || !/^https?:\/\//.test(url || '') || !output) {
+    console.error('Usage: node prepare-deck-pptx.mjs <exported.pptx> <vi|en> <video URL> <out.pptx> [slide]');
     process.exit(1);
 }
 
@@ -93,14 +94,10 @@ function separateBoxes(xml) {
 
 report.images = await convertImages(files);
 
-const dir = path.dirname(path.resolve(input));
-const base = path.join(dir, path.basename(input, '.pptx'));
-const fixed = `${base}.prepared.tmp.pptx`;
+const fixed = `${path.resolve(output)}.tmp.pptx`;
 fs.writeFileSync(fixed, zipSync(files));
 try {
-    const run = (script, args) => execFileSync(process.execPath, [path.join(here, script), ...args], { stdio: 'inherit' });
-    run('embed-video-pptx.mjs', [fixed, slideArg, video, `${base} (video).pptx`]);
-    run('link-video-pptx.mjs', [fixed, slideArg, url, `${base} (link).pptx`]);
+    execFileSync(process.execPath, [path.join(here, 'link-video-pptx.mjs'), fixed, slideArg, url, output], { stdio: 'inherit' });
 } finally {
     fs.rmSync(fixed, { force: true });
 }
