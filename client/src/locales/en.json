@@ -277,7 +277,12 @@
     "forecastBasisLure": "Following {name}: forecast average flies present per day, against the trap threshold.",
     "noSnapshotYet": "No analyzed photo yet",
     "snapshotCount": "{count} insects",
-    "averageToday": "avg today"
+    "averageToday": "avg today",
+    "withholding": {
+      "title": "{count} area(s) inside a pre-harvest interval: no harvest yet",
+      "item": "after {product}, harvest from {date}",
+      "open": "Open field log"
+    }
   },
   "cameras": {
     "title": "Camera Surveillance & Management",
@@ -934,7 +939,7 @@
           "log": {
             "title": "Treatment log & VietGAP",
             "desc": "Record every action taken and see its effect on trap catches.",
-            "items": "Open \"Field log\", click \"Log treatment\".\nChoose the method: spray, protein bait, lure, biological, sanitation, bagging or other; pick the traps in the treated area.\nEnter product, active ingredient, dose, operator and pre-harvest interval.\n\"Effect\" compares average catches before and after; \"Harvest\" shows when the interval has passed.\nClick \"Export VietGAP log\" to save the pesticide use record."
+            "items": "Open \"Field log\", click \"Log treatment\".\nChoose the method: spray, protein bait, lure, biological, sanitation, bagging or other; pick the traps in the treated area.\nEnter product, active ingredient, dose, operator and pre-harvest interval.\n\"Effect\" compares average catches before and after; \"Harvest\" shows when the interval has passed.\nClick \"Export VietGAP log\" to save the pesticide use record.\nThe dashboard lists areas inside a pre-harvest interval; on the morning it ends, FlyBot sends an \"OK to harvest\" notice in the app, by email and on Telegram."
           }
         }
       },
@@ -1252,6 +1257,10 @@
       "org_joined": {
         "title": "Added to an organization",
         "desc": "{sharer} added you to {orgName}."
+      },
+      "harvest_ready": {
+        "title": "OK to harvest",
+        "desc": "{area}: the pre-harvest interval after {product} ends at {date}."
       }
     }
   },
@@ -1443,7 +1452,8 @@
         "trainingSync": "AI training upload",
         "ezvizPolicies": "EZVIZ sub-account access",
         "morningBriefs": "Morning brief",
-        "vietgapMonthly": "Monthly VietGAP record"
+        "vietgapMonthly": "Monthly VietGAP record",
+        "harvestReminders": "Harvest reminders"
       },
       "jobSchedules": {
         "capture": "Every 5 minutes",
@@ -1457,7 +1467,8 @@
         "trainingSync": "Every 15 minutes",
         "ezvizPolicies": "Hourly, at :17",
         "morningBriefs": "Daily, 6:30",
-        "vietgapMonthly": "Monthly, the 1st at 7:00"
+        "vietgapMonthly": "Monthly, the 1st at 7:00",
+        "harvestReminders": "Daily at 6:00"
       },
       "results": {
         "cameras": "{n} camera(s)",

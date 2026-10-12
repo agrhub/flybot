@@ -6,6 +6,18 @@
       :subtitle="`${t('dashboard.welcome')}, ${userName}`"
     />
 
+    <!-- Areas still inside a pre-harvest interval after a treatment -->
+    <el-alert v-if="withholding.length" type="warning" :closable="false" show-icon>
+      <template #title>{{ t('dashboard.withholding.title', { count: withholding.length }) }}</template>
+      <ul class="withholding-list">
+        <li v-for="w in withholding.slice(0, 5)" :key="w.id">
+          <b>{{ w.area || w.traps.join(', ') }}</b>
+          <span>{{ t('dashboard.withholding.item', { product: w.product || t(`logbook.types.${w.type}`), date: formatHarvest(w.harvestAllowedFrom) }) }}</span>
+        </li>
+      </ul>
+      <el-button link type="primary" @click="router.push('/logbook')">{{ t('dashboard.withholding.open') }}</el-button>
+    </el-alert>
+
     <!-- Key metrics -->
     <section class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
       <!-- Insects that arrived today, all traps -->
@@ -425,7 +437,7 @@ import DegreeDayPanel from '@/components/dashboard/DegreeDayPanel.vue';
 import { speciesShare } from '@/utils/species';
 
 const router = useRouter();
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const { cameras, selectCameraAndGoToLive } = useCameras();
 
 const formatSpeciesDisplay = (topSpecies) => speciesShare(topSpecies, t);
@@ -588,13 +600,41 @@ const loadOverview = async () => {
   }
 };
 
+// ---------- Pre-harvest intervals ----------
+const withholding = ref([]);
+// 17/10 06:00 in Vietnamese, 10/17 06:00 in English
+const formatHarvest = (v) => {
+  const d = new Date(v);
+  const pad = (n) => String(n).padStart(2, '0');
+  const day = locale.value === 'vi' ? `${pad(d.getDate())}/${pad(d.getMonth() + 1)}` : `${pad(d.getMonth() + 1)}/${pad(d.getDate())}`;
+  return `${day} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+const loadWithholding = async () => {
+  try {
+    withholding.value = (await api.listWithholding()).data.treatments || [];
+  } catch {
+    // Not worth an error on the overview: the field log shows the same
+    withholding.value = [];
+  }
+};
+
 onMounted(async () => {
+  loadWithholding();
   await loadOverview();
   await runDeepDiagnosis();
 });
 </script>
 
 <style scoped>
+.withholding-list {
+  margin: 4px 0 2px;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+}
+.withholding-list span {
+  margin-left: 6px;
+}
 .section-title {
   margin: 0;
   font-size: 15px;

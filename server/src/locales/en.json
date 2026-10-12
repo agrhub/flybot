@@ -59,6 +59,10 @@
       "pest_threshold_daily": {
         "subject": "⚠️ Pest alert: {count} insects on average at {deviceName}",
         "body": "Lure trap {deviceName} ({deviceSerial}) has averaged {count} insects per photo today, at or above your alert threshold of {threshold}."
+      },
+      "harvest_ready": {
+        "subject": "🧺 OK to harvest: {product} ({area})",
+        "body": "The {days}-day pre-harvest interval after {product} in {area} ends at {date}. From then on, harvest is allowed around the traps {traps}."
       }
     },
     "cameraShared": {

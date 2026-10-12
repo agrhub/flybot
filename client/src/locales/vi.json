@@ -277,7 +277,12 @@
     "forecastBasisLure": "Theo dõi {name}: dự báo số ruồi hiện diện trung bình mỗi ngày, so với ngưỡng của bẫy.",
     "noSnapshotYet": "Chưa có ảnh đã phân tích",
     "snapshotCount": "{count} con",
-    "averageToday": "TB hôm nay"
+    "averageToday": "TB hôm nay",
+    "withholding": {
+      "title": "{count} khu vực đang trong thời gian cách ly: chưa được thu hoạch",
+      "item": "sau {product}, được thu hoạch từ {date}",
+      "open": "Mở nhật ký vườn"
+    }
   },
   "cameras": {
     "title": "Quản Lý & Xem Camera",
@@ -934,7 +939,7 @@
           "log": {
             "title": "Nhật ký xử lý & VietGAP",
             "desc": "Ghi lại mọi biện pháp đã làm và xem hiệu quả trên số ruồi vào bẫy.",
-            "items": "Vào \"Nhật ký vườn\", bấm \"Ghi nhận xử lý\".\nChọn biện pháp: phun thuốc, bả protein, mồi, sinh học, vệ sinh vườn, bao trái hoặc khác; chọn bẫy trong khu vực xử lý.\nNhập tên thuốc, hoạt chất, liều lượng, người thực hiện và thời gian cách ly.\nCột \"Hiệu quả\" so số bắt trung bình trước và sau xử lý; cột \"Thu hoạch\" báo khi đã qua thời gian cách ly.\nBấm \"Xuất sổ VietGAP\" để lưu sổ ghi chép sử dụng thuốc."
+            "items": "Vào \"Nhật ký vườn\", bấm \"Ghi nhận xử lý\".\nChọn biện pháp: phun thuốc, bả protein, mồi, sinh học, vệ sinh vườn, bao trái hoặc khác; chọn bẫy trong khu vực xử lý.\nNhập tên thuốc, hoạt chất, liều lượng, người thực hiện và thời gian cách ly.\nCột \"Hiệu quả\" so số bắt trung bình trước và sau xử lý; cột \"Thu hoạch\" báo khi đã qua thời gian cách ly.\nBấm \"Xuất sổ VietGAP\" để lưu sổ ghi chép sử dụng thuốc.\nTổng quan báo các khu vực đang trong thời gian cách ly; sáng ngày hết cách ly, FlyBot gửi thông báo \"Được thu hoạch\" qua ứng dụng, email và Telegram."
           }
         }
       },
@@ -1252,6 +1257,10 @@
       "org_joined": {
         "title": "Được thêm vào tổ chức",
         "desc": "{sharer} đã thêm bạn vào {orgName}."
+      },
+      "harvest_ready": {
+        "title": "Được thu hoạch",
+        "desc": "{area}: hết thời gian cách ly sau {product} lúc {date}."
       }
     }
   },
@@ -1443,7 +1452,8 @@
         "trainingSync": "Gửi ảnh huấn luyện AI",
         "ezvizPolicies": "Quyền tài khoản phụ EZVIZ",
         "morningBriefs": "Bản tin sáng",
-        "vietgapMonthly": "Sổ VietGAP hằng tháng"
+        "vietgapMonthly": "Sổ VietGAP hằng tháng",
+        "harvestReminders": "Nhắc hết cách ly"
       },
       "jobSchedules": {
         "capture": "Mỗi 5 phút",
@@ -1457,7 +1467,8 @@
         "trainingSync": "Mỗi 15 phút",
         "ezvizPolicies": "Mỗi giờ, phút 17",
         "morningBriefs": "Hằng ngày, 6:30",
-        "vietgapMonthly": "Hằng tháng, ngày 1 lúc 7:00"
+        "vietgapMonthly": "Hằng tháng, ngày 1 lúc 7:00",
+        "harvestReminders": "Hằng ngày lúc 6:00"
       },
       "results": {
         "cameras": "{n} camera",

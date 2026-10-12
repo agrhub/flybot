@@ -9,6 +9,7 @@ router.use(authenticate, requireStringFields);
 
 // Anyone sees treatments on cameras they can see; changes need management rights on every camera
 router.get('/', treatmentController.listTreatments);
+router.get('/withholding', treatmentController.listWithholding);
 // Same hourly quota as "Email me" for reports: each sends a PDF
 router.post('/vietgap/send', reportSendLimiter, treatmentController.sendVietGapRecord);
 router.post('/', treatmentController.createTreatment);

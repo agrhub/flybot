@@ -59,6 +59,10 @@
       "pest_threshold_daily": {
         "subject": "⚠️ Cảnh báo dịch hại: trung bình {count} con tại {deviceName}",
         "body": "Bẫy dẫn dụ {deviceName} ({deviceSerial}) có trung bình {count} con côn trùng mỗi ảnh hôm nay, bằng hoặc vượt ngưỡng cảnh báo {threshold} của bạn."
+      },
+      "harvest_ready": {
+        "subject": "🧺 Được thu hoạch: {product} ({area})",
+        "body": "Thời gian cách ly {days} ngày sau lần xử lý {product} tại {area} kết thúc lúc {date}. Từ thời điểm đó được thu hoạch ở khu vực các bẫy {traps}."
       }
     },
     "cameraShared": {

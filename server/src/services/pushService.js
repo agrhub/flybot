@@ -16,6 +16,7 @@ const TEXT_KEYS = {
     plot_threshold: 'email.alerts.plot_threshold',
     pest_surge: 'email.alerts.pest_surge',
     image_quality: 'email.alerts.image_quality',
+    harvest_ready: 'email.alerts.harvest_ready',
     farm_shared: 'email.farmShared',
     org_joined: 'email.orgShared',
     camera_shared: 'email.cameraShared',
@@ -31,6 +32,7 @@ const TARGET_PATH = {
     plot_threshold: '/farms',
     pest_surge: '/analytics',
     image_quality: '/cameras',
+    harvest_ready: '/logbook',
     camera_shared: '/cameras',
     org_joined: '/settings?tab=organizations'
 };

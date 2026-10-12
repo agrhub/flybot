@@ -13,7 +13,8 @@ const WEBHOOK_EVENTS = [
     'ai_failure',
     'card_due',
     'card_change_detected',
-    'image_quality'
+    'image_quality',
+    'harvest_ready'
 ];
 
 const webhookSchema = new mongoose.Schema({

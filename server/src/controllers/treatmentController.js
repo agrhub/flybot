@@ -5,6 +5,7 @@ const { getViewableSerials, canManageCamera } = require('../utils/ownership');
 const { sendServerError } = require('../utils/http');
 const { recordAudit } = require('../services/auditService');
 const treatmentService = require('../services/treatmentService');
+const harvestService = require('../services/harvestService');
 
 const MAX_PAGE_SIZE = 500;
 const MAX_CAMERAS = 50;
@@ -80,6 +81,18 @@ async function validateInput(body, user, { partial = false } = {}) {
 
 const sendError = (res, result) =>
     res.status(400).json({ success: false, message: result.error, ...(result.code ? { code: result.code } : {}) });
+
+/**
+ * GET /api/treatments/withholding: treatments on the viewer's traps still inside their
+ * pre-harvest interval, the soonest to end first.
+ */
+async function listWithholding(req, res) {
+    try {
+        res.json({ success: true, treatments: await harvestService.activeWithholding(req.user) });
+    } catch (err) {
+        sendServerError(res, err, { context: 'List pre-harvest intervals' });
+    }
+}
 
 /**
  * GET /api/treatments?deviceSerial=&type=&from=&to=&page=&limit=&effect=1
@@ -189,6 +202,8 @@ async function updateTreatment(req, res) {
         const result = await validateInput(req.body || {}, req.user, { partial: true });
         if (result.error) return sendError(res, result);
         Object.assign(found.treatment, result.value, { updatedAt: new Date() });
+        // A new date or interval means a new day to remind
+        if (result.value.at !== undefined || result.value.preHarvestDays !== undefined) found.treatment.harvestNotifiedAt = null;
         await found.treatment.save();
         recordAudit(req, { action: 'treatment.updated', target: auditTarget(found.treatment), details: { fields: Object.keys(result.value) } });
         res.json({ success: true, treatment: toClient(found.treatment, found.visible) });
@@ -233,6 +248,7 @@ async function sendVietGapRecord(req, res) {
 }
 
 module.exports = {
+    listWithholding,
     sendVietGapRecord,
     validateInput,
     listTreatments,

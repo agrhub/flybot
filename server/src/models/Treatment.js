@@ -20,6 +20,8 @@ const treatmentSchema = new mongoose.Schema({
     // Pre-harvest interval in days (no harvest before at + preHarvestDays)
     preHarvestDays: { type: Number, default: null, min: 0, max: 365 },
     note: { type: String, default: '' },
+    // When the "harvest allowed again" reminder went out (services/harvestService.js)
+    harvestNotifiedAt: { type: Date, default: null },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     createdByEmail: { type: String, default: '' },
     createdAt: { type: Date, default: Date.now },

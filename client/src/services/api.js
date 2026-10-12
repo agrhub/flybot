@@ -386,6 +386,9 @@ export default {
     return apiClient.get('/farms/map');
   },
   // Treatment (IPM) log
+  listWithholding() {
+    return apiClient.get('/treatments/withholding');
+  },
   sendVietGapRecord() {
     return apiClient.post('/treatments/vietgap/send');
   },
