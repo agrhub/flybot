@@ -2,7 +2,7 @@
   "name": "flybot",
   "version": "1.0.0",
   "private": true,
-  "description": "FlyBot Smart Trap Studio",
+  "description": "FlyBot: smart insect traps with AI counting",
   "workspaces": [
     "client",
     "server"

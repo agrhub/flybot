@@ -1,4 +1,4 @@
-# EZVIZ Manager - Backend Server
+# FlyBot API server
 
 Backend API service for EZVIZ camera management, AI insect detection (Vertex AI & Roboflow), and S3 snapshot storage.
 
