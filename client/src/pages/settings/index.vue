@@ -308,7 +308,7 @@
                   </template>
                 </el-table-column>
 
-                <el-table-column :label="t('common.actions')" width="240" align="right">
+                <el-table-column :label="t('common.actions')" width="240" align="right" fixed="right">
                   <template #default="{ row }">
                     <el-button link type="primary" :icon="VideoPlay" @click="selectCameraAndGoToLive(row)">
                       {{ t('settings.viewLiveBtn') }}
