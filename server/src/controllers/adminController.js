@@ -45,10 +45,14 @@ async function listUsers(req, res) {
             filter.$or = [{ email: pattern }, { name: pattern }];
         }
         if (ROLES.includes(req.query.role)) filter.role = req.query.role;
+        // Accounts made before email confirmation existed show up under "unverified"
+        if (req.query.status === 'unverified') filter.emailVerified = { $ne: true };
+        else if (req.query.status === 'disabled') filter.disabled = true;
 
-        const [total, users] = await Promise.all([
+        const [total, users, unverified] = await Promise.all([
             User.countDocuments(filter),
-            User.find(filter).select('-password').sort({ createdAt: 1 }).skip((page - 1) * limit).limit(limit)
+            User.find(filter).select('-password').sort({ createdAt: 1 }).skip((page - 1) * limit).limit(limit),
+            User.countDocuments({ emailVerified: { $ne: true }, disabled: { $ne: true } })
         ]);
         const counts = await cameraCountsFor(users.map(u => u._id));
         res.json({
@@ -56,6 +60,7 @@ async function listUsers(req, res) {
             total,
             page,
             limit,
+            unverified,
             users: users.map(u => toAdminUser(u, counts.get(String(u._id)) || 0))
         });
     } catch (err) {

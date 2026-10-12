@@ -74,3 +74,16 @@ test('system settings: validated, admin-only, and applied', async () => {
     await request('/api/user/add-camera', { method: 'POST', as: manager, body: { deviceSerial: 'NEW1', validateCode: 'ABCDEF' } });
     assert.equal((await models.Camera.findOne({ deviceSerial: 'NEW1' })).alertThreshold, 25);
 });
+
+test('admins can list accounts that have not confirmed their email', async () => {
+    const admin = await createUser({ role: 'admin' });
+    await createUser({ email: 'old1@example.test', emailVerified: false });
+    await createUser({ email: 'old2@example.test', emailVerified: false });
+    await createUser({ email: 'off@example.test', emailVerified: false, disabled: true });
+    const all = (await json(await request('/api/admin/users', { as: admin }))).body;
+    assert.equal(all.unverified, 2, 'disabled accounts are not counted');
+    const list = (await json(await request('/api/admin/users?status=unverified', { as: admin }))).body;
+    assert.deepEqual(list.users.map(u => u.email).sort(), ['off@example.test', 'old1@example.test', 'old2@example.test']);
+    const disabled = (await json(await request('/api/admin/users?status=disabled', { as: admin }))).body;
+    assert.deepEqual(disabled.users.map(u => u.email), ['off@example.test']);
+});

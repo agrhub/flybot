@@ -16,8 +16,26 @@
         <el-select v-model="roleFilter" :placeholder="t('admin.users.allRoles')" clearable class="!w-44" @change="reload">
           <el-option v-for="r in ROLES" :key="r" :label="t(`roles.${r}`)" :value="r" />
         </el-select>
+        <el-select v-model="statusFilter" :placeholder="t('admin.users.allStatuses')" clearable class="!w-48" @change="reload">
+          <el-option value="unverified" :label="t('admin.users.unverified')" />
+          <el-option value="disabled" :label="t('admin.users.disabled')" />
+        </el-select>
         <el-button :icon="Refresh" @click="load">{{ t('common.refresh') }}</el-button>
       </div>
+
+      <!-- Unconfirmed accounts get no alert emails and their invitations wait -->
+      <el-alert
+        v-if="unverifiedCount > 0 && statusFilter !== 'unverified'"
+        type="warning"
+        show-icon
+        :closable="false"
+        class="mb-4"
+      >
+        <template #title>
+          {{ t('admin.users.unverifiedHint', { count: unverifiedCount }) }}
+          <el-button link type="primary" @click="showUnverified">{{ t('admin.users.showUnverified') }}</el-button>
+        </template>
+      </el-alert>
 
       <el-table v-loading="loading" :data="users" row-key="id" style="width: 100%">
         <el-table-column :label="t('admin.users.account')" min-width="200">
@@ -120,6 +138,8 @@ const page = ref(1);
 const pageSize = 20;
 const query = ref('');
 const roleFilter = ref('');
+const statusFilter = ref('');
+const unverifiedCount = ref(0);
 const loading = ref(false);
 const saving = ref(null);
 
@@ -128,14 +148,20 @@ const formatDate = (value) => (value ? new Date(value).toLocaleDateString(locale
 const load = async () => {
   loading.value = true;
   try {
-    const res = await api.adminListUsers({ q: query.value || undefined, role: roleFilter.value || undefined, page: page.value, limit: pageSize });
+    const res = await api.adminListUsers({ q: query.value || undefined, role: roleFilter.value || undefined, status: statusFilter.value || undefined, page: page.value, limit: pageSize });
     users.value = res.data.users || [];
     total.value = res.data.total || 0;
+    unverifiedCount.value = res.data.unverified || 0;
   } catch (err) {
     ElMessage.error(adminErrorText(t, err));
   } finally {
     loading.value = false;
   }
+};
+
+const showUnverified = () => {
+  statusFilter.value = 'unverified';
+  reload();
 };
 
 const reload = () => {
@@ -201,7 +227,8 @@ const verifyEmail = async (row) => {
   } catch {
     return;
   }
-  update(row, { emailVerified: true });
+  await update(row, { emailVerified: true });
+  load();
 };
 
 const removeUser = async (row) => {
