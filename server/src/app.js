@@ -46,7 +46,8 @@ app.use((req, res, next) => {
     res.setHeader('X-Frame-Options', 'SAMEORIGIN');
     res.setHeader('Content-Security-Policy', "frame-ancestors 'self'; base-uri 'self'; object-src 'none'");
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-    res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(self), payment=()');
+    // Camera: the app itself only, to scan the QR code on an AI camera's label
+    res.setHeader('Permissions-Policy', 'camera=(self), microphone=(), geolocation=(self), payment=()');
     res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
     if (COOKIE_SECURE) res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
     next();

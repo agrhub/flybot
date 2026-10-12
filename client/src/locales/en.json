@@ -381,7 +381,8 @@
       "playbackRange": "Playback ({start} - {end})",
       "playbackUnavailable": "Could not load the playback stream.",
       "playbackSegmentFailed": "Could not replay this video segment.",
-      "playbackRequestFailed": "Error requesting the playback stream."
+      "playbackRequestFailed": "Error requesting the playback stream.",
+      "preparingRecording": "The camera is uploading this recording. This can take a few minutes on 4G..."
     },
     "captureNow": "Capture now",
     "captureDone": "Snapshot captured: {count} insects",
@@ -422,7 +423,37 @@
     "zoomIn": "Zoom in",
     "zoomOut": "Zoom out",
     "timeline": "Recording timeline of the day (arrows: previous/next clip, Page Up/Down: one hour)",
-    "timelineIdle": "No clip playing"
+    "timelineIdle": "No clip playing",
+    "connectPromptCamos": "Scan the QR code on the FlyBot AI camera label, or enter its serial number and verification code.",
+    "provider": {
+      "label": "Camera type",
+      "camos": "FlyBot AI camera"
+    },
+    "qrScan": {
+      "button": "Scan",
+      "title": "Scan the camera label",
+      "hint": "Point the phone camera at the QR code on the camera label.",
+      "noCamera": "The phone camera could not be opened. Allow camera access, or type the serial number and code."
+    },
+    "camosSetup": {
+      "title": "Connect the camera",
+      "intro": "The camera is added. Now connect it to the internet.",
+      "network": "Network",
+      "ssid": "Wi-Fi name",
+      "password": "Wi-Fi password",
+      "cellularHint": "With a SIM card in the camera, it connects by itself once powered on. Keep it powered and wait here.",
+      "showQr": "Show the QR code",
+      "qrAlt": "Network QR code for the camera",
+      "step1": "Turn the screen brightness up.",
+      "step2": "Hold the phone 15 to 30 cm in front of the camera lens, and move it slowly until the camera beeps or its light changes.",
+      "step3": "Wait here: the camera shows as online within a minute.",
+      "waiting": "Waiting for the camera to come online...",
+      "expired": "This setup code has expired. Close this window and add the camera again to get a new one.",
+      "later": "Finish later",
+      "back": "Change the Wi-Fi",
+      "onlineTitle": "The camera is online",
+      "onlineHint": "Photos and alerts start on the camera schedule."
+    }
   },
   "analytics": {
     "title": "AI Analytics & Detection History",

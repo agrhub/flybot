@@ -402,7 +402,9 @@
     "ai_cameras_are_not_available_yet": "AI cameras are not available yet.",
     "the_camera_service_did_not_respond": "The camera service did not respond. Please try again later.",
     "invalid_signature": "Invalid signature.",
-    "invalid_event": "Invalid event."
+    "invalid_event": "Invalid event.",
+    "the_camera_is_offline": "The camera is offline.",
+    "the_camera_is_busy_please_try_again": "The camera is busy. Please try again in a moment."
   },
   "reportPdf": {
     "range": "Period: {from} - {to} ({days} days)",

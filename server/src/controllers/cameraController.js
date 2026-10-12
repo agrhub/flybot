@@ -75,13 +75,29 @@ async function closePreviousStream(userId, deviceSerial, body) {
     return ezvizService.disableLiveAddress({ deviceSerial, urlId: session, channelNo: body.channelNo || 1 });
 }
 
+// SD-card playback jobs of AI cameras, per viewer ("userId:jobId" -> serial)
+const playbackJobs = new Map();
+
+// Recording times on the stream endpoints are farm time "YYYY-MM-DD HH:mm:ss" (Asia/Ho_Chi_Minh,
+// UTC+7 all year), like EZVIZ's; CamOS uses epoch milliseconds
+const FARM_OFFSET_MS = 7 * 60 * 60 * 1000;
+const farmTimeToMs = (value) => (/^\d+$/.test(String(value ?? ''))
+    ? Number(value)
+    : Date.parse(`${String(value ?? '').trim().replace(' ', 'T')}+07:00`));
+const msToFarmTime = (ms) => new Date(Number(ms) + FARM_OFFSET_MS).toISOString().slice(0, 19).replace('T', ' ');
+
 /**
  * A CamOS error on a stream endpoint, in their { code, msg } shape: the camera's own state
  * (offline, busy) is passed on, anything else is a generic "video unavailable".
  */
 function sendCamosStreamError(res, err) {
-    if (err.code === 'DEVICE_OFFLINE') return res.status(409).json({ code: "409", msg: "The camera is offline." });
-    if (err.code === 'DEVICE_BUSY') return res.status(409).json({ code: "409", msg: "The camera is busy. Please try again in a moment." });
+    // `message` is translated for the app (X-Language); `msg` keeps the stream endpoints' shape
+    if (err.code === 'DEVICE_OFFLINE') {
+        return res.status(409).json({ code: "409", msg: "The camera is offline.", message: "The camera is offline." });
+    }
+    if (err.code === 'DEVICE_BUSY') {
+        return res.status(409).json({ code: "409", msg: "The camera is busy. Please try again in a moment.", message: "The camera is busy. Please try again in a moment." });
+    }
     console.error('❌ CamOS stream request failed:', err.code, err.message);
     return res.status(503).json(PLAYER_UNAVAILABLE);
 }
@@ -570,9 +586,21 @@ async function getRecords(req, res) {
         }
 
         if (camera.provider === 'camos') {
+            const from = farmTimeToMs(startTime);
+            const to = farmTimeToMs(endTime);
+            if (!Number.isFinite(from) || !Number.isFinite(to) || to <= from) {
+                return res.status(400).json({ code: "400", msg: "Invalid time range." });
+            }
             try {
-                const records = await camosService.listSdRecords(deviceSerial, { from: Number(startTime), to: Number(endTime) });
-                return res.json({ code: "200", data: { provider: 'camos', segments: records?.segments || [] } });
+                const records = await camosService.listSdRecords(deviceSerial, { from, to });
+                // In the shape of the EZVIZ clip list the timeline reads
+                const clips = (records?.segments || []).map(segment => ({
+                    startTime: msToFarmTime(segment.start),
+                    endTime: msToFarmTime(segment.end),
+                    sizeMB: segment.sizeMB,
+                    events: segment.events || []
+                }));
+                return res.json({ code: "200", provider: 'camos', data: clips });
             } catch (err) {
                 return sendCamosStreamError(res, err);
             }
@@ -605,13 +633,15 @@ async function getPlaybackStream(req, res) {
         await closePreviousStream(userId, deviceSerial, req.body);
 
         if (camera.provider === 'camos') {
-            // The camera uploads the recording; the client follows the job until it has a URL
+            const start = farmTimeToMs(startTime);
+            const end = farmTimeToMs(stopTime);
+            if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) {
+                return res.status(400).json({ code: "400", msg: "Invalid time range." });
+            }
+            // The camera uploads the recording; the client follows the job (/playback/status) until it has a URL
             try {
-                const job = await camosService.requestSdPlayback(deviceSerial, {
-                    start: Number(startTime),
-                    end: Number(stopTime),
-                    externalUserId: String(userId)
-                });
+                const job = await camosService.requestSdPlayback(deviceSerial, { start, end, externalUserId: String(userId) });
+                if (job?.jobId) playbackJobs.set(sessionKey(userId, job.jobId), deviceSerial);
                 return res.json({ code: "200", data: { provider: 'camos', ...job } });
             } catch (err) {
                 return sendCamosStreamError(res, err);
@@ -637,6 +667,31 @@ async function getPlaybackStream(req, res) {
             responseData.data.validateCode = camera.validateCode;
         }
         res.json(responseData);
+    } catch (error) {
+        sendServerError(res, error, { format: 'ezviz' });
+    }
+}
+
+/**
+ * Progress of an AI camera's SD-card recording being uploaded for playback: { status, url? }.
+ * Only the viewer who asked for it can follow a job.
+ */
+async function getPlaybackStatus(req, res) {
+    const userId = req.user.id;
+    const { deviceSerial, jobId } = req.body;
+    if (!deviceSerial || !jobId) return res.status(400).json({ code: "400", msg: "Missing Serial Number." });
+    try {
+        const camera = await findViewableCamera(req.user, deviceSerial);
+        if (!camera || playbackJobs.get(sessionKey(userId, jobId)) !== deviceSerial) {
+            return res.status(404).json({ code: "404", msg: "Recording not found." });
+        }
+        try {
+            const job = await camosService.getJob(jobId);
+            if (job?.status === 'ready' || job?.status === 'failed') playbackJobs.delete(sessionKey(userId, jobId));
+            return res.json({ code: "200", data: { provider: 'camos', jobId, ...job } });
+        } catch (err) {
+            return sendCamosStreamError(res, err);
+        }
     } catch (error) {
         sendServerError(res, error, { format: 'ezviz' });
     }
@@ -766,6 +821,7 @@ module.exports = {
     getLiveStream,
     getRecords,
     getPlaybackStream,
+    getPlaybackStatus,
     disableStream
 };
 

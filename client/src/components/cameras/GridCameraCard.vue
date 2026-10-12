@@ -261,7 +261,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
-import { loadEzuikit } from '@/utils/lazyLibs';
+import { loadEzuikit, loadHlsPlayers } from '@/utils/lazyLibs';
 import api from '@/services/api';
 import { useI18n } from 'vue-i18n';
 import { requestErrorText } from '@/utils/requestError';
@@ -312,6 +312,8 @@ const inputCode = ref('');
 const savingCode = ref(false);
 
 let playerInstance = null;
+// hls.js player of an AI camera (CamOS stream)
+let hlsInstance = null;
 
 const formatModel = (val) => {
   if (!val) return 'EZVIZ Smart';
@@ -396,6 +398,13 @@ const startLiveStream = async () => {
     // Protocol 1: ezopen (standard EZUIKit multi.html demo), quality 1 (HD)
     const res = await api.getLiveStream(props.camera.deviceSerial, '', 1, 1);
     const data = res.data;
+
+    if (data.data?.provider === 'camos') {
+      if (!data.data.hls?.url) throw new Error(t('cameras.player.streamUnavailable'));
+      await nextTick();
+      await initHlsPlayer(data.data.hls.url);
+      return;
+    }
 
     let playUrl = '';
     let accessToken = '';
@@ -520,9 +529,45 @@ const initPlayer = async (url, accessToken, areaDomain, code) => {
   }
 };
 
+// AI camera: HLS from CamOS, muted in the grid
+const initHlsPlayer = async (url) => {
+  stopLiveStream();
+  const { Hls } = await loadHlsPlayers();
+  const container = playerContainerRef.value;
+  if (!container) return;
+  const video = document.createElement('video');
+  Object.assign(video, { muted: true, autoplay: true, playsInline: true });
+  video.className = 'w-full h-full object-contain';
+  container.appendChild(video);
+  const started = () => {
+    loading.value = false;
+    hasError.value = false;
+    isPlaying.value = true;
+  };
+  video.addEventListener('playing', started, { once: true });
+  if (Hls.isSupported()) {
+    hlsInstance = new Hls();
+    hlsInstance.loadSource(url);
+    hlsInstance.attachMedia(video);
+    hlsInstance.on(Hls.Events.ERROR, (event, data) => {
+      if (!data.fatal) return;
+      hasError.value = true;
+      errorMessage.value = t('cameras.streamError');
+      loading.value = false;
+    });
+  } else {
+    video.src = url;
+  }
+  video.play().catch(() => {});
+};
+
 const stopLiveStream = () => {
   isPlaying.value = false;
   loading.value = false;
+  if (hlsInstance) {
+    try { hlsInstance.destroy(); } catch (e) {}
+    hlsInstance = null;
+  }
   if (playerInstance) {
     try {
       if (typeof playerInstance.stop === 'function') playerInstance.stop();

@@ -402,7 +402,9 @@
     "ai_cameras_are_not_available_yet": "Camera AI chưa được hỗ trợ.",
     "the_camera_service_did_not_respond": "Dịch vụ camera không phản hồi. Vui lòng thử lại sau.",
     "invalid_signature": "Chữ ký không hợp lệ.",
-    "invalid_event": "Sự kiện không hợp lệ."
+    "invalid_event": "Sự kiện không hợp lệ.",
+    "the_camera_is_offline": "Camera đang ngoại tuyến.",
+    "the_camera_is_busy_please_try_again": "Camera đang bận. Vui lòng thử lại sau giây lát."
   },
   "reportPdf": {
     "range": "Khoảng thời gian: {from} - {to} ({days} ngày)",

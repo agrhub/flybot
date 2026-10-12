@@ -245,7 +245,37 @@ test('live view of an AI camera returns the CamOS player data and closes the vie
     fake.routes.set('POST /openapi/v1/devices/AIC1/live', () => [409, { error: { code: 'DEVICE_OFFLINE' } }]);
     const offline = await json(await request('/api/live', { method: 'POST', as: owner, body: { deviceSerial: 'AIC1' } }));
     assert.equal(offline.status, 409);
-    assert.equal(offline.body.msg, 'The camera is offline.');
+    assert.equal(offline.body.message, 'The camera is offline.');
+});
+
+test('SD-card clips of an AI camera use farm time; playback is followed by the viewer who asked', async () => {
+    const owner = await createUser({ role: 'manager' });
+    const other = await createUser({ role: 'manager' });
+    await createCamera(owner, { deviceSerial: 'AIC1', provider: 'camos' });
+    // 2026-10-12 06:00 and 06:05 farm time (UTC+7)
+    const start = Date.parse('2026-10-11T23:00:00Z');
+    fake.routes.set('GET /openapi/v1/devices/AIC1/sd-records', () => [200, { data: { segments: [{ start, end: start + 5 * 60000, sizeMB: 12 }] } }]);
+    fake.routes.set('POST /openapi/v1/devices/AIC1/sd-playback', () => [200, { data: { jobId: 'job_1', status: 'uploading' } }]);
+    fake.routes.set('GET /openapi/v1/jobs/job_1', () => [200, { data: { status: 'ready', url: imageUrl('clip.mp4') } }]);
+
+    const records = await json(await request('/api/records', { method: 'POST', as: owner, body: { deviceSerial: 'AIC1', startTime: '2026-10-12 00:00:00', endTime: '2026-10-12 23:59:59' } }));
+    assert.equal(records.status, 200);
+    assert.deepEqual(records.body.data, [{ startTime: '2026-10-12 06:00:00', endTime: '2026-10-12 06:05:00', sizeMB: 12, events: [] }]);
+    const asked = fake.calls.find(c => c.key === 'GET /openapi/v1/devices/AIC1/sd-records');
+    assert.ok(asked);
+
+    const bad = await request('/api/records', { method: 'POST', as: owner, body: { deviceSerial: 'AIC1', startTime: 'soon', endTime: 'later' } });
+    assert.equal(bad.status, 400);
+
+    const playback = await json(await request('/api/playback', { method: 'POST', as: owner, body: { deviceSerial: 'AIC1', startTime: '2026-10-12 06:00:00', stopTime: '2026-10-12 06:05:00' } }));
+    assert.equal(playback.body.data.jobId, 'job_1');
+    assert.deepEqual(fake.calls.find(c => c.key === 'POST /openapi/v1/devices/AIC1/sd-playback').body, { start, end: start + 5 * 60000, externalUserId: String(owner._id) });
+
+    const stranger = await request('/api/playback/status', { method: 'POST', as: other, body: { deviceSerial: 'AIC1', jobId: 'job_1' } });
+    assert.equal(stranger.status, 404);
+    const status = await json(await request('/api/playback/status', { method: 'POST', as: owner, body: { deviceSerial: 'AIC1', jobId: 'job_1' } }));
+    assert.equal(status.body.data.status, 'ready');
+    assert.equal(status.body.data.url, imageUrl('clip.mp4'));
 });
 
 // ---------- Webhook ----------

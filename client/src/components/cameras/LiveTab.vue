@@ -334,6 +334,8 @@ const handleSaveValidateCode = async () => {
 }
 
 const resetPlayer = () => {
+  // A recording still being prepared is not played over what comes next
+  recordingRequest++
   if (hlsEzPlayer) {
     try { hlsEzPlayer.destroy() } catch (e) {}
     hlsEzPlayer = null
@@ -587,7 +589,12 @@ const playLiveStream = async () => {
     // Always request HD main stream (quality = 1) when viewing single camera detail
     const res = await api.getLiveStream(props.camera.deviceSerial, currentStreamId.value, 1)
     const data = res.data
-    if (data.code === '200' && data.data?.url) {
+    if (data.code === '200' && data.data?.provider === 'camos') {
+      // AI camera: the stream comes from CamOS (Ant Media), played as HLS
+      if (!data.data.hls?.url) throw new Error('No stream URL')
+      initNativeHls(data.data.hls.url)
+      currentStreamType.value = t('cameras.live')
+    } else if (data.code === '200' && data.data?.url) {
       if (data.data?.id) {
         currentStreamId.value = data.data.id
       }
@@ -612,9 +619,40 @@ const playLiveStream = async () => {
       currentStreamType.value = t('cameras.player.disconnected')
     }
   } catch (error) {
-    placeholderText.value = t('cameras.player.systemError')
+    // The server's reason when it gave one (an AI camera offline or busy)
+    placeholderText.value = error.response?.data?.message || t('cameras.player.systemError')
     currentStreamType.value = t('cameras.streamError')
   }
+}
+
+// Follow an AI camera's recording upload (every 3 s, up to 5 minutes): the URL, null when it
+// failed, undefined when a newer playback request (or another camera) took over.
+let recordingRequest = 0
+const waitForRecording = async (jobId) => {
+  const request = ++recordingRequest
+  const serial = props.camera?.deviceSerial
+  for (let i = 0; i < 100 && jobId; i++) {
+    await new Promise(resolve => setTimeout(resolve, 3000))
+    if (request !== recordingRequest || props.camera?.deviceSerial !== serial) return undefined
+    try {
+      const job = (await api.getPlaybackStatus(serial, jobId)).data?.data
+      if (job?.status === 'ready' && job.url) return job.url
+      if (job?.status === 'failed') return null
+    } catch {
+      return null
+    }
+  }
+  return null
+}
+
+const playRecordingUrl = (url) => {
+  if (url.includes('.m3u8')) return initNativeHls(url)
+  const video = hlsVideo.value
+  if (!video) return
+  video.classList.remove('hidden')
+  video.src = url
+  video.play().catch(() => {})
+  isPlaceholderVisible.value = false
 }
 
 const handlePlayPlayback = async ({ startTime, stopTime }) => {
@@ -626,7 +664,18 @@ const handlePlayPlayback = async ({ startTime, stopTime }) => {
   try {
     const res = await api.getPlaybackStream(props.camera.deviceSerial, startTime, stopTime, currentStreamId.value)
     const data = res.data
-    if (data.code === '200' && data.data?.url) {
+    if (data.code === '200' && data.data?.provider === 'camos') {
+      // AI camera: the camera uploads the recording first, which can take a while on 4G
+      placeholderText.value = t('cameras.player.preparingRecording')
+      const url = data.data.url || await waitForRecording(data.data.jobId)
+      if (url === undefined) return
+      if (!url) {
+        placeholderText.value = t('cameras.player.playbackSegmentFailed')
+        return
+      }
+      playRecordingUrl(url)
+      currentStreamType.value = t('cameras.player.playbackRange', { start: startTime.slice(11, 16), end: stopTime.slice(11, 16) })
+    } else if (data.code === '200' && data.data?.url) {
       if (data.data?.id) {
         currentStreamId.value = data.data.id
       }

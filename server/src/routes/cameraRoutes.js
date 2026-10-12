@@ -38,6 +38,7 @@ router.post('/live', cameraController.getLiveStream);
 router.post('/live/disable', cameraController.disableStream);
 router.post('/records', cameraController.getRecords);
 router.post('/playback', cameraController.getPlaybackStream);
+router.post('/playback/status', cameraController.getPlaybackStatus);
 
 module.exports = router;
 

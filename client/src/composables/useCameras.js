@@ -14,8 +14,12 @@ const addingCamera = ref(false);
 const newCameraForm = reactive({
   deviceSerial: '',
   validateCode: '',
-  trapKind: 'sticky'
+  trapKind: 'sticky',
+  // 'ezviz' or 'camos' (FlyBot AI camera)
+  provider: 'ezviz'
 });
+// AI camera just added, waiting to be put on the network: { deviceSerial, provision }
+const cameraSetup = ref(null);
 
 export function useCameras() {
   const router = useRouter();
@@ -70,11 +74,14 @@ export function useCameras() {
     newCameraForm.deviceSerial = '';
     newCameraForm.validateCode = '';
     newCameraForm.trapKind = 'sticky';
+    newCameraForm.provider = 'ezviz';
+    cameraSetup.value = null;
     isAddCameraOpen.value = true;
   };
 
   const closeAddCameraModal = () => {
     isAddCameraOpen.value = false;
+    cameraSetup.value = null;
   };
 
   const submitAddCamera = async () => {
@@ -99,14 +106,19 @@ export function useCameras() {
 
     addingCamera.value = true;
     try {
-      const res = await api.createCamera({ deviceSerial: serial, validateCode: code, trapKind: newCameraForm.trapKind });
+      const res = await api.createCamera({ deviceSerial: serial, validateCode: code, trapKind: newCameraForm.trapKind, provider: newCameraForm.provider });
       if (res.data?.success) {
         ElNotification({
           title: t('common.success'),
           message: t('cameras.added'),
           type: 'success'
         });
-        isAddCameraOpen.value = false;
+        if (res.data.provision) {
+          // AI camera: the dialog goes on with putting it on the network
+          cameraSetup.value = { deviceSerial: serial, provision: res.data.provision };
+        } else {
+          isAddCameraOpen.value = false;
+        }
         await loadCameras();
         const newlyAdded = cameras.value.find(c => c.deviceSerial === serial);
         if (newlyAdded) {
@@ -140,6 +152,7 @@ export function useCameras() {
     isAddCameraOpen,
     addingCamera,
     newCameraForm,
+    cameraSetup,
     loadCameras,
     selectCamera,
     selectCameraAndGoToLive,

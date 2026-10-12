@@ -381,7 +381,8 @@
       "playbackRange": "Xem lại ({start} - {end})",
       "playbackUnavailable": "Không tải được luồng xem lại.",
       "playbackSegmentFailed": "Không phát lại được đoạn video này.",
-      "playbackRequestFailed": "Lỗi khi yêu cầu luồng xem lại."
+      "playbackRequestFailed": "Lỗi khi yêu cầu luồng xem lại.",
+      "preparingRecording": "Camera đang tải bản ghi này lên. Với 4G có thể mất vài phút..."
     },
     "captureNow": "Chụp ngay",
     "captureDone": "Đã chụp ảnh: {count} con",
@@ -422,7 +423,37 @@
     "zoomIn": "Phóng to",
     "zoomOut": "Thu nhỏ",
     "timeline": "Dòng thời gian ghi hình trong ngày (mũi tên: đoạn trước/sau, Page Up/Down: 1 giờ)",
-    "timelineIdle": "Chưa phát đoạn nào"
+    "timelineIdle": "Chưa phát đoạn nào",
+    "connectPromptCamos": "Quét mã QR trên nhãn camera AI FlyBot, hoặc nhập số serial và mã xác thực.",
+    "provider": {
+      "label": "Loại camera",
+      "camos": "Camera AI FlyBot"
+    },
+    "qrScan": {
+      "button": "Quét",
+      "title": "Quét nhãn camera",
+      "hint": "Hướng camera điện thoại vào mã QR trên nhãn camera.",
+      "noCamera": "Không mở được camera điện thoại. Hãy cho phép truy cập camera, hoặc nhập số serial và mã."
+    },
+    "camosSetup": {
+      "title": "Kết nối camera",
+      "intro": "Đã thêm camera. Giờ hãy kết nối camera với Internet.",
+      "network": "Mạng",
+      "ssid": "Tên Wi-Fi",
+      "password": "Mật khẩu Wi-Fi",
+      "cellularHint": "Camera có lắp SIM sẽ tự kết nối khi được cấp nguồn. Giữ camera có điện và chờ ở đây.",
+      "showQr": "Hiện mã QR",
+      "qrAlt": "Mã QR cấu hình mạng cho camera",
+      "step1": "Tăng độ sáng màn hình.",
+      "step2": "Đưa điện thoại trước ống kính camera, cách 15 đến 30 cm, di chuyển chậm đến khi camera kêu bíp hoặc đèn đổi màu.",
+      "step3": "Chờ ở đây: camera sẽ báo trực tuyến trong khoảng một phút.",
+      "waiting": "Đang chờ camera trực tuyến...",
+      "expired": "Mã cài đặt này đã hết hạn. Đóng cửa sổ này và thêm lại camera để nhận mã mới.",
+      "later": "Để sau",
+      "back": "Đổi Wi-Fi",
+      "onlineTitle": "Camera đã trực tuyến",
+      "onlineHint": "Ảnh và cảnh báo sẽ bắt đầu theo lịch chụp của camera."
+    }
   },
   "analytics": {
     "title": "Báo Cáo & Lịch Sử Nhận Dạng AI",

@@ -467,6 +467,10 @@ export default {
   getPlaybackStream(deviceSerial, startTime, stopTime, urlId = '') {
     return apiClient.post('/playback', { deviceSerial, startTime, stopTime, urlId });
   },
+  // AI cameras: progress of an SD-card recording being uploaded for playback
+  getPlaybackStatus(deviceSerial, jobId) {
+    return apiClient.post('/playback/status', { deviceSerial, jobId });
+  },
   getAiResults(deviceSerial = 'all', page = 1, limit = 10, startDate = null, endDate = null) {
     const params = new URLSearchParams();
     if (deviceSerial) params.append('deviceSerial', deviceSerial);
