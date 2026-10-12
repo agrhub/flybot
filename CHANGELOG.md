@@ -16,6 +16,12 @@
 ### Reports
 - "Custom dashboards" renamed **Reports**: 7 days to 12 months or custom ranges with comparison to the period before, new blocks, PDF export, share expiry, and scheduled weekly or monthly sending by email and Telegram.
 
+### Logbook (VietGAP)
+- **Monthly VietGAP record**: turn it on under Settings, Notifications to get last month's pesticide use record as a PDF on the 1st at 07:00, by email and on Telegram. **Email last month** in the Logbook sends it right away.
+
+### Works without signal
+- The installed app opens in the field without a connection and shows the last data seen, with the time it was saved. Actions that need the network say so instead of failing silently. Saved data is cleared on sign-out.
+
 ### FlyBot assistant
 - Rebuilt as an agent that looks up real data: catches, comparisons, alerts, cards due, treatment results, report summaries, camera and pipeline health.
 - Streams its answers with photo, chart, comparison and report cards, formatted text (headings, lists, tables), and can open the right page.
@@ -29,6 +35,7 @@
 
 ### Guide and media
 - In-app quick tour, a rewritten Guide with screenshots in both languages, and an 82-second product tour video in 1080p that starts playing right away.
+- Presentation decks export to PowerPoint in one step (`tools/media/prepare-deck-pptx.mjs`), with a version that embeds the video and one that links to it; pictures are PNG so they show in Google Slides and Drive.
 
 ### Reliability and speed
 - Every call to EZVIZ, storage and AI has a time limit, so one stuck camera no longer stops the captures. Failed AI analyses are retried for 6 hours.
