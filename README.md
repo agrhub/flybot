@@ -6,6 +6,10 @@ FlyBot watches sticky and lure traps through EZVIZ cameras, counts the insects o
 
 Website: <https://ezviz.agrhub.com> · Contact: <contact@agrhub.com>
 
+[![FlyBot product tour, 82 seconds](docs/images/tour-poster.webp)](https://ezviz.agrhub.com/media/flybot-tour-en.mp4)
+
+Product tour (1080p, 82 s): [English](https://ezviz.agrhub.com/media/flybot-tour-en.mp4) · [Tiếng Việt](https://ezviz.agrhub.com/media/flybot-tour-vi.mp4). The files are also in the repository: [client/public/media](client/public/media).
+
 ## Features
 
 - **Catches per trap per day.** Sticky traps count the daily rise on the glue card; lure traps count the average per photo. Flies per trap per day compare traps and weeks fairly.
@@ -17,6 +21,36 @@ Website: <https://ezviz.agrhub.com> · Contact: <contact@agrhub.com>
 - **Farms and organizations:** farms with plots drawn on a map, a treatment logbook with VietGAP export, organizations with owner/manager/member roles, and sharing per camera, farm or report.
 - **Admin:** users and roles, all cameras, audit log, system settings and a capture pipeline monitor.
 - **Public API and webhooks** for other systems ([API.md](API.md)).
+
+## Screenshots
+
+<table>
+<tr>
+<td width="50%"><img src="client/public/manual/en/dashboard.webp" alt="Overview dashboard"><br><sub><b>Overview:</b> flies caught today, flies per trap per day, every trap against its threshold</sub></td>
+<td width="50%"><img src="client/public/manual/en/detection.webp" alt="Detection on a sticky card"><br><sub><b>AI detection:</b> every fly boxed and counted; confirm or correct the count</sub></td>
+</tr>
+<tr>
+<td width="50%"><img src="client/public/manual/en/assistant-chart.webp" alt="FlyBot assistant answering with a chart"><br><sub><b>FlyBot assistant:</b> answers from real data, with photos and charts</sub></td>
+<td width="50%"><img src="client/public/manual/en/insights.webp" alt="In-depth analysis table"><br><sub><b>In-depth analysis:</b> per-trap table, daily catches, temperature, catches by hour</sub></td>
+</tr>
+<tr>
+<td width="50%"><img src="client/public/manual/en/reports.webp" alt="Report builder"><br><sub><b>Reports:</b> build, export to PDF, share with expiry, send weekly or monthly</sub></td>
+<td width="50%"><img src="client/public/manual/en/map.webp" alt="Field map with traps and plots"><br><sub><b>Field map:</b> traps, plots and a density heat map</sub></td>
+</tr>
+<tr>
+<td width="50%"><img src="client/public/manual/en/playback.webp" alt="SD-card playback timeline"><br><sub><b>Cameras:</b> live view and SD-card playback on a timeline</sub></td>
+<td width="50%"><img src="client/public/manual/en/logbook.webp" alt="Treatment logbook"><br><sub><b>Field log:</b> treatments with their effect on catches, VietGAP export</sub></td>
+</tr>
+</table>
+
+<p align="center">
+<img src="client/public/manual/en/mobile-dashboard.webp" alt="Phone: overview" width="240">
+<img src="client/public/manual/en/mobile-cameras.webp" alt="Phone: cameras" width="240">
+<img src="client/public/manual/en/mobile-more.webp" alt="Phone: menu" width="240">
+<br><sub>Installs on the phone like an app, with push notifications</sub>
+</p>
+
+Screenshots in Vietnamese are in [client/public/manual/vi](client/public/manual/vi).
 
 ## Tech stack
 
@@ -37,7 +71,7 @@ server/            Express API, cron jobs (capture, AI retry, reports, cleanup),
   tests/           node:test suite with an in-memory MongoDB
   scripts/         maintenance scripts (rebuild stats, find orphan files, VAPID keys...)
 deploy/            Cloud Run deploy script and settings template
-docs/              AI model and dataset
+docs/              AI model and dataset, README images
 tools/media/       demo server, screenshot and product-tour recording tools
 tools/perf/        performance benchmarks
 API.md             public API and webhooks
