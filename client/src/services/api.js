@@ -1,5 +1,7 @@
 import axios from 'axios';
 import i18n from '@/i18n';
+import { ElMessage } from 'element-plus';
+import { noteResponse, noteNetworkError } from '@/composables/useOffline';
 
 const API_URL = '/api'; // Using the proxy
 
@@ -21,8 +23,18 @@ apiClient.interceptors.request.use((config) => {
 });
 
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    noteResponse(response);
+    return response;
+  },
   (error) => {
+    // No answer at all: the device is offline (the service worker had no saved copy either)
+    if (!error.response && error.code !== 'ERR_CANCELED') {
+      noteNetworkError();
+      if (error.config && error.config.method !== 'get') {
+        ElMessage.warning({ message: i18n.global.t('offline.needsNetwork'), grouping: true });
+      }
+    }
     if (error.response && error.response.status === 401) {
       // Auth pages (login, reset password, verify email) handle their own errors
       if (!window.location.pathname.startsWith('/auth/')) {

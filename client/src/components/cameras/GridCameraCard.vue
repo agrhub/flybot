@@ -264,6 +264,7 @@ import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import { loadEzuikit } from '@/utils/lazyLibs';
 import api from '@/services/api';
 import { useI18n } from 'vue-i18n';
+import { requestErrorText } from '@/utils/requestError';
 import { ElNotification } from 'element-plus';
 import {
   VideoCamera,
@@ -374,7 +375,7 @@ const handleSaveCode = async () => {
       ElNotification({ title: t('common.error'), message: res.data?.message || t('cameras.player.codeUpdateFailed'), type: 'error' });
     }
   } catch (err) {
-    ElNotification({ title: t('common.error'), message: err.message, type: 'error' });
+    ElNotification({ title: t('common.error'), message: requestErrorText(t, err, t('cameras.streamError')), type: 'error' });
   } finally {
     savingCode.value = false;
   }
@@ -419,7 +420,7 @@ const startLiveStream = async () => {
   } catch (err) {
     console.error(`[GridCameraCard ${props.camera.deviceSerial}] Startup error:`, err);
     hasError.value = true;
-    errorMessage.value = err.message || t('cameras.streamError');
+    errorMessage.value = requestErrorText(t, err, t('cameras.streamError'));
     loading.value = false;
   }
 };
@@ -510,7 +511,7 @@ const initPlayer = async (url, accessToken, areaDomain, code) => {
   } catch (err) {
     console.error(`[EZUIKit ${props.camera.deviceSerial}] Player initialization error:`, err);
     hasError.value = true;
-    errorMessage.value = err.message || t('cameras.streamError');
+    errorMessage.value = requestErrorText(t, err, t('cameras.streamError'));
     loading.value = false;
   }
 };

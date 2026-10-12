@@ -17,6 +17,16 @@
         @open-settings-tab="handleOpenSettingsTab"
       />
 
+      <!-- No signal: what is on screen is the last copy saved on this device -->
+      <el-alert
+        v-if="offline"
+        type="info"
+        :closable="false"
+        show-icon
+        class="verify-banner shrink-0"
+        :title="savedAt ? t('offline.savedCopy', { time: formatSavedAt(savedAt) }) : t('offline.noSignal')"
+      />
+
       <!-- Email confirmation reminder (alert emails need a confirmed address) -->
       <el-alert
         v-if="user && user.emailVerified === false"
@@ -83,6 +93,7 @@ import { useTheme } from '@/utils/theme';
 import { useCameras } from '@/composables/useCameras';
 import { useBreakpoints } from '@/composables/useBreakpoints';
 import { useNotifications } from '@/composables/useNotifications';
+import { useOffline } from '@/composables/useOffline';
 
 import AppSidebar from '@/components/layout/AppSidebar.vue';
 import MobileTabBar from '@/components/layout/MobileTabBar.vue';
@@ -95,8 +106,10 @@ import { useAppTour } from '@/composables/useAppTour';
 const router = useRouter();
 const route = useRoute();
 const { initTheme } = useTheme();
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const { user, refreshUser } = useAuth();
+const { offline, savedAt } = useOffline();
+const formatSavedAt = (iso) => new Date(iso).toLocaleString(locale.value === 'vi' ? 'vi-VN' : 'en-GB', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
 const resending = ref(false);
 
 const resendVerification = async () => {

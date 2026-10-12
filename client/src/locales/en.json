@@ -995,6 +995,11 @@
             "title": "More menu & installing",
             "desc": "The \"More\" button opens everything else.",
             "items": "More holds: Reports, Farms, Field log, Settings, Add camera, Guide, language and light/dark theme.\nTo install it as an app: Settings, Notifications, \"Install the app\" (Android, computer), or on iPhone use Safari, Share, \"Add to Home Screen\".\nOnce installed, enable push notifications to get alerts right on the phone."
+          },
+          "offline": {
+            "title": "No signal in the field",
+            "desc": "FlyBot still opens when the phone is offline, with the data you last saw.",
+            "items": "Open FlyBot at least once with a connection: it keeps the pages and the data you viewed on the device.\nWithout signal, the bar at the top says \"You are offline\" and when the data was saved.\nLive video, taking photos, saving changes and the assistant need a connection; numbers update by themselves once you are back online.\nThe data kept on the device is removed when you sign out."
           }
         }
       },
@@ -2308,5 +2313,11 @@
         "desc": "Start by adding your first camera. Replay this tour any time from the account menu, \"Quick tour\"."
       }
     }
+  },
+  "offline": {
+    "noSignal": "You are offline. Some data may not load until the connection is back.",
+    "savedCopy": "You are offline. Showing data saved on this device at {time}.",
+    "needsNetwork": "No connection: this needs the network. Try again when you have signal.",
+    "noConnection": "No network connection"
   }
 }

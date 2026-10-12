@@ -201,6 +201,7 @@ import { VideoCamera, Key, Lock, EditPen, Camera, InfoFilled } from '@element-pl
 import { useBreakpoints } from '@/composables/useBreakpoints'
 import { useNotifications } from '@/composables/useNotifications'
 import { useI18n } from 'vue-i18n'
+import { requestErrorText } from '@/utils/requestError'
 
 const { t } = useI18n()
 
@@ -544,7 +545,7 @@ const initEzOpen = async (url, accessToken, areaDomain, customCode) => {
   } catch (err) {
     console.error('EZUIKit init error:', err)
     isPlaceholderVisible.value = true
-    placeholderText.value = t('cameras.player.initError', { error: err.message })
+    placeholderText.value = t('cameras.player.initError', { error: requestErrorText(t, err, err.message) })
   }
 }
 

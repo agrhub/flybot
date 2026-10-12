@@ -224,6 +224,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { requestErrorText } from '@/utils/requestError';
 import { useTheme } from '@/utils/theme';
 import { useCameras } from '@/composables/useCameras';
 import api from '@/services/api';
@@ -713,7 +714,7 @@ const playPopupStream = async (cam) => {
     stopPopupPlayer();
     ElNotification({
       title: t('common.error'),
-      message: err.message || t('cameras.streamError'),
+      message: requestErrorText(t, err, t('cameras.streamError')),
       type: 'error'
     });
   }
@@ -769,7 +770,7 @@ const renderMarkers = () => {
       } catch (err) {
         ElNotification({
           title: t('common.error'),
-          message: t('map.coordsSaveFailed', { error: err.message }),
+          message: t('map.coordsSaveFailed', { error: requestErrorText(t, err, err.message) }),
           type: 'error'
         });
       }
@@ -944,7 +945,7 @@ const handleSaveLocation = async () => {
   } catch (err) {
     ElNotification({
       title: t('common.error'),
-      message: t('map.locationSaveFailed', { error: err.message }),
+      message: t('map.locationSaveFailed', { error: requestErrorText(t, err, err.message) }),
       type: 'error'
     });
   } finally {

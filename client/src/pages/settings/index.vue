@@ -714,6 +714,7 @@
 import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
+import { requestErrorText } from '@/utils/requestError';
 import { useTheme } from '@/utils/theme';
 import { useCameras } from '@/composables/useCameras';
 import api from '@/services/api';
@@ -1204,7 +1205,7 @@ const handleSaveEditCamera = async () => {
       ElNotification({ title: t('common.error'), message: res.data?.message || t('settings.saveFailed'), type: 'error' });
     }
   } catch (err) {
-    ElNotification({ title: t('common.error'), message: err.message, type: 'error' });
+    ElNotification({ title: t('common.error'), message: requestErrorText(t, err, err.message), type: 'error' });
   } finally {
     savingCamera.value = false;
   }

@@ -399,6 +399,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
+import { requestErrorText } from '@/utils/requestError';
 import { useCameras } from '@/composables/useCameras';
 import api from '@/services/api';
 import { ElNotification } from 'element-plus';
@@ -565,7 +566,7 @@ const runDeepDiagnosis = async () => {
     console.error('Diagnosis error:', err);
     ElNotification({
       title: t('common.error'),
-      message: t('dashboard.diagnosisFailed', { error: err.message }),
+      message: t('dashboard.diagnosisFailed', { error: requestErrorText(t, err, err.message) }),
       type: 'error'
     });
   } finally {

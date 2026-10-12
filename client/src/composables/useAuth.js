@@ -4,6 +4,7 @@ import api from '@/services/api';
 import i18n from '@/i18n';
 import { useNotifications } from '@/composables/useNotifications';
 import { forgetDeviceOnLogout } from '@/composables/usePush';
+import { clearOfflineData } from '@/composables/useOffline';
 
 // Singleton authentication state
 const user = ref((() => {
@@ -43,6 +44,8 @@ export function useAuth() {
       localStorage.removeItem('user');
     }
     if (userToken) {
+      // A new sign-in must not see what the previous account left for offline use
+      clearOfflineData();
       token.value = userToken;
       localStorage.setItem('token', userToken);
     }
@@ -61,6 +64,7 @@ export function useAuth() {
     forgetDeviceOnLogout(token.value || localStorage.getItem('token'));
     api.logout().catch(() => {});
     useNotifications().reset();
+    clearOfflineData();
     user.value = null;
     token.value = null;
     localStorage.removeItem('user');

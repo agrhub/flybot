@@ -10,9 +10,10 @@ const PROFILE = process.env.FLYBOT_SHOT_PROFILE || path.join(os.tmpdir(), 'flybo
 const PORT = 9333;
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
-export async function launch() {
-    fs.rmSync(PROFILE, { recursive: true, force: true, maxRetries: 10, retryDelay: 300 });
-    const proc = spawn(CHROME, [
+// keepProfile: reuse the previous run's profile (service worker, caches); args: extra Chrome flags
+export async function launch({ keepProfile = false, args = [] } = {}) {
+    if (!keepProfile) fs.rmSync(PROFILE, { recursive: true, force: true, maxRetries: 10, retryDelay: 300 });
+    const proc = spawn(CHROME, [...args,
         '--headless=new', `--remote-debugging-port=${PORT}`, `--user-data-dir=${PROFILE}`,
         '--no-first-run', '--no-default-browser-check', '--hide-scrollbars', '--mute-audio',
         '--disable-extensions', '--disable-background-networking', '--disable-sync',

@@ -995,6 +995,11 @@
             "title": "Menu Thêm & cài ứng dụng",
             "desc": "Nút \"Thêm\" mở các mục còn lại.",
             "items": "Thêm gồm: Báo cáo, Vườn & lô, Nhật ký vườn, Cài đặt, Thêm camera, Hướng dẫn, ngôn ngữ và giao diện sáng/tối.\nĐể cài như ứng dụng: vào Cài đặt, mục Thông báo, bấm \"Cài đặt ứng dụng\" (Android, máy tính), hoặc trên iPhone dùng Safari, nút Chia sẻ, \"Thêm vào MH chính\".\nSau khi cài, bật thông báo đẩy để nhận cảnh báo ngay trên điện thoại."
+          },
+          "offline": {
+            "title": "Khi mất sóng ngoài vườn",
+            "desc": "FlyBot vẫn mở được khi điện thoại không có mạng, với dữ liệu lần cuối đã xem.",
+            "items": "Mở FlyBot ít nhất một lần khi có mạng: ứng dụng tự lưu các trang và dữ liệu đã xem trên máy.\nKhi mất sóng, thanh trên cùng báo \"Đang ngoại tuyến\" kèm thời điểm dữ liệu được lưu.\nXem trực tiếp camera, chụp ảnh, lưu thay đổi và trợ lý cần có mạng; khi có sóng lại, số liệu tự cập nhật.\nDữ liệu lưu trên máy được xóa khi đăng xuất."
           }
         }
       },
@@ -2308,5 +2313,11 @@
         "desc": "Bắt đầu bằng việc thêm camera đầu tiên. Xem lại phần giới thiệu này bất cứ lúc nào từ menu tài khoản, mục \"Hướng dẫn nhanh\"."
       }
     }
+  },
+  "offline": {
+    "noSignal": "Đang ngoại tuyến. Một số dữ liệu sẽ chưa tải được cho đến khi có mạng.",
+    "savedCopy": "Đang ngoại tuyến. Đang hiện dữ liệu lưu trên máy lúc {time}.",
+    "needsNetwork": "Không có kết nối mạng: thao tác này cần mạng. Hãy thử lại khi có sóng.",
+    "noConnection": "Không có kết nối mạng"
   }
 }
