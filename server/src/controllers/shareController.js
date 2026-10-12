@@ -1,4 +1,6 @@
-const { User, Camera } = require('../models');
+const { User, Camera, Dashboard, Farm, Organization } = require('../models');
+const { isAdmin } = require('../constants/roles');
+const { remindQuota } = require('../middlewares/rateLimit');
 const { findManageableCamera, findOwnedCamera } = require('../utils/ownership');
 const { sendServerError } = require('../utils/http');
 const { normalizeLanguage } = require('../utils/i18n');
@@ -13,6 +15,67 @@ const MAX_SHARES_PER_CAMERA = 50;
 
 const normalizeEmail = (value) => (typeof value === 'string' ? value.trim().toLowerCase() : '');
 const findUserByEmail = (email) => User.findOne({ email }).collation({ locale: 'en', strength: 2 });
+
+/**
+ * Of the invited emails, those that already have an account (not confirmed yet: a confirmed
+ * account is linked when invited or when it confirms).
+ */
+async function emailsWithAccount(emails) {
+    if (!emails.length) return new Set();
+    const users = await User.find({ email: { $in: emails } })
+        .collation({ locale: 'en', strength: 2 }).select('email').lean();
+    return new Set(users.map(u => String(u.email).toLowerCase()));
+}
+
+/**
+ * Share lists as shown to the sharer: "unverified" instead of "pending" when the invitee has an
+ * account but has not confirmed its email (access starts once they do).
+ */
+async function withAccountStatus(shares) {
+    const found = await emailsWithAccount(shares.filter(s => s.status === 'pending').map(s => s.email));
+    return shares.map(s => (s.status === 'pending' && found.has(String(s.email).toLowerCase()) ? { ...s, status: 'unverified' } : s));
+}
+
+/**
+ * Send the confirmation email again to an invitee whose account is not confirmed.
+ * At most 3 a day per address, counted only when one is sent. Returns [status, body].
+ */
+async function sendConfirmReminder(email) {
+    const account = await findUserByEmail(email);
+    if (!account) return [400, { success: false, code: 'NO_ACCOUNT', message: "This person has not created an account yet." }];
+    if (account.emailVerified) return [400, { success: false, code: 'ALREADY_ACTIVE', message: "This person already has access." }];
+    if (!remindQuota.take(email)) {
+        return [429, { success: false, message: "A reminder was already sent to this address today. Please try again tomorrow." }];
+    }
+    // Lazy: authController requires this module
+    await require('./authController').sendVerificationEmail(account);
+    return [200, { success: true }];
+}
+
+/**
+ * POST /api/user/share/remind { email }: whoever invited this email to a camera, report, farm or
+ * organization they manage (or an admin) can send the confirmation email again.
+ */
+async function remindInvitee(req, res) {
+    try {
+        const email = normalizeEmail(req.body.email);
+        if (!EMAIL_REGEX.test(email)) return res.status(400).json({ success: false, message: "Please enter a valid email address." });
+        const pending = { $elemMatch: { email, userId: null } };
+        const allowed = isAdmin(req.user) || (await Promise.all([
+            Camera.exists({ userId: req.user.id, sharedWith: pending }),
+            Dashboard.exists({ ownerId: req.user.id, sharedWith: pending }),
+            Farm.exists({ ownerId: req.user.id, sharedWith: pending }),
+            Organization.exists({ members: { $all: [{ $elemMatch: { userId: req.user.id, role: { $in: ['owner', 'manager'] } } }, pending] } })
+        ])).some(Boolean);
+        // Same answer as "no invitation" so addresses cannot be probed
+        if (!allowed) return res.status(404).json({ success: false, message: "Invitation not found." });
+        const [status, body] = await sendConfirmReminder(email);
+        if (status === 200) recordAudit(req, { action: 'user.confirm_reminded', target: { type: 'user', label: email } });
+        res.status(status).json(body);
+    } catch (err) {
+        sendServerError(res, err, { context: 'Remind invitee' });
+    }
+}
 
 function sharesOf(camera) {
     return (camera.sharedWith || []).map(sh => ({
@@ -43,7 +106,7 @@ async function listShares(req, res) {
     try {
         const camera = await findManageableCamera(req.user, req.query.deviceSerial);
         if (!camera) return res.status(404).json({ success: false, message: "Camera not found or you cannot manage it." });
-        res.json({ success: true, shares: sharesOf(camera) });
+        res.json({ success: true, shares: await withAccountStatus(sharesOf(camera)) });
     } catch (err) {
         sendServerError(res, err, { context: 'List camera shares' });
     }
@@ -128,7 +191,7 @@ async function addShare(req, res) {
             }));
         }
 
-        res.json({ success: true, invited: !active, shares: sharesOf(camera) });
+        res.json({ success: true, invited: !active, shares: await withAccountStatus(sharesOf(camera)) });
     } catch (err) {
         sendServerError(res, err, { context: 'Share camera' });
     }
@@ -156,7 +219,7 @@ async function removeShare(req, res) {
         }
         await camera.save();
         recordAudit(req, { action: 'camera.unshared', target: { type: 'camera', id: camera.deviceSerial, label: camera.deviceName }, details: { email } });
-        res.json({ success: true, shares: sharesOf(camera) });
+        res.json({ success: true, shares: await withAccountStatus(sharesOf(camera)) });
     } catch (err) {
         sendServerError(res, err, { context: 'Unshare camera' });
     }
@@ -184,6 +247,10 @@ async function claimPendingShares(user) {
 
 module.exports = {
     listShares,
+    remindInvitee,
+    sendConfirmReminder,
+    withAccountStatus,
+    emailsWithAccount,
     addShare,
     removeShare,
     claimPendingShares,

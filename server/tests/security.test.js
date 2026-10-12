@@ -40,7 +40,8 @@ test('sharing with an unconfirmed account stays pending until the address is con
 
     const res = await json(await request('/api/user/camera/share', { method: 'POST', as: owner, body: { deviceSerial: 'CAM1', email: 'boss@corp.test' } }));
     assert.equal(res.body.invited, true);
-    assert.equal(res.body.shares[0].status, 'pending');
+    // Shown as "not confirmed" (registration already tells whether an address is taken), still no access
+    assert.equal(res.body.shares[0].status, 'unverified');
     assert.equal((await json(await request('/api/user/cameras', { as: squatter }))).body.cameras.length, 0);
     assert.equal(await models.Notification.countDocuments({ userId: squatter._id }), 0);
     // The real owner of the address is told, and gets access once they confirm it

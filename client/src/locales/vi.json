@@ -1259,12 +1259,16 @@
     "status": "Trạng thái",
     "statusLabel": {
       "active": "Đang truy cập",
-      "pending": "Đã mời"
+      "pending": "Đã mời",
+      "unverified": "Chưa xác nhận"
     },
     "statusHint": {
       "active": "Người này đã có quyền truy cập.",
-      "pending": "Đang chờ người này đăng ký và xác nhận email."
+      "pending": "Đang chờ người này đăng ký và xác nhận email.",
+      "unverified": "Người này đã có tài khoản nhưng chưa xác nhận email. Có quyền truy cập ngay khi xác nhận."
     },
+    "remind": "Nhắc xác nhận",
+    "reminded": "Đã gửi lại email xác nhận tới {email}.",
     "empty": "Chưa chia sẻ với ai.",
     "remove": "Gỡ quyền truy cập",
     "removeConfirm": "Gỡ quyền truy cập của {email}?",
@@ -1735,6 +1739,7 @@
         "role_changed": "Đổi vai trò",
         "disabled": "Vô hiệu hóa tài khoản",
         "enabled": "Kích hoạt tài khoản",
+        "confirm_reminded": "Nhắc xác nhận email",
         "email_verified": "Quản trị viên xác nhận email",
         "deleted": "Xóa tài khoản"
       },

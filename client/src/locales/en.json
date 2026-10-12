@@ -1259,12 +1259,16 @@
     "status": "Status",
     "statusLabel": {
       "active": "Active",
-      "pending": "Invited"
+      "pending": "Invited",
+      "unverified": "Not confirmed"
     },
     "statusHint": {
       "active": "This person has access.",
-      "pending": "Waiting for this person to sign up and confirm their email."
+      "pending": "Waiting for this person to sign up and confirm their email.",
+      "unverified": "This person has an account but has not confirmed their email yet. Access starts once they do."
     },
+    "remind": "Remind to confirm",
+    "reminded": "Confirmation email sent again to {email}.",
     "empty": "Not shared with anyone yet.",
     "remove": "Remove access",
     "removeConfirm": "Remove access for {email}?",
@@ -1735,6 +1739,7 @@
         "role_changed": "Role changed",
         "disabled": "Account disabled",
         "enabled": "Account enabled",
+        "confirm_reminded": "Reminder to confirm email sent",
         "email_verified": "Email confirmed by an admin",
         "deleted": "Account deleted"
       },

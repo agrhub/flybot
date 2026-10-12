@@ -15,11 +15,9 @@
     <el-empty v-if="!shares.length" :description="t('share.empty')" :image-size="56" />
     <el-table v-else :data="shares" size="small" style="width: 100%">
       <el-table-column :label="t('share.email')" min-width="200" prop="email" />
-      <el-table-column :label="t('share.status')" width="130">
+      <el-table-column :label="t('share.status')" width="160">
         <template #default="{ row }">
-          <el-tooltip :content="t(`share.statusHint.${row.status}`)" placement="top">
-            <el-tag :type="row.status === 'active' ? 'success' : 'warning'" effect="light" round size="small">{{ t(`share.statusLabel.${row.status}`) }}</el-tag>
-          </el-tooltip>
+          <ShareStatus :status="row.status" :email="row.email" />
         </template>
       </el-table-column>
       <el-table-column width="60" align="right">
@@ -41,6 +39,7 @@ import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Share, Delete, Message } from '@element-plus/icons-vue';
+import ShareStatus from '@/components/common/ShareStatus.vue';
 
 // Share-by-email list for any item; the parent passes the API calls
 const props = defineProps({

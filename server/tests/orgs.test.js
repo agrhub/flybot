@@ -163,3 +163,28 @@ test('owners can remind an unconfirmed member to confirm their email', async () 
     await remind('late@example.test');
     assert.equal((await remind('late@example.test')).status, 429);
 });
+
+test('share lists mark unconfirmed accounts, and the sharer can remind them', async () => {
+    const owner = await createUser({ role: 'manager' });
+    const stranger = await createUser({ role: 'manager' });
+    await createCamera(owner, { deviceSerial: 'SHR' });
+    await createUser({ email: 'slow@example.test', emailVerified: false });
+    const share = async (email) => json(await request('/api/user/camera/share', { method: 'POST', as: owner, body: { deviceSerial: 'SHR', email } }));
+    await share('slow@example.test');
+    const res = await share('nobody-yet@example.test');
+    const status = Object.fromEntries(res.body.shares.map(s => [s.email, s.status]));
+    assert.deepEqual(status, { 'slow@example.test': 'unverified', 'nobody-yet@example.test': 'pending' });
+
+    const remind = (email, as = owner) => request('/api/user/share/remind', { method: 'POST', as, body: { email } });
+    const before = sentMails.length;
+    assert.equal((await remind('slow@example.test')).status, 200);
+    assert.equal(sentMails.length, before + 1);
+    assert.equal((await json(await remind('nobody-yet@example.test'))).body.code, 'NO_ACCOUNT');
+    assert.equal((await remind('slow@example.test', stranger)).status, 404, 'only whoever invited them');
+    assert.ok(await models.AuditLog.exists({ action: 'user.confirm_reminded' }));
+
+    // Farms and reports use the same status
+    const farm = await models.Farm.create({ ownerId: owner._id, name: 'F' });
+    const farmRes = await json(await request(`/api/farms/${farm._id}/share`, { method: 'POST', as: owner, body: { email: 'slow@example.test' } }));
+    assert.equal(farmRes.body.shares?.[0]?.status, 'unverified');
+});

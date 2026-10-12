@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { Organization, Camera, Farm, User } = require('../models');
+const { Organization, Camera, Farm } = require('../models');
 const { ORG_ROLES } = require('../models/Organization');
 const { isCameraOwner } = require('../utils/ownership');
 const { isAdmin } = require('../constants/roles');
@@ -10,8 +10,7 @@ const mailService = require('../services/mailService');
 const emailTemplates = require('../services/emailTemplates');
 const notificationService = require('../services/notificationService');
 const orgService = require('../services/orgService');
-const { remindQuota } = require('../middlewares/rateLimit');
-const { EMAIL_REGEX, normalizeEmail, findUserByEmail, safeUrl } = require('./shareController');
+const { EMAIL_REGEX, normalizeEmail, findUserByEmail, safeUrl, emailsWithAccount, sendConfirmReminder } = require('./shareController');
 
 const MAX_ORGS_PER_USER = 20;
 const MAX_MEMBERS = 200;
@@ -20,17 +19,6 @@ const NOT_FOUND = { success: false, message: "Organization not found." };
 
 const text = (value, max) => (typeof value === 'string' ? value.trim().slice(0, max) : '');
 const orgTarget = (org) => ({ type: 'organization', id: String(org._id), label: org.name });
-
-/**
- * Of the invited emails, those that already have an account (not yet confirmed: a confirmed
- * account is linked when invited or when it confirms).
- */
-async function emailsWithAccount(emails) {
-    if (!emails.length) return new Set();
-    const users = await User.find({ email: { $in: emails } })
-        .collation({ locale: 'en', strength: 2 }).select('email').lean();
-    return new Set(users.map(u => String(u.email).toLowerCase()));
-}
 
 async function toClientOrg(org, user) {
     const invited = org.members.filter(m => !m.userId).map(m => m.email);
@@ -203,22 +191,12 @@ async function remindMember(req, res) {
         if (!org) return;
         const member = org.members.find(m => m.email === email);
         if (!member) return res.status(404).json({ success: false, message: "Member not found." });
-        const account = member.userId ? null : await findUserByEmail(email);
-        if (member.userId || account?.emailVerified) {
-            return res.status(400).json({ success: false, code: 'ALREADY_ACTIVE', message: "This member already has access." });
+        if (member.userId) {
+            return res.status(400).json({ success: false, code: 'ALREADY_ACTIVE', message: "This person already has access." });
         }
-        if (!account) {
-            return res.status(400).json({ success: false, code: 'NO_ACCOUNT', message: "This person has not created an account yet." });
-        }
-        // Counted only when a reminder really goes out, so refused attempts cannot use up the day
-        if (!remindQuota.take(email)) {
-            res.setHeader('Retry-After', remindQuota.retryAfterSeconds(email));
-            return res.status(429).json({ success: false, message: "A reminder was already sent to this address today. Please try again tomorrow." });
-        }
-        // Lazy: authController loads this module's dependencies
-        await require('./authController').sendVerificationEmail(account);
-        recordAudit(req, { action: 'org.member_reminded', target: orgTarget(org), details: { email } });
-        res.json({ success: true });
+        const [status, body] = await sendConfirmReminder(email);
+        if (status === 200) recordAudit(req, { action: 'org.member_reminded', target: orgTarget(org), details: { email } });
+        res.status(status).json(body);
     } catch (err) {
         sendServerError(res, err, { context: 'Remind organization member' });
     }

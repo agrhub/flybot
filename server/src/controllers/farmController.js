@@ -8,7 +8,7 @@ const { queueMail } = require('../services/mailService');
 const emailTemplates = require('../services/emailTemplates');
 const notificationService = require('../services/notificationService');
 const farmService = require('../services/farmService');
-const { EMAIL_REGEX, normalizeEmail, findUserByEmail, safeUrl } = require('./shareController');
+const { EMAIL_REGEX, normalizeEmail, findUserByEmail, safeUrl, withAccountStatus } = require('./shareController');
 
 const MAX_FARMS_PER_OWNER = 50;
 const MAX_PLOTS_PER_FARM = 100;
@@ -180,7 +180,7 @@ async function getFarm(req, res) {
                 description: farm.description,
                 owner: ownerOf(farm),
                 canEdit,
-                ...(canEdit ? { sharedWith: sharesOf(farm) } : {})
+                ...(canEdit ? { sharedWith: await withAccountStatus(sharesOf(farm)) } : {})
             },
             plots: plots.map(p => ({ ...toPlot(p), stats: statsBy.get(String(p._id)) })),
             cameras: cameras.map(c => ({
@@ -367,7 +367,7 @@ async function shareFarm(req, res) {
         } else {
             queueMail(emailTemplates.shareEmail({ kind: 'farmInvite', to: email, language: normalizeLanguage(req.user.language), sharer, params, url: safeUrl('/auth/login', { mode: 'register', email }) }));
         }
-        res.json({ success: true, invited: !active, shares: sharesOf(farm) });
+        res.json({ success: true, invited: !active, shares: await withAccountStatus(sharesOf(farm)) });
     } catch (err) {
         sendServerError(res, err, { context: 'Share farm' });
     }
@@ -387,7 +387,7 @@ async function unshareFarm(req, res) {
         await farm.save();
         await farmService.syncFarmShares(farm);
         recordAudit(req, { action: 'farm.unshared', target: farmTarget(farm), details: { email } });
-        res.json({ success: true, shares: sharesOf(farm) });
+        res.json({ success: true, shares: await withAccountStatus(sharesOf(farm)) });
     } catch (err) {
         sendServerError(res, err, { context: 'Unshare farm' });
     }

@@ -14,7 +14,7 @@ const { recordAudit } = require('../services/auditService');
 const { createTtlCache } = require('../utils/ttlCache');
 const { createLimiter } = require('../utils/concurrency');
 const { SNAPSHOT_KEY_REGEX, pipeSnapshot } = require('./s3Controller');
-const { EMAIL_REGEX, normalizeEmail, findUserByEmail, safeUrl } = require('./shareController');
+const { EMAIL_REGEX, normalizeEmail, findUserByEmail, safeUrl, withAccountStatus } = require('./shareController');
 
 const MAX_DASHBOARDS_PER_OWNER = 50;
 const MAX_CAMERAS = 50;
@@ -69,6 +69,13 @@ const rangeOf = (dashboard) => {
     const { preset = '7d', from, to } = dashboard.range || {};
     return preset === 'custom' ? { preset, from, to } : { preset };
 };
+
+/** toDetail, with invitees who have an unconfirmed account marked as such. */
+async function toDetailWithShares(dashboard, user) {
+    const detail = toDetail(dashboard, user);
+    if (detail.sharedWith) detail.sharedWith = await withAccountStatus(detail.sharedWith);
+    return detail;
+}
 
 function toDetail(dashboard, user) {
     const detail = {
@@ -309,7 +316,7 @@ async function getDashboard(req, res) {
             : [];
         res.json({
             success: true,
-            dashboard: toDetail(dashboard, req.user),
+            dashboard: await toDetailWithShares(dashboard, req.user),
             cameras: cameras.map(c => ({ deviceSerial: c.deviceSerial, deviceName: c.deviceName, status: c.status }))
         });
     } catch (err) {
@@ -360,7 +367,7 @@ async function updateDashboard(req, res) {
         if (expiry !== previousExpiry) {
             recordAudit(req, { action: 'dashboard.expiry_changed', target: dashboardTarget(dashboard), details: { expiresAt: dashboard.expiresAt || null } });
         }
-        res.json({ success: true, dashboard: toDetail(dashboard, req.user) });
+        res.json({ success: true, dashboard: await toDetailWithShares(dashboard, req.user) });
     } catch (err) {
         sendServerError(res, err, { context: 'Update dashboard' });
     }
@@ -540,7 +547,7 @@ async function shareDashboard(req, res) {
                 url: safeUrl('/auth/login', { mode: 'register', email })
             }));
         }
-        res.json({ success: true, invited: !active, shares: sharesOf(dashboard) });
+        res.json({ success: true, invited: !active, shares: await withAccountStatus(sharesOf(dashboard)) });
     } catch (err) {
         sendServerError(res, err, { context: 'Share dashboard' });
     }
@@ -564,7 +571,7 @@ async function unshareDashboard(req, res) {
         }
         await dashboard.save();
         recordAudit(req, { action: 'dashboard.unshared', target: dashboardTarget(dashboard), details: { email } });
-        res.json({ success: true, shares: sharesOf(dashboard) });
+        res.json({ success: true, shares: await withAccountStatus(sharesOf(dashboard)) });
     } catch (err) {
         sendServerError(res, err, { context: 'Unshare dashboard' });
     }

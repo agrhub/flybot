@@ -36,13 +36,9 @@
             <span class="truncate">{{ row.email }}</span>
           </template>
         </el-table-column>
-        <el-table-column :label="t('share.status')" width="130">
+        <el-table-column :label="t('share.status')" width="160">
           <template #default="{ row }">
-            <el-tooltip :content="t(`share.statusHint.${row.status}`)" placement="top">
-              <el-tag :type="row.status === 'active' ? 'success' : 'warning'" effect="light" round size="small">
-                {{ t(`share.statusLabel.${row.status}`) }}
-              </el-tag>
-            </el-tooltip>
+            <ShareStatus :status="row.status" :email="row.email" />
           </template>
         </el-table-column>
         <el-table-column width="90" align="right">
@@ -70,6 +66,7 @@ import { useI18n } from 'vue-i18n';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Share, Delete, Message } from '@element-plus/icons-vue';
 import api from '@/services/api';
+import ShareStatus from '@/components/common/ShareStatus.vue';
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },

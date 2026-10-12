@@ -26,6 +26,7 @@ router.get('/user/cameras/health', cameraController.getCamerasHealth);
 router.get('/user/camera/shares', shareController.listShares);
 router.post('/user/camera/share', shareLimiter, shareController.addShare);
 router.delete('/user/camera/share', shareController.removeShare);
+router.post('/user/share/remind', shareLimiter, shareController.remindInvitee);
 router.post('/user/camera/capture', captureLimiter, cameraController.captureNow);
 router.get('/user/camera/maintenance', maintenanceController.listEvents);
 router.post('/user/camera/maintenance', maintenanceController.addEvent);
