@@ -36,6 +36,7 @@ deploy\deploy-cloudrun.bat --project PROJECT_ID
 | `--skip-setup` | Skip the one-time setup checks, for faster redeploys |
 | `--dry-run` | Show the changes without making them. Read-only `gcloud` checks still run. |
 | `--yes` | Don't ask for confirmation |
+| `--check` | Only report what `.env` gives production: required values, the Cloud Run settings and which optional features (email, Telegram, push, maps, AI) are on. Runs no `gcloud` and writes nothing; exits with 1 if something blocks a deploy. |
 
 Secret values go to `gcloud` through stdin, never on the command line. The script stops before changing anything if `.env` is missing a required value or `MONGO_URI`/`S3_ENDPOINT` point to `localhost`.
 
