@@ -3,13 +3,15 @@
 //    installed PowerPoint mis-wraps Vietnamese lines (a word repeated at line ends)
 // 2. Vietnamese text tagged vi-VN (the export tags everything en-US)
 // 3. text boxes the export laid over each other (two-column grids) moved apart
-// 4. "<name> (video).pptx" with the tour embedded and "<name> (link).pptx" opening it online
+// 4. WebP and SVG pictures turned into PNG: Google Slides and Drive's preview show neither
+// 5. "<name> (video).pptx" with the tour embedded and "<name> (link).pptx" opening it online
 // Usage: node prepare-deck-pptx.mjs <exported.pptx> <vi|en> <video.mp4> <video URL> [slide with the video, default 4]
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
+import { convertImages } from './pptx-images.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
@@ -28,7 +30,7 @@ const WEB_FONT = 'Be Vietnam Pro';
 const FONT = 'Arial';
 
 const files = unzipSync(fs.readFileSync(input));
-const report = { fonts: 0, columns: 0, rows: 0 };
+const report = { fonts: 0, columns: 0, rows: 0, images: 0 };
 
 for (const name of Object.keys(files)) {
     if (!/^ppt\/(slides|slideLayouts|slideMasters|theme)\/[^/]+\.xml$/.test(name)) continue;
@@ -89,6 +91,8 @@ function separateBoxes(xml) {
     return xml;
 }
 
+report.images = await convertImages(files);
+
 const dir = path.dirname(path.resolve(input));
 const base = path.join(dir, path.basename(input, '.pptx'));
 const fixed = `${base}.prepared.tmp.pptx`;
@@ -100,4 +104,4 @@ try {
 } finally {
     fs.rmSync(fixed, { force: true });
 }
-console.log(`Fonts: ${report.fonts} set to ${FONT}; boxes: ${report.columns} narrowed, ${report.rows} rows moved down`);
+console.log(`Fonts: ${report.fonts} set to ${FONT}; boxes: ${report.columns} narrowed, ${report.rows} rows moved down; pictures: ${report.images} converted to PNG`);
