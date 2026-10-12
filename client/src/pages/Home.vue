@@ -325,7 +325,7 @@ const isAuthenticated = computed(() => {
                   <span class="w-1.5 h-1.5 bg-[#3ecf8e] rounded-full"></span>
                 </div>
                 <div class="text-center text-lg">🪰</div>
-                <span class="text-[8px] text-[var(--el-text-color-secondary)] uppercase">SD Mode</span>
+                <span class="text-[8px] text-[var(--el-text-color-secondary)] uppercase">SD</span>
               </div>
 
               <div class="rounded-lg bg-[var(--el-card-bg-color)] border border-[var(--el-border-color)] p-2 flex flex-col justify-between">
@@ -334,7 +334,7 @@ const isAuthenticated = computed(() => {
                   <span class="w-1.5 h-1.5 bg-[#3ecf8e] rounded-full"></span>
                 </div>
                 <div class="text-center text-lg">🌾</div>
-                <span class="text-[8px] text-[var(--el-text-color-secondary)] uppercase">SD Mode</span>
+                <span class="text-[8px] text-[var(--el-text-color-secondary)] uppercase">SD</span>
               </div>
 
               <div class="rounded-lg bg-[var(--el-card-bg-color)] border border-[var(--el-border-color)] p-2 flex flex-col justify-between">
@@ -343,7 +343,7 @@ const isAuthenticated = computed(() => {
                   <span class="w-1.5 h-1.5 bg-[#3ecf8e] rounded-full"></span>
                 </div>
                 <div class="text-center text-lg">🐛</div>
-                <span class="text-[8px] text-[var(--el-text-color-secondary)] uppercase">SD Mode</span>
+                <span class="text-[8px] text-[var(--el-text-color-secondary)] uppercase">SD</span>
               </div>
 
               <div class="rounded-lg bg-[var(--el-card-bg-color)] border border-[var(--el-border-color)] p-2 flex flex-col justify-between">
@@ -352,7 +352,7 @@ const isAuthenticated = computed(() => {
                   <span class="w-1.5 h-1.5 bg-[#3ecf8e] rounded-full"></span>
                 </div>
                 <div class="text-center text-lg">🌳</div>
-                <span class="text-[8px] text-[var(--el-text-color-secondary)] uppercase">SD Mode</span>
+                <span class="text-[8px] text-[var(--el-text-color-secondary)] uppercase">SD</span>
               </div>
             </div>
           </div>

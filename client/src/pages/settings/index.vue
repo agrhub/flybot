@@ -573,7 +573,7 @@
               <el-table-column :label="t('settings.sessionSignedIn')" min-width="170">
                 <template #default="{ row }">{{ formatDateTime(row.createdAt) }}</template>
               </el-table-column>
-              <el-table-column width="120" align="right">
+              <el-table-column width="120" align="right" fixed="right">
                 <template #default="{ row }">
                   <el-button link type="danger" @click="handleRevokeSession(row)">
                     {{ t('settings.signOut') }}

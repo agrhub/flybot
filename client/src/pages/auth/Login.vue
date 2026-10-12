@@ -16,7 +16,7 @@
           <el-input
             v-model="loginForm.email"
             type="email"
-            placeholder="admin@smarttrap.com"
+            :placeholder="t('auth.emailPlaceholder')"
           />
         </el-form-item>
 
@@ -67,7 +67,7 @@
           <el-input
             v-model="forgotForm.email"
             type="email"
-            placeholder="admin@smarttrap.com"
+            :placeholder="t('auth.emailPlaceholder')"
             @keyup.enter="handleForgot"
           />
         </el-form-item>
@@ -98,7 +98,7 @@
           <el-input
             v-model="registerForm.email"
             type="email"
-            placeholder="creator@smarttrap.com"
+            :placeholder="t('auth.emailPlaceholder')"
           />
         </el-form-item>
 

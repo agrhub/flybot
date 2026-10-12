@@ -43,7 +43,7 @@ function handleNavClick(href, e) {
 <template>
   <div class="min-h-screen flex flex-col font-sans bg-[var(--el-bg-color-page)] text-[var(--el-text-color-primary)] selection:bg-[#3ecf8e] selection:text-[#002112]">
     <!-- Top Navigation Header -->
-    <header id="public-header" class="fixed top-0 left-0 w-full z-50 px-6 py-4 flex justify-between items-center bg-[var(--el-bg-color-page)]/80 backdrop-blur-md border-b border-[var(--el-border-color)]/60 transition-colors">
+    <header id="public-header" class="fixed top-0 left-0 w-full z-50 px-6 py-4 flex justify-between items-center bg-[var(--el-bg-color-page)]/80 backdrop-blur-md border-b border-[var(--el-border-color)] transition-colors">
       <div class="flex items-center space-x-8">
         <router-link to="/" class="flex items-center gap-2.5 text-xl font-bold tracking-tight text-[var(--el-text-color-primary)]">
           <img src="/logo.png" alt="FlyBot Logo" class="h-8 w-auto object-contain" />
@@ -94,7 +94,7 @@ function handleNavClick(href, e) {
           <el-dropdown trigger="click" @command="handleNavClick">
             <button
               class="w-8 h-8 rounded-xl border border-[var(--el-border-color)] bg-[var(--el-card-bg-color)] flex items-center justify-center text-[var(--el-text-color-regular)] hover:text-[#3ecf8e] transition-all cursor-pointer shadow-sm"
-              aria-label="Navigation menu"
+              :aria-label="t('nav.mainNavigation')"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />

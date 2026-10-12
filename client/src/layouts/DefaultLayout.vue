@@ -86,7 +86,7 @@ const footerLinks = {
             <el-dropdown trigger="click" @command="handleNavClick">
               <button
                 class="w-8 h-8 rounded-xl border border-[var(--el-border-color)] bg-[var(--el-card-bg-color)] flex items-center justify-center text-[var(--el-text-color-regular)] hover:text-[#3ecf8e] transition-all cursor-pointer shadow-sm"
-                aria-label="Navigation menu"
+                :aria-label="t('nav.mainNavigation')"
               >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />

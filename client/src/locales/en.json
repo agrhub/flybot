@@ -76,6 +76,7 @@
     "appearance": "Language & theme"
   },
   "auth": {
+    "emailPlaceholder": "you{'@'}example.com",
     "tagline": "Smart insect traps with AI counting",
     "accountEmail": "Account Email",
     "password": "Password",

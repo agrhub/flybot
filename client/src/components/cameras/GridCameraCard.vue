@@ -9,7 +9,7 @@
           <img
             v-if="cameraThumbnail"
             :src="cameraThumbnail"
-            alt="Thumbnail"
+            :alt="camera.deviceName"
             class="w-full h-full object-cover"
             @error="thumbError = true"
           />
@@ -96,7 +96,7 @@
         <img
           v-if="cameraThumbnail && (!isPlaying || hasError)"
           :src="cameraThumbnail"
-          alt="Camera preview"
+          :alt="camera.deviceName"
           class="absolute inset-0 w-full h-full object-cover transition-opacity duration-300 z-0 pointer-events-none"
           :class="isPlaying && !hasError ? 'opacity-0' : 'opacity-70'"
           @error="thumbError = true"
@@ -116,7 +116,7 @@
         >
           <div class="grid-cam__hud px-2 py-0.5 flex items-center gap-1.5 font-mono">
             <span class="grid-cam__pulse"></span>
-            <span>1080P • 25fps</span>
+            <span>{{ t('cameras.live') }}</span>
           </div>
         </div>
 

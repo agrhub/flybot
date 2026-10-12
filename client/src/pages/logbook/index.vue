@@ -83,7 +83,7 @@
         <el-table-column :label="t('logbook.effect')" width="150">
           <template #default="{ row }"><EffectTag :effect="row.effect" @click="openEffect(row)" /></template>
         </el-table-column>
-        <el-table-column v-if="canManageCameras" width="90" align="right">
+        <el-table-column v-if="canManageCameras" width="90" align="right" fixed="right">
           <template #default="{ row }">
             <el-button link :icon="Edit" :title="t('common.edit')" @click="openForm(row)" />
             <el-button link type="danger" :icon="Delete" :title="t('logbook.delete')" @click="remove(row)" />

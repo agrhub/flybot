@@ -76,6 +76,7 @@
     "appearance": "Ngôn ngữ & giao diện"
   },
   "auth": {
+    "emailPlaceholder": "ban{'@'}example.com",
     "tagline": "Bẫy côn trùng thông minh, AI nhận dạng",
     "accountEmail": "Email tài khoản",
     "password": "Mật khẩu",
