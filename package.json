@@ -20,6 +20,6 @@
     "test:e2e": "npm run test:e2e -w client"
   },
   "devDependencies": {
-    "concurrently": "^9.1.2"
+    "concurrently": "^10.0.5"
   }
 }
