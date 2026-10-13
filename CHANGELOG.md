@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.2.0 (2026-10-13)
 
 ### Season report
 - **Season report** on Farms: one PDF for a chosen period (6 months by default, up to a year), downloaded or emailed: each farm's flies per trap per day, month by month, its worst plot and busiest days, the effect of each active ingredient, and the treatment record (VietGAP) as an appendix.
