@@ -21,7 +21,7 @@
               <el-button :icon="Share" @click="shareVisible = true">{{ t('share.button') }}</el-button>
               <el-button type="primary" :icon="Edit" @click="startEditing">{{ t('dashboards.edit') }}</el-button>
               <el-dropdown trigger="click" @command="onCommand">
-                <el-button :icon="MoreFilled" circle />
+                <el-button :icon="MoreFilled" circle :aria-label="t('common.moreActions')" />
                 <template #dropdown>
                   <el-dropdown-menu>
                     <el-dropdown-item command="schedule" :icon="AlarmClock">{{ t('dashboards.schedule.menu') }}</el-dropdown-item>
@@ -49,13 +49,13 @@
           <el-tag v-if="dashboard.expiresAt" :type="dashboard.expired ? 'danger' : 'info'" effect="plain" round size="small">
             {{ dashboard.expired ? t('dashboards.expiry.expired') : t('dashboards.expiry.until', { time: formatDateTime(dashboard.expiresAt) }) }}
           </el-tag>
-          <el-tag v-if="scheduleLabel" type="success" effect="plain" round size="small" class="cursor-pointer" @click="scheduleVisible = true">
+          <el-tag v-if="scheduleLabel" type="success" effect="plain" round size="small" class="cursor-pointer" @click="scheduleVisible = true" @keydown.enter.prevent="scheduleVisible = true" @keydown.space.prevent="scheduleVisible = true" role="button" tabindex="0">
             <el-icon class="mr-1"><AlarmClock /></el-icon>{{ scheduleLabel }}
           </el-tag>
           <span v-if="generatedAt" class="dash-meta">{{ t('dashboards.updatedAt', { time: formatTime(generatedAt) }) }}</span>
           <!-- Shared with me and sent on a schedule: I can stop it for myself -->
           <span v-if="dashboard.scheduleForMe?.active" class="inline-flex items-center gap-2 dash-meta">
-            <el-switch :model-value="!dashboard.scheduleForMe.muted" size="small" :loading="muting" @change="(on) => setScheduleMuted(!on)" />
+            <el-switch :aria-label="t('dashboards.schedule.receive')" :model-value="!dashboard.scheduleForMe.muted" size="small" :loading="muting" @change="(on) => setScheduleMuted(!on)" />
             {{ t('dashboards.schedule.receive') }}
           </span>
         </div>
@@ -114,16 +114,16 @@
       <DashboardGrid v-else :widgets="currentWidgets" :data="widgetData" :loading="loadingData" :range-days="dataRange?.days || 0">
         <template v-if="editing" #actions="{ widget }">
           <el-tooltip :content="t('dashboards.moveUp')" placement="top">
-            <el-button text circle size="small" :icon="Top" :disabled="indexOf(widget) === 0" @click="move(widget, -1)" />
+            <el-button :aria-label="t('dashboards.moveUp')" text circle size="small" :icon="Top" :disabled="indexOf(widget) === 0" @click="move(widget, -1)" />
           </el-tooltip>
           <el-tooltip :content="t('dashboards.moveDown')" placement="top">
-            <el-button text circle size="small" :icon="Bottom" :disabled="indexOf(widget) === draft.widgets.length - 1" @click="move(widget, 1)" />
+            <el-button :aria-label="t('dashboards.moveDown')" text circle size="small" :icon="Bottom" :disabled="indexOf(widget) === draft.widgets.length - 1" @click="move(widget, 1)" />
           </el-tooltip>
           <el-tooltip :content="t('dashboards.editWidget')" placement="top">
-            <el-button text circle size="small" :icon="Setting" @click="openWidget(widget)" />
+            <el-button :aria-label="t('dashboards.editWidget')" text circle size="small" :icon="Setting" @click="openWidget(widget)" />
           </el-tooltip>
           <el-tooltip :content="t('dashboards.removeWidget')" placement="top">
-            <el-button text circle size="small" type="danger" :icon="Delete" @click="removeWidget(widget)" />
+            <el-button :aria-label="t('dashboards.removeWidget')" text circle size="small" type="danger" :icon="Delete" @click="removeWidget(widget)" />
           </el-tooltip>
         </template>
       </DashboardGrid>

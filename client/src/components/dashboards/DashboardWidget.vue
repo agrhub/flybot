@@ -148,11 +148,12 @@
       <!-- Latest snapshots -->
       <template v-else-if="widget.type === 'latestSnapshot'">
         <el-empty v-if="!data.snapshots?.length" :description="t('dashboards.noCameras')" :image-size="56" />
-        <div v-else class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 dash-widget__scroll" :style="{ maxHeight: `${bodyHeight}px` }">
+        <div v-else class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 dash-widget__scroll" tabindex="0" :style="{ maxHeight: `${bodyHeight}px` }">
           <div v-for="snap in data.snapshots" :key="snap.deviceSerial" class="dash-snap">
             <el-image
               v-if="snap.imageUrl"
               :src="snap.imageUrl"
+              :alt="snap.deviceName"
               :preview-src-list="[snap.imageUrl]"
               preview-teleported
               fit="cover"

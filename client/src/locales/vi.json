@@ -31,7 +31,9 @@
     "defaultUserName": "Người dùng",
     "confirm": "Xác nhận",
     "done": "Xong",
-    "edit": "Sửa"
+    "edit": "Sửa",
+    "moreActions": "Thêm thao tác",
+    "darkTheme": "Giao diện tối"
   },
   "nav": {
     "home": "Trang chủ",
@@ -282,7 +284,9 @@
       "title": "{count} khu vực đang trong thời gian cách ly: chưa được thu hoạch",
       "item": "sau {product}, được thu hoạch từ {date}",
       "open": "Mở nhật ký vườn"
-    }
+    },
+    "levelOf": "Mức ruồi so với ngưỡng: {name}",
+    "openPhoto": "Xem ảnh phân tích: {name}"
   },
   "cameras": {
     "title": "Quản Lý & Xem Camera",
@@ -533,7 +537,8 @@
       "export": "Xuất dữ liệu đã sửa",
       "exportHint": "Các ảnh đã sửa trong 90 ngày (số AI đếm và số đúng), dùng để huấn luyện lại model nhận diện",
       "exportEmpty": "Chưa có ảnh nào được sửa trong 90 ngày qua.",
-      "exported": "Đã xuất {count} ảnh đã sửa."
+      "exported": "Đã xuất {count} ảnh đã sửa.",
+      "countOf": "Số con: {name}"
     },
     "exportMenu": "Xuất báo cáo",
     "catchesChart": "Số ruồi mới mỗi ngày",
@@ -675,7 +680,9 @@
       "title": "Dữ liệu của bạn",
       "desc": "Tải về một file ZIP gồm mọi thứ bạn sở hữu: camera, vườn và lô, số ruồi theo ngày, kết quả phân tích từng ảnh, nhật ký phun xịt, các lần thay bẫy, báo cáo và các cuộc trò chuyện với trợ lý. Bảng ở dạng CSV (mở bằng Excel), phần còn lại ở dạng JSON. Ảnh chụp không nằm trong file. Mỗi giờ tải tối đa 3 lần.",
       "download": "Tải toàn bộ dữ liệu"
-    }
+    },
+    "section": "Mục cài đặt",
+    "thresholdOf": "Ngưỡng cảnh báo: {name}"
   },
   "assistant": {
     "title": "Trợ lý FlyBot",
@@ -856,7 +863,7 @@
           "account": {
             "title": "Đăng nhập & xem Tổng quan",
             "desc": "Trang Tổng quan cho biết hôm nay có bao nhiêu ruồi vào bẫy, chỉ số ruồi/bẫy/ngày, số camera trực tuyến và mức nguy cơ dịch hại.",
-            "items": "Đăng ký bằng email rồi bấm liên kết xác nhận trong hộp thư.\nVai trò của tài khoản: quản trị viên quản lý toàn hệ thống; quản lý thêm và quản lý camera; người xem chỉ thấy những gì được chia sẻ.\n\"Ruồi vào bẫy hôm nay\" là số ruồi mới trên tất cả các bẫy, kèm số hôm qua; \"Ruồi/bẫy/ngày (7 ngày)\" là chỉ số chuẩn để so sánh giữa các tuần.\nTrong danh sách bẫy, thanh màu so số hiện có trên bẫy với ngưỡng cảnh báo; dòng dưới cho biết hôm nay có thêm bao nhiêu con và trung bình mỗi ngày.\nNhãn \"Điểm nóng dịch hại\" xuất hiện khi bẫy chạm ngưỡng; \"Cần thay bẫy\" khi tấm keo đã đến hạn thay.\nCuối trang, mỗi bẫy có ảnh phân tích mới nhất: AI khoanh từng con kèm tên loài; bấm vào ảnh để xem chi tiết, xác nhận hoặc sửa số đếm.\nLần đầu mở FlyBot có phần giới thiệu nhanh từng mục; xem lại bất cứ lúc nào ở menu tài khoản, \"Hướng dẫn nhanh\".\nĐổi tên và ảnh đại diện trong Cài đặt, mục Thông tin cá nhân (ảnh JPG hoặc PNG, tối đa 2 MB). Hãy xác nhận email để nhận cảnh báo qua email và để lời mời chia sẻ có hiệu lực.\nMuốn giữ một bản riêng hoặc chuyển sang công cụ khác: Cài đặt, mục Thông tin cá nhân, \"Tải toàn bộ dữ liệu\" tải về một file ZIP gồm camera, vườn, số ruồi theo ngày, kết quả từng ảnh, nhật ký vườn và báo cáo (bảng CSV mở được bằng Excel)."
+            "items": "Đăng ký bằng email rồi bấm liên kết xác nhận trong hộp thư.\nVai trò của tài khoản: quản trị viên quản lý toàn hệ thống; quản lý thêm và quản lý camera; người xem chỉ thấy những gì được chia sẻ.\n\"Ruồi vào bẫy hôm nay\" là số ruồi mới trên tất cả các bẫy, kèm số hôm qua; \"Ruồi/bẫy/ngày (7 ngày)\" là chỉ số chuẩn để so sánh giữa các tuần.\nTrong danh sách bẫy, thanh màu so số hiện có trên bẫy với ngưỡng cảnh báo; dòng dưới cho biết hôm nay có thêm bao nhiêu con và trung bình mỗi ngày.\nNhãn \"Điểm nóng dịch hại\" xuất hiện khi bẫy chạm ngưỡng; \"Cần thay bẫy\" khi tấm keo đã đến hạn thay.\nCuối trang, mỗi bẫy có ảnh phân tích mới nhất: AI khoanh từng con kèm tên loài; bấm vào ảnh để xem chi tiết, xác nhận hoặc sửa số đếm.\nLần đầu mở FlyBot có phần giới thiệu nhanh từng mục; xem lại bất cứ lúc nào ở menu tài khoản, \"Hướng dẫn nhanh\".\nĐổi tên và ảnh đại diện trong Cài đặt, mục Thông tin cá nhân (ảnh JPG hoặc PNG, tối đa 2 MB). Hãy xác nhận email để nhận cảnh báo qua email và để lời mời chia sẻ có hiệu lực.\nMuốn giữ một bản riêng hoặc chuyển sang công cụ khác: Cài đặt, mục Thông tin cá nhân, \"Tải toàn bộ dữ liệu\" tải về một file ZIP gồm camera, vườn, số ruồi theo ngày, kết quả từng ảnh, nhật ký vườn và báo cáo (bảng CSV mở được bằng Excel).\nDùng được bằng bàn phím và trình đọc màn hình: Tab để di chuyển, Enter hoặc phím cách để mở thẻ bẫy, ảnh hay thông báo; mọi nút đều có tên được đọc to."
           },
           "camera": {
             "title": "Thêm camera & chọn loại bẫy",
@@ -2105,7 +2112,8 @@
     },
     "follow": {
       "title": "Camera tôi theo dõi",
-      "desc": "Tắt một camera để không nhận bất kỳ thông báo nào của nó (không ảnh hưởng người khác)."
+      "desc": "Tắt một camera để không nhận bất kỳ thông báo nào của nó (không ảnh hưởng người khác).",
+      "camera": "Nhận cảnh báo từ {name}"
     },
     "morning": {
       "title": "Bản tin sáng",
@@ -2199,7 +2207,8 @@
         "full": "Tổ chức đã đủ thành viên",
         "limit": "Vượt giới hạn mời trong ngày"
       }
-    }
+    },
+    "role": "Vai trò"
   },
   "integrations": {
     "tab": "API & Webhook",
@@ -2238,7 +2247,8 @@
       "off": "Đang tắt",
       "lastDelivery": "Lần gửi gần nhất {time}",
       "noDelivery": "Chưa gửi lần nào.",
-      "docs": "Hãy kiểm tra header X-FlyBot-Signature bằng secret trước khi tin một yêu cầu. Sau 15 lần gửi lỗi liên tiếp, webhook sẽ tự tắt."
+      "docs": "Hãy kiểm tra header X-FlyBot-Signature bằng secret trước khi tin một yêu cầu. Sau 15 lần gửi lỗi liên tiếp, webhook sẽ tự tắt.",
+      "activeLabel": "Bật webhook {url}"
     }
   },
   "legal": {

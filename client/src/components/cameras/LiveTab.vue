@@ -73,7 +73,7 @@
               {{ camera?.validateCode || '--' }}
             </el-tag>
             <el-tooltip v-if="camera && camera.canManage !== false" :content="t('cameras.updateCode')" placement="top">
-              <el-button
+              <el-button :aria-label="t('cameras.updateCode')"
                 @click="openValidateCodeDialog"
                 size="small"
                 text

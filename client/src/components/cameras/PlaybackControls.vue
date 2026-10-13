@@ -33,7 +33,7 @@
             @keyup.enter="playClip(clip)"
           >
             <div class="playback__thumb">
-              <el-image v-if="clip.thumb" :src="clip.thumb" fit="cover" class="w-full h-full" lazy />
+              <el-image v-if="clip.thumb" :src="clip.thumb" alt="" fit="cover" class="w-full h-full" lazy />
               <el-icon v-else :size="22"><VideoCamera /></el-icon>
               <span class="playback__badge playback__badge--start">{{ formatTime(clip.start) }}</span>
               <span class="playback__badge playback__badge--duration">{{ formatDuration(clip) }}</span>

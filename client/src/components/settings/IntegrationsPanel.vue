@@ -36,7 +36,7 @@
       <div class="flex flex-col gap-2 mb-4">
         <el-input v-model="newHook.url" placeholder="https://example.com/flybot-webhook" clearable />
         <div class="flex flex-wrap gap-2">
-          <el-select v-model="newHook.events" multiple collapse-tags collapse-tags-tooltip :placeholder="t('integrations.hooks.events')" class="flex-1 min-w-[220px]">
+          <el-select :aria-label="t('integrations.hooks.events')" v-model="newHook.events" multiple collapse-tags collapse-tags-tooltip :placeholder="t('integrations.hooks.events')" class="flex-1 min-w-[220px]">
             <el-option v-for="e in events" :key="e" :label="eventLabel(e)" :value="e" />
           </el-select>
           <el-button type="primary" :icon="Plus" :loading="busy === 'create'" :disabled="!newHook.url || !newHook.events.length" @click="createHook">
@@ -52,12 +52,12 @@
           <div class="flex flex-wrap items-center justify-between gap-2">
             <p class="int-name font-mono truncate min-w-0 flex-1">{{ h.url }}</p>
             <div class="flex items-center gap-2">
-              <el-switch :model-value="h.active" :loading="busy === `active:${h.id}`" @change="(v) => updateHook(h, { active: v })" />
+              <el-switch :aria-label="t('integrations.hooks.activeLabel', { url: h.url })" :model-value="h.active" :loading="busy === `active:${h.id}`" @change="(v) => updateHook(h, { active: v })" />
               <el-button size="small" :icon="Promotion" :loading="busy === `test:${h.id}`" @click="testHook(h)">{{ t('integrations.hooks.test') }}</el-button>
               <el-button size="small" :icon="Delete" text type="danger" :aria-label="t('integrations.hooks.delete')" @click="deleteHook(h)" />
             </div>
           </div>
-          <el-select
+          <el-select :aria-label="t('integrations.hooks.events')"
             :model-value="h.events"
             multiple
             collapse-tags

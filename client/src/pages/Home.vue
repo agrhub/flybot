@@ -71,7 +71,7 @@ const isAuthenticated = computed(() => {
         <div class="lg:col-span-7 flex flex-col space-y-8 relative z-10">
           <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#3ecf8e]/10 border border-[#3ecf8e]/30 w-fit">
             <span class="w-2 h-2 rounded-full bg-[#3ecf8e] animate-pulse"></span>
-            <span class="text-xs font-bold uppercase tracking-[0.2em] text-[#3ecf8e]">
+            <span class="text-xs font-bold uppercase tracking-[0.2em] text-[var(--el-color-primary)]">
               {{ t('home.tagline') }}
             </span>
           </div>
@@ -79,7 +79,7 @@ const isAuthenticated = computed(() => {
           <h1 class="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black leading-[0.95] tracking-tighter text-[var(--el-text-color-primary)]">
             {{ t('home.heroTitlePart1') }}<br>
             {{ t('home.heroTitlePart2') }}<br>
-            <span class="text-[#3ecf8e] drop-shadow-sm">{{ t('home.heroTitleWithAi') }}</span>
+            <span class="text-[var(--el-color-primary)] drop-shadow-sm">{{ t('home.heroTitleWithAi') }}</span>
           </h1>
 
           <p class="text-base sm:text-lg text-[var(--el-text-color-regular)] max-w-xl leading-relaxed">
@@ -133,7 +133,7 @@ const isAuthenticated = computed(() => {
 
                 <!-- Detection Bounding Box 1 -->
                 <div class="absolute top-10 left-8 border-2 border-[#3ecf8e] bg-[#3ecf8e]/15 rounded p-1 shadow-lg transform -rotate-3 transition-transform group-hover:scale-105">
-                  <span class="block text-[8px] font-bold text-white bg-[#3ecf8e] px-1 rounded-sm leading-tight text-[#002112]">
+                  <span class="block text-[8px] font-bold bg-[#3ecf8e] px-1 rounded-sm leading-tight text-[#002112]">
                     {{ t('home.mockLabel') }}
                   </span>
                   <div class="w-12 h-10 flex items-center justify-center">
@@ -194,7 +194,7 @@ const isAuthenticated = computed(() => {
     <section id="video" class="py-24 px-6 scroll-mt-20">
       <div class="container mx-auto max-w-[1200px]">
         <div class="text-center mb-10 space-y-3">
-          <span class="text-xs font-bold uppercase tracking-widest text-[#3ecf8e] block">{{ t('home.videoTag') }}</span>
+          <span class="text-xs font-bold uppercase tracking-widest text-[var(--el-color-primary)] block">{{ t('home.videoTag') }}</span>
           <h2 class="text-3xl sm:text-5xl font-extrabold tracking-tighter text-[var(--el-text-color-primary)]">{{ t('home.videoHeading') }}</h2>
           <p class="text-sm sm:text-base text-[var(--el-text-color-secondary)] max-w-2xl mx-auto">{{ t('home.videoDesc') }}</p>
         </div>
@@ -220,7 +220,7 @@ const isAuthenticated = computed(() => {
           </video>
         </div>
         <div class="text-center mt-6">
-          <RouterLink to="/manual" class="text-xs font-bold uppercase tracking-widest border-b border-[#3ecf8e] pb-1 text-[#3ecf8e] hover:text-[var(--el-text-color-primary)] transition-colors">
+          <RouterLink to="/manual" class="text-xs font-bold uppercase tracking-widest border-b border-[#3ecf8e] pb-1 text-[var(--el-color-primary)] hover:text-[var(--el-text-color-primary)] transition-colors">
             {{ t('home.videoCta') }} &rarr;
           </RouterLink>
         </div>
@@ -233,7 +233,7 @@ const isAuthenticated = computed(() => {
         <!-- Intro Header -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 mb-20">
           <div class="lg:col-span-3">
-            <span class="text-xs font-bold uppercase tracking-widest text-[#3ecf8e]">
+            <span class="text-xs font-bold uppercase tracking-widest text-[var(--el-color-primary)]">
               {{ t('home.theShineAgent') }}
             </span>
           </div>
@@ -272,7 +272,7 @@ const isAuthenticated = computed(() => {
                 </p>
               </div>
               <div class="w-12 h-12 rounded-2xl bg-[#3ecf8e]/15 flex items-center justify-center shrink-0">
-                <el-icon class="text-2xl text-[#3ecf8e]"><Aim /></el-icon>
+                <el-icon class="text-2xl text-[var(--el-color-primary)]"><Aim /></el-icon>
               </div>
             </div>
 
@@ -290,7 +290,7 @@ const isAuthenticated = computed(() => {
                 <div class="space-y-2.5">
                   <div v-for="row in mockRows" :key="row.label" class="flex items-center justify-between p-2.5 rounded-lg bg-[var(--el-card-bg-color)] border border-[var(--el-border-color)]">
                     <span class="text-xs font-medium text-[var(--el-text-color-primary)]">{{ t(row.label) }}</span>
-                    <span class="text-xs font-bold text-[#3ecf8e]">{{ t(row.value) }}</span>
+                    <span class="text-xs font-bold text-[var(--el-color-primary)]">{{ t(row.value) }}</span>
                   </div>
                 </div>
               </div>
@@ -320,7 +320,7 @@ const isAuthenticated = computed(() => {
             <!-- Skeleton UI: Multi-Camera Grid Quad Layout -->
             <div class="mt-8 flex-1 bg-[var(--el-bg-color)] rounded-xl p-3 border border-[var(--el-border-color)] grid grid-cols-2 gap-2 shadow-inner">
               <div class="rounded-lg bg-[var(--el-card-bg-color)] border border-[#3ecf8e]/40 p-2 flex flex-col justify-between relative overflow-hidden">
-                <div class="flex items-center justify-between text-[9px] text-[#3ecf8e] font-mono">
+                <div class="flex items-center justify-between text-[9px] text-[var(--el-color-primary)] font-mono">
                   <span>CAM-01</span>
                   <span class="w-1.5 h-1.5 bg-[#3ecf8e] rounded-full"></span>
                 </div>
@@ -375,7 +375,7 @@ const isAuthenticated = computed(() => {
             <div class="mt-8 flex-1 bg-[var(--el-bg-color)] rounded-xl p-5 border border-[var(--el-border-color)] flex flex-col justify-center space-y-4 shadow-inner">
               <div class="flex items-center justify-between text-xs">
                 <span class="text-[var(--el-text-color-secondary)]">{{ t('home.mockForecastLabel') }}</span>
-                <span class="text-[#3ecf8e] font-bold">{{ t('home.mockForecastValue') }}</span>
+                <span class="text-[var(--el-color-primary)] font-bold">{{ t('home.mockForecastValue') }}</span>
               </div>
               <div class="space-y-2">
                 <div class="h-2 w-full bg-[var(--el-border-color)] rounded-full overflow-hidden">
@@ -384,7 +384,7 @@ const isAuthenticated = computed(() => {
                 <div class="text-[10px] text-[var(--el-text-color-secondary)]">{{ t('home.mockForecastProgress') }}</div>
               </div>
               <div class="pt-2 border-t border-[var(--el-border-color)] flex items-center gap-2 text-[11px] text-[var(--el-text-color-primary)]">
-                <el-icon class="text-[#3ecf8e]"><Sunny /></el-icon>
+                <el-icon class="text-[var(--el-color-primary)]"><Sunny /></el-icon>
                 <span>{{ t('home.mockForecastWeather') }}</span>
               </div>
             </div>
@@ -433,7 +433,7 @@ const isAuthenticated = computed(() => {
                   <span>{{ t('home.mockExportExcel') }}</span>
                 </div>
                 <div class="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--el-card-bg-color)] border border-[var(--el-border-color)] text-xs font-semibold text-[var(--el-text-color-primary)]">
-                  <el-icon class="text-[#3ecf8e]"><Notebook /></el-icon>
+                  <el-icon class="text-[var(--el-color-primary)]"><Notebook /></el-icon>
                   <span>{{ t('home.mockExportLog') }}</span>
                 </div>
               </div>
@@ -448,7 +448,7 @@ const isAuthenticated = computed(() => {
       <div class="container mx-auto max-w-[1440px] px-6">
         <div class="flex flex-col md:flex-row justify-between items-end mb-16">
           <div class="max-w-2xl">
-            <span class="text-xs font-bold uppercase tracking-widest text-[#3ecf8e] block mb-3">{{ t('home.galleryTag') }}</span>
+            <span class="text-xs font-bold uppercase tracking-widest text-[var(--el-color-primary)] block mb-3">{{ t('home.galleryTag') }}</span>
             <h2 class="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tighter text-[var(--el-text-color-primary)]">
               {{ t('home.galleryHeading') }}
             </h2>
@@ -456,7 +456,7 @@ const isAuthenticated = computed(() => {
           <div class="mt-6 md:mt-0">
             <RouterLink
               to="/manual"
-              class="text-xs font-bold uppercase tracking-widest border-b border-[#3ecf8e] pb-1 text-[#3ecf8e] hover:text-[var(--el-text-color-primary)] transition-colors cursor-pointer"
+              class="text-xs font-bold uppercase tracking-widest border-b border-[#3ecf8e] pb-1 text-[var(--el-color-primary)] hover:text-[var(--el-text-color-primary)] transition-colors cursor-pointer"
             >
               {{ t('home.viewAllExports') }} &rarr;
             </RouterLink>
@@ -470,10 +470,10 @@ const isAuthenticated = computed(() => {
             class="rounded-2xl overflow-hidden bg-[var(--el-card-bg-color)] border border-[var(--el-border-color)] p-6 space-y-4 hover:border-[#3ecf8e]/50 transition-all shadow-sm"
           >
             <div class="w-12 h-12 rounded-2xl bg-[#3ecf8e]/15 flex items-center justify-center">
-              <el-icon class="text-2xl text-[#3ecf8e]"><component :is="use.icon" /></el-icon>
+              <el-icon class="text-2xl text-[var(--el-color-primary)]"><component :is="use.icon" /></el-icon>
             </div>
             <div class="space-y-1">
-              <span class="text-[10px] font-bold uppercase tracking-widest text-[#3ecf8e]">{{ t(`home.${use.key}Stat`) }}</span>
+              <span class="text-[10px] font-bold uppercase tracking-widest text-[var(--el-color-primary)]">{{ t(`home.${use.key}Stat`) }}</span>
               <h3 class="text-lg font-bold text-[var(--el-text-color-primary)]">{{ t(`home.${use.key}Title`) }}</h3>
               <p class="text-sm text-[var(--el-text-color-secondary)] leading-relaxed">{{ t(`home.${use.key}Subtitle`) }}</p>
             </div>
@@ -486,7 +486,7 @@ const isAuthenticated = computed(() => {
     <section id="pricing" class="py-32 px-6 bg-[var(--el-bg-color-page)] scroll-mt-20">
       <div class="container mx-auto max-w-[1440px]">
         <div class="text-center mb-20 space-y-3">
-          <span class="text-xs font-bold uppercase tracking-widest text-[#3ecf8e] block">{{ t('nav.pricing') }}</span>
+          <span class="text-xs font-bold uppercase tracking-widest text-[var(--el-color-primary)] block">{{ t('nav.pricing') }}</span>
           <h2 class="text-4xl sm:text-5xl md:text-7xl font-extrabold tracking-tighter text-[var(--el-text-color-primary)]" v-html="t('home.pricingHeading')">
           </h2>
         </div>
@@ -501,7 +501,7 @@ const isAuthenticated = computed(() => {
             <p class="text-sm text-[var(--el-text-color-secondary)] mb-8">{{ t(`home.${group.key}Desc`) }}</p>
             <ul class="space-y-4 mb-10 flex-grow">
               <li v-for="n in group.features" :key="n" class="flex items-start gap-3 text-sm text-[var(--el-text-color-regular)]">
-                <el-icon class="text-[#3ecf8e] mt-0.5 shrink-0"><Check /></el-icon>
+                <el-icon class="text-[var(--el-color-primary)] mt-0.5 shrink-0"><Check /></el-icon>
                 <span>{{ t(`home.${group.key}Feat${n}`) }}</span>
               </li>
             </ul>

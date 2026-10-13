@@ -10,6 +10,7 @@ import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { createRequire } from 'node:module';
 
 const MEDIA = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../tools/media');
 // Other ports when 3013/3010 are taken: DEMO_API_PORT, DEMO_CLIENT_PORT
@@ -204,6 +205,33 @@ test('without signal a card change waits on the device, then goes out when the s
     return false;`), true);
   assert.ok(await page.eval(`for (let i = 0; i < 40 && document.body.innerText.includes('đang chờ gửi'); i++) await new Promise(r => setTimeout(r, 250));
     return !document.body.innerText.includes('đang chờ gửi');`), 'the bar goes away');
+});
+
+test('the main pages pass the automatic accessibility checks (WCAG 2.1 AA), light and dark', { timeout: 300000 }, async () => {
+  const axe = fs.readFileSync(createRequire(import.meta.url).resolve('axe-core/axe.min.js'), 'utf8');
+  const pages = ['/dashboard', '/cameras', '/analytics', '/reports', '/farms', '/logbook', '/map', '/settings?tab=profile', '/settings?tab=notifications', '/manual'];
+  const problems = [];
+  try {
+    for (const theme of ['light', 'dark']) {
+      await page.eval(`localStorage.setItem('smart_trap_theme', '${theme}'); return true;`);
+      for (const url of pages) {
+        await page.goto(BASE + url, 1000);
+        await page.eval(`for (let i = 0; i < 120 && document.body.innerText.length < 200; i++) await new Promise(r => setTimeout(r, 250));
+          await new Promise(r => setTimeout(r, 2000)); return true;`);
+        // Colors are measured as shown, not halfway through a transition
+        const found = await page.eval(`const still = document.createElement('style');
+          still.textContent = '*, *::before, *::after { transition: none !important; animation: none !important; }';
+          document.head.appendChild(still); await new Promise(r => setTimeout(r, 300));
+          ${axe};
+          const r = await axe.run(document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'] } });
+          return r.violations.map(v => v.id + ': ' + v.nodes.slice(0, 3).map(n => n.target.join(' ') + ' (' + (n.any[0]?.message || '') + ')').join(', '));`);
+        for (const f of found) problems.push(`${theme} ${url} ${f}`);
+      }
+    }
+  } finally {
+    await page.eval(`localStorage.removeItem('smart_trap_theme'); return true;`);
+  }
+  assert.deepEqual(problems, []);
 });
 
 test('on a phone the pages fit the screen', { timeout: 120000 }, async () => {

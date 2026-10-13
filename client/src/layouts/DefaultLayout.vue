@@ -44,7 +44,7 @@ const footerLinks = {
         <div class="flex items-center gap-8">
           <router-link to="/" class="flex items-center gap-2.5 font-bold tracking-tight">
             <img src="/logo.png" alt="FlyBot Logo" class="h-8 w-auto object-contain" />
-            <span class="text-lg font-extrabold tracking-tight text-[#3ecf8e]">FlyBot</span>
+            <span class="text-lg font-extrabold tracking-tight text-[var(--el-color-primary)]">FlyBot</span>
           </router-link>
 
           <nav class="hidden md:flex items-center gap-6 text-xs font-semibold uppercase tracking-wider">
@@ -52,8 +52,8 @@ const footerLinks = {
               v-for="link in navLinks"
               :key="link.href"
               :to="link.href"
-              class="text-[var(--el-text-color-secondary)] hover:text-[#3ecf8e] transition-colors"
-              active-class="!text-[#3ecf8e] font-bold"
+              class="text-[var(--el-text-color-secondary)] hover:text-[var(--el-color-primary)] transition-colors"
+              active-class="!text-[var(--el-color-primary)] font-bold"
             >
               {{ t(link.key) }}
             </router-link>
@@ -65,6 +65,7 @@ const footerLinks = {
           <!-- Theme Toggle Switch -->
           <el-switch
             v-model="isDark"
+            :aria-label="t('common.darkTheme')"
             :active-icon="Moon"
             :inactive-icon="Sunny"
             inline-prompt
@@ -85,7 +86,7 @@ const footerLinks = {
           <div class="md:hidden">
             <el-dropdown trigger="click" @command="handleNavClick">
               <button
-                class="w-8 h-8 rounded-xl border border-[var(--el-border-color)] bg-[var(--el-card-bg-color)] flex items-center justify-center text-[var(--el-text-color-regular)] hover:text-[#3ecf8e] transition-all cursor-pointer shadow-sm"
+                class="w-8 h-8 rounded-xl border border-[var(--el-border-color)] bg-[var(--el-card-bg-color)] flex items-center justify-center text-[var(--el-text-color-regular)] hover:text-[var(--el-color-primary)] transition-all cursor-pointer shadow-sm"
                 :aria-label="t('nav.mainNavigation')"
               >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -98,7 +99,7 @@ const footerLinks = {
                     v-for="link in navLinks"
                     :key="link.href"
                     :command="link.href"
-                    class="!rounded-xl !py-2.5 !px-4 text-xs font-semibold uppercase tracking-wider text-[var(--el-text-color-primary)] hover:!text-[#3ecf8e]"
+                    class="!rounded-xl !py-2.5 !px-4 text-xs font-semibold uppercase tracking-wider text-[var(--el-text-color-primary)] hover:!text-[var(--el-color-primary)]"
                   >
                     {{ t(link.key) }}
                   </el-dropdown-item>
@@ -132,7 +133,7 @@ const footerLinks = {
           <h4 class="text-xs font-bold uppercase tracking-wider text-[var(--el-text-color-primary)] mb-3">{{ t('footer.product') }}</h4>
           <ul class="space-y-2 text-xs">
             <li v-for="link in footerLinks.product" :key="link.key">
-              <router-link :to="link.href" class="hover:text-[#3ecf8e] transition-colors">
+              <router-link :to="link.href" class="hover:text-[var(--el-color-primary)] transition-colors">
                 {{ t(link.key) }}
               </router-link>
             </li>
@@ -143,7 +144,7 @@ const footerLinks = {
           <h4 class="text-xs font-bold uppercase tracking-wider text-[var(--el-text-color-primary)] mb-3">{{ t('footer.legal') }}</h4>
           <ul class="space-y-2 text-xs">
             <li v-for="link in footerLinks.legal" :key="link.key">
-              <router-link :to="link.href" class="hover:text-[#3ecf8e] transition-colors">
+              <router-link :to="link.href" class="hover:text-[var(--el-color-primary)] transition-colors">
                 {{ t(link.key) }}
               </router-link>
             </li>

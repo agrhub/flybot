@@ -77,7 +77,7 @@
 
             <el-form v-else label-position="top" size="small" @submit.prevent>
               <div v-for="(row, index) in correctionRows" :key="index" class="flex items-center gap-2 mb-2">
-                <el-select
+                <el-select :aria-label="t('analytics.review.species')"
                   v-model="row.label"
                   filterable
                   allow-create
@@ -87,8 +87,8 @@
                 >
                   <el-option v-for="key in KNOWN_SPECIES" :key="key" :value="key" :label="speciesName(key, t)" />
                 </el-select>
-                <el-input-number v-model="row.count" :min="0" :max="10000" :step="1" step-strictly controls-position="right" class="!w-28" />
-                <el-button text circle :icon="Delete" @click="correctionRows.splice(index, 1)" />
+                <el-input-number :aria-label="t('analytics.review.countOf', { name: row.label || t('analytics.review.species') })" v-model="row.count" :min="0" :max="10000" :step="1" step-strictly controls-position="right" class="!w-28" />
+                <el-button text circle :icon="Delete" :aria-label="t('common.delete')" @click="correctionRows.splice(index, 1)" />
               </div>
               <el-button size="small" link type="primary" :icon="Plus" @click="correctionRows.push({ label: '', count: 0 })">
                 {{ t('analytics.review.addSpecies') }}

@@ -38,7 +38,7 @@
             <span class="trap-value">{{ cardAgeDays !== null ? t('maintenance.days', { count: cardAgeDays }) : '--' }}</span>
           </el-descriptions-item>
           <el-descriptions-item :label="t('maintenance.reminder')">
-            <el-select
+            <el-select :aria-label="t('maintenance.reminder')"
               v-if="canManage"
               :model-value="card?.reminderDays ?? 7"
               size="small"
@@ -77,7 +77,7 @@
                 <div v-if="ev.by" class="trap-meta">{{ ev.by }}</div>
               </div>
               <el-tooltip v-if="canManage" :content="t('maintenance.delete')" placement="top">
-                <el-button link type="danger" size="small" :icon="Delete" @click="remove(ev)" />
+                <el-button :aria-label="t('maintenance.delete')" link type="danger" size="small" :icon="Delete" @click="remove(ev)" />
               </el-tooltip>
             </div>
           </el-timeline-item>

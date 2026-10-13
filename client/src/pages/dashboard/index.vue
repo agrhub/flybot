@@ -83,6 +83,10 @@
             v-for="cam in (overviewData.cameraRealtimeList || [])"
             :key="cam.deviceSerial"
             @click="selectCameraAndGoToLive(cam)"
+            @keydown.enter.prevent="selectCameraAndGoToLive(cam)"
+            @keydown.space.prevent="selectCameraAndGoToLive(cam)"
+            role="button"
+            tabindex="0"
             class="density-item"
           >
             <div class="flex items-center justify-between gap-3 mb-2">
@@ -99,6 +103,7 @@
             </div>
 
             <el-progress
+              :aria-label="t('dashboard.levelOf', { name: cam.deviceName || cam.deviceSerial })"
               :percentage="Math.min(100, Math.max(4, ((cam.riskValue ?? cam.currentCount) / (cam.alertThreshold || 15)) * 100))"
               :color="`var(--el-color-${levelTagType(cam.riskLevel)})`"
               :stroke-width="8"
@@ -394,7 +399,7 @@
 
           <div class="flex items-center justify-between gap-2">
             <span class="meta-text truncate">{{ cam.locationAddress || t('map.noAddress') }}</span>
-            <span class="watch-link shrink-0">
+            <span class="watch-link shrink-0" @keydown.enter.prevent="selectCameraAndGoToLive(cam)" @keydown.space.prevent="selectCameraAndGoToLive(cam)" role="button" tabindex="0">
               {{ t('dashboard.watchStream') }}
               <el-icon><Right /></el-icon>
             </span>

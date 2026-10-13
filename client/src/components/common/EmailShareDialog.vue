@@ -30,7 +30,7 @@
       <el-table-column width="60" align="right">
         <template #default="{ row }">
           <el-tooltip :content="t('share.remove')" placement="top">
-            <el-button link type="danger" :icon="Delete" @click="remove(row)" />
+            <el-button :aria-label="t('share.remove')" link type="danger" :icon="Delete" @click="remove(row)" />
           </el-tooltip>
         </template>
       </el-table-column>

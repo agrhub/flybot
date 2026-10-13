@@ -11,7 +11,7 @@
     <div class="absolute top-6 right-6 flex items-center gap-2 z-20">
       <LanguageSelect />
       <el-tooltip :content="isDark ? t('topbar.lightMode') : t('topbar.darkMode')" placement="bottom">
-        <el-button circle :icon="isDark ? Sunny : Moon" @click="toggleTheme" />
+        <el-button :aria-label="isDark ? t('topbar.lightMode') : t('topbar.darkMode')" circle :icon="isDark ? Sunny : Moon" @click="toggleTheme" />
       </el-tooltip>
     </div>
 

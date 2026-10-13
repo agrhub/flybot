@@ -1,5 +1,5 @@
 <template>
-  <div class="snap" :class="{ 'is-clickable': !!item }" @click.stop="item && emit('open', item)">
+  <div class="snap" :class="{ 'is-clickable': !!item }" :role="item ? 'button' : undefined" :tabindex="item ? 0 : undefined" :aria-label="item ? t('dashboard.openPhoto', { name: title }) : undefined" @click.stop="item && emit('open', item)" @keydown.enter.prevent="item && emit('open', item)" @keydown.space.prevent="item && emit('open', item)">
     <el-skeleton v-if="loading" animated class="snap__fill">
       <template #template><el-skeleton-item variant="image" class="snap__fill" /></template>
     </el-skeleton>

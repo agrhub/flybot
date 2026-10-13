@@ -29,10 +29,10 @@
       <!-- Action buttons -->
       <div class="flex items-center shrink-0">
         <el-tooltip :content="t('assistant.reset')" placement="bottom">
-          <el-button text circle :icon="Refresh" @click="resetChat" />
+          <el-button :aria-label="t('assistant.reset')" text circle :icon="Refresh" @click="resetChat" />
         </el-tooltip>
         <el-tooltip :content="t('common.close')" placement="bottom">
-          <el-button text circle :icon="Close" @click="closeAssistant" />
+          <el-button :aria-label="t('common.close')" text circle :icon="Close" @click="closeAssistant" />
         </el-tooltip>
       </div>
     </div>
@@ -188,7 +188,7 @@
           :disabled="isThinking"
           class="flex-1"
         />
-        <el-button
+        <el-button :aria-label="t('assistant.send')"
           type="primary"
           native-type="submit"
           :icon="Promotion"

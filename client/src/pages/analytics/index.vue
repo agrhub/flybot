@@ -10,7 +10,7 @@
 
     <!-- Page filters: every widget starts from them and can set its own -->
     <div class="flex flex-wrap items-center gap-3 mb-4">
-      <el-select
+      <el-select :aria-label="t('analytics.selectCamera')"
         v-if="cameras.length > 0"
         :model-value="selectedCamera?.deviceSerial || 'all'"
         :placeholder="t('analytics.selectCamera')"

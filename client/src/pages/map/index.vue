@@ -3,11 +3,11 @@
     <PageHeader :title="t('dashboard.mapViewTitle')" :subtitle="t('dashboard.mapViewSubtitle')">
       <template #actions>
         <div class="flex items-center gap-2 mr-2">
-          <el-switch v-model="showHeatmap" size="small" />
+          <el-switch v-model="showHeatmap" size="small" :aria-label="t('map.heatmap')" />
           <span class="text-sm">{{ t('map.heatmap') }}</span>
         </div>
         <div class="flex items-center gap-2 mr-2">
-          <el-switch v-model="showPlots" size="small" />
+          <el-switch v-model="showPlots" size="small" :aria-label="t('map.plots')" />
           <span class="text-sm">{{ t('map.plots') }}</span>
         </div>
         <!-- Outbreak legend -->
@@ -114,7 +114,7 @@
 
               <div class="min-w-0 flex-1">
                 <div class="flex items-center justify-between gap-1">
-                  <div class="trap-item__name truncate">{{ cam.deviceName || cam.deviceSerial }}</div>
+                  <div class="trap-item__name truncate" role="button" tabindex="0" @keydown.enter.prevent="focusCamera(cam)" @keydown.space.prevent="focusCamera(cam)">{{ cam.deviceName || cam.deviceSerial }}</div>
                   <!-- Insect density tag -->
                   <el-tag :type="getDensityTagType(cam.riskLevel)" effect="light" round size="small" class="shrink-0">
                     {{ cam.riskValue }} {{ t('map.fruitFlyShort') }}

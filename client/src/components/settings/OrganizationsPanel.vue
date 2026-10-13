@@ -35,7 +35,7 @@
       <h4 class="org-section">{{ t('orgs.members') }}</h4>
       <div v-if="org.canManage" class="flex flex-wrap gap-2 mb-3">
         <el-input v-model="invite[org.id].email" :placeholder="t('orgs.emailPlaceholder')" class="!w-64" clearable @keyup.enter="addMember(org)" />
-        <el-select v-model="invite[org.id].role" class="!w-36">
+        <el-select :aria-label="t('orgs.role')" v-model="invite[org.id].role" class="!w-36">
           <el-option v-for="role in assignableRoles(org)" :key="role" :label="t(`orgs.roles.${role}`)" :value="role" />
         </el-select>
         <el-button :icon="Plus" :loading="busy === `add:${org.id}`" @click="addMember(org)">{{ t('orgs.addMember') }}</el-button>
@@ -63,7 +63,7 @@
             </div>
           </div>
           <div class="flex items-center gap-2">
-            <el-select
+            <el-select :aria-label="t('orgs.role')"
               v-if="canEditMember(org, m)"
               :model-value="m.role"
               size="small"
@@ -101,7 +101,7 @@
         <span v-if="!org.cameras.length" class="org-meta">{{ t('orgs.noCameras') }}</span>
       </div>
       <div v-if="org.canManage && addableFor(org).length" class="flex flex-wrap gap-2 mt-3">
-        <el-select v-model="cameraPick[org.id]" multiple collapse-tags :placeholder="t('orgs.pickCameras')" class="!w-72">
+        <el-select :aria-label="t('orgs.pickCameras')" v-model="cameraPick[org.id]" multiple collapse-tags :placeholder="t('orgs.pickCameras')" class="!w-72">
           <el-option v-for="cam in addableFor(org)" :key="cam.deviceSerial" :label="cam.deviceName" :value="cam.deviceSerial" />
         </el-select>
         <el-button :disabled="!cameraPick[org.id]?.length" :loading="busy === `cams:${org.id}`" @click="moveCameras(org, { add: cameraPick[org.id] })">
@@ -118,7 +118,7 @@
       <div class="flex flex-wrap items-center justify-between gap-2 mt-2">
         <span class="org-meta">{{ t('orgs.bulk.count', { count: bulkEmails.length }) }}</span>
         <div class="flex items-center gap-2">
-          <el-select v-if="bulk.org" v-model="bulk.role" size="small" class="!w-36">
+          <el-select :aria-label="t('orgs.role')" v-if="bulk.org" v-model="bulk.role" size="small" class="!w-36">
             <el-option v-for="role in assignableRoles(bulk.org)" :key="role" :label="t(`orgs.roles.${role}`)" :value="role" />
           </el-select>
           <el-button size="small" :icon="Upload" @click="pickCsv">{{ t('orgs.bulk.csv') }}</el-button>

@@ -59,7 +59,7 @@ const videoLang = computed(() => (locale.value === 'en' ? 'en' : 'vi'));
 <template>
   <div id="manual-page" class="min-h-screen bg-[var(--el-bg-color-page)] text-[var(--el-text-color-primary)] py-12 px-4 sm:px-6 max-w-6xl mx-auto">
     <div class="mb-8 text-center md:text-left">
-      <span class="text-xs font-bold uppercase tracking-widest text-[#3ecf8e] block mb-2">{{ t('nav.manual') }}</span>
+      <span class="text-xs font-bold uppercase tracking-widest text-[var(--el-color-primary)] block mb-2">{{ t('nav.manual') }}</span>
       <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-[var(--el-text-color-primary)]">{{ t('manual.title') }}</h1>
       <p class="text-sm text-[var(--el-text-color-secondary)] mt-2 max-w-2xl leading-relaxed">{{ t('manual.subtitle') }}</p>
     </div>
@@ -80,7 +80,7 @@ const videoLang = computed(() => (locale.value === 'en' ? 'en' : 'vi'));
           </video>
         </div>
         <div class="lg:col-span-2 p-6 flex flex-col justify-center gap-2">
-          <el-icon class="text-3xl text-[#3ecf8e]"><VideoPlay /></el-icon>
+          <el-icon class="text-3xl text-[var(--el-color-primary)]"><VideoPlay /></el-icon>
           <h2 class="text-xl font-bold text-[var(--el-text-color-primary)]">{{ t('manual.videoTitle') }}</h2>
           <p class="text-sm text-[var(--el-text-color-secondary)] leading-relaxed">{{ t('manual.videoDesc') }}</p>
         </div>

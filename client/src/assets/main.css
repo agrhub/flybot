@@ -12,19 +12,21 @@
   --border-color: #e6e8e7;
   --input-border: #e6e8e7;
 
-  /* Element Plus Global Tokens (Light Mode) */
-  --el-color-primary: #3ecf8e;
-  --el-color-primary-light-3: #71fcb6;
-  --el-color-primary-light-5: #9effce;
-  --el-color-primary-light-7: #cbfde2;
-  --el-color-primary-light-8: #e1feef;
-  --el-color-primary-light-9: #e8fbf3;
-  --el-color-primary-dark-2: #006c45;
+  /* Element Plus Global Tokens (Light Mode)
+     On a light page the brand mint is too pale for text (2:1), so the theme colors are deeper
+     shades that reach 4.5:1 (WCAG AA) on white and on their own light-9 backgrounds */
+  --el-color-primary: #007a4d;
+  --el-color-primary-light-3: #4da282;
+  --el-color-primary-light-5: #80bda6;
+  --el-color-primary-light-7: #b3d7ca;
+  --el-color-primary-light-8: #cce4db;
+  --el-color-primary-light-9: #e6f2ed;
+  --el-color-primary-dark-2: #00623e;
 
-  --el-color-success: #3ecf8e;
-  --el-color-warning: #e6a23c;
-  --el-color-danger: #f56c6c;
-  --el-color-info: #909399;
+  --el-color-success: #007a4d;
+  --el-color-warning: #9a6200;
+  --el-color-danger: #c62828;
+  --el-color-info: #6b6e73;
 
   --el-bg-color: #f5f6f5;
   --el-bg-color-page: #fcfcfc;
@@ -34,8 +36,8 @@
 
   --el-text-color-primary: #171717;
   --el-text-color-regular: #5a5f5c;
-  --el-text-color-secondary: #707572;
-  --el-text-color-placeholder: #707572;
+  --el-text-color-secondary: #626764;
+  --el-text-color-placeholder: #626764;
 
   --el-border-color: #e6e8e7;
   --el-border-color-light: #f0f2f1;
@@ -84,7 +86,7 @@ body.dark,
   --el-text-color-primary: #f0f2f1;
   --el-text-color-regular: #b4b9b6;
   --el-text-color-secondary: #868c88;
-  --el-text-color-placeholder: #585f64;
+  --el-text-color-placeholder: #868c91;
 
   --el-border-color: #282a29;
   --el-border-color-light: #222423;
@@ -201,21 +203,31 @@ body {
    only brand-specific tweaks live here.
    ========================================================================== */
 
-/* The brand green is light, so primary buttons use dark text for contrast */
-.el-button--primary {
+/* In dark mode the brand green is light, so text on it is dark (white on mint is 2:1) */
+.dark .el-button--primary {
   --el-button-text-color: #06281a;
   --el-button-hover-text-color: #06281a;
   --el-button-active-text-color: #06281a;
   --el-button-disabled-text-color: #06281a;
 }
-.el-button--primary.is-plain,
-.el-button--primary.is-text,
-.el-button--primary.is-link {
+.dark .el-button--primary.is-plain,
+.dark .el-button--primary.is-text,
+.dark .el-button--primary.is-link {
   --el-button-text-color: var(--el-color-primary);
 }
-.el-button--primary.is-plain:hover,
-.el-button--primary.is-plain:focus-visible {
+.dark .el-button--primary.is-plain:hover,
+.dark .el-button--primary.is-plain:focus-visible {
   --el-button-hover-text-color: #06281a;
+}
+.dark .el-segmented {
+  --el-segmented-item-selected-color: #06281a;
+}
+.dark .el-radio-button {
+  --el-radio-button-checked-text-color: #06281a;
+}
+.dark .el-tag--dark.el-tag--primary,
+.dark .el-tag--dark.el-tag--success {
+  --el-tag-text-color: #06281a;
 }
 
 /* Cards: flat, rounded, using theme colors */
@@ -310,4 +322,10 @@ body {
     width: calc(100vw - 32px) !important;
     right: 16px !important;
   }
+}
+
+/* Cards and rows that open something are reached with Tab: show where the focus is */
+[role="button"][tabindex]:focus-visible {
+  outline: 2px solid var(--el-color-primary);
+  outline-offset: 2px;
 }

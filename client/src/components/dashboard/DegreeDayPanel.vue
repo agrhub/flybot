@@ -23,7 +23,7 @@
       <p v-else class="dd-meta">{{ t('degreeDays.noPeak') }}</p>
 
       <div v-if="model.progressPct !== null" class="mt-3">
-        <el-progress :percentage="model.progressPct" :stroke-width="10" :status="model.progressPct >= 90 ? 'warning' : ''" />
+        <el-progress :aria-label="t('degreeDays.progress', { acc: model.accumulated, total: model.model.generationDd })" :percentage="model.progressPct" :stroke-width="10" :status="model.progressPct >= 90 ? 'warning' : ''" />
         <p class="dd-meta mt-1">
           {{ t('degreeDays.progress', { acc: model.accumulated, total: model.model.generationDd }) }}
           · {{ t('degreeDays.fromPeak', { day: formatDay(model.anchor.day), count: model.anchor.catches }) }}

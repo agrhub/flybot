@@ -14,7 +14,7 @@
             <el-button :icon="Share" @click="shareVisible = true">{{ t('share.button') }}</el-button>
             <el-button type="primary" :icon="Plus" @click="openPlot()">{{ t('farms.addPlot') }}</el-button>
             <el-dropdown trigger="click" @command="onCommand">
-              <el-button :icon="MoreFilled" circle />
+              <el-button :icon="MoreFilled" circle :aria-label="t('common.moreActions')" />
               <template #dropdown>
                 <el-dropdown-menu>
                   <el-dropdown-item command="rename" :icon="Edit">{{ t('farms.rename') }}</el-dropdown-item>
@@ -44,9 +44,9 @@
                 <el-tag :type="RISK_TAG[plot.stats?.risk || 'low']" effect="light" round size="small">{{ riskLabel(plot.stats?.risk) }}</el-tag>
               </div>
               <div v-if="farm.canEdit" class="flex items-center shrink-0">
-                <el-button link :icon="VideoCamera" :title="t('farms.assignCameras')" @click="openAssign(plot)" />
-                <el-button link :icon="Edit" :title="t('common.edit')" @click="openPlot(plot)" />
-                <el-button link type="danger" :icon="Delete" :title="t('farms.deletePlot')" @click="removePlot(plot)" />
+                <el-button :aria-label="t('farms.assignCameras')" link :icon="VideoCamera" :title="t('farms.assignCameras')" @click="openAssign(plot)" />
+                <el-button :aria-label="t('common.edit')" link :icon="Edit" :title="t('common.edit')" @click="openPlot(plot)" />
+                <el-button :aria-label="t('farms.deletePlot')" link type="danger" :icon="Delete" :title="t('farms.deletePlot')" @click="removePlot(plot)" />
               </div>
             </div>
           </template>

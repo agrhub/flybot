@@ -12,7 +12,7 @@
       <LanguageSelect v-if="!isMobile" />
 
       <el-tooltip v-if="!isMobile" :content="isDark ? t('topbar.lightMode') : t('topbar.darkMode')" placement="bottom">
-        <el-button circle :icon="isDark ? Sunny : Moon" @click="toggleTheme" />
+        <el-button :aria-label="isDark ? t('topbar.lightMode') : t('topbar.darkMode')" circle :icon="isDark ? Sunny : Moon" @click="toggleTheme" />
       </el-tooltip>
 
       <!-- Notifications Popover -->
@@ -25,7 +25,7 @@
         <template #reference>
           <span class="inline-flex">
             <el-badge :value="unreadCount" :max="99" :hidden="unreadCount === 0" type="warning">
-              <el-button circle :icon="Bell" :title="t('topbar.notifications')" data-tour="notifications" />
+              <el-button :aria-label="t('topbar.notifications')" circle :icon="Bell" :title="t('topbar.notifications')" data-tour="notifications" />
             </el-badge>
           </span>
         </template>
@@ -45,7 +45,7 @@
           <div
             v-for="n in notificationItems"
             :key="n.id"
-            @click="openNotification(n)"
+            @click="openNotification(n)" @keydown.enter.prevent="openNotification(n)" @keydown.space.prevent="openNotification(n)" role="button" tabindex="0"
             class="notif-item p-2.5 cursor-pointer flex items-start gap-2.5"
             :class="{ 'is-read': n.read }"
           >

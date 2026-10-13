@@ -29,7 +29,7 @@ onMounted(async () => {
 <template>
   <div class="min-h-screen bg-[var(--el-bg-color-page)] text-[var(--el-text-color-primary)] py-16 px-6 max-w-4xl mx-auto space-y-8">
     <div class="space-y-2">
-      <span class="text-xs font-bold uppercase tracking-widest text-[#3ecf8e]">{{ t(navKey) }}</span>
+      <span class="text-xs font-bold uppercase tracking-widest text-[var(--el-color-primary)]">{{ t(navKey) }}</span>
       <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-[var(--el-text-color-primary)]">{{ t(`${ns}.title`) }}</h1>
       <p class="text-xs text-[var(--el-text-color-secondary)]">{{ t(`${ns}.lastUpdated`) }}</p>
       <p class="text-sm text-[var(--el-text-color-regular)] leading-relaxed pt-2">{{ t(`${ns}.intro`) }}</p>
