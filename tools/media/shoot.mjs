@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { launch, sleep } from './cdp.mjs';
 
-const BASE = 'http://localhost:3010';
+const BASE = `http://localhost:${Number(process.env.DEMO_CLIENT_PORT) || 3010}`;
 const OUT = process.argv[2];
 const only = process.argv[3] && process.argv[3] !== 'all' ? process.argv[3].split(',') : null;
 const LANG = process.argv[4] === 'en' ? 'en' : 'vi';

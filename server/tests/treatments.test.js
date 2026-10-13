@@ -156,3 +156,32 @@ test('effectiveness per active ingredient across its uses', async () => {
     assert.deepEqual(camTwo.body.ingredients.map(g => g.name.toLowerCase()).sort(), ['cypermethrin', 'spinetoram']);
     assert.equal((await request('/api/treatments/effectiveness?deviceSerial=XCAM', { as: owner })).status, 403);
 });
+
+test('a treatment sent again with the same clientId is recorded once', async () => {
+    const owner = await createUser({ role: 'manager' });
+    const other = await createUser({ role: 'manager' });
+    await createCamera(owner, { deviceSerial: 'CAM1' });
+    await createCamera(other, { deviceSerial: 'CAM2' });
+    const body = { clientId: 'offline-1a2b3c4d', type: 'spray', at: new Date().toISOString(), cameraSerials: ['CAM1'], product: 'Radiant' };
+    const first = await json(await request('/api/treatments', { method: 'POST', as: owner, body }));
+    assert.equal(first.status, 201);
+    const again = await json(await request('/api/treatments', { method: 'POST', as: owner, body }));
+    assert.equal(again.status, 200);
+    assert.equal(again.body.duplicate, true);
+    assert.equal(again.body.treatment.id, first.body.treatment.id);
+    assert.equal(await models.Treatment.countDocuments(), 1);
+    // The same id from someone else is their own record
+    assert.equal((await request('/api/treatments', { method: 'POST', as: other, body: { ...body, cameraSerials: ['CAM2'] } })).status, 201);
+    assert.equal((await request('/api/treatments', { method: 'POST', as: owner, body: { ...body, clientId: 'bad id!' } })).status, 400);
+});
+
+test('a card change sent again with the same clientId is recorded once', async () => {
+    const owner = await createUser({ role: 'manager' });
+    await createCamera(owner, { deviceSerial: 'CAM1' });
+    const body = { clientId: 'offline-card-0001', deviceSerial: 'CAM1', type: 'card_replaced' };
+    assert.equal((await request('/api/user/camera/maintenance', { method: 'POST', as: owner, body })).status, 201);
+    const again = await json(await request('/api/user/camera/maintenance', { method: 'POST', as: owner, body }));
+    assert.equal(again.status, 200);
+    assert.equal(again.body.duplicate, true);
+    assert.equal(await models.MaintenanceEvent.countDocuments({ deviceSerial: 'CAM1' }), 1);
+});

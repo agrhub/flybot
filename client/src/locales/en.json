@@ -1006,7 +1006,7 @@
           "offline": {
             "title": "No signal in the field",
             "desc": "FlyBot still opens when the phone is offline, with the data you last saw.",
-            "items": "Open FlyBot at least once with a connection: it keeps the pages and the data you viewed on the device.\nWithout signal, the bar at the top says \"You are offline\" and when the data was saved.\nLive video, taking photos, saving changes and the assistant need a connection; numbers update by themselves once you are back online.\nThe data kept on the device is removed when you sign out."
+            "items": "Open FlyBot at least once with a connection: it keeps the pages and the data you viewed on the device.\nWithout signal, the bar at the top says \"You are offline\" and when the data was saved.\nLive video, taking photos, saving changes and the assistant need a connection; numbers update by themselves once you are back online.\nThe data kept on the device is removed when you sign out.\nWithout signal you can still log a treatment in the Field log or a card change: they are kept on the device and sent when the network is back; a bar at the top says how many are waiting."
           }
         }
       },
@@ -2404,5 +2404,13 @@
     "savedCopy": "You are offline. Showing data saved on this device at {time}.",
     "needsNetwork": "No connection: this needs the network. Try again when you have signal.",
     "noConnection": "No network connection"
+  },
+  "outbox": {
+    "savedOffline": "No signal: saved on this device, it will be sent when the network is back.",
+    "waiting": "{count} entry recorded offline is waiting to be sent | {count} entries recorded offline are waiting to be sent",
+    "sendNow": "Send now",
+    "refused": "Could not send \"{label}\": {reason}",
+    "remove": "Remove",
+    "sent": "Sent {count} entry recorded offline. | Sent {count} entries recorded offline."
   }
 }

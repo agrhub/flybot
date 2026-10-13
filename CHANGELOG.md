@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Works without signal
+- A treatment in the Field log or a card change recorded without signal is kept on the device and sent when the network is back; a bar at the top shows what is waiting, and anything the server refused with its reason. Each carries an id, so a send that did arrive but lost its answer is never recorded twice.
+
 ## 1.2.0 (2026-10-13)
 
 ### Season report

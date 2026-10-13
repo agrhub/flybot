@@ -1006,7 +1006,7 @@
           "offline": {
             "title": "Khi mất sóng ngoài vườn",
             "desc": "FlyBot vẫn mở được khi điện thoại không có mạng, với dữ liệu lần cuối đã xem.",
-            "items": "Mở FlyBot ít nhất một lần khi có mạng: ứng dụng tự lưu các trang và dữ liệu đã xem trên máy.\nKhi mất sóng, thanh trên cùng báo \"Đang ngoại tuyến\" kèm thời điểm dữ liệu được lưu.\nXem trực tiếp camera, chụp ảnh, lưu thay đổi và trợ lý cần có mạng; khi có sóng lại, số liệu tự cập nhật.\nDữ liệu lưu trên máy được xóa khi đăng xuất."
+            "items": "Mở FlyBot ít nhất một lần khi có mạng: ứng dụng tự lưu các trang và dữ liệu đã xem trên máy.\nKhi mất sóng, thanh trên cùng báo \"Đang ngoại tuyến\" kèm thời điểm dữ liệu được lưu.\nXem trực tiếp camera, chụp ảnh, lưu thay đổi và trợ lý cần có mạng; khi có sóng lại, số liệu tự cập nhật.\nDữ liệu lưu trên máy được xóa khi đăng xuất.\nKhông có sóng vẫn ghi được lần xử lý trong Nhật ký vườn và việc thay tấm keo: chúng được lưu trên máy và tự gửi khi có mạng; thanh báo ở đầu trang cho biết còn bao nhiêu mục đang chờ."
           }
         }
       },
@@ -2404,5 +2404,13 @@
     "savedCopy": "Đang ngoại tuyến. Đang hiện dữ liệu lưu trên máy lúc {time}.",
     "needsNetwork": "Không có kết nối mạng: thao tác này cần mạng. Hãy thử lại khi có sóng.",
     "noConnection": "Không có kết nối mạng"
+  },
+  "outbox": {
+    "savedOffline": "Không có sóng: đã lưu trên máy, sẽ tự gửi khi có mạng.",
+    "waiting": "{count} mục ghi khi mất sóng đang chờ gửi | {count} mục ghi khi mất sóng đang chờ gửi",
+    "sendNow": "Gửi ngay",
+    "refused": "Không gửi được \"{label}\": {reason}",
+    "remove": "Xóa",
+    "sent": "Đã gửi {count} mục ghi khi mất sóng. | Đã gửi {count} mục ghi khi mất sóng."
   }
 }

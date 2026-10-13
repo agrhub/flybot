@@ -45,7 +45,7 @@ npm run test:e2e         # the demo in headless Chrome: every main page and the 
 
 `test:client` also checks that Vietnamese and English have the same keys and placeholders, that every message compiles (write `{'@'}` for a literal @) and that every `t('...')` key used in the code exists. Component tests live in `client/tests/unit` and mock `@/services/api`.
 
-`test:e2e` starts the demo from `tools/media` (in-memory database, ports 3013 and 3010, which must be free), opens every main page with a manager account and fails on any script error, then checks the overview, the field log and the notification settings, and that pages fit a phone screen. It needs Google Chrome (`CHROME_PATH` if it is elsewhere) and about 500 MB of temporary disk space. If another in-memory MongoDB is running and the test cannot replace the cached `mongod`, point it at that file with `MONGOMS_SYSTEM_BINARY`.
+`test:e2e` starts the demo from `tools/media` (in-memory database, ports 3013 and 3010, which must be free; `DEMO_API_PORT` and `DEMO_CLIENT_PORT` pick others), opens every main page with a manager account and fails on any script error, then checks the overview, the field log and the notification settings, and that pages fit a phone screen. It needs Google Chrome (`CHROME_PATH` if it is elsewhere) and about 500 MB of temporary disk space. If another in-memory MongoDB is running and the test cannot replace the cached `mongod`, point it at that file with `MONGOMS_SYSTEM_BINARY`.
 
 ## Trying the UI without real data
 

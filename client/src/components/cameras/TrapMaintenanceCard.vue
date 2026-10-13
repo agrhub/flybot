@@ -109,6 +109,7 @@ import { useI18n } from 'vue-i18n';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { RefreshRight, Plus, Delete } from '@element-plus/icons-vue';
 import api from '@/services/api';
+import { enqueue, newClientId, isNetworkError } from '@/composables/useOutbox';
 import { useCameras } from '@/composables/useCameras';
 
 const props = defineProps({
@@ -166,7 +167,16 @@ const load = async () => {
 const record = async (type, extra = {}) => {
   saving.value = true;
   try {
-    await api.addMaintenance({ deviceSerial: props.camera.deviceSerial, type, ...extra });
+    // The time of the work, not of the send: it may go out later, when there is signal
+    const body = { deviceSerial: props.camera.deviceSerial, type, at: new Date().toISOString(), ...extra, clientId: newClientId() };
+    try {
+      await api.addMaintenance(body, { offlineQueue: true });
+    } catch (err) {
+      if (!isNetworkError(err)) throw err;
+      enqueue('maintenance', body, `${t(`maintenance.types.${type}`)} · ${props.camera.deviceName || props.camera.deviceSerial}`);
+      ElMessage.info(t('outbox.savedOffline'));
+      return true;
+    }
     ElMessage.success(t('maintenance.saved'));
     await load();
     // Card due dates on camera lists

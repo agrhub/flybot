@@ -12,7 +12,10 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const MEDIA = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../tools/media');
-const BASE = 'http://localhost:3010';
+// Other ports when 3013/3010 are taken: DEMO_API_PORT, DEMO_CLIENT_PORT
+const API_PORT = Number(process.env.DEMO_API_PORT) || 3013;
+const CLIENT_PORT = Number(process.env.DEMO_CLIENT_PORT) || 3010;
+const BASE = `http://localhost:${CLIENT_PORT}`;
 const TMP = path.join(os.tmpdir(), 'flybot-e2e');
 // Its own Chrome port and profile, so it can run next to the screenshot scripts
 process.env.FLYBOT_CDP_PORT ||= '9444';
@@ -52,7 +55,7 @@ function stopAll() {
 }
 
 before(async () => {
-  for (const port of [3013, 3010]) {
+  for (const port of [API_PORT, CLIENT_PORT]) {
     assert.ok(await portFree(port), `port ${port} is in use: stop the demo (or whatever uses it) first`);
   }
   fs.rmSync(TMP, { recursive: true, force: true });
@@ -156,6 +159,39 @@ test('the monthly VietGAP switch is saved', { timeout: 60000 }, async () => {
   const prefs = await page.eval(`const r = await fetch('/api/auth/me', { headers: { Authorization: 'Bearer ' + localStorage.getItem('token') } });
     const body = await r.json(); return (body.user || body).notificationPrefs;`);
   assert.equal(prefs.vietgapMonthly, true);
+});
+
+test('without signal a card change waits on the device, then goes out when the signal is back', { timeout: 120000 }, async () => {
+  await page.goto(`${BASE}/cameras`, 2000);
+  assert.ok(await waitForText('Bẫy xoài A1'));
+  // A sticky trap (lure traps have no card)
+  await page.eval(`const card = [...document.querySelectorAll('.el-card')].filter(c => c.innerText.includes('Bẫy xoài A1')).pop();
+    [...card.querySelectorAll('button')].find(b => b.innerText.includes('Xem chi tiết')).click(); return true;`);
+  assert.ok(await waitForText('Đã thay tấm bẫy'), 'maintenance card');
+  const outbox = () => page.eval(`const key = Object.keys(localStorage).find(k => k.startsWith('flybot_outbox_')); return key ? JSON.parse(localStorage.getItem(key)) : [];`);
+
+  await page.send('Network.enable');
+  await page.send('Network.emulateNetworkConditions', { offline: true, latency: 0, downloadThroughput: -1, uploadThroughput: -1 });
+  try {
+    await page.eval(`[...document.querySelectorAll('button')].find(b => b.innerText.includes('Đã thay tấm bẫy')).click(); return true;`);
+    assert.ok(await waitForText('đã lưu trên máy'), 'saved on the device');
+    assert.ok(await waitForText('đang chờ gửi'), 'waiting bar');
+    const waiting = await outbox();
+    assert.equal(waiting.length, 1);
+    assert.equal(waiting[0].body.type, 'card_replaced');
+    assert.ok(waiting[0].body.at, 'the time of the work is kept');
+  } finally {
+    await page.send('Network.emulateNetworkConditions', { offline: false, latency: 0, downloadThroughput: -1, uploadThroughput: -1 });
+  }
+  // Back online: sent on its own
+  assert.equal(await page.eval(`for (let i = 0; i < 60; i++) {
+      const key = Object.keys(localStorage).find(k => k.startsWith('flybot_outbox_'));
+      if (!key || JSON.parse(localStorage.getItem(key)).length === 0) return true;
+      await new Promise(r => setTimeout(r, 250));
+    }
+    return false;`), true);
+  assert.ok(await page.eval(`for (let i = 0; i < 40 && document.body.innerText.includes('đang chờ gửi'); i++) await new Promise(r => setTimeout(r, 250));
+    return !document.body.innerText.includes('đang chờ gửi');`), 'the bar goes away');
 });
 
 test('on a phone the pages fit the screen', { timeout: 120000 }, async () => {

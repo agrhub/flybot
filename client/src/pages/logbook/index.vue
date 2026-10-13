@@ -234,6 +234,7 @@ import { useCameras } from '@/composables/useCameras';
 import { useBreakpoints } from '@/composables/useBreakpoints';
 import { loadExcelWriter } from '@/utils/lazyLibs';
 import { ingredientSheets, downloadSheets } from '@/utils/tableExport';
+import { enqueue, newClientId, isNetworkError } from '@/composables/useOutbox';
 import PageHeader from '@/components/common/PageHeader.vue';
 import StatCard from '@/components/common/StatCard.vue';
 
@@ -381,8 +382,21 @@ const save = async () => {
   saving.value = true;
   try {
     const body = { ...form, at: new Date(form.at).toISOString(), preHarvestDays: Number.isInteger(form.preHarvestDays) ? form.preHarvestDays : null };
-    if (editingId.value) await api.updateTreatment(editingId.value, body);
-    else await api.createTreatment(body);
+    if (editingId.value) {
+      await api.updateTreatment(editingId.value, body);
+    } else {
+      // A new treatment can be recorded without signal: kept on the device and sent later
+      body.clientId = newClientId();
+      try {
+        await api.createTreatment(body, { offlineQueue: true });
+      } catch (err) {
+        if (!isNetworkError(err)) throw err;
+        enqueue('treatment', body, [t(`logbook.types.${body.type}`), body.product].filter(Boolean).join(' · '));
+        ElMessage.info(t('outbox.savedOffline'));
+        formVisible.value = false;
+        return;
+      }
+    }
     ElMessage.success(t('logbook.saved'));
     formVisible.value = false;
     load();

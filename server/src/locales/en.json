@@ -382,7 +382,8 @@
     "confirm_your_email_or_link_telegram_to_receive_the_record": "Confirm your email or link Telegram to receive the record.",
     "dates_must_be_yyyy_mm_dd": "Dates must be YYYY-MM-DD.",
     "the_period_must_end_today_at_the_latest_and_start_before_it_ends": "The period must end today at the latest and start before it ends.",
-    "the_period_can_be_at_most_a_year": "The period can be at most a year."
+    "the_period_can_be_at_most_a_year": "The period can be at most a year.",
+    "clientid_must_be_8_to_64_letters_digits_or_dashes": "clientId must be 8 to 64 letters, digits or dashes."
   },
   "reportPdf": {
     "range": "Period: {from} - {to} ({days} days)",

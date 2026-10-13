@@ -28,6 +28,8 @@ node shoot.mjs shots all vi
 node record.mjs shots video vi
 ```
 
+Ports 3013 and 3010 are taken? Set `DEMO_API_PORT` and `DEMO_CLIENT_PORT` for all the scripts.
+
 For English, restart step 1 with `DEMO_LANG=en`, then run `node shoot.mjs shots-en all en` and `node record.mjs shots-en video en`.
 
 For a sharp product tour, take its screenshots at twice the resolution (`FLYBOT_SHOT_SCALE=2 FLYBOT_SHOT_QUALITY=92 node shoot.mjs shots-2x <scenes> vi`) and record from those. `record.mjs` draws at 1920x1080 (`FLYBOT_VIDEO_SCALE`, default 1.5 x 1280x720) at 8 Mbps (`FLYBOT_VIDEO_BITRATE`); `FLYBOT_POSTER_ONLY=1` writes only the still frame.

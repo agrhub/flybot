@@ -1,4 +1,5 @@
-// Local UI demo: in-memory MongoDB, external services stubbed, seeded data. Port 3013.
+// Local UI demo: in-memory MongoDB, external services stubbed, seeded data.
+// Port 3013 (DEMO_API_PORT), for the client on 3010 (DEMO_CLIENT_PORT).
 const path = require('path');
 const fs = require('fs');
 const SERVER = path.resolve(__dirname, '../../server');
@@ -13,12 +14,14 @@ for (const file of [path.join(SERVER, '.env'), path.join(SERVER, '../.env')]) {
     }
 }
 process.env.NODE_ENV = 'development';
-process.env.PORT = '3013';
+const API_PORT = Number(process.env.DEMO_API_PORT) || 3013;
+const CLIENT_PORT = Number(process.env.DEMO_CLIENT_PORT) || 3010;
+process.env.PORT = String(API_PORT);
 process.env.JWT_SECRET = 'demo-secret-'.padEnd(48, 'x');
 process.env.MONGO_URI = 'mongodb://127.0.0.1:1/unused';
-process.env.CORS_ORIGINS = 'http://localhost:3010';
+process.env.CORS_ORIGINS = `http://localhost:${CLIENT_PORT}`;
 process.env.ALLOW_REGISTRATION = 'true';
-process.env.APP_BASE_URL = 'http://localhost:3010';
+process.env.APP_BASE_URL = `http://localhost:${CLIENT_PORT}`;
 process.env.SMTP_HOST = '';
 process.env.TELEGRAM_BOT_TOKEN = '';
 process.env.S3_ACCESS_KEY_ID = 'demo';
@@ -345,7 +348,7 @@ let boxesFromLayout;
     boxesFromLayout = trapImage.boxes;
     const users = await seedShowcase();
     await req('src/services/dailyStats').rebuildAll();
-    app.listen(3013, () => {
+    app.listen(API_PORT, () => {
         const tokens = {};
         for (const [k, u] of Object.entries(users)) {
             tokens[k] = {
@@ -354,6 +357,6 @@ let boxesFromLayout;
             };
         }
         fs.writeFileSync(path.join(__dirname, 'demo-tokens.json'), JSON.stringify(tokens, null, 2));
-        console.log('Demo API on :3013');
+        console.log(`Demo API on :${API_PORT}`);
     });
 })();

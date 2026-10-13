@@ -6,6 +6,7 @@ const { sendServerError } = require('../utils/http');
 const { recordAudit } = require('../services/auditService');
 const treatmentService = require('../services/treatmentService');
 const harvestService = require('../services/harvestService');
+const { readClientId, isDuplicateKey } = require('../utils/clientId');
 
 const MAX_PAGE_SIZE = 500;
 const MAX_CAMERAS = 50;
@@ -220,9 +221,22 @@ const auditTarget = (t) => ({ type: 'treatment', id: String(t._id), label: `${t.
  */
 async function createTreatment(req, res) {
     try {
+        const clientId = readClientId(req.body);
+        if (clientId.error) return sendError(res, clientId);
+        // Sent again (offline, then the signal came back): the first one stands
+        const sentBefore = async () => clientId.value && Treatment.findOne({ createdBy: req.user.id, clientId: clientId.value });
+        const existing = await sentBefore();
+        if (existing) return res.json({ success: true, duplicate: true, treatment: toClient(existing, new Set(await getViewableSerials(req.user))) });
         const result = await validateInput(req.body || {}, req.user);
         if (result.error) return sendError(res, result);
-        const treatment = await Treatment.create({ ...result.value, createdBy: req.user.id, createdByEmail: req.user.email });
+        let treatment;
+        try {
+            treatment = await Treatment.create({ ...result.value, clientId: clientId.value, createdBy: req.user.id, createdByEmail: req.user.email });
+        } catch (err) {
+            // Two sends at the same moment: the other one won
+            if (!isDuplicateKey(err)) throw err;
+            return res.json({ success: true, duplicate: true, treatment: toClient(await sentBefore(), new Set(await getViewableSerials(req.user))) });
+        }
         recordAudit(req, { action: 'treatment.created', target: auditTarget(treatment), details: { cameras: treatment.cameraSerials, at: treatment.at.toISOString() } });
         const visible = new Set(await getViewableSerials(req.user));
         res.status(201).json({ success: true, treatment: toClient(treatment, visible) });

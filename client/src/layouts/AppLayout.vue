@@ -27,6 +27,26 @@
         :title="savedAt ? t('offline.savedCopy', { time: formatSavedAt(savedAt) }) : t('offline.noSignal')"
       />
 
+      <!-- Field work recorded without signal, waiting to be sent -->
+      <el-alert
+        v-if="outboxItems.length"
+        :type="outboxFailed.length ? 'warning' : 'info'"
+        :closable="false"
+        show-icon
+        class="verify-banner shrink-0"
+      >
+        <template #title>
+          <span class="inline-flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span>{{ t('outbox.waiting', { count: outboxPending.length }, outboxPending.length) }}</span>
+            <el-button v-if="outboxPending.length" link type="primary" size="small" :loading="outboxSending" @click="sendOutbox">{{ t('outbox.sendNow') }}</el-button>
+          </span>
+        </template>
+        <div v-for="item in outboxFailed" :key="item.id" class="flex flex-wrap items-center gap-x-2 text-xs mt-1">
+          <span>{{ t('outbox.refused', { label: item.label, reason: item.error }) }}</span>
+          <el-button link type="danger" size="small" @click="removeOutboxItem(item.id)">{{ t('outbox.remove') }}</el-button>
+        </div>
+      </el-alert>
+
       <!-- Email confirmation reminder (alert emails need a confirmed address) -->
       <el-alert
         v-if="user && user.emailVerified === false"
@@ -94,6 +114,7 @@ import { useCameras } from '@/composables/useCameras';
 import { useBreakpoints } from '@/composables/useBreakpoints';
 import { useNotifications } from '@/composables/useNotifications';
 import { useOffline } from '@/composables/useOffline';
+import { useOutbox } from '@/composables/useOutbox';
 
 import AppSidebar from '@/components/layout/AppSidebar.vue';
 import MobileTabBar from '@/components/layout/MobileTabBar.vue';
@@ -109,6 +130,11 @@ const { initTheme } = useTheme();
 const { t, locale } = useI18n();
 const { user, refreshUser } = useAuth();
 const { offline, savedAt } = useOffline();
+const { items: outboxItems, pending: outboxPending, failed: outboxFailed, sending: outboxSending, flush: flushOutbox, removeItem: removeOutboxItem, reload: reloadOutbox } = useOutbox();
+const sendOutbox = async () => {
+  const sent = await flushOutbox();
+  if (sent) ElNotification({ title: t('common.success'), message: t('outbox.sent', { count: sent }, sent), type: 'success', duration: 3000 });
+};
 const formatSavedAt = (iso) => new Date(iso).toLocaleString(locale.value === 'vi' ? 'vi-VN' : 'en-GB', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
 const resending = ref(false);
 
@@ -165,6 +191,9 @@ const stopListening = useNotifications().onNotification((n) => {
 onUnmounted(stopListening);
 
 onMounted(() => {
+  // The person may have changed since the module loaded (sign in): their own queue, then send it
+  reloadOutbox();
+  sendOutbox();
   setTimeout(() => useAppTour().startIfNew(), 1500);
   const user = localStorage.getItem('user');
   if (!user) {

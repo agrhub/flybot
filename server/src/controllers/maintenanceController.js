@@ -4,6 +4,7 @@ const { MAINTENANCE_TYPES } = require('../models/MaintenanceEvent');
 const { findViewableCamera, findManageableCamera } = require('../utils/ownership');
 const { sendServerError } = require('../utils/http');
 const maintenanceService = require('../services/maintenanceService');
+const { readClientId, isDuplicateKey } = require('../utils/clientId');
 
 const MAX_LIST = 100;
 // Back-dating is allowed (entered later), but not into the future or years back
@@ -61,10 +62,22 @@ async function addEvent(req, res) {
                 return res.status(400).json({ success: false, message: "Invalid date (up to 90 days back, not in the future)." });
             }
         }
+        const clientId = readClientId(req.body);
+        if (clientId.error) return res.status(400).json({ success: false, message: clientId.error });
         const camera = await findManageableCamera(req.user, req.body.deviceSerial);
         if (!camera) return res.status(404).json({ success: false, message: "Camera not found or you cannot manage it." });
 
-        const event = await maintenanceService.recordEvent({ deviceSerial: camera.deviceSerial, type, at, note, user: req.user });
+        // Sent again (offline, then the signal came back): the first one stands
+        const sentBefore = () => clientId.value && MaintenanceEvent.findOne({ userId: req.user.id, clientId: clientId.value });
+        const existing = await sentBefore();
+        if (existing) return res.json({ success: true, duplicate: true, event: toClient(existing) });
+        let event;
+        try {
+            event = await maintenanceService.recordEvent({ deviceSerial: camera.deviceSerial, type, at, note, user: req.user, clientId: clientId.value });
+        } catch (err) {
+            if (!isDuplicateKey(err)) throw err;
+            return res.json({ success: true, duplicate: true, event: toClient(await sentBefore()) });
+        }
         res.status(201).json({ success: true, event: toClient(event) });
     } catch (err) {
         sendServerError(res, err, { context: 'Add maintenance' });

@@ -16,11 +16,14 @@ const maintenanceEventSchema = new mongoose.Schema({
     source: { type: String, enum: ['manual', 'detected'], default: 'manual' },
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     userEmail: { type: String, default: '' },
+    // Set by the app for an event saved offline and sent later (utils/clientId.js)
+    clientId: { type: String, default: undefined },
     createdAt: { type: Date, default: Date.now }
 });
 
 maintenanceEventSchema.index({ deviceSerial: 1, at: -1 });
 maintenanceEventSchema.index({ deviceSerial: 1, type: 1, at: -1 });
+maintenanceEventSchema.index({ userId: 1, clientId: 1 }, { unique: true, partialFilterExpression: { clientId: { $type: 'string' } } });
 
 const MaintenanceEvent = mongoose.model('MaintenanceEvent', maintenanceEventSchema);
 
