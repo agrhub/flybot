@@ -94,6 +94,22 @@ const waitForText = (text, ms = 20000) => page.eval(`
   }
   return false;`);
 
+test('signed out, a page sends you to sign in and remembers where you were going', { timeout: 120000 }, async () => {
+  // Signed out: no token and no user, as after "Sign out"
+  const saved = await page.eval(`const saved = { token: localStorage.getItem('token'), user: localStorage.getItem('user') };
+    localStorage.removeItem('token'); localStorage.removeItem('user'); return saved;`);
+  try {
+    await page.goto(`${BASE}/logbook`, 1000);
+    const where = await page.eval(`
+      for (let i = 0; i < 120 && !location.pathname.startsWith('/auth'); i++) await new Promise(r => setTimeout(r, 250));
+      return { path: location.pathname, redirect: new URLSearchParams(location.search).get('redirect') };`);
+    assert.deepEqual(where, { path: '/auth/login', redirect: '/logbook' });
+  } finally {
+    // Signed in again for the next tests
+    await page.eval(`localStorage.setItem('token', ${JSON.stringify(saved.token)}); localStorage.setItem('user', ${JSON.stringify(saved.user)}); return true;`);
+  }
+});
+
 test('every main page opens without a script error', { timeout: 300000 }, async () => {
   const pages = ['/dashboard', '/cameras', '/analytics', '/reports', '/farms', '/logbook', '/map', '/settings?tab=notifications'];
   const problems = [];
