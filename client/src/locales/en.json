@@ -1989,7 +1989,12 @@
       "clearlyWorked": "Clear drop (30%+)",
       "last": "Last used",
       "notJudged": "Not enough data",
-      "empty": "No treatment with a product or active ingredient yet."
+      "empty": "No treatment with a product or active ingredient yet.",
+      "export": "Export Excel",
+      "sheetName": "Effect by ingredient",
+      "products": "Products",
+      "measured": "Measured uses",
+      "avgChangePct": "Average change (%)"
     }
   },
   "farms": {
@@ -2059,7 +2064,12 @@
       "treatmentsCount": "{count} treatments",
       "noPlots": "No plot with traps on this farm yet.",
       "empty": "No farm with traps to compare yet.",
-      "noCatches": "No catches in this period yet."
+      "noCatches": "No catches in this period yet.",
+      "export": "Export Excel",
+      "sheetFarms": "Farms ({days} days)",
+      "sheetPlots": "Plots",
+      "previousFtd": "Period before (flies/trap/day)",
+      "changePctCol": "Change (%)"
     }
   },
   "alertPrefs": {

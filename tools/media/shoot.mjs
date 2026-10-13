@@ -74,6 +74,12 @@ const shots = [
         b.click(); for (let i = 0; i < 40 && !document.querySelector('.dd-panel'); i++) await sleep(300);
         await sleep(1500); document.querySelectorAll('.el-notification').forEach(n => n.remove());
         document.querySelector('.dd-panel').closest('.el-card').scrollIntoView({ block: 'start' }); await sleep(600);` },
+    // The degree-day panel with the next 3 days' weather
+    { name: 'weather-outlook', url: '/dashboard', settle: 8000, action: `
+        const b = [...document.querySelectorAll('.el-card button')].find(b => b.innerText.includes(${JSON.stringify(W('Chẩn đoán lại bằng AI', 'Re-evaluate with AI'))}));
+        b.click(); for (let i = 0; i < 40 && !document.querySelector('.dd-panel'); i++) await sleep(300);
+        await sleep(1500); document.querySelectorAll('.el-notification').forEach(n => n.remove());
+        document.querySelector('.dd-panel').scrollIntoView({ block: 'start' }); window.scrollBy(0, -80); await sleep(600);` },
     { name: 'cameras', url: '/cameras', settle: 20000, action: SHOW_STILL },
     { name: 'add-camera', url: '/cameras', action: `await click('button', ${JSON.stringify(W('Thêm camera', 'Add Camera'))}, 1200);` },
     { name: 'camera-detail', url: '/cameras', action: `
@@ -153,6 +159,9 @@ const shots = [
         link.click(); await sleep(5000);`, settle: 2000 },
     { name: 'map', url: '/map', settle: 6000 },
     { name: 'logbook', url: '/logbook', settle: 3000 },
+    { name: 'logbook-ingredients', url: '/logbook', settle: 5000, action: `
+        const card = [...document.querySelectorAll('.el-card')].find(c => c.innerText.includes(${JSON.stringify(W('Hiệu quả theo hoạt chất', 'Effect by active ingredient'))}));
+        card.scrollIntoView({ block: 'start' }); window.scrollBy(0, -80); await sleep(600);` },
     { name: 'notifications', url: '/dashboard', action: `
         const bell = [...document.querySelectorAll('header button, .el-badge')].find(b => b.querySelector('svg') && (b.getAttribute('aria-label') || '').toLowerCase().includes(${JSON.stringify(W('thông báo', 'notification'))})) || document.querySelector('.el-badge');
         bell.click(); await sleep(1500);` },

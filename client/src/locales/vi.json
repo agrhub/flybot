@@ -1989,7 +1989,12 @@
       "clearlyWorked": "Giảm rõ (từ 30%)",
       "last": "Lần gần nhất",
       "notJudged": "Chưa đủ dữ liệu",
-      "empty": "Chưa có lần xử lý nào ghi tên thuốc hoặc hoạt chất."
+      "empty": "Chưa có lần xử lý nào ghi tên thuốc hoặc hoạt chất.",
+      "export": "Xuất Excel",
+      "sheetName": "Hiệu quả theo hoạt chất",
+      "products": "Tên thuốc",
+      "measured": "Số lần đo được",
+      "avgChangePct": "Thay đổi trung bình (%)"
     }
   },
   "farms": {
@@ -2059,7 +2064,12 @@
       "treatmentsCount": "{count} lần xử lý",
       "noPlots": "Vườn này chưa có lô nào gắn bẫy.",
       "empty": "Chưa có vườn nào gắn bẫy để so sánh.",
-      "noCatches": "Chưa có số ruồi trong kỳ này."
+      "noCatches": "Chưa có số ruồi trong kỳ này.",
+      "export": "Xuất Excel",
+      "sheetFarms": "Vườn ({days} ngày)",
+      "sheetPlots": "Lô",
+      "previousFtd": "Kỳ trước (ruồi/bẫy/ngày)",
+      "changePctCol": "Thay đổi (%)"
     }
   },
   "alertPrefs": {

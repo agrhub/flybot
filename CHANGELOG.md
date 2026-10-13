@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Exports
+- **Export Excel** for the farm comparison (a sheet for farms, one for plots) and for the effect by active ingredient, for cooperatives to send on.
+
 ### FlyBot assistant
 - Also answers which active ingredients worked best, how the farms compare, and whether the next 3 days suit fruit flies.
 
