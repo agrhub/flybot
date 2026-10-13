@@ -969,7 +969,7 @@
           "ask": {
             "title": "Hỏi bằng lời",
             "desc": "Bấm nút \"Trợ lý\" ở góc trên để mở trợ lý; menu trái tự thu gọn cho rộng chỗ.",
-            "items": "Hỏi như nói chuyện: \"Bẫy nào nặng nhất?\", \"Tuần này so với tuần trước?\", \"Hôm nay có cảnh báo gì?\", \"Lần phun tuần trước có hiệu quả không?\", \"Tóm tắt báo cáo mùa vụ\".\nTrợ lý tự tra số liệu thật của bạn trước khi trả lời, dùng cùng cách tính ruồi vào bẫy như các trang khác.\nTrợ lý chỉ thấy camera và báo cáo bạn được xem; quản trị viên hỏi được cả tình trạng luồng chụp ảnh.\nTrợ lý có thể mở đúng trang hoặc tab bạn cần, chụp ảnh mới từ camera, hoặc gửi một báo cáo PDF về email của bạn."
+            "items": "Hỏi như nói chuyện: \"Bẫy nào nặng nhất?\", \"Tuần này so với tuần trước?\", \"Hôm nay có cảnh báo gì?\", \"Lần phun tuần trước có hiệu quả không?\", \"Tóm tắt báo cáo mùa vụ\".\nTrợ lý tự tra số liệu thật của bạn trước khi trả lời, dùng cùng cách tính ruồi vào bẫy như các trang khác.\nTrợ lý chỉ thấy camera và báo cáo bạn được xem; quản trị viên hỏi được cả tình trạng luồng chụp ảnh.\nTrợ lý có thể mở đúng trang hoặc tab bạn cần, chụp ảnh mới từ camera, hoặc gửi một báo cáo PDF về email của bạn.\nHỏi thêm được: \"thuốc nào hiệu quả nhất ở vườn tôi?\", \"vườn nào đang nặng nhất?\", \"3 ngày tới thời tiết có thuận lợi cho ruồi không?\"."
           },
           "cards": {
             "title": "Câu trả lời kèm ảnh và biểu đồ",

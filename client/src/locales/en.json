@@ -969,7 +969,7 @@
           "ask": {
             "title": "Ask in plain words",
             "desc": "Press \"Assistant\" at the top to open it; the left menu folds to make room.",
-            "items": "Ask as you would a colleague: \"Which trap is worst?\", \"This week compared with last week?\", \"Any alerts today?\", \"Did last week's spray work?\", \"Summarize the season report\".\nThe assistant looks up your real figures before answering, counting catches the same way as the other pages.\nIt only sees the cameras and reports you may see; administrators can also ask about the capture pipeline.\nIt can open the page or tab you need, take a new photo from a camera, or email a report as a PDF to you."
+            "items": "Ask as you would a colleague: \"Which trap is worst?\", \"This week compared with last week?\", \"Any alerts today?\", \"Did last week's spray work?\", \"Summarize the season report\".\nThe assistant looks up your real figures before answering, counting catches the same way as the other pages.\nIt only sees the cameras and reports you may see; administrators can also ask about the capture pipeline.\nIt can open the page or tab you need, take a new photo from a camera, or email a report as a PDF to you.\nYou can also ask: \"which spray works best on my farm?\", \"which farm is worst right now?\", \"will the next 3 days suit fruit flies?\"."
           },
           "cards": {
             "title": "Answers with photos and charts",
