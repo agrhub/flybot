@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.3.0 (2026-10-13)
 
 ### Works without signal
 - A treatment in the Field log or a card change recorded without signal is kept on the device and sent when the network is back; a bar at the top shows what is waiting, and anything the server refused with its reason. Each carries an id, so a send that did arrive but lost its answer is never recorded twice.
@@ -18,6 +18,7 @@
 - Trap cards, map entries, notifications, report cards and photos open from the keyboard (Tab, then Enter or Space) and show where the focus is; the Settings menu and the avatar upload are one control each.
 - The recording timeline is a slider: arrows play the previous or next clip, Page Up / Down jump an hour, Home / End go to the first or last clip.
 - The sidebar tag under the logo is a short description in the chosen language ("Giám sát côn trùng" / "Insect monitoring") instead of "STUDIO".
+- The guide pictures and both tour videos show the new colors.
 
 ## 1.2.0 (2026-10-13)
 
