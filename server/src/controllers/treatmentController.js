@@ -139,12 +139,19 @@ async function listTreatments(req, res) {
 
         // Effect summary per row (small queries on the daily rollup); skipped for big exports
         const withEffect = req.query.effect === '1' && limit <= 50;
-        const treatments = await Promise.all(items.map(async (t) => {
+        // The page's rollup read once for all its rows
+        let data = null;
+        if (withEffect && items.length) {
+            const serials = [...new Set(items.flatMap(t => t.cameraSerials.filter(sr => visible.has(sr))))];
+            const now = new Date();
+            const keys = items.map(t => treatmentService.effectRange(t, treatmentService.DEFAULT_WINDOW_DAYS, now));
+            data = await treatmentService.loadEffectData(serials, keys.map(k => k.fromKey).sort()[0], keys.map(k => k.toKey).sort().at(-1));
+        }
+        const treatments = items.map((t) => {
             if (!withEffect) return toClient(t, visible);
-            const serials = t.cameraSerials.filter(s => visible.has(s));
-            const effect = await treatmentService.effectOf(t, serials);
+            const effect = treatmentService.computeEffect(t, t.cameraSerials.filter(sr => visible.has(sr)), data);
             return toClient(t, visible, { status: effect.status, changePct: effect.changePct, before: effect.before, after: effect.after });
-        }));
+        });
         res.json({ success: true, total, page, limit, treatments });
     } catch (err) {
         sendServerError(res, err, { context: 'List treatments' });
