@@ -1,6 +1,6 @@
 # Changelog
 
-## 2026-10-12
+## 1.1.0 (2026-10-13)
 
 ### Catches and alerts
 - Counts are now **flies caught per day** and **flies per trap per day** instead of the running total on the card. Each camera is a sticky trap (glue card: the day's rise) or a lure trap (no glue: the average per photo); days with a card change are left out.
@@ -20,6 +20,9 @@
 - **Monthly VietGAP record**: turn it on under Settings, Notifications to get last month's pesticide use record as a PDF on the 1st at 07:00, by email and on Telegram. **Email last month** in the Field log sends it right away.
 - **Pre-harvest intervals**: the overview lists areas still inside the interval after a treatment, with the time harvest is allowed; that morning at 06:00 everyone who sees the traps gets an **OK to harvest** notice in the app, by email, Telegram, push and webhook (`harvest_ready`).
 - **Effect by active ingredient**: the Field log sums up every use of each active ingredient (or product): average change in flies per trap per day in the 7 days after, and how many uses clearly worked (a drop of 30% or more).
+
+### Farms
+- **Compare farms** at the top of Farms: each farm's flies per trap per day over 7, 30 or 90 days against the period before, a line per farm, its worst plot and its treatments; a row opens to its plots. For a cooperative that follows several growers.
 
 ### Weather outlook
 - The degree-day panel shows the next 3 days with temperature, humidity and rain, and which of them suit fruit flies (25–33°C, humid, no heavy rain).
@@ -52,3 +55,11 @@
 - `node deploy/deploy-cloudrun.js --check` reports what `.env` provides for production without calling gcloud.
 - Cloud Run settings are generated from `.env` on every deploy; `deploy/cloudrun.env.yaml` is only the template.
 - `GOOGLE_APPLICATION_CREDENTIALS` tolerates stray quotes and falls back to `gcp-service-account.json`.
+- The deploy stops if a tour video is only a Git LFS pointer (a checkout without git-lfs).
+
+### Development
+- Tests for the web app: Vitest unit and component tests (translations checked for missing keys and placeholders), and an end-to-end smoke test that opens every page of the demo in headless Chrome.
+- GitHub Actions CI on every push and pull request: server tests, web app tests and build, end-to-end; failed tests show as annotations. Dependabot opens weekly update pull requests.
+- Server tests never read the real `.env` (a guard test checks every test file).
+- Tour videos and decks are stored in Git LFS.
+- Test and build tools upgraded: `npm audit` reports no known vulnerability.
