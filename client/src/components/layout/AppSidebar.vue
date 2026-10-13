@@ -12,7 +12,7 @@
               <img src="/logo.png" alt="FlyBot Logo" class="w-9 h-9 rounded-lg object-contain shrink-0" />
               <div class="min-w-0">
                 <div class="sidebar-brand truncate">{{ t('common.brandName') }}</div>
-                <div class="sidebar-tag truncate">{{ t('common.studioTag') }}</div>
+                <div class="sidebar-tag truncate">{{ t('common.tagline') }}</div>
               </div>
             </div>
             <el-tooltip :content="t('common.collapse')" placement="right" :show-after="100">

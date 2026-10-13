@@ -75,7 +75,7 @@ const footerLinks = {
           <!-- Language Selector -->
           <LanguageSelect />
 
-          <!-- Sign In / Studio Access -->
+          <!-- Sign in / open the app -->
           <router-link :to="isAuthenticated ? '/dashboard' : '/auth/login'">
             <button class="bg-[#3ecf8e] text-[#002112] px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider hover:bg-white hover:text-black transition-all shadow-sm cursor-pointer">
               {{ isAuthenticated ? t('nav.dashboard') : t('nav.signIn') }}
@@ -122,7 +122,7 @@ const footerLinks = {
         <div class="space-y-3 md:col-span-2">
           <div class="flex items-center gap-2">
             <img src="/logo.png" alt="FlyBot Logo" class="h-6 w-auto object-contain" />
-            <span class="font-bold text-base text-[var(--el-text-color-primary)]">FlyBot Studio</span>
+            <span class="font-bold text-base text-[var(--el-text-color-primary)]">FlyBot</span>
           </div>
           <p class="text-xs max-w-sm leading-relaxed text-[var(--el-text-color-secondary)]">
             {{ t('footer.tagline') }}

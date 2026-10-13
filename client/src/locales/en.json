@@ -1,8 +1,7 @@
 {
   "common": {
-    "brandStudio": "FlyBot Studio",
     "brandName": "FlyBot",
-    "studioTag": "STUDIO",
+    "tagline": "Insect monitoring",
     "collapse": "Collapse Sidebar",
     "expand": "Expand Sidebar",
     "profile": "Profile Settings",
@@ -420,7 +419,9 @@
     "nextDay": "Next day",
     "noClips": "No recordings on this day",
     "zoomIn": "Zoom in",
-    "zoomOut": "Zoom out"
+    "zoomOut": "Zoom out",
+    "timeline": "Recording timeline of the day (arrows: previous/next clip, Page Up/Down: one hour)",
+    "timelineIdle": "No clip playing"
   },
   "analytics": {
     "title": "AI Analytics & Detection History",

@@ -325,7 +325,8 @@ body {
 }
 
 /* Cards and rows that open something are reached with Tab: show where the focus is */
-[role="button"][tabindex]:focus-visible {
+[role="button"][tabindex]:focus-visible,
+[role="slider"][tabindex]:focus-visible {
   outline: 2px solid var(--el-color-primary);
   outline-offset: 2px;
 }

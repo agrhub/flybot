@@ -30,7 +30,8 @@
             role="button"
             tabindex="0"
             @click="playClip(clip)"
-            @keyup.enter="playClip(clip)"
+            @keydown.enter.prevent="playClip(clip)"
+            @keydown.space.prevent="playClip(clip)"
           >
             <div class="playback__thumb">
               <el-image v-if="clip.thumb" :src="clip.thumb" alt="" fit="cover" class="w-full h-full" lazy />
@@ -50,7 +51,15 @@
           <div
             class="playback__timeline"
             :style="{ width: `${zoom * 100}%` }"
+            role="slider"
+            tabindex="0"
+            :aria-label="t('cameras.timeline')"
+            aria-valuemin="0"
+            aria-valuemax="1439"
+            :aria-valuenow="playing ? minuteOf(playing.start) : undefined"
+            :aria-valuetext="playing ? formatTime(playing.start) : t('cameras.timelineIdle')"
             @click="onTimelineClick"
+            @keydown="onTimelineKey"
           >
             <div
               v-for="clip in clips"
@@ -213,6 +222,35 @@ const onTimelineClick = (event) => {
   const at = new Date(dayStart.value.getTime() + ((event.clientX - rect.left) / rect.width) * 86400000);
   const clip = clips.value.find(c => c.start <= at && c.end >= at) || clips.value.find(c => c.start >= at);
   if (clip) playClip(clip);
+};
+
+const minuteOf = (date) => Math.round((date - dayStart.value) / 60000);
+
+// Keyboard on the timeline: arrows go to the previous / next clip, Page Up / Down an hour,
+// Home / End the first / last clip of the day
+const TIMELINE_KEYS = ['ArrowRight', 'ArrowUp', 'ArrowLeft', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End'];
+const onTimelineKey = (event) => {
+  const list = clips.value;
+  if (!list.length || !TIMELINE_KEYS.includes(event.key)) return;
+  event.preventDefault();
+  const i = playing.value ? list.findIndex(c => c.key === playing.value.key) : -1;
+  const later = list[Math.min(list.length - 1, i + 1)];
+  const earlier = list[i < 0 ? list.length - 1 : Math.max(0, i - 1)];
+  const hourAway = (hours) => {
+    const at = new Date((playing.value?.start || dayStart.value).getTime() + hours * 3600000);
+    return hours > 0 ? list.find(c => c.start >= at) : list.findLast(c => c.start <= at);
+  };
+  const next = {
+    ArrowRight: later,
+    ArrowUp: later,
+    ArrowLeft: earlier,
+    ArrowDown: earlier,
+    PageUp: hourAway(1),
+    PageDown: hourAway(-1),
+    Home: list[0],
+    End: list.at(-1)
+  }[event.key];
+  if (next && next.key !== playing.value?.key) playClip(next);
 };
 
 const setZoom = async (direction) => {

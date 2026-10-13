@@ -1,8 +1,7 @@
 {
   "common": {
-    "brandStudio": "FlyBot Studio",
     "brandName": "FlyBot",
-    "studioTag": "STUDIO",
+    "tagline": "Giám sát côn trùng",
     "collapse": "Thu gọn menu",
     "expand": "Mở rộng menu",
     "profile": "Thông tin tài khoản",
@@ -420,7 +419,9 @@
     "nextDay": "Ngày sau",
     "noClips": "Không có bản ghi trong ngày này",
     "zoomIn": "Phóng to",
-    "zoomOut": "Thu nhỏ"
+    "zoomOut": "Thu nhỏ",
+    "timeline": "Dòng thời gian ghi hình trong ngày (mũi tên: đoạn trước/sau, Page Up/Down: 1 giờ)",
+    "timelineIdle": "Chưa phát đoạn nào"
   },
   "analytics": {
     "title": "Báo Cáo & Lịch Sử Nhận Dạng AI",

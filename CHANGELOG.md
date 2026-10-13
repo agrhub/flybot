@@ -16,6 +16,8 @@
 - Light mode uses deeper theme colors (green, amber, red, grey) so text reaches 4.5:1 contrast; in dark mode, text on the mint green is dark.
 - Icon-only buttons, switches, drop-downs and progress bars have names a screen reader reads out; the page language follows the chosen language.
 - Trap cards, map entries, notifications, report cards and photos open from the keyboard (Tab, then Enter or Space) and show where the focus is; the Settings menu and the avatar upload are one control each.
+- The recording timeline is a slider: arrows play the previous or next clip, Page Up / Down jump an hour, Home / End go to the first or last clip.
+- The sidebar tag under the logo is a short description in the chosen language ("Giám sát côn trùng" / "Insect monitoring") instead of "STUDIO".
 
 ## 1.2.0 (2026-10-13)
 
