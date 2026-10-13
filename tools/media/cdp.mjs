@@ -14,7 +14,9 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 // keepProfile: reuse the previous run's profile (service worker, caches); args: extra Chrome flags
 export async function launch({ keepProfile = false, args = [] } = {}) {
     if (!keepProfile) fs.rmSync(PROFILE, { recursive: true, force: true, maxRetries: 10, retryDelay: 300 });
-    const proc = spawn(CHROME, [...args,
+    // FLYBOT_CHROME_ARGS: extra flags from the environment (e.g. --no-sandbox on CI runners)
+    const extra = (process.env.FLYBOT_CHROME_ARGS || '').split(' ').filter(Boolean);
+    const proc = spawn(CHROME, [...extra, ...args,
         '--headless=new', `--remote-debugging-port=${PORT}`, `--user-data-dir=${PROFILE}`,
         '--no-first-run', '--no-default-browser-check', '--hide-scrollbars', '--mute-audio',
         '--disable-extensions', '--disable-background-networking', '--disable-sync',
