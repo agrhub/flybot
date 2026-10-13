@@ -17,7 +17,7 @@
         </el-empty>
       </el-card>
       <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        <el-card v-for="farm in farms" :key="farm.id" shadow="hover" class="cursor-pointer" @click="router.push(`/farms/${farm.id}`)">
+        <el-card v-for="farm in farms" :key="farm.id" shadow="hover" class="cursor-pointer" @click="router.push(`/farms/${farm.id}`)" @keydown.enter.prevent="router.push(`/farms/${farm.id}`)" @keydown.space.prevent="router.push(`/farms/${farm.id}`)" role="button" tabindex="0">
           <div class="flex items-start justify-between gap-3">
             <div class="min-w-0">
               <div class="farm-title truncate">{{ farm.name }}</div>

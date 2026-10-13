@@ -13,10 +13,10 @@
           @input="debouncedLoad"
           @clear="load"
         />
-        <el-select v-model="roleFilter" :placeholder="t('admin.users.allRoles')" clearable class="!w-44" @change="reload">
+        <el-select :aria-label="t('admin.users.role')" v-model="roleFilter" :placeholder="t('admin.users.allRoles')" clearable class="!w-44" @change="reload">
           <el-option v-for="r in ROLES" :key="r" :label="t(`roles.${r}`)" :value="r" />
         </el-select>
-        <el-select v-model="statusFilter" :placeholder="t('admin.users.allStatuses')" clearable class="!w-48" @change="reload">
+        <el-select :aria-label="t('admin.users.status')" v-model="statusFilter" :placeholder="t('admin.users.allStatuses')" clearable class="!w-48" @change="reload">
           <el-option value="unverified" :label="t('admin.users.unverified')" />
           <el-option value="disabled" :label="t('admin.users.disabled')" />
         </el-select>
@@ -55,7 +55,7 @@
 
         <el-table-column :label="t('admin.users.role')" width="150">
           <template #default="{ row }">
-            <el-select
+            <el-select :aria-label="t('admin.users.role')"
               :model-value="row.role"
               size="small"
               :disabled="row.id === authUser?.id || saving === row.id"
@@ -87,14 +87,14 @@
         <el-table-column width="160" align="right" fixed="right">
           <template #default="{ row }">
             <el-tooltip v-if="!row.emailVerified" :content="t('admin.users.verifyEmail')" placement="top">
-              <el-button link type="primary" :icon="CircleCheck" :loading="saving === row.id" @click="verifyEmail(row)" />
+              <el-button :aria-label="t('admin.users.verifyEmail')" link type="primary" :icon="CircleCheck" :loading="saving === row.id" @click="verifyEmail(row)" />
             </el-tooltip>
             <template v-if="row.id !== authUser?.id">
               <el-button link :type="row.disabled ? 'primary' : 'warning'" :loading="saving === row.id" @click="toggleDisabled(row)">
                 {{ row.disabled ? t('admin.users.enable') : t('admin.users.disable') }}
               </el-button>
               <el-tooltip :content="t('admin.users.delete')" placement="top">
-                <el-button link type="danger" :icon="Delete" @click="removeUser(row)" />
+                <el-button :aria-label="t('admin.users.delete')" link type="danger" :icon="Delete" @click="removeUser(row)" />
               </el-tooltip>
             </template>
           </template>

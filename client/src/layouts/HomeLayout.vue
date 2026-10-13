@@ -47,7 +47,7 @@ function handleNavClick(href, e) {
       <div class="flex items-center space-x-8">
         <router-link to="/" class="flex items-center gap-2.5 text-xl font-bold tracking-tight text-[var(--el-text-color-primary)]">
           <img src="/logo.png" alt="FlyBot Logo" class="h-8 w-auto object-contain" />
-          <span class="tracking-tight font-extrabold text-[#3ecf8e]">FlyBot</span>
+          <span class="tracking-tight font-extrabold text-[var(--el-color-primary)]">FlyBot</span>
         </router-link>
         <nav class="hidden md:flex space-x-6 text-[11px] font-semibold uppercase tracking-widest text-[var(--el-text-color-secondary)]">
           <a
@@ -73,6 +73,7 @@ function handleNavClick(href, e) {
         <!-- Dark/Light Theme Switch -->
         <el-switch
           v-model="isDark"
+          :aria-label="t('common.darkTheme')"
           :active-icon="Moon"
           :inactive-icon="Sunny"
           inline-prompt
@@ -93,7 +94,7 @@ function handleNavClick(href, e) {
         <div class="md:hidden">
           <el-dropdown trigger="click" @command="handleNavClick">
             <button
-              class="w-8 h-8 rounded-xl border border-[var(--el-border-color)] bg-[var(--el-card-bg-color)] flex items-center justify-center text-[var(--el-text-color-regular)] hover:text-[#3ecf8e] transition-all cursor-pointer shadow-sm"
+              class="w-8 h-8 rounded-xl border border-[var(--el-border-color)] bg-[var(--el-card-bg-color)] flex items-center justify-center text-[var(--el-text-color-regular)] hover:text-[var(--el-color-primary)] transition-all cursor-pointer shadow-sm"
               :aria-label="t('nav.mainNavigation')"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -106,20 +107,20 @@ function handleNavClick(href, e) {
                   v-for="link in headerNavLinks"
                   :key="link.href"
                   :command="link.href"
-                  class="!rounded-xl !py-2.5 !px-4 text-xs font-semibold uppercase tracking-wider text-[var(--el-text-color-primary)] hover:!text-[#3ecf8e]"
+                  class="!rounded-xl !py-2.5 !px-4 text-xs font-semibold uppercase tracking-wider text-[var(--el-text-color-primary)] hover:!text-[var(--el-color-primary)]"
                 >
                   {{ t(link.key) }}
                 </el-dropdown-item>
                 <el-dropdown-item
                   divided
                   command="/privacy"
-                  class="!rounded-xl !py-2.5 !px-4 text-xs font-semibold uppercase tracking-wider text-[var(--el-text-color-secondary)] hover:!text-[#3ecf8e]"
+                  class="!rounded-xl !py-2.5 !px-4 text-xs font-semibold uppercase tracking-wider text-[var(--el-text-color-secondary)] hover:!text-[var(--el-color-primary)]"
                 >
                   {{ t('nav.privacy') }}
                 </el-dropdown-item>
                 <el-dropdown-item
                   command="/terms"
-                  class="!rounded-xl !py-2.5 !px-4 text-xs font-semibold uppercase tracking-wider text-[var(--el-text-color-secondary)] hover:!text-[#3ecf8e]"
+                  class="!rounded-xl !py-2.5 !px-4 text-xs font-semibold uppercase tracking-wider text-[var(--el-text-color-secondary)] hover:!text-[var(--el-color-primary)]"
                 >
                   {{ t('nav.terms') }}
                 </el-dropdown-item>
@@ -143,7 +144,7 @@ function handleNavClick(href, e) {
           <div class="md:col-span-4 space-y-4">
             <div class="flex items-center gap-2.5">
               <img src="/logo.png" alt="FlyBot Logo" class="h-7 w-auto object-contain" />
-              <span class="text-2xl font-bold tracking-tight text-[#3ecf8e]">FlyBot</span>
+              <span class="text-2xl font-bold tracking-tight text-[var(--el-color-primary)]">FlyBot</span>
             </div>
             <p class="text-sm text-[var(--el-text-color-secondary)] max-w-xs leading-relaxed">
               {{ t('footer.tagline') }}
@@ -152,32 +153,32 @@ function handleNavClick(href, e) {
 
           <!-- Product Links -->
           <div class="md:col-span-2">
-            <h4 class="text-[10px] font-bold uppercase tracking-widest mb-6 text-[#3ecf8e]/80">{{ t('footer.product') }}</h4>
+            <h4 class="text-[10px] font-bold uppercase tracking-widest mb-6 text-[var(--el-color-primary)]/80">{{ t('footer.product') }}</h4>
             <ul class="space-y-3 text-sm text-[var(--el-text-color-secondary)]">
-              <li><a href="/#engine" @click="(e) => handleNavClick('/#engine', e)" class="hover:text-[#3ecf8e] transition-colors cursor-pointer">{{ t('nav.capabilities') || t('nav.engine') }}</a></li>
-              <li><a href="/#pricing" @click="(e) => handleNavClick('/#pricing', e)" class="hover:text-[#3ecf8e] transition-colors cursor-pointer">{{ t('nav.pricing') }}</a></li>
-              <li><a href="/#gallery" @click="(e) => handleNavClick('/#gallery', e)" class="hover:text-[#3ecf8e] transition-colors cursor-pointer">{{ t('nav.showcase') || t('nav.gallery') }}</a></li>
-              <li><router-link to="/manual" class="hover:text-[#3ecf8e] transition-colors">{{ t('nav.manual') }}</router-link></li>
+              <li><a href="/#engine" @click="(e) => handleNavClick('/#engine', e)" class="hover:text-[var(--el-color-primary)] transition-colors cursor-pointer">{{ t('nav.capabilities') || t('nav.engine') }}</a></li>
+              <li><a href="/#pricing" @click="(e) => handleNavClick('/#pricing', e)" class="hover:text-[var(--el-color-primary)] transition-colors cursor-pointer">{{ t('nav.pricing') }}</a></li>
+              <li><a href="/#gallery" @click="(e) => handleNavClick('/#gallery', e)" class="hover:text-[var(--el-color-primary)] transition-colors cursor-pointer">{{ t('nav.showcase') || t('nav.gallery') }}</a></li>
+              <li><router-link to="/manual" class="hover:text-[var(--el-color-primary)] transition-colors">{{ t('nav.manual') }}</router-link></li>
             </ul>
           </div>
 
           <!-- Resources Links -->
           <div class="md:col-span-2">
-            <h4 class="text-[10px] font-bold uppercase tracking-widest mb-6 text-[#3ecf8e]/80">{{ t('footer.resources') }}</h4>
+            <h4 class="text-[10px] font-bold uppercase tracking-widest mb-6 text-[var(--el-color-primary)]/80">{{ t('footer.resources') }}</h4>
             <ul class="space-y-3 text-sm text-[var(--el-text-color-secondary)]">
-              <li><router-link to="/manual" class="hover:text-[#3ecf8e] transition-colors">{{ t('nav.helpCenter') }}</router-link></li>
-              <li><router-link to="/contact" class="hover:text-[#3ecf8e] transition-colors">{{ t('nav.contact') }}</router-link></li>
-              <li><router-link to="/manual?tab=integrations" class="hover:text-[#3ecf8e] transition-colors">{{ t('nav.apiDocs') }}</router-link></li>
+              <li><router-link to="/manual" class="hover:text-[var(--el-color-primary)] transition-colors">{{ t('nav.helpCenter') }}</router-link></li>
+              <li><router-link to="/contact" class="hover:text-[var(--el-color-primary)] transition-colors">{{ t('nav.contact') }}</router-link></li>
+              <li><router-link to="/manual?tab=integrations" class="hover:text-[var(--el-color-primary)] transition-colors">{{ t('nav.apiDocs') }}</router-link></li>
             </ul>
           </div>
 
           <!-- Company & Legal Links -->
           <div class="md:col-span-2">
-            <h4 class="text-[10px] font-bold uppercase tracking-widest mb-6 text-[#3ecf8e]/80">{{ t('footer.company') }}</h4>
+            <h4 class="text-[10px] font-bold uppercase tracking-widest mb-6 text-[var(--el-color-primary)]/80">{{ t('footer.company') }}</h4>
             <ul class="space-y-3 text-sm text-[var(--el-text-color-secondary)]">
-              <li><a href="/#engine" @click="(e) => handleNavClick('/#engine', e)" class="hover:text-[#3ecf8e] transition-colors cursor-pointer">{{ t('nav.about') }}</a></li>
-              <li><router-link to="/privacy" class="hover:text-[#3ecf8e] transition-colors">{{ t('footer.legal') }}</router-link></li>
-              <li><router-link to="/terms" class="hover:text-[#3ecf8e] transition-colors">{{ t('nav.terms') }}</router-link></li>
+              <li><a href="/#engine" @click="(e) => handleNavClick('/#engine', e)" class="hover:text-[var(--el-color-primary)] transition-colors cursor-pointer">{{ t('nav.about') }}</a></li>
+              <li><router-link to="/privacy" class="hover:text-[var(--el-color-primary)] transition-colors">{{ t('footer.legal') }}</router-link></li>
+              <li><router-link to="/terms" class="hover:text-[var(--el-color-primary)] transition-colors">{{ t('nav.terms') }}</router-link></li>
             </ul>
           </div>
 
@@ -187,9 +188,9 @@ function handleNavClick(href, e) {
         <div class="pt-8 border-t border-[var(--el-border-color)] flex flex-col md:flex-row justify-between items-center text-[10px] text-[var(--el-text-color-secondary)] uppercase tracking-widest">
           <p>{{ t('home.copyrightText') }}</p>
           <div class="flex space-x-6 mt-4 md:mt-0">
-            <router-link to="/privacy" class="hover:text-[#3ecf8e] transition-colors">{{ t('nav.privacy') }}</router-link>
-            <router-link to="/terms" class="hover:text-[#3ecf8e] transition-colors">{{ t('nav.terms') }}</router-link>
-            <router-link to="/contact" class="hover:text-[#3ecf8e] transition-colors">{{ t('nav.contact') }}</router-link>
+            <router-link to="/privacy" class="hover:text-[var(--el-color-primary)] transition-colors">{{ t('nav.privacy') }}</router-link>
+            <router-link to="/terms" class="hover:text-[var(--el-color-primary)] transition-colors">{{ t('nav.terms') }}</router-link>
+            <router-link to="/contact" class="hover:text-[var(--el-color-primary)] transition-colors">{{ t('nav.contact') }}</router-link>
           </div>
         </div>
       </div>

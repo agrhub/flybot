@@ -57,7 +57,7 @@
       <span class="tabbar-sheet__label">{{ t('topbar.appearance') }}</span>
       <div class="flex items-center gap-2">
         <LanguageSelect />
-        <el-button circle :icon="isDark ? Sunny : Moon" :title="isDark ? t('topbar.lightMode') : t('topbar.darkMode')" @click="toggleTheme" />
+        <el-button :aria-label="isDark ? t('topbar.lightMode') : t('topbar.darkMode')" circle :icon="isDark ? Sunny : Moon" :title="isDark ? t('topbar.lightMode') : t('topbar.darkMode')" @click="toggleTheme" />
       </div>
     </div>
   </el-drawer>

@@ -12,7 +12,7 @@
         <div class="share-label">{{ t('dashboards.share.publicTitle') }}</div>
         <p class="share-meta">{{ t('dashboards.share.publicDesc') }}</p>
       </div>
-      <el-switch :model-value="isPublic" :loading="savingVisibility" @change="setPublic" />
+      <el-switch :aria-label="t('dashboards.share.publicTitle')" :model-value="isPublic" :loading="savingVisibility" @change="setPublic" />
     </div>
 
     <div v-if="isPublic && publicUrl" class="mt-3">
@@ -66,7 +66,7 @@
       <el-table-column width="60" align="right">
         <template #default="{ row }">
           <el-tooltip :content="t('share.remove')" placement="top">
-            <el-button link type="danger" :icon="Delete" @click="removeShare(row)" />
+            <el-button :aria-label="t('share.remove')" link type="danger" :icon="Delete" @click="removeShare(row)" />
           </el-tooltip>
         </template>
       </el-table-column>

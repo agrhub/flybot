@@ -20,6 +20,8 @@ const treatmentSchema = new mongoose.Schema({
     // Pre-harvest interval in days (no harvest before at + preHarvestDays)
     preHarvestDays: { type: Number, default: null, min: 0, max: 365 },
     note: { type: String, default: '' },
+    // Set by the app for a treatment saved offline and sent later (utils/clientId.js)
+    clientId: { type: String, default: undefined },
     // When the "harvest allowed again" reminder went out (services/harvestService.js)
     harvestNotifiedAt: { type: Date, default: null },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
@@ -30,6 +32,8 @@ const treatmentSchema = new mongoose.Schema({
 
 treatmentSchema.index({ cameraSerials: 1, at: -1 });
 treatmentSchema.index({ at: -1 });
+// One record per id the app gave it, per person
+treatmentSchema.index({ createdBy: 1, clientId: 1 }, { unique: true, partialFilterExpression: { clientId: { $type: 'string' } } });
 
 const Treatment = mongoose.model('Treatment', treatmentSchema);
 

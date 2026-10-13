@@ -10,6 +10,7 @@
       </div>
       <el-switch
         v-if="canToggle"
+        :aria-label="t('push.title')"
         :model-value="subscribed"
         :loading="busy"
         @change="toggle"

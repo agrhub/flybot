@@ -6,7 +6,7 @@
         <span class="pref-label">{{ t('alertPrefs.weekly.title') }}</span>
         <p class="pref-meta mt-1">{{ t('alertPrefs.weekly.desc') }}</p>
       </div>
-      <el-switch :model-value="prefs.weeklyReport !== false" :loading="saving === 'weekly'" @change="(v) => save('weekly', { weeklyReport: v })" />
+      <el-switch :aria-label="t('alertPrefs.weekly.title')" :model-value="prefs.weeklyReport !== false" :loading="saving === 'weekly'" @change="(v) => save('weekly', { weeklyReport: v })" />
     </div>
     <div class="flex flex-wrap items-center gap-2 mt-3">
       <el-button size="small" :icon="Promotion" :loading="sendingReport" @click="sendReportNow">{{ t('alertPrefs.weekly.sendNow') }}</el-button>
@@ -21,7 +21,7 @@
         <span class="pref-label">{{ t('alertPrefs.morning.title') }}</span>
         <p class="pref-meta mt-1">{{ t('alertPrefs.morning.desc') }}</p>
       </div>
-      <el-switch :model-value="!!prefs.morningBrief" :loading="saving === 'morning'" @change="(v) => save('morning', { morningBrief: v })" />
+      <el-switch :aria-label="t('alertPrefs.morning.title')" :model-value="!!prefs.morningBrief" :loading="saving === 'morning'" @change="(v) => save('morning', { morningBrief: v })" />
     </div>
   </el-card>
 
@@ -32,7 +32,7 @@
         <span class="pref-label">{{ t('alertPrefs.vietgap.title') }}</span>
         <p class="pref-meta mt-1">{{ t('alertPrefs.vietgap.desc') }}</p>
       </div>
-      <el-switch :model-value="!!prefs.vietgapMonthly" :loading="saving === 'vietgap'" @change="(v) => save('vietgap', { vietgapMonthly: v })" />
+      <el-switch :aria-label="t('alertPrefs.vietgap.title')" :model-value="!!prefs.vietgapMonthly" :loading="saving === 'vietgap'" @change="(v) => save('vietgap', { vietgapMonthly: v })" />
     </div>
   </el-card>
 
@@ -43,7 +43,7 @@
         <span class="pref-label">{{ t('alertPrefs.quiet.title') }}</span>
         <p class="pref-meta mt-1">{{ t('alertPrefs.quiet.desc') }}</p>
       </div>
-      <el-switch :model-value="!!quiet.enabled" :loading="saving === 'quiet'" @change="(v) => saveQuiet({ enabled: v })" />
+      <el-switch :aria-label="t('alertPrefs.quiet.title')" :model-value="!!quiet.enabled" :loading="saving === 'quiet'" @change="(v) => saveQuiet({ enabled: v })" />
     </div>
     <div v-if="quiet.enabled" class="flex flex-wrap items-center gap-2 mt-3">
       <el-time-select :model-value="quiet.start" start="00:00" end="23:30" step="00:30" class="!w-32" :clearable="false" @change="(v) => saveQuiet({ start: v })" />
@@ -66,7 +66,7 @@
           <p class="pref-name truncate">{{ cam.deviceName }}</p>
           <p class="pref-meta font-mono">{{ cam.deviceSerial }}</p>
         </div>
-        <el-switch :model-value="!muted.has(cam.deviceSerial)" :loading="saving === cam.deviceSerial" @change="(v) => toggleCamera(cam.deviceSerial, v)" />
+        <el-switch :aria-label="t('alertPrefs.follow.camera', { name: cam.deviceName })" :model-value="!muted.has(cam.deviceSerial)" :loading="saving === cam.deviceSerial" @change="(v) => toggleCamera(cam.deviceSerial, v)" />
       </div>
     </template>
   </el-card>

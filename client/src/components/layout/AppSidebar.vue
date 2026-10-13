@@ -12,11 +12,11 @@
               <img src="/logo.png" alt="FlyBot Logo" class="w-9 h-9 rounded-lg object-contain shrink-0" />
               <div class="min-w-0">
                 <div class="sidebar-brand truncate">{{ t('common.brandName') }}</div>
-                <div class="sidebar-tag truncate">{{ t('common.studioTag') }}</div>
+                <div class="sidebar-tag truncate">{{ t('common.tagline') }}</div>
               </div>
             </div>
             <el-tooltip :content="t('common.collapse')" placement="right" :show-after="100">
-              <el-button text circle :icon="Fold" @click="toggleCollapse" />
+              <el-button :aria-label="t('common.collapse')" text circle :icon="Fold" @click="toggleCollapse" />
             </el-tooltip>
           </div>
         </template>
@@ -24,7 +24,7 @@
         <!-- Collapsed header -->
         <template v-else>
           <el-tooltip :content="t('common.expand')" placement="right" :show-after="100">
-            <el-button text circle :icon="Expand" @click="toggleCollapse" />
+            <el-button :aria-label="t('common.expand')" text circle :icon="Expand" @click="toggleCollapse" />
           </el-tooltip>
           <img
             src="/logo.png"
@@ -58,7 +58,7 @@
         placement="right"
         :show-after="100"
       >
-        <el-button type="primary" circle :icon="Plus" data-tour="add-camera" @click="emit('open-add-camera')" />
+        <el-button :aria-label="t('cameras.addCameraBtn')" type="primary" circle :icon="Plus" data-tour="add-camera" @click="emit('open-add-camera')" />
       </el-tooltip>
 
       <el-button

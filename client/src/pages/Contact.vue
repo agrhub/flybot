@@ -50,14 +50,14 @@ const handleSubmit = async () => {
   <div id="contact-page" class="min-h-screen bg-[var(--el-bg-color-page)] text-[var(--el-text-color-primary)] py-16 px-6">
     <div class="max-w-xl mx-auto space-y-8">
       <div class="text-center md:text-left">
-        <span class="text-xs font-bold uppercase tracking-widest text-[#3ecf8e] block mb-2">{{ t('nav.contact') }}</span>
+        <span class="text-xs font-bold uppercase tracking-widest text-[var(--el-color-primary)] block mb-2">{{ t('nav.contact') }}</span>
         <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-[var(--el-text-color-primary)]">{{ t('contact.title') }}</h1>
         <p class="text-sm text-[var(--el-text-color-secondary)] mt-2 leading-relaxed">{{ t('contact.subtitle') }}</p>
       </div>
 
       <!-- Success Confirmation Card -->
       <el-card v-if="isSent" shadow="never" class="text-center p-8 !border !border-[var(--el-border-color)] !bg-[var(--el-card-bg-color)] !rounded-2xl">
-        <el-icon class="text-5xl text-[#3ecf8e] mb-4"><CircleCheck /></el-icon>
+        <el-icon class="text-5xl text-[var(--el-color-primary)] mb-4"><CircleCheck /></el-icon>
         <h3 class="text-xl font-bold text-[var(--el-text-color-primary)] mb-2">{{ t('contact.successTitle') }}</h3>
         <p class="text-xs sm:text-sm text-[var(--el-text-color-secondary)] max-w-sm mx-auto leading-relaxed">{{ t('contact.successMsg') }}</p>
         <div class="mt-6">

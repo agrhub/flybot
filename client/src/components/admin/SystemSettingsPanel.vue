@@ -10,7 +10,7 @@
               <div class="admin-label">{{ t('admin.system.allowRegistration') }}</div>
               <p class="admin-meta">{{ t('admin.system.allowRegistrationDesc') }}</p>
             </div>
-            <el-switch v-model="form.allowRegistration" />
+            <el-switch v-model="form.allowRegistration" :aria-label="t('admin.system.allowRegistration')" />
           </div>
         </el-form-item>
 

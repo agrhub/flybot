@@ -50,7 +50,7 @@
               <el-tag type="info" effect="plain" size="small">{{ t('share.viaFarm') }}</el-tag>
             </el-tooltip>
             <el-tooltip v-else :content="t('share.remove')" placement="top">
-              <el-button link type="danger" :icon="Delete" @click="removeShare(row)" />
+              <el-button :aria-label="t('share.remove')" link type="danger" :icon="Delete" @click="removeShare(row)" />
             </el-tooltip>
           </template>
         </el-table-column>

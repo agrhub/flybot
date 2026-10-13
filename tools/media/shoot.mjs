@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { launch, sleep } from './cdp.mjs';
 
-const BASE = 'http://localhost:3010';
+const BASE = `http://localhost:${Number(process.env.DEMO_CLIENT_PORT) || 3010}`;
 const OUT = process.argv[2];
 const only = process.argv[3] && process.argv[3] !== 'all' ? process.argv[3].split(',') : null;
 const LANG = process.argv[4] === 'en' ? 'en' : 'vi';
@@ -16,7 +16,13 @@ fs.mkdirSync(OUT, { recursive: true });
 const H = `
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 const byText = (sel, text) => [...document.querySelectorAll(sel)].find(e => e.innerText && e.innerText.trim().includes(text));
-const click = async (sel, text, wait = 800) => { const el = text ? byText(sel, text) : document.querySelector(sel); if (!el) throw new Error('not found: ' + sel + ' ' + (text || '')); el.click(); await sleep(wait); };
+// Waits up to 10 s for the element: lists and cards arrive after the page itself
+const click = async (sel, text, wait = 800) => {
+    let el = null;
+    for (let i = 0; i < 40 && !el; i++) { el = text ? byText(sel, text) : document.querySelector(sel); if (!el) await sleep(250); }
+    if (!el) throw new Error('not found: ' + sel + ' ' + (text || ''));
+    el.click(); await sleep(wait);
+};
 const top = (el, offset = 72) => { const r = el.getBoundingClientRect(); (document.querySelector('main.overflow-y-auto') || document.scrollingElement).scrollBy(0, 0); el.scrollIntoView({ block: 'start' }); window.scrollBy(0, -offset); };
 `;
 
@@ -124,7 +130,10 @@ const shots = [
         const c = document.querySelector('.roster-card').closest('.el-card:not(.roster-card)'); c.scrollIntoView({ block: 'start' }); await sleep(1000);` },
     { name: 'detection', url: '/analytics', action: `
         await click('.el-tabs__item', ${JSON.stringify(W('Lịch sử', 'History'))}, 2500);
-        const view = document.querySelector('.el-table__body button'); view.click(); await sleep(3500);` },
+        const view = document.querySelector('.el-table__body button'); view.click(); await sleep(3500);
+        // The photo with its boxes is drawn after it downloads
+        for (let i = 0; i < 60 && document.querySelector('.el-dialog .el-loading-spinner, .el-dialog .is-loading'); i++) await sleep(250);
+        await sleep(500);` },
     { name: 'insights', url: '/analytics', action: `
         await click('.el-tabs__item', ${JSON.stringify(W('Phân tích chuyên sâu', 'Insights'))}, 4000);` },
     { name: 'insights-table', url: '/analytics', action: `
@@ -196,6 +205,15 @@ try {
         await page.viewport(...(s.size || DESKTOP), !!s.mobile);
         await page.goto(BASE + s.url, s.settle || 2500);
         try {
+            // A page the dev server is still compiling (or a slow API answer) is blank or half
+            // drawn: wait for its content and for the loading masks to go
+            await page.eval(`for (let i = 0; i < 120 && document.body.innerText.length < 200; i++) await new Promise(r => setTimeout(r, 250));
+                for (let i = 0; i < 40 && document.querySelector('.el-loading-mask:not([style*="display: none"])'); i++) await new Promise(r => setTimeout(r, 250));
+                // Figures show "--" until their data arrives; a map needs its tiles and trap markers
+                const waiting = () => [...document.querySelectorAll('.stat-card__value')].some(v => v.innerText.trim() === '--')
+                    || (document.querySelector('.leaflet-container') && !(document.querySelector('.leaflet-tile-loaded') && document.querySelector('.custom-leaflet-marker')));
+                for (let i = 0; i < 60 && waiting(); i++) await new Promise(r => setTimeout(r, 250));
+                return true;`);
             // The assistant panel can stay open from an earlier shot: only its own shots show it
             if (!/assistant|chat/.test(s.name)) {
                 await page.eval(`const panel = document.getElementById('smart-trap-assistant-sidebar');

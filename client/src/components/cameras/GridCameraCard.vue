@@ -38,7 +38,7 @@
           <div class="flex items-center gap-1 mt-0.5">
             <span class="grid-cam__meta font-mono whitespace-nowrap">SN: {{ camera.deviceSerial }}</span>
             <el-tooltip :content="copiedSn ? t('cameras.copied') : t('cameras.copySerial')" placement="top">
-              <el-button
+              <el-button :aria-label="copiedSn ? t('cameras.copied') : t('cameras.copySerial')"
                 link
                 size="small"
                 :type="copiedSn ? 'success' : 'info'"
@@ -127,7 +127,7 @@
         >
           <!-- Enter/Update Code Button (if encrypted) -->
           <el-tooltip v-if="camera.isEncrypt === 1 && camera.canManage !== false" :content="t('cameras.changeCode')" placement="bottom">
-            <el-button
+            <el-button :aria-label="t('cameras.changeCode')"
               circle
               size="small"
               type="warning"
@@ -138,7 +138,7 @@
 
           <!-- Refresh Stream Button -->
           <el-tooltip :content="t('common.refresh')" placement="bottom">
-            <el-button
+            <el-button :aria-label="t('common.refresh')"
               circle
               size="small"
               :icon="Refresh"
@@ -149,7 +149,7 @@
 
           <!-- Full View Launcher -->
           <el-tooltip :content="t('cameras.viewDetails')" placement="bottom">
-            <el-button
+            <el-button :aria-label="t('cameras.viewDetails')"
               circle
               size="small"
               type="primary"

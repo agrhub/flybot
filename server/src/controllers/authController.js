@@ -13,6 +13,7 @@ const { normalizeLanguage, SUPPORTED_LANGUAGES } = require('../utils/i18n');
 const { queueMail } = require('../services/mailService');
 const emailTemplates = require('../services/emailTemplates');
 const avatarService = require('../services/avatarService');
+const dataExportService = require('../services/dataExportService');
 const { pipeSnapshot } = require('./s3Controller');
 const {
     PASSWORD_RESET_TTL_MINUTES,
@@ -224,6 +225,31 @@ async function getAuthConfig(req, res) {
         res.json({ success: true, allowRegistration: (await getSettings()).allowRegistration, contactEmail });
     } catch (err) {
         sendServerError(res, err, { context: 'Auth config' });
+    }
+}
+
+/**
+ * GET /api/auth/export: everything this person owns as one ZIP (CSV tables and JSON),
+ * streamed as it is read
+ */
+async function exportMyData(req, res) {
+    try {
+        const user = await User.findById(req.user.id).lean();
+        if (!user) return res.status(404).json({ success: false, message: "User not found" });
+        const day = new Date().toISOString().slice(0, 10);
+        res.setHeader('Content-Type', 'application/zip');
+        res.setHeader('Content-Disposition', `attachment; filename="FlyBot_data_${day}.zip"`);
+        res.setHeader('Cache-Control', 'no-store');
+        await dataExportService.writeExport(user, res);
+        res.end();
+        recordAudit(req, { action: 'auth.data_exported' });
+    } catch (err) {
+        // Part of the file may already be on its way: cut it so it is not taken for a whole one
+        if (res.headersSent) {
+            console.error('Data export failed:', err.message);
+            return res.destroy(err);
+        }
+        sendServerError(res, err, { context: 'Export my data' });
     }
 }
 
@@ -588,6 +614,7 @@ async function getUserAvatar(req, res) {
 }
 
 module.exports = {
+    exportMyData,
     register,
     login,
     refreshSession,

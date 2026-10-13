@@ -26,7 +26,7 @@
 
       <!-- This table's own filters -->
       <div class="flex flex-wrap items-center gap-2 mt-3">
-        <el-select
+        <el-select :aria-label="t('analytics.allCameras')"
           v-if="showCameraFilter"
           v-model="filters.cameras"
           multiple
@@ -41,11 +41,11 @@
           <el-option v-for="cam in cameraOptions" :key="cam.deviceSerial" :label="cam.deviceName" :value="cam.deviceSerial" />
         </el-select>
         <DateRangeFilter v-model="filters.range" />
-        <el-select v-model="filters.risk" clearable :placeholder="t('history.allStatus')" class="history-select">
+        <el-select :aria-label="t('history.allStatus')" v-model="filters.risk" clearable :placeholder="t('history.allStatus')" class="history-select">
           <template #prefix><el-icon><Bell /></el-icon></template>
           <el-option v-for="risk in RISKS" :key="risk" :label="t(`history.risk.${risk}`)" :value="risk" />
         </el-select>
-        <el-select v-model="filters.review" clearable :placeholder="t('history.allReviews')" class="history-select">
+        <el-select :aria-label="t('history.allReviews')" v-model="filters.review" clearable :placeholder="t('history.allReviews')" class="history-select">
           <el-option v-for="review in REVIEWS" :key="review" :label="t(`history.review.${review}`)" :value="review" />
         </el-select>
         <el-button v-if="diverged" link type="primary" :icon="RefreshLeft" @click="resetToDefaults">{{ t('filters.useShared') }}</el-button>
@@ -78,7 +78,7 @@
 
       <el-table-column :label="t('analytics.image')" width="100">
         <template #default="{ row }">
-          <el-image :src="api.getImageUrl(row.imageUrl || row.s3Key)" fit="cover" loading="lazy" class="thumb" />
+          <el-image :src="api.getImageUrl(row.imageUrl || row.s3Key)" :alt="t('analytics.image')" fit="cover" loading="lazy" class="thumb" />
         </template>
       </el-table-column>
 
@@ -118,7 +118,7 @@
       <el-table-column :label="t('common.actions')" width="80" align="center" fixed="right">
         <template #default="{ row }">
           <el-tooltip :content="t('analytics.inspectSnapshot')" placement="top">
-            <el-button :icon="View" circle size="small" @click.stop="openModal(row)" />
+            <el-button :aria-label="t('analytics.inspectSnapshot')" :icon="View" circle size="small" @click.stop="openModal(row)" />
           </el-tooltip>
         </template>
       </el-table-column>

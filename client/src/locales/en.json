@@ -1,8 +1,7 @@
 {
   "common": {
-    "brandStudio": "FlyBot Studio",
     "brandName": "FlyBot",
-    "studioTag": "STUDIO",
+    "tagline": "Insect monitoring",
     "collapse": "Collapse Sidebar",
     "expand": "Expand Sidebar",
     "profile": "Profile Settings",
@@ -31,7 +30,9 @@
     "defaultUserName": "User",
     "confirm": "Confirm",
     "done": "Done",
-    "edit": "Edit"
+    "edit": "Edit",
+    "moreActions": "More actions",
+    "darkTheme": "Dark theme"
   },
   "nav": {
     "home": "Home",
@@ -282,7 +283,9 @@
       "title": "{count} area(s) inside a pre-harvest interval: no harvest yet",
       "item": "after {product}, harvest from {date}",
       "open": "Open field log"
-    }
+    },
+    "levelOf": "Flies against the threshold: {name}",
+    "openPhoto": "Open the analyzed photo: {name}"
   },
   "cameras": {
     "title": "Camera Surveillance & Management",
@@ -416,7 +419,9 @@
     "nextDay": "Next day",
     "noClips": "No recordings on this day",
     "zoomIn": "Zoom in",
-    "zoomOut": "Zoom out"
+    "zoomOut": "Zoom out",
+    "timeline": "Recording timeline of the day (arrows: previous/next clip, Page Up/Down: one hour)",
+    "timelineIdle": "No clip playing"
   },
   "analytics": {
     "title": "AI Analytics & Detection History",
@@ -533,7 +538,8 @@
       "export": "Export corrections",
       "exportHint": "Corrected snapshots from the last 90 days (AI vs human counts), for retraining the detection model",
       "exportEmpty": "No corrected snapshots in the last 90 days.",
-      "exported": "Exported {count} corrected snapshots."
+      "exported": "Exported {count} corrected snapshots.",
+      "countOf": "Count: {name}"
     },
     "exportMenu": "Export",
     "catchesChart": "New flies per day",
@@ -670,7 +676,14 @@
       "notConfigured": "Telegram alerts are not set up on this server yet (the administrator needs to add a bot)."
     },
     "thresholdSuggestion": "Suggested {value} from the last {days} days: the current threshold was reached on {now} days, the suggested one on {then}.",
-    "applySuggestion": "Apply"
+    "applySuggestion": "Apply",
+    "myData": {
+      "title": "Your data",
+      "desc": "Download one ZIP file with everything you own: cameras, farms and plots, daily fly counts, the analysis of each photo, the spray log, trap changes, reports and your conversations with the assistant. Tables are CSV (they open in Excel), the rest is JSON. Photos are not included. Up to 3 downloads an hour.",
+      "download": "Download all my data"
+    },
+    "section": "Settings section",
+    "thresholdOf": "Alert threshold: {name}"
   },
   "assistant": {
     "title": "FlyBot Assistant",
@@ -851,7 +864,7 @@
           "account": {
             "title": "Sign in & the Overview",
             "desc": "The Overview shows how many flies arrived today, flies per trap per day, cameras online and the pest risk level.",
-            "items": "Sign up with your email and click the confirmation link in your inbox.\nAccount roles: admins run the whole system; managers add and manage cameras; viewers see what is shared with them.\n\"Flies caught today\" counts new flies on all traps, with yesterday next to it; \"Flies/trap/day (7 days)\" is the standard figure to compare weeks.\nIn the trap list, the bar compares what is on each trap now with its alert threshold; the line below shows today’s new flies and the daily average.\n\"Pest Hotspot\" appears when a trap reaches its threshold; \"Replace card\" when its glue card should be replaced.\nAt the bottom, each trap shows its latest analyzed photo with every insect boxed and named; click it for the details, to confirm or correct the count.\nThe first time you open FlyBot a quick tour shows each part; replay it any time from the account menu, \"Quick tour\".\nChange your name and profile photo in Settings, Profile Information (JPG or PNG, up to 2 MB). Confirm your email to get alert emails and for shared items to reach you."
+            "items": "Sign up with your email and click the confirmation link in your inbox.\nAccount roles: admins run the whole system; managers add and manage cameras; viewers see what is shared with them.\n\"Flies caught today\" counts new flies on all traps, with yesterday next to it; \"Flies/trap/day (7 days)\" is the standard figure to compare weeks.\nIn the trap list, the bar compares what is on each trap now with its alert threshold; the line below shows today’s new flies and the daily average.\n\"Pest Hotspot\" appears when a trap reaches its threshold; \"Replace card\" when its glue card should be replaced.\nAt the bottom, each trap shows its latest analyzed photo with every insect boxed and named; click it for the details, to confirm or correct the count.\nThe first time you open FlyBot a quick tour shows each part; replay it any time from the account menu, \"Quick tour\".\nChange your name and profile photo in Settings, Profile Information (JPG or PNG, up to 2 MB). Confirm your email to get alert emails and for shared items to reach you.\nTo keep your own copy or move to another tool: Settings, Personal info, \"Download all my data\" gives one ZIP file with your cameras, farms, daily fly counts, the result of each photo, the field log and reports (CSV tables that open in Excel).\nWorks with a keyboard and a screen reader: Tab to move, Enter or Space to open a trap card, a photo or a notification; every button has a name that is read out."
           },
           "camera": {
             "title": "Add a camera & choose the trap type",
@@ -936,7 +949,7 @@
           "sharing": {
             "title": "Sharing & organizations",
             "desc": "Work as a team by sharing cameras or farms, or with an organization.",
-            "items": "Share a camera in Settings, Camera Management; share a farm with the \"Share\" button on the farm page.\nFor a cooperative or company: Settings, Organizations, \"New organization\".\nAdd members by email as Owner, Manager or Member. Members see every camera and farm of the organization.\nOnly the camera owner or an admin can delete it, share it outside or move it to another organization.\nPeople you invite get access once they confirm their email. Anyone with an account who has not confirmed it shows as \"Not confirmed\": click \"Remind to confirm\" to send the confirmation email again (up to 3 times a day). Admins can also confirm it for them in Settings, Users."
+            "items": "Share a camera in Settings, Camera Management; share a farm with the \"Share\" button on the farm page.\nFor a cooperative or company: Settings, Organizations, \"New organization\".\nAdd members by email as Owner, Manager or Member. Members see every camera and farm of the organization.\nOnly the camera owner or an admin can delete it, share it outside or move it to another organization.\nPeople you invite get access once they confirm their email. Anyone with an account who has not confirmed it shows as \"Not confirmed\": click \"Remind to confirm\" to send the confirmation email again (up to 3 times a day). Admins can also confirm it for them in Settings, Users.\n\"Invite many\" under Organizations: paste the email addresses or pick a CSV file to invite a whole cooperative at once (up to 50 addresses each time), with the result for each address."
           },
           "log": {
             "title": "Treatment log & VietGAP",
@@ -1006,7 +1019,7 @@
           "offline": {
             "title": "No signal in the field",
             "desc": "FlyBot still opens when the phone is offline, with the data you last saw.",
-            "items": "Open FlyBot at least once with a connection: it keeps the pages and the data you viewed on the device.\nWithout signal, the bar at the top says \"You are offline\" and when the data was saved.\nLive video, taking photos, saving changes and the assistant need a connection; numbers update by themselves once you are back online.\nThe data kept on the device is removed when you sign out."
+            "items": "Open FlyBot at least once with a connection: it keeps the pages and the data you viewed on the device.\nWithout signal, the bar at the top says \"You are offline\" and when the data was saved.\nLive video, taking photos, saving changes and the assistant need a connection; numbers update by themselves once you are back online.\nThe data kept on the device is removed when you sign out.\nWithout signal you can still log a treatment in the Field log or a card change: they are kept on the device and sent when the network is back; a bar at the top says how many are waiting."
           }
         }
       },
@@ -1768,7 +1781,8 @@
         "login_failed": "Failed sign-in",
         "password_reset": "Password reset by email",
         "password_changed": "Password changed",
-        "sessions_revoked": "Signed out other devices"
+        "sessions_revoked": "Signed out other devices",
+        "data_exported": "Downloaded all data"
       },
       "user": {
         "role_changed": "Role changed",
@@ -1820,7 +1834,8 @@
         "member_updated": "Change member role",
         "member_removed": "Remove member",
         "member_reminded": "Remind member to confirm email",
-        "cameras_changed": "Move cameras"
+        "cameras_changed": "Move cameras",
+        "members_added": "Invite many members"
       },
       "integration": {
         "key_created": "Create API key",
@@ -2098,7 +2113,8 @@
     },
     "follow": {
       "title": "Cameras I follow",
-      "desc": "Turn a camera off to stop all of its notifications for you (other people are not affected)."
+      "desc": "Turn a camera off to stop all of its notifications for you (other people are not affected).",
+      "camera": "Alerts from {name}"
     },
     "morning": {
       "title": "Morning brief",
@@ -2171,7 +2187,29 @@
       "owner": "Owner",
       "manager": "Manager",
       "member": "Member"
-    }
+    },
+    "bulk": {
+      "open": "Invite many",
+      "title": "Invite many people to {name}",
+      "hint": "Paste the email addresses (one per line, or separated by commas), or pick a CSV file: every email address in it is taken. At most 50 addresses at a time.",
+      "placeholder": "grower.one{'@'}gmail.com\ngrower.two{'@'}gmail.com",
+      "count": "{count} addresses",
+      "csv": "Pick a CSV file",
+      "email": "Email",
+      "result": "Result",
+      "send": "Invite {count}",
+      "done": "Added or invited {count} people.",
+      "tooBig": "The file is too big for a member list (at most 200 KB).",
+      "status": {
+        "added": "Added",
+        "invited": "Invitation sent",
+        "already": "Already a member",
+        "invalid": "Not a valid email",
+        "full": "The organization is full",
+        "limit": "Over today's invitation limit"
+      }
+    },
+    "role": "Role"
   },
   "integrations": {
     "tab": "API & Webhooks",
@@ -2210,7 +2248,8 @@
       "off": "Off",
       "lastDelivery": "Last delivery {time}",
       "noDelivery": "Nothing sent yet.",
-      "docs": "Check the X-FlyBot-Signature header with your secret before trusting a request. After 15 failures in a row a webhook is switched off."
+      "docs": "Check the X-FlyBot-Signature header with your secret before trusting a request. After 15 failures in a row a webhook is switched off.",
+      "activeLabel": "Webhook {url} on"
     }
   },
   "legal": {
@@ -2404,5 +2443,13 @@
     "savedCopy": "You are offline. Showing data saved on this device at {time}.",
     "needsNetwork": "No connection: this needs the network. Try again when you have signal.",
     "noConnection": "No network connection"
+  },
+  "outbox": {
+    "savedOffline": "No signal: saved on this device, it will be sent when the network is back.",
+    "waiting": "{count} entry recorded offline is waiting to be sent | {count} entries recorded offline are waiting to be sent",
+    "sendNow": "Send now",
+    "refused": "Could not send \"{label}\": {reason}",
+    "remove": "Remove",
+    "sent": "Sent {count} entry recorded offline. | Sent {count} entries recorded offline."
   }
 }

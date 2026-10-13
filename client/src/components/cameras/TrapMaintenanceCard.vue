@@ -38,7 +38,7 @@
             <span class="trap-value">{{ cardAgeDays !== null ? t('maintenance.days', { count: cardAgeDays }) : '--' }}</span>
           </el-descriptions-item>
           <el-descriptions-item :label="t('maintenance.reminder')">
-            <el-select
+            <el-select :aria-label="t('maintenance.reminder')"
               v-if="canManage"
               :model-value="card?.reminderDays ?? 7"
               size="small"
@@ -77,7 +77,7 @@
                 <div v-if="ev.by" class="trap-meta">{{ ev.by }}</div>
               </div>
               <el-tooltip v-if="canManage" :content="t('maintenance.delete')" placement="top">
-                <el-button link type="danger" size="small" :icon="Delete" @click="remove(ev)" />
+                <el-button :aria-label="t('maintenance.delete')" link type="danger" size="small" :icon="Delete" @click="remove(ev)" />
               </el-tooltip>
             </div>
           </el-timeline-item>
@@ -109,6 +109,7 @@ import { useI18n } from 'vue-i18n';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { RefreshRight, Plus, Delete } from '@element-plus/icons-vue';
 import api from '@/services/api';
+import { enqueue, newClientId, isNetworkError } from '@/composables/useOutbox';
 import { useCameras } from '@/composables/useCameras';
 
 const props = defineProps({
@@ -166,7 +167,16 @@ const load = async () => {
 const record = async (type, extra = {}) => {
   saving.value = true;
   try {
-    await api.addMaintenance({ deviceSerial: props.camera.deviceSerial, type, ...extra });
+    // The time of the work, not of the send: it may go out later, when there is signal
+    const body = { deviceSerial: props.camera.deviceSerial, type, at: new Date().toISOString(), ...extra, clientId: newClientId() };
+    try {
+      await api.addMaintenance(body, { offlineQueue: true });
+    } catch (err) {
+      if (!isNetworkError(err)) throw err;
+      enqueue('maintenance', body, `${t(`maintenance.types.${type}`)} · ${props.camera.deviceName || props.camera.deviceSerial}`);
+      ElMessage.info(t('outbox.savedOffline'));
+      return true;
+    }
     ElMessage.success(t('maintenance.saved'));
     await load();
     // Card due dates on camera lists

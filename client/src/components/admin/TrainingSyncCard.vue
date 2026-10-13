@@ -7,6 +7,7 @@
           <p class="admin-meta mt-1">{{ t('admin.training.desc') }}</p>
         </div>
         <el-switch
+          :aria-label="t('admin.training.title')"
           :model-value="!!sync?.enabled"
           :disabled="!sync?.configured"
           :loading="saving"

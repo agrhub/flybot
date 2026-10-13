@@ -12,12 +12,12 @@
 
     <!-- Filters -->
     <div class="flex flex-wrap items-center gap-3 mb-4">
-      <el-select v-model="filters.deviceSerial" class="w-full sm:!w-60" @change="reload">
+      <el-select :aria-label="t('analytics.selectCamera')" v-model="filters.deviceSerial" class="w-full sm:!w-60" @change="reload">
         <template #prefix><el-icon><VideoCamera /></el-icon></template>
         <el-option :label="t('analytics.allCameras')" value="all" />
         <el-option v-for="cam in cameras" :key="cam.deviceSerial" :label="cam.deviceName" :value="cam.deviceSerial" />
       </el-select>
-      <el-select v-model="filters.type" :placeholder="t('logbook.allTypes')" clearable class="w-full sm:!w-48" @change="reload">
+      <el-select :aria-label="t('logbook.type')" v-model="filters.type" :placeholder="t('logbook.allTypes')" clearable class="w-full sm:!w-48" @change="reload">
         <el-option v-for="type in TYPES" :key="type" :label="t(`logbook.types.${type}`)" :value="type" />
       </el-select>
       <el-date-picker
@@ -54,8 +54,8 @@
           <div class="flex items-center justify-between gap-2 mt-2">
             <PhiTag :row="row" />
             <div v-if="canManageCameras" class="flex items-center gap-1">
-              <el-button size="small" circle :icon="Edit" :title="t('common.edit')" @click="openForm(row)" />
-              <el-button size="small" circle type="danger" plain :icon="Delete" :title="t('logbook.delete')" @click="remove(row)" />
+              <el-button :aria-label="t('common.edit')" size="small" circle :icon="Edit" :title="t('common.edit')" @click="openForm(row)" />
+              <el-button :aria-label="t('logbook.delete')" size="small" circle type="danger" plain :icon="Delete" :title="t('logbook.delete')" @click="remove(row)" />
             </div>
           </div>
         </div>
@@ -88,8 +88,8 @@
         </el-table-column>
         <el-table-column v-if="canManageCameras" width="90" align="right" fixed="right">
           <template #default="{ row }">
-            <el-button link :icon="Edit" :title="t('common.edit')" @click="openForm(row)" />
-            <el-button link type="danger" :icon="Delete" :title="t('logbook.delete')" @click="remove(row)" />
+            <el-button :aria-label="t('common.edit')" link :icon="Edit" :title="t('common.edit')" @click="openForm(row)" />
+            <el-button :aria-label="t('logbook.delete')" link type="danger" :icon="Delete" :title="t('logbook.delete')" @click="remove(row)" />
           </template>
         </el-table-column>
       </el-table>
@@ -234,6 +234,7 @@ import { useCameras } from '@/composables/useCameras';
 import { useBreakpoints } from '@/composables/useBreakpoints';
 import { loadExcelWriter } from '@/utils/lazyLibs';
 import { ingredientSheets, downloadSheets } from '@/utils/tableExport';
+import { enqueue, newClientId, isNetworkError } from '@/composables/useOutbox';
 import PageHeader from '@/components/common/PageHeader.vue';
 import StatCard from '@/components/common/StatCard.vue';
 
@@ -381,8 +382,21 @@ const save = async () => {
   saving.value = true;
   try {
     const body = { ...form, at: new Date(form.at).toISOString(), preHarvestDays: Number.isInteger(form.preHarvestDays) ? form.preHarvestDays : null };
-    if (editingId.value) await api.updateTreatment(editingId.value, body);
-    else await api.createTreatment(body);
+    if (editingId.value) {
+      await api.updateTreatment(editingId.value, body);
+    } else {
+      // A new treatment can be recorded without signal: kept on the device and sent later
+      body.clientId = newClientId();
+      try {
+        await api.createTreatment(body, { offlineQueue: true });
+      } catch (err) {
+        if (!isNetworkError(err)) throw err;
+        enqueue('treatment', body, [t(`logbook.types.${body.type}`), body.product].filter(Boolean).join(' · '));
+        ElMessage.info(t('outbox.savedOffline'));
+        formVisible.value = false;
+        return;
+      }
+    }
     ElMessage.success(t('logbook.saved'));
     formVisible.value = false;
     load();

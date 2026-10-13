@@ -1,3 +1,4 @@
+import { watch } from 'vue';
 import { createI18n } from 'vue-i18n';
 import en from './locales/en.json';
 import vi from './locales/vi.json';
@@ -19,5 +20,10 @@ const i18n = createI18n({
     vi,
   },
 });
+
+// Screen readers pick their voice from <html lang>: keep it on the language shown
+if (typeof document !== 'undefined') {
+  watch(i18n.global.locale, (code) => { document.documentElement.lang = code; }, { immediate: true });
+}
 
 export default i18n;

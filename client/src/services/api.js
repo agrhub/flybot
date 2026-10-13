@@ -31,7 +31,8 @@ apiClient.interceptors.response.use(
     // No answer at all: the device is offline (the service worker had no saved copy either)
     if (!error.response && error.code !== 'ERR_CANCELED') {
       noteNetworkError();
-      if (error.config && error.config.method !== 'get') {
+      // (unless the caller keeps the request to send later: it says so itself)
+      if (error.config && error.config.method !== 'get' && !error.config.offlineQueue) {
         ElMessage.warning({ message: i18n.global.t('offline.needsNetwork'), grouping: true });
       }
     }
@@ -214,6 +215,10 @@ export default {
     const newPassword = args.length >= 3 ? args[2] : args[1];
     return apiClient.post('/auth/change-password', { currentPassword, newPassword });
   },
+  // "Download all my data" (ZIP)
+  exportMyData() {
+    return apiClient.get('/auth/export', { responseType: 'blob' });
+  },
   uploadAvatar(blob) {
     return apiClient.post('/auth/avatar', blob, { headers: { 'Content-Type': 'image/jpeg' } });
   },
@@ -289,8 +294,9 @@ export default {
   getMaintenance(deviceSerial, limit = 20) {
     return apiClient.get('/user/camera/maintenance', { params: { deviceSerial, limit } });
   },
-  addMaintenance(data) {
-    return apiClient.post('/user/camera/maintenance', data);
+  // config.offlineQueue: the caller keeps the request for later when there is no signal
+  addMaintenance(data, config = {}) {
+    return apiClient.post('/user/camera/maintenance', data, config);
   },
   deleteMaintenance(id) {
     return apiClient.delete(`/user/camera/maintenance/${id}`);
@@ -338,6 +344,9 @@ export default {
   },
   remindOrgMember(id, email) {
     return apiClient.post(`/orgs/${id}/members/remind`, { email });
+  },
+  addOrgMembersBulk(id, data) {
+    return apiClient.post(`/orgs/${id}/members/bulk`, data);
   },
   addOrgMember(id, data) {
     return apiClient.post(`/orgs/${id}/members`, data);
@@ -410,8 +419,8 @@ export default {
   listTreatments(params = {}) {
     return apiClient.get('/treatments', { params });
   },
-  createTreatment(data) {
-    return apiClient.post('/treatments', data);
+  createTreatment(data, config = {}) {
+    return apiClient.post('/treatments', data, config);
   },
   updateTreatment(id, data) {
     return apiClient.put(`/treatments/${id}`, data);

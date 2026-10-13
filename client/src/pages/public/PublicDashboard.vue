@@ -8,7 +8,7 @@
         </router-link>
         <div class="flex items-center gap-2">
           <LanguageSelect />
-          <el-button :icon="isDark ? Sunny : Moon" circle text @click="toggleTheme" />
+          <el-button :icon="isDark ? Sunny : Moon" circle text :aria-label="isDark ? t('topbar.lightMode') : t('topbar.darkMode')" @click="toggleTheme" />
         </div>
       </div>
     </header>

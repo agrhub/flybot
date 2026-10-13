@@ -24,7 +24,7 @@
           :key="d.id"
           shadow="hover"
           class="dash-card cursor-pointer"
-          @click="router.push(`/reports/${d.id}`)"
+          @click="router.push(`/reports/${d.id}`)" @keydown.enter.prevent="router.push(`/reports/${d.id}`)" @keydown.space.prevent="router.push(`/reports/${d.id}`)" role="button" tabindex="0"
         >
           <div class="flex items-start justify-between gap-3">
             <div class="min-w-0">

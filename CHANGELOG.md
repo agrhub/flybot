@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.3.0 (2026-10-13)
+
+### Works without signal
+- A treatment in the Field log or a card change recorded without signal is kept on the device and sent when the network is back; a bar at the top shows what is waiting, and anything the server refused with its reason. Each carries an id, so a send that did arrive but lost its answer is never recorded twice.
+
+### Organizations
+- **Invite many**: paste a list of email addresses or pick a CSV file to invite a whole cooperative at once (up to 50 addresses each time, 100 invitations a day per person), with the result for each address.
+
+### Your data
+- Settings, Personal info: **Download all my data** gives one ZIP file with your cameras, farms and plots, daily counts, the analysis of every photo, treatments, trap changes, reports and assistant conversations (CSV tables and JSON). Values a spreadsheet would run as a formula are escaped; 3 downloads an hour.
+
+### Accessibility
+- The main pages pass the automatic WCAG 2.1 AA checks (axe-core) in light and dark mode, now part of the end-to-end test.
+- Light mode uses deeper theme colors (green, amber, red, grey) so text reaches 4.5:1 contrast; in dark mode, text on the mint green is dark.
+- Icon-only buttons, switches, drop-downs and progress bars have names a screen reader reads out; the page language follows the chosen language.
+- Trap cards, map entries, notifications, report cards and photos open from the keyboard (Tab, then Enter or Space) and show where the focus is; the Settings menu and the avatar upload are one control each.
+- The recording timeline is a slider: arrows play the previous or next clip, Page Up / Down jump an hour, Home / End go to the first or last clip.
+- The sidebar tag under the logo is a short description in the chosen language ("Giám sát côn trùng" / "Insect monitoring") instead of "STUDIO".
+- The guide pictures and both tour videos show the new colors.
+
 ## 1.2.0 (2026-10-13)
 
 ### Season report

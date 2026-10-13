@@ -7,91 +7,99 @@
           <h1 class="settings-nav__title">{{ t('settings.title') }}</h1>
           <p v-if="!isMobile" class="settings-nav__desc">{{ t('settings.desc') }}</p>
           <!-- Phones: the section list is a dropdown, so the page content stays on screen -->
-          <el-select v-if="isMobile" v-model="activeTab" class="w-full mt-3" size="large">
+          <el-select :aria-label="t('settings.section')" v-if="isMobile" v-model="activeTab" class="w-full mt-3" size="large">
             <el-option-group v-for="group in mobileSections" :key="group.label" :label="group.label">
               <el-option v-for="item in group.items" :key="item.value" :label="item.label" :value="item.value" />
             </el-option-group>
           </el-select>
         </div>
 
-        <el-menu
-          v-if="!isMobile"
-          :default-active="activeTab"
-          class="settings-menu"
-          @select="(key) => (activeTab = key)"
-        >
-          <el-menu-item-group :title="t('settings.account')">
-            <el-menu-item index="profile">
-              <el-icon><User /></el-icon>
-              <span>{{ t('settings.profileTab') }}</span>
-            </el-menu-item>
-            <el-menu-item index="password">
-              <el-icon><Lock /></el-icon>
-              <span>{{ t('settings.passwordTab') }}</span>
-            </el-menu-item>
-            <el-menu-item index="sessions">
-              <el-icon><Monitor /></el-icon>
-              <span>{{ t('settings.sessionsTab') }}</span>
-            </el-menu-item>
-          </el-menu-item-group>
+        <!-- One menu per group: a group inside el-menu is not a valid menu for screen readers -->
+        <nav v-if="!isMobile" :aria-label="t('settings.section')">
+          <div class="settings-group">
+            <p class="settings-group__title">{{ t('settings.account') }}</p>
+            <el-menu :default-active="activeTab" class="settings-menu" :aria-label="t('settings.account')" @select="(key) => (activeTab = key)">
+              <el-menu-item index="profile">
+                <el-icon><User /></el-icon>
+                <span>{{ t('settings.profileTab') }}</span>
+              </el-menu-item>
+              <el-menu-item index="password">
+                <el-icon><Lock /></el-icon>
+                <span>{{ t('settings.passwordTab') }}</span>
+              </el-menu-item>
+              <el-menu-item index="sessions">
+                <el-icon><Monitor /></el-icon>
+                <span>{{ t('settings.sessionsTab') }}</span>
+              </el-menu-item>
+            </el-menu>
+          </div>
 
-          <el-menu-item-group :title="t('settings.system')">
-            <el-menu-item index="cameras">
-              <el-icon><VideoCamera /></el-icon>
-              <span>{{ t('settings.camerasTab') }}</span>
-            </el-menu-item>
-            <el-menu-item index="organizations">
-              <el-icon><OfficeBuilding /></el-icon>
-              <span>{{ t('orgs.tab') }}</span>
-            </el-menu-item>
-            <el-menu-item index="notifications">
-              <el-icon><Bell /></el-icon>
-              <span>{{ t('settings.notificationsTab') }}</span>
-            </el-menu-item>
-            <el-menu-item v-if="canManageCameras" index="integrations">
-              <el-icon><Connection /></el-icon>
-              <span>{{ t('integrations.tab') }}</span>
-            </el-menu-item>
-            <el-menu-item index="preferences">
-              <el-icon><Brush /></el-icon>
-              <span>{{ t('settings.preferencesTab') }}</span>
-            </el-menu-item>
-            <el-menu-item index="storage">
-              <el-icon><Coin /></el-icon>
-              <span>{{ t('settings.storageTab') }}</span>
-            </el-menu-item>
-          </el-menu-item-group>
+          <div class="settings-group">
+            <p class="settings-group__title">{{ t('settings.system') }}</p>
+            <el-menu :default-active="activeTab" class="settings-menu" :aria-label="t('settings.system')" @select="(key) => (activeTab = key)">
+              <el-menu-item index="cameras">
+                <el-icon><VideoCamera /></el-icon>
+                <span>{{ t('settings.camerasTab') }}</span>
+              </el-menu-item>
+              <el-menu-item index="organizations">
+                <el-icon><OfficeBuilding /></el-icon>
+                <span>{{ t('orgs.tab') }}</span>
+              </el-menu-item>
+              <el-menu-item index="notifications">
+                <el-icon><Bell /></el-icon>
+                <span>{{ t('settings.notificationsTab') }}</span>
+              </el-menu-item>
+              <el-menu-item v-if="canManageCameras" index="integrations">
+                <el-icon><Connection /></el-icon>
+                <span>{{ t('integrations.tab') }}</span>
+              </el-menu-item>
+              <el-menu-item index="preferences">
+                <el-icon><Brush /></el-icon>
+                <span>{{ t('settings.preferencesTab') }}</span>
+              </el-menu-item>
+              <el-menu-item index="storage">
+                <el-icon><Coin /></el-icon>
+                <span>{{ t('settings.storageTab') }}</span>
+              </el-menu-item>
+            </el-menu>
+          </div>
 
-          <el-menu-item-group v-if="isAdmin" :title="t('admin.group')">
-            <el-menu-item index="adminUsers">
-              <el-icon><UserFilled /></el-icon>
-              <span>{{ t('admin.users.tab') }}</span>
-            </el-menu-item>
-            <el-menu-item index="adminCameras">
-              <el-icon><Camera /></el-icon>
-              <span>{{ t('admin.cameras.tab') }}</span>
-            </el-menu-item>
-            <el-menu-item index="adminSystem">
-              <el-icon><Tools /></el-icon>
-              <span>{{ t('admin.system.tab') }}</span>
-            </el-menu-item>
-            <el-menu-item index="adminPipeline">
-              <el-icon><DataLine /></el-icon>
-              <span>{{ t('admin.pipeline.tab') }}</span>
-            </el-menu-item>
-            <el-menu-item index="adminAudit">
-              <el-icon><Tickets /></el-icon>
-              <span>{{ t('audit.tab') }}</span>
-            </el-menu-item>
-          </el-menu-item-group>
+          <div v-if="isAdmin" class="settings-group">
+            <p class="settings-group__title">{{ t('admin.group') }}</p>
+            <el-menu :default-active="activeTab" class="settings-menu" :aria-label="t('admin.group')" @select="(key) => (activeTab = key)">
+              <el-menu-item index="adminUsers">
+                <el-icon><UserFilled /></el-icon>
+                <span>{{ t('admin.users.tab') }}</span>
+              </el-menu-item>
+              <el-menu-item index="adminCameras">
+                <el-icon><Camera /></el-icon>
+                <span>{{ t('admin.cameras.tab') }}</span>
+              </el-menu-item>
+              <el-menu-item index="adminSystem">
+                <el-icon><Tools /></el-icon>
+                <span>{{ t('admin.system.tab') }}</span>
+              </el-menu-item>
+              <el-menu-item index="adminPipeline">
+                <el-icon><DataLine /></el-icon>
+                <span>{{ t('admin.pipeline.tab') }}</span>
+              </el-menu-item>
+              <el-menu-item index="adminAudit">
+                <el-icon><Tickets /></el-icon>
+                <span>{{ t('audit.tab') }}</span>
+              </el-menu-item>
+            </el-menu>
+          </div>
 
-          <el-menu-item-group :title="t('settings.legal')">
-            <el-menu-item index="legal">
-              <el-icon><Document /></el-icon>
-              <span>{{ t('settings.termsTab') }}</span>
-            </el-menu-item>
-          </el-menu-item-group>
-        </el-menu>
+          <div class="settings-group">
+            <p class="settings-group__title">{{ t('settings.legal') }}</p>
+            <el-menu :default-active="activeTab" class="settings-menu" :aria-label="t('settings.legal')" @select="(key) => (activeTab = key)">
+              <el-menu-item index="legal">
+                <el-icon><Document /></el-icon>
+                <span>{{ t('settings.termsTab') }}</span>
+              </el-menu-item>
+            </el-menu>
+          </div>
+        </nav>
       </aside>
 
       <!-- Right content area -->
@@ -109,16 +117,11 @@
                 <p class="settings-label">{{ t('settings.avatarLabel') }}</p>
                 <p class="settings-meta mt-1">{{ t('settings.avatarHint') }}</p>
                 <div class="flex flex-wrap items-center gap-2 mt-2">
-                  <el-upload
-                    :show-file-list="false"
-                    :accept="AVATAR_TYPES.join(',')"
-                    :before-upload="checkAvatar"
-                    :http-request="uploadAvatar"
-                  >
-                    <el-button size="small" :icon="Upload" :loading="avatarBusy === 'upload'">
-                      {{ authUser?.avatar ? t('settings.avatarChange') : t('settings.avatarUpload') }}
-                    </el-button>
-                  </el-upload>
+                  <!-- A plain file input behind the button: one control for the keyboard and screen readers -->
+                  <el-button size="small" :icon="Upload" :loading="avatarBusy === 'upload'" @click="avatarInput?.click()">
+                    {{ authUser?.avatar ? t('settings.avatarChange') : t('settings.avatarUpload') }}
+                  </el-button>
+                  <input ref="avatarInput" type="file" :accept="AVATAR_TYPES.join(',')" class="hidden" tabindex="-1" aria-hidden="true" @change="pickAvatar" />
                   <el-button
                     v-if="authUser?.avatar"
                     size="small"
@@ -144,6 +147,13 @@
                 </el-button>
               </el-form-item>
             </el-form>
+          </el-card>
+
+          <!-- Everything this account owns, as one file -->
+          <el-card shadow="never" class="mt-4">
+            <template #header>{{ t('settings.myData.title') }}</template>
+            <p class="text-sm text-[var(--el-text-color-secondary)] mb-3">{{ t('settings.myData.desc') }}</p>
+            <el-button :loading="exportingData" @click="exportMyData">{{ t('settings.myData.download') }}</el-button>
           </el-card>
         </div>
 
@@ -222,9 +232,9 @@
                       {{ t('settings.viewLiveBtn') }}
                     </el-button>
                     <div v-if="row.canManage !== false" class="flex items-center gap-1">
-                      <el-button size="small" circle :icon="Share" :title="t('share.button')" @click="openShareDialog(row)" />
-                      <el-button size="small" circle :icon="Edit" :title="t('settings.editCamera')" @click="openEditCameraModal(row)" />
-                      <el-button size="small" circle type="danger" plain :icon="Delete" :title="t('settings.deleteCamera')" @click="handleDeleteCamera(row)" />
+                      <el-button :aria-label="t('share.button')" size="small" circle :icon="Share" :title="t('share.button')" @click="openShareDialog(row)" />
+                      <el-button :aria-label="t('settings.editCamera')" size="small" circle :icon="Edit" :title="t('settings.editCamera')" @click="openEditCameraModal(row)" />
+                      <el-button :aria-label="t('settings.deleteCamera')" size="small" circle type="danger" plain :icon="Delete" :title="t('settings.deleteCamera')" @click="handleDeleteCamera(row)" />
                     </div>
                   </div>
                 </div>
@@ -315,13 +325,13 @@
                     </el-button>
                     <template v-if="row.canManage !== false">
                       <el-tooltip :content="t('share.button')" placement="top">
-                        <el-button link :icon="Share" @click="openShareDialog(row)" />
+                        <el-button :aria-label="t('share.button')" link :icon="Share" @click="openShareDialog(row)" />
                       </el-tooltip>
                       <el-tooltip :content="t('settings.editCamera')" placement="top">
-                        <el-button link :icon="Edit" @click="openEditCameraModal(row)" />
+                        <el-button :aria-label="t('settings.editCamera')" link :icon="Edit" @click="openEditCameraModal(row)" />
                       </el-tooltip>
                       <el-tooltip :content="t('settings.deleteCamera')" placement="top">
-                        <el-button link type="danger" :icon="Delete" @click="handleDeleteCamera(row)" />
+                        <el-button :aria-label="t('settings.deleteCamera')" link type="danger" :icon="Delete" @click="handleDeleteCamera(row)" />
                       </el-tooltip>
                     </template>
                   </template>
@@ -376,6 +386,7 @@
                 <p class="settings-meta mt-1">{{ authUser?.email }}</p>
               </div>
               <el-switch
+                :aria-label="t('settings.emailAlerts')"
                 :model-value="emailAlertsEnabled"
                 :loading="savingPrefs"
                 @change="saveEmailAlerts"
@@ -412,6 +423,7 @@
               </div>
               <el-switch
                 v-if="telegramConnected"
+                :aria-label="t('settings.telegram.title')"
                 :model-value="authUser?.notificationPrefs?.telegram !== false"
                 :loading="savingPrefs"
                 @change="saveTelegramAlerts"
@@ -483,6 +495,7 @@
                   </div>
                   <div class="flex items-center gap-2">
                     <el-input-number
+                      :aria-label="t('settings.thresholdOf', { name: cam.deviceName })"
                       :model-value="cam.alertThreshold || 15"
                       :min="1"
                       :max="10000"
@@ -697,7 +710,7 @@
               <div class="text-sm">{{ t('settings.captureDaytimeOnly') }}</div>
               <div class="text-xs" style="color: var(--el-text-color-secondary)">{{ t('settings.captureDaytimeOnlyHint') }}</div>
             </div>
-            <el-switch v-model="editForm.captureDaytimeOnly" />
+            <el-switch v-model="editForm.captureDaytimeOnly" :aria-label="t('settings.captureDaytimeOnly')" />
           </div>
         </el-form-item>
       </el-form>
@@ -1118,6 +1131,13 @@ const checkAvatar = (file) => {
   return true;
 };
 
+const avatarInput = ref(null);
+const pickAvatar = (event) => {
+  const file = event.target.files?.[0];
+  event.target.value = '';
+  if (file && checkAvatar(file)) uploadAvatar({ file });
+};
+
 const uploadAvatar = async ({ file }) => {
   avatarBusy.value = 'upload';
   try {
@@ -1160,6 +1180,30 @@ const saveProfile = async () => {
     ElNotification({ title: t('common.error'), message: t('settings.saveFailed'), type: 'error' });
   } finally {
     savingProfile.value = false;
+  }
+};
+
+// "Download all my data": a ZIP of CSV and JSON files
+const exportingData = ref(false);
+const exportMyData = async () => {
+  exportingData.value = true;
+  try {
+    const res = await api.exportMyData();
+    const url = URL.createObjectURL(new Blob([res.data], { type: 'application/zip' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `FlyBot_data_${new Date().toISOString().slice(0, 10)}.zip`;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+  } catch (err) {
+    // The error comes back as a blob too
+    let message = requestErrorText(t, err, t('common.error'));
+    try {
+      if (err.response?.data instanceof Blob) message = JSON.parse(await err.response.data.text()).message || message;
+    } catch { /* not JSON */ }
+    ElNotification({ title: t('common.error'), message, type: 'error' });
+  } finally {
+    exportingData.value = false;
   }
 };
 
@@ -1297,6 +1341,13 @@ const handleDeleteCamera = async (cam) => {
 .settings-menu {
   border-right: none;
   background-color: transparent;
+}
+.settings-group__title {
+  margin: 0;
+  padding: 7px 0 7px 20px;
+  font-size: 12px;
+  line-height: normal;
+  color: var(--el-text-color-secondary);
 }
 .settings-section-title {
   font-size: 15px;

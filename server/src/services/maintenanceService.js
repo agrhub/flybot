@@ -35,8 +35,9 @@ async function syncCardReplacedAt(deviceSerial) {
 /**
  * Record one event. `user` is req.user (null for automatic detections).
  */
-async function recordEvent({ deviceSerial, type, at = new Date(), note = '', source = 'manual', user = null }) {
+async function recordEvent({ deviceSerial, type, at = new Date(), note = '', source = 'manual', user = null, clientId = undefined }) {
     const event = await MaintenanceEvent.create({
+        clientId,
         deviceSerial,
         type,
         at,

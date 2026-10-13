@@ -10,9 +10,13 @@ import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { createRequire } from 'node:module';
 
 const MEDIA = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../tools/media');
-const BASE = 'http://localhost:3010';
+// Other ports when 3013/3010 are taken: DEMO_API_PORT, DEMO_CLIENT_PORT
+const API_PORT = Number(process.env.DEMO_API_PORT) || 3013;
+const CLIENT_PORT = Number(process.env.DEMO_CLIENT_PORT) || 3010;
+const BASE = `http://localhost:${CLIENT_PORT}`;
 const TMP = path.join(os.tmpdir(), 'flybot-e2e');
 // Its own Chrome port and profile, so it can run next to the screenshot scripts
 process.env.FLYBOT_CDP_PORT ||= '9444';
@@ -52,7 +56,7 @@ function stopAll() {
 }
 
 before(async () => {
-  for (const port of [3013, 3010]) {
+  for (const port of [API_PORT, CLIENT_PORT]) {
     assert.ok(await portFree(port), `port ${port} is in use: stop the demo (or whatever uses it) first`);
   }
   fs.rmSync(TMP, { recursive: true, force: true });
@@ -156,6 +160,78 @@ test('the monthly VietGAP switch is saved', { timeout: 60000 }, async () => {
   const prefs = await page.eval(`const r = await fetch('/api/auth/me', { headers: { Authorization: 'Bearer ' + localStorage.getItem('token') } });
     const body = await r.json(); return (body.user || body).notificationPrefs;`);
   assert.equal(prefs.vietgapMonthly, true);
+});
+
+test('"download all my data" gives a ZIP of the account', { timeout: 60000 }, async () => {
+  await page.goto(`${BASE}/settings?tab=profile`, 2000);
+  assert.ok(await waitForText('Tải toàn bộ dữ liệu'));
+  // The same request the button makes; the file's first bytes are the ZIP signature
+  const got = await page.eval(`const r = await fetch('/api/auth/export', { headers: { Authorization: 'Bearer ' + localStorage.getItem('token') } });
+    const bytes = new Uint8Array(await r.arrayBuffer());
+    return { status: r.status, type: r.headers.get('content-type'), zip: bytes[0] === 0x50 && bytes[1] === 0x4b, size: bytes.length };`);
+  assert.equal(got.status, 200);
+  assert.equal(got.type, 'application/zip');
+  assert.ok(got.zip && got.size > 1000, `a ZIP with the demo data (${got.size} bytes)`);
+});
+
+test('without signal a card change waits on the device, then goes out when the signal is back', { timeout: 120000 }, async () => {
+  await page.goto(`${BASE}/cameras`, 2000);
+  assert.ok(await waitForText('Bẫy xoài A1'));
+  // A sticky trap (lure traps have no card)
+  await page.eval(`const card = [...document.querySelectorAll('.el-card')].filter(c => c.innerText.includes('Bẫy xoài A1')).pop();
+    [...card.querySelectorAll('button')].find(b => b.innerText.includes('Xem chi tiết')).click(); return true;`);
+  assert.ok(await waitForText('Đã thay tấm bẫy'), 'maintenance card');
+  const outbox = () => page.eval(`const key = Object.keys(localStorage).find(k => k.startsWith('flybot_outbox_')); return key ? JSON.parse(localStorage.getItem(key)) : [];`);
+
+  await page.send('Network.enable');
+  await page.send('Network.emulateNetworkConditions', { offline: true, latency: 0, downloadThroughput: -1, uploadThroughput: -1 });
+  try {
+    await page.eval(`[...document.querySelectorAll('button')].find(b => b.innerText.includes('Đã thay tấm bẫy')).click(); return true;`);
+    assert.ok(await waitForText('đã lưu trên máy'), 'saved on the device');
+    assert.ok(await waitForText('đang chờ gửi'), 'waiting bar');
+    const waiting = await outbox();
+    assert.equal(waiting.length, 1);
+    assert.equal(waiting[0].body.type, 'card_replaced');
+    assert.ok(waiting[0].body.at, 'the time of the work is kept');
+  } finally {
+    await page.send('Network.emulateNetworkConditions', { offline: false, latency: 0, downloadThroughput: -1, uploadThroughput: -1 });
+  }
+  // Back online: sent on its own
+  assert.equal(await page.eval(`for (let i = 0; i < 60; i++) {
+      const key = Object.keys(localStorage).find(k => k.startsWith('flybot_outbox_'));
+      if (!key || JSON.parse(localStorage.getItem(key)).length === 0) return true;
+      await new Promise(r => setTimeout(r, 250));
+    }
+    return false;`), true);
+  assert.ok(await page.eval(`for (let i = 0; i < 40 && document.body.innerText.includes('đang chờ gửi'); i++) await new Promise(r => setTimeout(r, 250));
+    return !document.body.innerText.includes('đang chờ gửi');`), 'the bar goes away');
+});
+
+test('the main pages pass the automatic accessibility checks (WCAG 2.1 AA), light and dark', { timeout: 300000 }, async () => {
+  const axe = fs.readFileSync(createRequire(import.meta.url).resolve('axe-core/axe.min.js'), 'utf8');
+  const pages = ['/dashboard', '/cameras', '/analytics', '/reports', '/farms', '/logbook', '/map', '/settings?tab=profile', '/settings?tab=notifications', '/manual'];
+  const problems = [];
+  try {
+    for (const theme of ['light', 'dark']) {
+      await page.eval(`localStorage.setItem('smart_trap_theme', '${theme}'); return true;`);
+      for (const url of pages) {
+        await page.goto(BASE + url, 1000);
+        await page.eval(`for (let i = 0; i < 120 && document.body.innerText.length < 200; i++) await new Promise(r => setTimeout(r, 250));
+          await new Promise(r => setTimeout(r, 2000)); return true;`);
+        // Colors are measured as shown, not halfway through a transition
+        const found = await page.eval(`const still = document.createElement('style');
+          still.textContent = '*, *::before, *::after { transition: none !important; animation: none !important; }';
+          document.head.appendChild(still); await new Promise(r => setTimeout(r, 300));
+          ${axe};
+          const r = await axe.run(document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'] } });
+          return r.violations.map(v => v.id + ': ' + v.nodes.slice(0, 3).map(n => n.target.join(' ') + ' (' + (n.any[0]?.message || '') + ')').join(', '));`);
+        for (const f of found) problems.push(`${theme} ${url} ${f}`);
+      }
+    }
+  } finally {
+    await page.eval(`localStorage.removeItem('smart_trap_theme'); return true;`);
+  }
+  assert.deepEqual(problems, []);
 });
 
 test('on a phone the pages fit the screen', { timeout: 120000 }, async () => {

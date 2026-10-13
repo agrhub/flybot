@@ -8,7 +8,7 @@
 
     <el-card shadow="never">
       <div class="flex flex-wrap items-center gap-3 mb-4">
-        <el-select v-model="category" :placeholder="t('audit.allCategories')" clearable class="!w-48" @change="reload">
+        <el-select :aria-label="t('audit.allCategories')" v-model="category" :placeholder="t('audit.allCategories')" clearable class="!w-48" @change="reload">
           <el-option v-for="c in CATEGORIES" :key="c" :label="t(`audit.categories.${c}`)" :value="c" />
         </el-select>
         <el-input

@@ -123,7 +123,7 @@
             <span class="cameras-meta hidden md:inline">
               {{ t('cameras.selectCamera') }}:
             </span>
-            <el-select
+            <el-select :aria-label="t('cameras.selectCamera')"
               :model-value="currentDetailCamera?.deviceSerial"
               @change="handleSelectDetailCamera"
               size="default"
