@@ -475,6 +475,11 @@
                   <div class="min-w-0">
                     <p class="settings-label truncate">{{ cam.deviceName }}</p>
                     <p class="settings-meta font-mono">{{ cam.deviceSerial }}</p>
+                    <!-- From the camera's last 30 days: the busy days alert, not every day -->
+                    <p v-if="suggestionFor(cam)" class="settings-meta mt-1">
+                      {{ t('settings.thresholdSuggestion', { value: suggestionFor(cam).suggested, days: suggestionFor(cam).days, now: suggestionFor(cam).alertDaysCurrent, then: suggestionFor(cam).alertDaysSuggested }) }}
+                      <el-button link type="primary" size="small" :disabled="savingThreshold === cam.deviceSerial" @click="saveThreshold(cam, suggestionFor(cam).suggested)">{{ t('settings.applySuggestion') }}</el-button>
+                    </p>
                   </div>
                   <div class="flex items-center gap-2">
                     <el-input-number
@@ -895,9 +900,28 @@ const loadSystemInfo = async () => {
   }
 };
 
+// ---------- Suggested thresholds ----------
+const thresholdSuggestions = ref({});
+const loadThresholdSuggestions = async () => {
+  try {
+    const res = await api.getThresholdSuggestions();
+    thresholdSuggestions.value = Object.fromEntries((res.data.suggestions || []).map((s) => [s.deviceSerial, s]));
+  } catch {
+    // Only a hint: the thresholds still work without it
+    thresholdSuggestions.value = {};
+  }
+};
+// Shown when there is one and it differs from the threshold in use
+const suggestionFor = (cam) => {
+  const s = thresholdSuggestions.value[cam.deviceSerial];
+  return s && s.suggested && s.suggested !== (cam.alertThreshold || 15) ? s : null;
+};
+
+// (declared above: the watcher runs at once)
 watch(activeTab, (tab) => {
   if (tab === 'sessions') loadSessions();
   if (tab === 'storage' || tab === 'notifications') loadSystemInfo();
+  if (tab === 'notifications') loadThresholdSuggestions();
 }, { immediate: true });
 
 // ---------- Telegram ----------

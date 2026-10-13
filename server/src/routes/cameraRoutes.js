@@ -23,6 +23,7 @@ router.post('/user/update-camera-location', cameraController.updateCameraLocatio
 router.delete('/user/delete-camera', cameraController.deleteCamera);
 router.post('/user/update-camera-code', cameraController.updateCameraCode);
 router.get('/user/cameras/health', cameraController.getCamerasHealth);
+router.get('/user/cameras/threshold-suggestions', cameraController.getThresholdSuggestions);
 router.get('/user/camera/shares', shareController.listShares);
 router.post('/user/camera/share', shareLimiter, shareController.addShare);
 router.delete('/user/camera/share', shareController.removeShare);

@@ -10,6 +10,7 @@ const { CARD_REMINDER_DAYS, cardDueAt } = require('../services/maintenanceServic
 const { TRAP_KINDS, DEFAULT_TRAP_KIND } = require('../constants/trap');
 
 const cameraTarget = (camera) => ({ type: 'camera', id: camera.deviceSerial, label: camera.deviceName });
+const thresholdService = require('../services/thresholdService');
 const { viewFilter, viewableCameras, findViewableCamera, findManageableCamera, findOwnedCamera, canManageCamera } = require('../utils/ownership');
 
 /**
@@ -612,7 +613,22 @@ async function getCamerasHealth(req, res) {
     }
 }
 
+/**
+ * GET /api/user/cameras/threshold-suggestions
+ * A suggested alert threshold for each camera the user can change, from its last 30 days.
+ */
+async function getThresholdSuggestions(req, res) {
+    try {
+        const cameras = await viewableCameras(req.user).select('deviceSerial deviceName alertThreshold trapKind userId sharedWith').lean();
+        const manageable = [...new Map(cameras.filter(c => canManageCamera(req.user, c)).map(c => [c.deviceSerial, c])).values()];
+        res.json({ success: true, days: thresholdService.DAYS, suggestions: await thresholdService.suggestThresholds(manageable) });
+    } catch (err) {
+        sendServerError(res, err, { context: 'Threshold suggestions' });
+    }
+}
+
 module.exports = {
+    getThresholdSuggestions,
     captureNow,
     getCamerasHealth,
     getUserCameras,
