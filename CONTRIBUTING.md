@@ -2,6 +2,8 @@
 
 ## Setup
 
+Install [Git LFS](https://git-lfs.com) first (`git lfs install`): the tour videos in `client/public/media` and the `.pptx` decks are stored there. A new video or deck is picked up by `.gitattributes` automatically.
+
 ```bash
 npm install
 cp .env.example .env

@@ -83,6 +83,8 @@ DEPLOY.md          Cloud Run and VM deployment
 
 Requirements: Node.js 20.19+ or 22.12+, a MongoDB database, S3-compatible storage, an EZVIZ Open Platform app (app key and secret) and a Roboflow workflow.
 
+The product tour videos and the presentation decks are stored with [Git LFS](https://git-lfs.com): run `git lfs install` once before cloning (or `git lfs pull` afterwards), or those files are small pointers.
+
 ```bash
 npm install
 cp .env.example .env        # then fill in the values (see the comments in the file)

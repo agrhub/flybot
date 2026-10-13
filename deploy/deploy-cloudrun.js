@@ -189,9 +189,23 @@ function envProblems(env) {
     return problems;
 }
 
+// The tour videos live in Git LFS: a checkout without it has small pointer files instead,
+// and the website would serve those as videos
+const MEDIA_DIR = path.join(ROOT, 'client', 'public', 'media');
+function mediaProblems() {
+    if (!fs.existsSync(MEDIA_DIR)) return [];
+    return fs.readdirSync(MEDIA_DIR)
+        .filter(name => {
+            const file = path.join(MEDIA_DIR, name);
+            if (!fs.statSync(file).isFile() || fs.statSync(file).size > 1024) return false;
+            return fs.readFileSync(file, 'utf8').startsWith('version https://git-lfs');
+        })
+        .map(name => `client/public/media/${name} is a Git LFS pointer, not the video: run "git lfs install" and "git lfs pull"`);
+}
+
 function validateEnv(env) {
-    const problems = envProblems(env);
-    if (problems.length) fail(`Fix these in your .env first:\n  - ${problems.join('\n  - ')}`);
+    const problems = [...envProblems(env), ...mediaProblems()];
+    if (problems.length) fail(`Fix these first:\n  - ${problems.join('\n  - ')}`);
 }
 
 // ---------- Steps ----------
@@ -352,7 +366,7 @@ function checkReadiness(opts, env) {
     let blocking = 0;
 
     step(`Required (${path.relative(ROOT, opts.envFile)})`);
-    const problems = envProblems(env);
+    const problems = [...envProblems(env), ...mediaProblems()];
     if (problems.length) problems.forEach(p => { console.log(`  ${red('✗')} ${p}`); blocking++; });
     else ok('Database, EZVIZ, S3 storage, Roboflow and JWT secret are set');
 

@@ -2,3 +2,6 @@
 *.sh text eol=lf
 *.bat text eol=crlf
 Dockerfile text eol=lf
+# Videos and decks are large and change with every re-recording/export: kept in Git LFS
+client/public/media/*.mp4 filter=lfs diff=lfs merge=lfs -text
+*.pptx filter=lfs diff=lfs merge=lfs -text
