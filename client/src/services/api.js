@@ -251,6 +251,9 @@ export default {
     }
     return apiClient.post('/user/add-camera', { deviceSerial, validateCode, deviceName });
   },
+  getThresholdSuggestions() {
+    return apiClient.get('/user/cameras/threshold-suggestions');
+  },
   updateCamera(...args) {
     // Supports both (deviceSerial, data) and legacy (userId, deviceSerial, data)
     const deviceSerial = args.length >= 3 ? args[1] : args[0];
@@ -349,6 +352,12 @@ export default {
     return apiClient.put(`/orgs/${id}/cameras`, data);
   },
   // Farms and plots
+  downloadSeasonReport(params = {}) {
+    return apiClient.get('/farms/season-report', { params, responseType: 'blob' });
+  },
+  sendSeasonReport(body = {}) {
+    return apiClient.post('/farms/season-report/send', body);
+  },
   compareFarms(days = 30) {
     return apiClient.get('/farms/compare', { params: { days } });
   },

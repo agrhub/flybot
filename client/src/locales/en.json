@@ -668,7 +668,9 @@
       "disconnect": "Disconnect",
       "disconnectConfirm": "Stop sending FlyBot alerts to Telegram?",
       "notConfigured": "Telegram alerts are not set up on this server yet (the administrator needs to add a bot)."
-    }
+    },
+    "thresholdSuggestion": "Suggested {value} from the last {days} days: the current threshold was reached on {now} days, the suggested one on {then}.",
+    "applySuggestion": "Apply"
   },
   "assistant": {
     "title": "FlyBot Assistant",
@@ -924,7 +926,7 @@
           "plots": {
             "title": "Farms & plots",
             "desc": "Group traps by farm and plot to follow each area.",
-            "items": "Open \"Farms\", create a farm, then click \"Add plot\".\nDraw the plot boundary on the map and enter its area and color.\nPut cameras in the plot and set a plot threshold if needed.\nEach plot shows its traps, the current average and the last 7 days; Low/High follows the risk.\n\"Compare farms\" at the top of Farms shows each farm's flies per trap per day over 7, 30 or 90 days against the period before, its worst plot and its treatments; open a row to compare its plots."
+            "items": "Open \"Farms\", create a farm, then click \"Add plot\".\nDraw the plot boundary on the map and enter its area and color.\nPut cameras in the plot and set a plot threshold if needed.\nEach plot shows its traps, the current average and the last 7 days; Low/High follows the risk.\n\"Compare farms\" at the top of Farms shows each farm's flies per trap per day over 7, 30 or 90 days against the period before, its worst plot and its treatments; open a row to compare its plots.\n\"Season report\" on Farms: pick the dates (6 months by default), then download the PDF or email it; it has each farm by month, the busiest days, the effect of each active ingredient and the treatment record."
           },
           "map": {
             "title": "Map",
@@ -954,7 +956,7 @@
           "channels": {
             "title": "Channels & quiet hours",
             "desc": "Choose how alerts reach you when the app is closed.",
-            "items": "Open Settings, Notifications.\nTurn on alert emails, connect Telegram, or enable push notifications on this phone or computer.\nTurn on the weekly report for a Monday summary; \"Send me this week’s report now\" shows an example.\nSet quiet hours for the night, and switch off cameras you do not follow under \"Cameras I follow\".\nTurn on \"Morning brief\" for a summary at 6:30 every morning: yesterday's catches, traps over or near their threshold, cards due, cameras offline (on Telegram, or by email without Telegram).\nTurn on \"Monthly VietGAP record\" to get last month's pesticide use record (PDF) on the 1st of each month; in the Field log, \"Email last month\" sends it right away."
+            "items": "Open Settings, Notifications.\nTurn on alert emails, connect Telegram, or enable push notifications on this phone or computer.\nTurn on the weekly report for a Monday summary; \"Send me this week’s report now\" shows an example.\nSet quiet hours for the night, and switch off cameras you do not follow under \"Cameras I follow\".\nTurn on \"Morning brief\" for a summary at 6:30 every morning: yesterday's catches, traps over or near their threshold, cards due, cameras offline (on Telegram, or by email without Telegram).\nTurn on \"Monthly VietGAP record\" to get last month's pesticide use record (PDF) on the 1st of each month; in the Field log, \"Email last month\" sends it right away.\nUnder each camera, a threshold suggested from its last 30 days (only the busiest days reach it); press \"Apply\" to use it."
           },
           "reports": {
             "title": "Reports",
@@ -2070,6 +2072,13 @@
       "sheetPlots": "Plots",
       "previousFtd": "Period before (flies/trap/day)",
       "changePctCol": "Change (%)"
+    },
+    "season": {
+      "title": "Season report",
+      "desc": "One PDF for the whole period: flies per trap per day by farm and by month, the busiest days, the effect of each active ingredient and the treatment record (VietGAP).",
+      "download": "Download PDF",
+      "send": "Email it",
+      "sent": "The season report is on its way to your email."
     }
   },
   "alertPrefs": {

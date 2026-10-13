@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+### Season report
+- **Season report** on Farms: one PDF for a chosen period (6 months by default, up to a year), downloaded or emailed: each farm's flies per trap per day, month by month, its worst plot and busiest days, the effect of each active ingredient, and the treatment record (VietGAP) as an appendix.
+
+### Alert thresholds
+- Settings, Notifications: under each camera a threshold suggested from its last 30 days (the 90th percentile of the figure its alert compares), with how many days the current and the suggested one were reached, and an **Apply** button.
+
+### Security and speed
+- The farm comparison and the effect by ingredient are rate-limited per person; asking for a camera you cannot see is always refused.
+- Effect by ingredient reads the daily figures once instead of per treatment: 23 s to 0.4 s with 200 treatments.
+
 ### Exports
 - **Export Excel** for the farm comparison (a sheet for farms, one for plots) and for the effect by active ingredient, for cooperatives to send on.
 

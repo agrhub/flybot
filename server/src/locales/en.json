@@ -379,7 +379,10 @@
     "this_has_already_been_handled": "This has already been handled.",
     "unknown_action": "Unknown action.",
     "invalid_request": "Invalid request.",
-    "confirm_your_email_or_link_telegram_to_receive_the_record": "Confirm your email or link Telegram to receive the record."
+    "confirm_your_email_or_link_telegram_to_receive_the_record": "Confirm your email or link Telegram to receive the record.",
+    "dates_must_be_yyyy_mm_dd": "Dates must be YYYY-MM-DD.",
+    "the_period_must_end_today_at_the_latest_and_start_before_it_ends": "The period must end today at the latest and start before it ends.",
+    "the_period_can_be_at_most_a_year": "The period can be at most a year."
   },
   "reportPdf": {
     "range": "Period: {from} - {to} ({days} days)",
@@ -491,6 +494,43 @@
       "sanitation": "Orchard sanitation",
       "bagging": "Fruit bagging",
       "other": "Other"
+    }
+  },
+  "season": {
+    "title": "Season report {from} – {to}",
+    "subtitle": "{owner} · {farms} farms · {days} days · made by FlyBot on {date}",
+    "ftdNote": "Flies per trap per day: new flies on the traps each day, divided by the traps with data (the standard figure to compare farms and months).",
+    "farmsTitle": "1. Farms",
+    "monthsTitle": "2. Flies per trap per day by month",
+    "monthsMore": "Only the {count} busiest farms are shown.",
+    "ingredientsTitle": "3. Effect by active ingredient",
+    "recordTitle": "Appendix: treatment record (VietGAP)",
+    "usesValue": "{uses} uses ({measured} measured)",
+    "noTreatments": "No treatment with a product or active ingredient in the period.",
+    "footer": "FlyBot · figures from camera traps and AI insect counts; treatment effect compares flies per trap per day 7 days before and after.",
+    "intro": "The season report {from} – {to} for {farms} farms: flies per trap per day by farm and by month, the busiest days, the treatments and the effect of each active ingredient.",
+    "attached": "The report is attached as a PDF.",
+    "button": "Open Farms",
+    "col": {
+      "farm": "Farm",
+      "traps": "Traps",
+      "ftd": "Flies/trap/day",
+      "worstPlot": "Worst plot",
+      "peaks": "Busiest days (flies/trap)",
+      "treatments": "Treatments",
+      "month": "Month",
+      "ingredient": "Active ingredient",
+      "products": "Products",
+      "uses": "Uses",
+      "avgChange": "Average change",
+      "clearlyWorked": "Clear drop (30%+)",
+      "date": "Date",
+      "trapsList": "Traps",
+      "type": "Treatment",
+      "product": "Product",
+      "dose": "Dose",
+      "operator": "Operator",
+      "phi": "PHI (days)"
     }
   }
 }

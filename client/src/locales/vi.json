@@ -668,7 +668,9 @@
       "disconnect": "Ngắt kết nối",
       "disconnectConfirm": "Ngừng gửi cảnh báo FlyBot qua Telegram?",
       "notConfigured": "Máy chủ chưa được thiết lập cảnh báo Telegram (quản trị viên cần thêm bot)."
-    }
+    },
+    "thresholdSuggestion": "Đề xuất {value} theo {days} ngày qua: ngưỡng hiện tại vượt {now} ngày, ngưỡng đề xuất vượt {then} ngày.",
+    "applySuggestion": "Áp dụng"
   },
   "assistant": {
     "title": "Trợ lý FlyBot",
@@ -924,7 +926,7 @@
           "plots": {
             "title": "Vườn & lô",
             "desc": "Nhóm bẫy theo vườn và lô để theo dõi theo khu vực.",
-            "items": "Vào \"Vườn & lô\", tạo vườn mới, rồi bấm \"Thêm lô\".\nVẽ ranh giới lô trên bản đồ, nhập diện tích và màu.\nGán camera vào lô và đặt ngưỡng cảnh báo cho lô nếu cần.\nMỗi lô cho biết số bẫy, số ruồi trung bình hiện tại và tổng 7 ngày qua; nhãn Thấp/Cao theo mức nguy cơ.\nĐầu trang Vườn & lô có bảng \"So sánh vườn\": ruồi/bẫy/ngày từng vườn trong 7, 30 hoặc 90 ngày so với kỳ trước, lô nặng nhất và số lần xử lý; mở một dòng để so sánh các lô."
+            "items": "Vào \"Vườn & lô\", tạo vườn mới, rồi bấm \"Thêm lô\".\nVẽ ranh giới lô trên bản đồ, nhập diện tích và màu.\nGán camera vào lô và đặt ngưỡng cảnh báo cho lô nếu cần.\nMỗi lô cho biết số bẫy, số ruồi trung bình hiện tại và tổng 7 ngày qua; nhãn Thấp/Cao theo mức nguy cơ.\nĐầu trang Vườn & lô có bảng \"So sánh vườn\": ruồi/bẫy/ngày từng vườn trong 7, 30 hoặc 90 ngày so với kỳ trước, lô nặng nhất và số lần xử lý; mở một dòng để so sánh các lô.\n\"Báo cáo mùa vụ\" trên trang Vườn & lô: chọn khoảng ngày (mặc định 6 tháng) rồi tải PDF hoặc gửi email; báo cáo gồm từng vườn theo tháng, ngày nặng nhất, hiệu quả theo hoạt chất và sổ ghi chép xử lý."
           },
           "map": {
             "title": "Bản đồ",
@@ -954,7 +956,7 @@
           "channels": {
             "title": "Kênh nhận & giờ yên lặng",
             "desc": "Chọn cách nhận cảnh báo khi không mở ứng dụng.",
-            "items": "Vào Cài đặt, mục Thông báo.\nBật email cảnh báo, kết nối Telegram, hoặc bật thông báo đẩy trên điện thoại/máy tính đang dùng.\nBật \"Báo cáo tuần\" để nhận tóm tắt mỗi sáng thứ Hai; bấm \"Gửi báo cáo tuần này cho tôi ngay\" để xem thử.\nĐặt \"Giờ yên lặng\" để không bị làm phiền ban đêm, và tắt camera không muốn theo dõi trong \"Camera tôi theo dõi\".\nBật \"Bản tin sáng\" để nhận lúc 6:30 mỗi sáng: số ruồi vào bẫy hôm qua, bẫy vượt hoặc gần ngưỡng, tấm keo đến hạn, camera mất kết nối (qua Telegram, hoặc email nếu chưa liên kết Telegram).\nBật \"Sổ VietGAP hằng tháng\" để nhận sổ sử dụng thuốc BVTV tháng trước (PDF) vào ngày 1 hằng tháng; trong Nhật ký vườn, bấm \"Gửi sổ tháng trước\" để nhận ngay."
+            "items": "Vào Cài đặt, mục Thông báo.\nBật email cảnh báo, kết nối Telegram, hoặc bật thông báo đẩy trên điện thoại/máy tính đang dùng.\nBật \"Báo cáo tuần\" để nhận tóm tắt mỗi sáng thứ Hai; bấm \"Gửi báo cáo tuần này cho tôi ngay\" để xem thử.\nĐặt \"Giờ yên lặng\" để không bị làm phiền ban đêm, và tắt camera không muốn theo dõi trong \"Camera tôi theo dõi\".\nBật \"Bản tin sáng\" để nhận lúc 6:30 mỗi sáng: số ruồi vào bẫy hôm qua, bẫy vượt hoặc gần ngưỡng, tấm keo đến hạn, camera mất kết nối (qua Telegram, hoặc email nếu chưa liên kết Telegram).\nBật \"Sổ VietGAP hằng tháng\" để nhận sổ sử dụng thuốc BVTV tháng trước (PDF) vào ngày 1 hằng tháng; trong Nhật ký vườn, bấm \"Gửi sổ tháng trước\" để nhận ngay.\nDưới mỗi camera có ngưỡng đề xuất theo 30 ngày qua (chỉ những ngày đông nhất mới vượt); bấm \"Áp dụng\" để dùng."
           },
           "reports": {
             "title": "Báo cáo",
@@ -2070,6 +2072,13 @@
       "sheetPlots": "Lô",
       "previousFtd": "Kỳ trước (ruồi/bẫy/ngày)",
       "changePctCol": "Thay đổi (%)"
+    },
+    "season": {
+      "title": "Báo cáo mùa vụ",
+      "desc": "Một file PDF cho cả kỳ: ruồi/bẫy/ngày từng vườn và theo tháng, ngày nặng nhất, hiệu quả theo hoạt chất và sổ ghi chép xử lý (VietGAP).",
+      "download": "Tải PDF",
+      "send": "Gửi email",
+      "sent": "Đang gửi báo cáo mùa vụ tới email của bạn."
     }
   },
   "alertPrefs": {

@@ -8,6 +8,7 @@
 
     <!-- Several farms (a cooperative): side by side -->
     <FarmCompareCard v-if="farms.length" />
+    <SeasonReportCard v-if="farms.length" />
 
     <div v-loading="loading">
       <el-card v-if="!farms.length && !loading" shadow="never">
@@ -59,6 +60,7 @@ import api from '@/services/api';
 import { useAuth } from '@/composables/useAuth';
 import PageHeader from '@/components/common/PageHeader.vue';
 import FarmCompareCard from '@/components/farms/FarmCompareCard.vue';
+import SeasonReportCard from '@/components/farms/SeasonReportCard.vue';
 
 const router = useRouter();
 const { t } = useI18n();
