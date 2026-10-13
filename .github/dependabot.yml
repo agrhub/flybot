@@ -1,0 +1,22 @@
+# Weekly update pull requests; CI runs on each. Security fixes come as soon as they are published.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    # A release must be a week old first: brand-new versions are where supply-chain attacks land
+    cooldown:
+      default-days: 7
+    groups:
+      # Test and build tools together: one pull request instead of many
+      dev-tools:
+        dependency-type: development
+        update-types: [minor, patch]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
