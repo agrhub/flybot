@@ -1,8 +1,9 @@
 const { test, before, after, beforeEach } = require('node:test');
 const assert = require('node:assert/strict');
 const axios = require('axios');
-const env = require('../src/config/env');
+// The harness first: it replaces every .env value before anything reads them
 const { models, startDb, stopDb, clearDb, request, createUser, createCamera, json } = require('./dbHelpers');
+const env = require('../src/config/env');
 const ezvizService = require('../src/services/ezvizService');
 const ezvizRam = require('../src/services/ezvizRamService');
 

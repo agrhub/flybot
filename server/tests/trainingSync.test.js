@@ -1,8 +1,9 @@
 const { test, before, after, beforeEach } = require('node:test');
 const assert = require('node:assert/strict');
 const axios = require('axios');
-const env = require('../src/config/env');
+// The harness first: it replaces every .env value before anything reads them
 const { models, startDb, stopDb, clearDb, request, createUser, createCamera, json } = require('./dbHelpers');
+const env = require('../src/config/env');
 const trainingSync = require('../src/services/trainingSync');
 const settingsService = require('../src/services/settingsService');
 
@@ -12,6 +13,8 @@ beforeEach(async () => {
     await clearDb();
     settingsService.clearCache();
     env.ROBOFLOW_UPLOAD_PROJECT = '';
+    // A dummy key: the harness blanks the real one, and Roboflow is faked below
+    env.ROBOFLOW_API_KEY = 'test-roboflow-key';
 });
 
 // Record calls to Roboflow instead of sending them

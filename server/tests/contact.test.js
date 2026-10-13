@@ -1,7 +1,8 @@
 const { test, before, after, beforeEach } = require('node:test');
 const assert = require('node:assert/strict');
-const env = require('../src/config/env');
+// The harness first: it replaces every .env value before anything reads them
 const { sentMails, startDb, stopDb, clearDb, request, createUser, json } = require('./dbHelpers');
+const env = require('../src/config/env');
 
 before(startDb);
 after(stopDb);
