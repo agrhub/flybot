@@ -63,6 +63,10 @@
       "harvest_ready": {
         "subject": "🧺 Được thu hoạch: {product} ({area})",
         "body": "Thời gian cách ly {days} ngày sau lần xử lý {product} tại {area} kết thúc lúc {date}. Từ thời điểm đó được thu hoạch ở khu vực các bẫy {traps}."
+      },
+      "weather_risk": {
+        "subject": "🌦️ Thời tiết thuận lợi cho ruồi vàng: {farmName}",
+        "body": "Dự báo các ngày {days} ở {farmName}: {minTemp}–{maxTemp}°C, độ ẩm đến {humidity}%, rất thuận lợi cho ruồi vàng hoạt động và đẻ trứng. Theo độ-ngày, đợt ruồi trưởng thành tiếp theo dự kiến khoảng {waveDate}. Nên kiểm tra bẫy, thu gom trái rụng và chuẩn bị phun bả trước các ngày này."
       }
     },
     "cameraShared": {

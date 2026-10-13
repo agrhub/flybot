@@ -69,7 +69,7 @@ const MOBILE = [390, 844];
 
 const shots = [
     { name: 'dashboard', url: '/dashboard', settle: 6000 },
-    { name: 'diagnosis', url: '/dashboard', settle: 4000, action: `
+    { name: 'diagnosis', url: '/dashboard', settle: 8000, action: `
         const b = [...document.querySelectorAll('.el-card button')].find(b => b.innerText.includes(${JSON.stringify(W('Chẩn đoán lại bằng AI', 'Re-evaluate with AI'))}));
         b.click(); for (let i = 0; i < 40 && !document.querySelector('.dd-panel'); i++) await sleep(300);
         await sleep(1500); document.querySelectorAll('.el-notification').forEach(n => n.remove());

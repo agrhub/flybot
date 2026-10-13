@@ -14,7 +14,8 @@ const WEBHOOK_EVENTS = [
     'card_due',
     'card_change_detected',
     'image_quality',
-    'harvest_ready'
+    'harvest_ready',
+    'weather_risk'
 ];
 
 const webhookSchema = new mongoose.Schema({

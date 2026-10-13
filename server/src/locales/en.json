@@ -63,6 +63,10 @@
       "harvest_ready": {
         "subject": "🧺 OK to harvest: {product} ({area})",
         "body": "The {days}-day pre-harvest interval after {product} in {area} ends at {date}. From then on, harvest is allowed around the traps {traps}."
+      },
+      "weather_risk": {
+        "subject": "🌦️ Weather that suits fruit flies: {farmName}",
+        "body": "The forecast for {days} at {farmName}: {minTemp}–{maxTemp}°C, humidity up to {humidity}%, ideal for fruit flies to fly and lay eggs. From degree-days, the next wave of adults is due around {waveDate}. Check the traps, collect fallen fruit and get bait sprays ready before those days."
       }
     },
     "cameraShared": {

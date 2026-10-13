@@ -183,7 +183,7 @@ const notificationItems = computed(() => {
 
 const openNotification = (n) => {
   markRead([n.id]);
-  if ((n.type === 'farm_shared' || n.type === 'plot_threshold') && n.params?.farmId) {
+  if ((n.type === 'farm_shared' || n.type === 'plot_threshold' || n.type === 'weather_risk') && n.params?.farmId) {
     router.push(`/farms/${n.params.farmId}`);
     return;
   }

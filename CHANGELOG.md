@@ -21,6 +21,10 @@
 - **Pre-harvest intervals**: the overview lists areas still inside the interval after a treatment, with the time harvest is allowed; that morning at 06:00 everyone who sees the traps gets an **OK to harvest** notice in the app, by email, Telegram, push and webhook (`harvest_ready`).
 - **Effect by active ingredient**: the Field log sums up every use of each active ingredient (or product): average change in flies per trap per day in the 7 days after, and how many uses clearly worked (a drop of 30% or more).
 
+### Weather outlook
+- The degree-day panel shows the next 3 days with temperature, humidity and rain, and which of them suit fruit flies (25–33°C, humid, no heavy rain).
+- When two or more such days come just as a new wave of adults is due, each farm gets a **weather warning** at 17:00 the day before (`weather_risk`), at most once a day.
+
 ### Works without signal
 - The installed app opens in the field without a connection and shows the last data seen, with the time it was saved. Actions that need the network say so instead of failing silently. Saved data is cleared on sign-out.
 

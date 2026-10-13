@@ -44,11 +44,13 @@ async function getCurrentWeather(latitude, longitude) {
 }
 
 const DAILY_TTL_MS = 3 * 60 * 60 * 1000;
+const numberOrNull = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
 const dailyCache = new Map(); // "lat,lng" -> { at, value }
 
 /**
- * Daily min/max temperature for the past month and the next 16 days (Open-Meteo, free).
- * Returns [{ day: 'YYYY-MM-DD', min, max, forecast }] in the farm time zone, or null.
+ * Daily min/max temperature, mean humidity and rain for the past month and the next 16 days
+ * (Open-Meteo, free). Returns [{ day: 'YYYY-MM-DD', min, max, humidity, rain, forecast }] in the
+ * farm time zone (humidity and rain may be null), or null.
  */
 async function getDailyTemperatures(latitude, longitude) {
     const lat = Number(latitude);
@@ -64,7 +66,7 @@ async function getDailyTemperatures(latitude, longitude) {
             params: {
                 latitude: lat.toFixed(4),
                 longitude: lng.toFixed(4),
-                daily: 'temperature_2m_max,temperature_2m_min',
+                daily: 'temperature_2m_max,temperature_2m_min,relative_humidity_2m_mean,precipitation_sum',
                 past_days: 31,
                 forecast_days: 16,
                 timezone: TIMEZONE
@@ -75,7 +77,14 @@ async function getDailyTemperatures(latitude, longitude) {
         if (!Array.isArray(daily?.time)) return null;
         const today = new Intl.DateTimeFormat('en-CA', { timeZone: TIMEZONE }).format(new Date());
         const value = daily.time
-            .map((day, i) => ({ day, min: daily.temperature_2m_min?.[i], max: daily.temperature_2m_max?.[i], forecast: day > today }))
+            .map((day, i) => ({
+                day,
+                min: daily.temperature_2m_min?.[i],
+                max: daily.temperature_2m_max?.[i],
+                humidity: numberOrNull(daily.relative_humidity_2m_mean?.[i]),
+                rain: numberOrNull(daily.precipitation_sum?.[i]),
+                forecast: day > today
+            }))
             .filter(d => typeof d.min === 'number' && typeof d.max === 'number');
         if (!value.length) return null;
         dailyCache.set(key, { at: Date.now(), value });

@@ -914,7 +914,7 @@
           "forecast": {
             "title": "Chẩn đoán AI & dự báo",
             "desc": "Khung chẩn đoán AI ở Tổng quan tổng hợp nguy cơ, xu hướng và biện pháp gợi ý.",
-            "items": "Bấm \"Chẩn đoán lại bằng AI\" ở cuối trang Tổng quan.\n\"Dự báo xu hướng 7 ngày tới\" theo dõi bẫy nhiều ruồi nhất: dự báo số ruồi mới mỗi ngày (+) rồi cộng dồn vào số trên tấm keo, màu theo ngưỡng của bẫy.\n\"Đợt ruồi trưởng thành tiếp theo\": tính theo độ-ngày từ đợt bắt nhiều nhất, kèm tiến độ và thời gian một thế hệ.\n\"Biện pháp xử lý khuyến nghị\": gợi ý theo nguyên tắc quản lý dịch hại tổng hợp. Đây là ước tính để tham khảo, hãy kiểm tra thực tế tại vườn."
+            "items": "Bấm \"Chẩn đoán lại bằng AI\" ở cuối trang Tổng quan.\n\"Dự báo xu hướng 7 ngày tới\" theo dõi bẫy nhiều ruồi nhất: dự báo số ruồi mới mỗi ngày (+) rồi cộng dồn vào số trên tấm keo, màu theo ngưỡng của bẫy.\n\"Đợt ruồi trưởng thành tiếp theo\": tính theo độ-ngày từ đợt bắt nhiều nhất, kèm tiến độ và thời gian một thế hệ.\n\"Biện pháp xử lý khuyến nghị\": gợi ý theo nguyên tắc quản lý dịch hại tổng hợp. Đây là ước tính để tham khảo, hãy kiểm tra thực tế tại vườn.\n\"3 ngày tới\" trong khung độ-ngày cho biết ngày nào thời tiết thuận lợi cho ruồi vàng (25–33°C, ẩm, không mưa to). Khi có từ 2 ngày như vậy đúng lúc sắp có đợt ruồi mới, FlyBot gửi cảnh báo thời tiết cho vườn lúc 17:00 hôm trước."
           }
         }
       },
@@ -1261,6 +1261,10 @@
       "harvest_ready": {
         "title": "Được thu hoạch",
         "desc": "{area}: hết thời gian cách ly sau {product} lúc {date}."
+      },
+      "weather_risk": {
+        "title": "Thời tiết thuận lợi cho ruồi vàng",
+        "desc": "{farmName}: {days}, {minTemp}–{maxTemp}°C, ẩm đến {humidity}%; đợt ruồi mới khoảng {waveDate}."
       }
     }
   },
@@ -1453,7 +1457,8 @@
         "ezvizPolicies": "Quyền tài khoản phụ EZVIZ",
         "morningBriefs": "Bản tin sáng",
         "vietgapMonthly": "Sổ VietGAP hằng tháng",
-        "harvestReminders": "Nhắc hết cách ly"
+        "harvestReminders": "Nhắc hết cách ly",
+        "weatherAlerts": "Cảnh báo thời tiết"
       },
       "jobSchedules": {
         "capture": "Mỗi 5 phút",
@@ -1468,7 +1473,8 @@
         "ezvizPolicies": "Mỗi giờ, phút 17",
         "morningBriefs": "Hằng ngày, 6:30",
         "vietgapMonthly": "Hằng tháng, ngày 1 lúc 7:00",
-        "harvestReminders": "Hằng ngày lúc 6:00"
+        "harvestReminders": "Hằng ngày lúc 6:00",
+        "weatherAlerts": "Hằng ngày lúc 17:00"
       },
       "results": {
         "cameras": "{n} camera",
@@ -2082,7 +2088,16 @@
     "chartLabel": "Độ-ngày theo ngày",
     "dayTip": "{day}: {dd} độ-ngày ({min}–{max} °C)",
     "past": "14 ngày qua",
-    "forecast": "Dự báo"
+    "forecast": "Dự báo",
+    "outlook": {
+      "title": "3 ngày tới",
+      "high": "Thời tiết thuận lợi cho ruồi vàng đúng lúc sắp có đợt ruồi mới: nên chuẩn bị xử lý",
+      "elevated": "Thời tiết thuận lợi cho ruồi vàng hoạt động",
+      "low": "Thời tiết ít thuận lợi cho ruồi vàng",
+      "favorable": "Thuận lợi cho ruồi",
+      "dayTip": "{day}: {min}–{max}°C, ẩm {humidity}%, mưa {rain} mm",
+      "noHumidity": "--"
+    }
   },
   "orgs": {
     "tab": "Tổ chức",

@@ -33,7 +33,7 @@ Every answer is `{ "success": true, "data": ... }`. Errors are `{ "success": fal
 
 A webhook receives your alerts as they happen, as a JSON `POST` to an HTTPS address. Choose which events it gets:
 
-`pest_threshold`, `pest_surge`, `plot_threshold`, `camera_offline`, `camera_online`, `ai_failure`, `card_due`, `card_change_detected`, `image_quality`, `harvest_ready` (a pre-harvest interval ends; `params.date` is when harvest is allowed)
+`pest_threshold`, `pest_surge`, `plot_threshold`, `camera_offline`, `camera_online`, `ai_failure`, `card_due`, `card_change_detected`, `image_quality`, `harvest_ready` (a pre-harvest interval ends; `params.date` is when harvest is allowed), `weather_risk` (the next days suit fruit flies and a wave of adults is due; `params.days`, `params.waveDate`)
 
 The **Test** button sends a `ping` event.
 

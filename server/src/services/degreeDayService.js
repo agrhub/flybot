@@ -3,6 +3,7 @@ const dailyStats = require('./dailyStats');
 const { dailyValues } = require('./treatmentService');
 const { trapKindOf } = require('../constants/trap');
 const weatherService = require('./weatherService');
+const weatherRisk = require('./weatherRiskService');
 
 /**
  * Degree-day model for the next wave of adult fruit flies (Bactrocera dorsalis).
@@ -90,6 +91,8 @@ function computeDegreeDays({ temps, catchesByDay, today }) {
     const days = temps
         .filter(t => t.day >= addDays(today, -(CHART_PAST_DAYS - 1)))
         .map(t => ({ day: t.day, dd: round1(ddByDay.get(t.day)), min: t.min, max: t.max, forecast: t.day > today }));
+    // The next days' weather against the conditions fruit flies thrive in
+    const outlook = weatherRisk.outlook(temps, nextWave, today);
 
     return {
         model: { species: 'bactrocera_dorsalis', baseTemp: BASE_TEMP, upperTemp: UPPER_TEMP, generationDd: GENERATION_DD },
@@ -102,7 +105,8 @@ function computeDegreeDays({ temps, catchesByDay, today }) {
         accumulated,
         progressPct: accumulated === null ? null : Math.min(100, Math.round((accumulated / GENERATION_DD) * 100)),
         nextWave,
-        days
+        days,
+        outlook
     };
 }
 

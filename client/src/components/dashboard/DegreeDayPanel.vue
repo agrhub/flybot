@@ -56,6 +56,29 @@
         <span>{{ t('degreeDays.past') }}</span>
         <span>{{ t('degreeDays.forecast') }}</span>
       </div>
+
+      <!-- Next days' weather against what fruit flies thrive in -->
+      <div v-if="model.outlook" class="mt-4">
+        <div class="flex flex-wrap items-center gap-2 mb-2">
+          <span class="dd-subtitle">{{ t('degreeDays.outlook.title') }}</span>
+          <el-tag :type="OUTLOOK_TAG[model.outlook.level]" effect="light" size="small" round>{{ t(`degreeDays.outlook.${model.outlook.level}`) }}</el-tag>
+        </div>
+        <div class="grid grid-cols-3 gap-2">
+          <el-tooltip
+            v-for="d in model.outlook.days"
+            :key="d.day"
+            :content="t('degreeDays.outlook.dayTip', { day: formatDay(d.day), min: d.min, max: d.max, humidity: d.humidity ?? '--', rain: d.rain ?? '--' })"
+            placement="top"
+          >
+            <div class="dd-day" :class="{ 'is-favorable': d.favorable }">
+              <span class="dd-meta font-mono">{{ formatDay(d.day) }}</span>
+              <span class="dd-day-temp">{{ d.min }}–{{ d.max }}°C</span>
+              <span class="dd-meta">{{ d.humidity ?? '--' }}% · {{ d.rain ?? '--' }} mm</span>
+              <span v-if="d.favorable" class="dd-day-flag">{{ t('degreeDays.outlook.favorable') }}</span>
+            </div>
+          </el-tooltip>
+        </div>
+      </div>
     </template>
   </div>
 </template>
@@ -71,6 +94,7 @@ const props = defineProps({
 
 const { t } = useI18n();
 
+const OUTLOOK_TAG = { high: 'danger', elevated: 'warning', low: 'success' };
 const formatDay = (key) => (key ? `${key.slice(8, 10)}/${key.slice(5, 7)}` : '');
 const maxDd = computed(() => Math.max(1, ...(props.model?.days || []).map(d => d.dd)));
 
@@ -131,6 +155,34 @@ const waveHeadline = computed(() => {
 }
 .dd-bar.is-wave {
   background-color: var(--el-color-warning);
+}
+.dd-subtitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+.dd-day {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: var(--el-border-radius-base);
+  background-color: var(--el-bg-color);
+}
+.dd-day.is-favorable {
+  border-color: var(--el-color-warning-light-5);
+  background-color: var(--el-color-warning-light-9);
+}
+.dd-day-temp {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+.dd-day-flag {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--el-color-warning);
 }
 .is-primary { color: var(--el-color-primary); }
 </style>

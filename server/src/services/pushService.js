@@ -17,6 +17,7 @@ const TEXT_KEYS = {
     pest_surge: 'email.alerts.pest_surge',
     image_quality: 'email.alerts.image_quality',
     harvest_ready: 'email.alerts.harvest_ready',
+    weather_risk: 'email.alerts.weather_risk',
     farm_shared: 'email.farmShared',
     org_joined: 'email.orgShared',
     camera_shared: 'email.cameraShared',
@@ -33,6 +34,7 @@ const TARGET_PATH = {
     pest_surge: '/analytics',
     image_quality: '/cameras',
     harvest_ready: '/logbook',
+    weather_risk: '/dashboard',
     camera_shared: '/cameras',
     org_joined: '/settings?tab=organizations'
 };

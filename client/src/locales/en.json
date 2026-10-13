@@ -914,7 +914,7 @@
           "forecast": {
             "title": "AI diagnosis & forecast",
             "desc": "The AI Copilot panel on the Overview brings risk, trend and suggested actions together.",
-            "items": "Click the AI Agent diagnosis button at the bottom of the Overview.\n\"7-day trend forecast\" follows the busiest trap: expected new flies per day (+) added to the count on its glue card, colored against its threshold.\n\"Next wave of adult flies\": a degree-day estimate from the biggest catch, with progress and generation length.\n\"Recommended actions\": suggestions following integrated pest management. These are estimates; check the field."
+            "items": "Click the AI Agent diagnosis button at the bottom of the Overview.\n\"7-day trend forecast\" follows the busiest trap: expected new flies per day (+) added to the count on its glue card, colored against its threshold.\n\"Next wave of adult flies\": a degree-day estimate from the biggest catch, with progress and generation length.\n\"Recommended actions\": suggestions following integrated pest management. These are estimates; check the field.\n\"Next 3 days\" in the degree-day panel shows which days suit fruit flies (25–33°C, humid, no heavy rain). When two or more of them come as a new wave is due, FlyBot sends the farm a weather warning at 17:00 the day before."
           }
         }
       },
@@ -1261,6 +1261,10 @@
       "harvest_ready": {
         "title": "OK to harvest",
         "desc": "{area}: the pre-harvest interval after {product} ends at {date}."
+      },
+      "weather_risk": {
+        "title": "Weather that suits fruit flies",
+        "desc": "{farmName}: {days}, {minTemp}–{maxTemp}°C, humidity up to {humidity}%; next wave around {waveDate}."
       }
     }
   },
@@ -1453,7 +1457,8 @@
         "ezvizPolicies": "EZVIZ sub-account access",
         "morningBriefs": "Morning brief",
         "vietgapMonthly": "Monthly VietGAP record",
-        "harvestReminders": "Harvest reminders"
+        "harvestReminders": "Harvest reminders",
+        "weatherAlerts": "Weather warnings"
       },
       "jobSchedules": {
         "capture": "Every 5 minutes",
@@ -1468,7 +1473,8 @@
         "ezvizPolicies": "Hourly, at :17",
         "morningBriefs": "Daily, 6:30",
         "vietgapMonthly": "Monthly, the 1st at 7:00",
-        "harvestReminders": "Daily at 6:00"
+        "harvestReminders": "Daily at 6:00",
+        "weatherAlerts": "Daily at 17:00"
       },
       "results": {
         "cameras": "{n} camera(s)",
@@ -2082,7 +2088,16 @@
     "chartLabel": "Degree-days per day",
     "dayTip": "{day}: {dd} degree-days ({min}–{max} °C)",
     "past": "Last 14 days",
-    "forecast": "Forecast"
+    "forecast": "Forecast",
+    "outlook": {
+      "title": "Next 3 days",
+      "high": "Weather that suits fruit flies just as a new wave is due: get treatments ready",
+      "elevated": "Weather that suits fruit flies",
+      "low": "Weather not very favorable to fruit flies",
+      "favorable": "Suits flies",
+      "dayTip": "{day}: {min}–{max}°C, humidity {humidity}%, rain {rain} mm",
+      "noHumidity": "--"
+    }
   },
   "orgs": {
     "tab": "Organizations",
