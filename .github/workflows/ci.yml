@@ -1,0 +1,80 @@
+# Tests and build on every push and pull request. No secrets: the tests use an in-memory
+# MongoDB and stub every outside service (S3, EZVIZ, email, Telegram, AI).
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  server:
+    name: Server tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      # MongoDB binary for the in-memory test databases, downloaded once
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/mongodb-binaries
+          key: mongodb-binaries-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: mongodb-binaries-${{ runner.os }}-
+      - run: npm ci
+      # Results also go to a TAP file, so failures can be shown as annotations
+      - run: npm run test -w server -- --test-concurrency=1 --test-timeout=180000 --test-reporter=spec --test-reporter-destination=stdout --test-reporter=tap --test-reporter-destination=test-results.tap
+      - if: failure()
+        run: node .github/scripts/tap-annotations.js server/test-results.tap
+
+  client:
+    name: Web app tests and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run test -w client
+      - run: npm run build -w client
+
+  e2e:
+    name: End-to-end (demo in Chrome)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [client]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/mongodb-binaries
+          key: mongodb-binaries-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: mongodb-binaries-${{ runner.os }}-
+      - run: npm ci
+      # Chrome comes with the runner image
+      - run: node --test --test-concurrency=1 --test-reporter=spec --test-reporter-destination=stdout --test-reporter=tap --test-reporter-destination=e2e-results.tap tests/e2e/smoke.test.mjs
+        working-directory: client
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+          # Ubuntu 24.04 runners block Chrome's sandbox (no unprivileged user namespaces)
+          FLYBOT_CHROME_ARGS: --no-sandbox
+      - if: failure()
+        run: node .github/scripts/tap-annotations.js client/e2e-results.tap

@@ -1,0 +1,2389 @@
+{
+  "common": {
+    "brandStudio": "FlyBot Studio",
+    "brandName": "FlyBot",
+    "studioTag": "STUDIO",
+    "collapse": "Collapse Sidebar",
+    "expand": "Expand Sidebar",
+    "profile": "Profile Settings",
+    "logout": "Logout",
+    "save": "Save Changes",
+    "cancel": "Cancel",
+    "close": "Close",
+    "loading": "Loading...",
+    "success": "Success",
+    "error": "Error",
+    "online": "Online",
+    "offline": "Offline",
+    "actions": "Actions",
+    "delete": "Delete",
+    "refresh": "Refresh",
+    "search": "Search...",
+    "new": "new",
+    "exporting": "Exporting...",
+    "showing": "Showing",
+    "of": "of",
+    "perPage": "Per page",
+    "page": "Page",
+    "prevPage": "Previous page",
+    "nextPage": "Next page",
+    "notice": "Notice",
+    "defaultUserName": "User",
+    "confirm": "Confirm",
+    "done": "Done",
+    "edit": "Edit"
+  },
+  "nav": {
+    "home": "Home",
+    "dashboard": "Dashboard",
+    "cameras": "Cameras",
+    "analytics": "Analytics",
+    "map": "Field Map",
+    "settings": "Settings",
+    "engine": "Features",
+    "gallery": "Use cases",
+    "pricing": "Who it is for",
+    "manual": "Manual",
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "contact": "Contact",
+    "signIn": "Sign In",
+    "getStarted": "Get Started",
+    "launchStudio": "Launch Studio",
+    "capabilities": "Features",
+    "showcase": "Use cases",
+    "about": "About",
+    "careers": "Careers",
+    "blog": "Blog",
+    "helpCenter": "Help Center",
+    "apiDocs": "API Docs",
+    "mainNavigation": "Main navigation",
+    "overviewShort": "Overview",
+    "more": "More",
+    "logbook": "Field log",
+    "farms": "Farms",
+    "reports": "Reports"
+  },
+  "topbar": {
+    "notifications": "Notifications",
+    "noNotifications": "No new notifications",
+    "assistant": "Assistant",
+    "lightMode": "Switch to Light Mode",
+    "darkMode": "Switch to Dark Mode",
+    "changePassword": "Change Password",
+    "profileSettings": "Profile Settings",
+    "recentAlerts": "Recent Alerts",
+    "appearance": "Language & theme"
+  },
+  "auth": {
+    "emailPlaceholder": "you{'@'}example.com",
+    "tagline": "Smart insect traps with AI counting",
+    "accountEmail": "Account Email",
+    "password": "Password",
+    "loginBtn": "Sign In to Studio",
+    "noAccount": "Don't have an account?",
+    "registerNow": "Register now",
+    "newEmail": "New Email",
+    "passwordHint": "Password (6+ characters)",
+    "registerBtn": "Create Account",
+    "hasAccount": "Already have an account?",
+    "backToLogin": "Back to Sign In",
+    "loginSuccess": "Signed in successfully",
+    "welcomeBack": "Welcome back to FlyBot Studio",
+    "registerSuccess": "Registration successful",
+    "registerSuccessMsg": "Your account is ready! Please sign in.",
+    "loginFailed": "Sign in failed",
+    "registerFailed": "Registration failed",
+    "forgotPassword": "Forgot password?",
+    "forgotTitle": "Reset your password",
+    "forgotDesc": "Enter your account email and we'll send you a link to reset your password.",
+    "sendResetLink": "Send reset link",
+    "resetLinkSent": "If an account exists for this email, a reset link is on its way. Check your inbox and spam folder.",
+    "invalidEmail": "Please enter a valid email address.",
+    "newPasswordTitle": "Choose a new password",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm new password",
+    "passwordMismatch": "Passwords do not match.",
+    "passwordTooShort": "Password must be at least 6 characters.",
+    "resetBtn": "Reset password",
+    "resetSuccess": "Your password has been reset. Please sign in with the new password.",
+    "resetInvalid": "This reset link is invalid or has expired. Please request a new one.",
+    "requestNewLink": "Request a new link",
+    "verifyingEmail": "Confirming your email...",
+    "emailVerified": "Your email is confirmed. You will now receive alert emails.",
+    "verifyInvalid": "This confirmation link is invalid or has expired.",
+    "goToDashboard": "Go to dashboard",
+    "verifyBanner": "Confirm your email ({email}) to receive pest alert emails.",
+    "resendVerification": "Resend email",
+    "verificationSent": "Confirmation email sent. Check your inbox.",
+    "registerSuccessVerify": "Your account is ready! We sent a confirmation link to your email.",
+    "registrationClosed": "New accounts are not being accepted right now. Ask an administrator for access."
+  },
+  "dashboard": {
+    "welcome": "Welcome back",
+    "title": "Smart Insect Monitoring",
+    "activeCameras": "Active Cameras",
+    "insectsCount": "Realtime Insects",
+    "hotspotPeak": "Hotspot Realtime Peak (Max)",
+    "hotspotSubtitle": "Highest current density across traps",
+    "realtimeTotal": "Total Realtime Infiltration",
+    "realtimeTotalDesc": "Real-time count sum across orchard traps",
+    "riskIndex": "Outbreak Risk Level",
+    "onlinePct": "Online",
+    "cycle30Days": "Last 30-day cycle",
+    "monitoringHours": "AI Monitoring Hours",
+    "detectionAccuracy": "AI Confidence Score",
+    "detectionTrend": "Density Trend",
+    "topSpecies": "Dominant Species",
+    "topSpeciesDesc": "Dominant share across scan cycles",
+    "scans24h": "Past 24h Scans",
+    "scansUnit": "scans",
+    "scans24hDesc": "Automated image analysis from smart traps",
+    "totalS3Snapshots": "Total S3 Snapshots",
+    "recordsUnit": "records",
+    "s3Desc": "Auto-sync & lifecycle data management",
+    "cameraRoster": "Camera Surveillance Roster",
+    "cameraRosterSubtitle": "Quick access and manage insect trap devices",
+    "watchStream": "View stream",
+    "recentDetections": "Recent AI Detections",
+    "allCameras": "All Cameras",
+    "viewAll": "View All",
+    "hoursUnit": "hrs",
+    "pointsUnit": "pts",
+    "realtimeByCamera": "Realtime Density by Camera",
+    "realtimeByCameraDesc": "Current fruit fly population comparison between traps",
+    "minMaxAvgTitle": "Min / Max / Avg Statistics",
+    "minMaxAvgDesc": "Mathematically verified historical scan values",
+    "periodDay": "Today (24h)",
+    "periodWeek": "Past 7 Days",
+    "periodMonth": "Past 30 Days",
+    "statMin": "Minimum (Min)",
+    "statMax": "Maximum (Max)",
+    "statAvg": "Average (Avg)",
+    "statScans": "AI Scans",
+    "aiAgentTitle": "Agronomic Pest Diagnosis & Forecasting (AI Copilot)",
+    "aiAgentSubtitle": "AI predictive modeling for fruit fly surges & prescriptive IPM action plan",
+    "runDiagnosis": "Re-evaluate with AI Agent",
+    "runningDiagnosis": "Analyzing agricultural data...",
+    "recommendationsTitle": "Prescriptive Action Plans",
+    "trajectoryTitle": "7-Day Outbreak Trajectory Forecast",
+    "outbreakRiskHigh": "Warning: High Outbreak Risk",
+    "outbreakRiskModerate": "Moderate Risk: Close Monitoring Needed",
+    "outbreakRiskLow": "Safe: Pest Density Under Control",
+    "mapViewTitle": "Insect Trap Distribution Map",
+    "mapViewSubtitle": "Monitor GPS coordinates, fruit fly density alerts and drag markers to update trap locations.",
+    "individualsUnit": "insects",
+    "fruitFlyUnit": "fruit flies",
+    "avgPerTrap": "Avg: {count} / trap",
+    "alertThreshold": "Alert thresholds: Settings → Notifications",
+    "insectsShort": "insects",
+    "pestHotspot": "⚠️ Pest Hotspot",
+    "moderateLevel": "Moderate Level",
+    "wellControlled": "Well Controlled",
+    "noRealtimeData": "No real-time detection data from camera traps yet.",
+    "individualsPerScan": "insects / scan",
+    "peakRecorded": "peak recorded",
+    "cycleAverage": "cycle average",
+    "aiProcessedRuns": "AI scans processed",
+    "dominantSpeciesLabel": "Dominant species:",
+    "aiCopilotAgentBadge": "AI Agricultural Copilot Agent",
+    "modelConfidence": "Model confidence:",
+    "appliedZone": "Applied zone:",
+    "noCamerasPrompt": "No cameras connected yet. Click 'Add Camera' to start monitoring.",
+    "noCamerasCopilotPrompt": "No cameras added yet. Please add a camera to activate AI agronomic diagnosis and pest forecasting.",
+    "systemSafePrompt": "Pest density is safe. No chemical or bait intervention required at this time.",
+    "diagnosisDone": "Deep diagnosis and 7-day pest forecast completed.",
+    "diagnosisFailed": "Could not run AI diagnosis: {error}",
+    "diagnosis": {
+      "urgency": {
+        "urgent": "Urgent",
+        "recommended": "Recommended",
+        "routine": "Routine",
+        "important": "Important",
+        "normal": "Normal"
+      },
+      "recs": {
+        "pheromoneLure": {
+          "title": "Replenish Pheromone Lure (Methyl Eugenol)",
+          "desc": "Male attractant loses potency after 15-20 days. Add 2-3ml Methyl Eugenol to the cotton core to maintain trap attraction.",
+          "zone": "Traps at or above the alert level",
+          "method": "Bio Trap"
+        },
+        "proteinBait": {
+          "title": "Apply Bio-Protein Bait (Protein Hydrolysate)",
+          "desc": "Spot spray coarse droplets onto 1m² of eastern canopy between 06:00 and 08:00. Attracts both male and female flies before mating.",
+          "zone": "Perimeter border of fruit tree orchards",
+          "method": "Bio Bait"
+        },
+        "fieldSanitation": {
+          "title": "Sanitize Field & Collect Fallen Fruit",
+          "desc": "Dispose of infested rotten fruit by sealing it in plastic bags in the sun or liming it, cutting off pupation in the soil.",
+          "zone": "Entire orchard plot area",
+          "method": "Ecological Practice"
+        },
+        "fruitBagging": {
+          "title": "Bag Developing Fruit & Reinforce Protection",
+          "desc": "Bag fruit early, once it reaches 1/3 of mature size, with waterproof bags to stop flies from stinging it.",
+          "zone": "Orchards in the fruit development stage",
+          "method": "Mechanical"
+        }
+      },
+      "trajectory": {
+        "surging": "Rising",
+        "declining": "Falling",
+        "stable": "Stable"
+      },
+      "confidence": {
+        "low": "Low",
+        "medium": "Medium",
+        "high": "High"
+      },
+      "basis": "{days} days of data",
+      "peakTrap": "Highest trap: {name}, {count} of {threshold}",
+      "weather": "{temperature}°C, humidity {humidity}%",
+      "weatherUnavailable": "No weather data (add GPS coordinates to a trap on the map)",
+      "weatherFactor": {
+        "hot_humid": "favors rapid fruit fly breeding",
+        "cool": "slows fruit fly activity",
+        "very_hot": "extreme heat reduces fly activity",
+        "dry": "dry air shortens adult fly lifespan",
+        "moderate": "normal conditions"
+      }
+    },
+    "catchesToday": "Flies caught today",
+    "catchesYesterday": "Yesterday: {count}",
+    "catchesHint": "All traps, since midnight",
+    "ftd7": "Flies/trap/day (7 days)",
+    "ftdUnit": "per trap per day",
+    "ftdPrev": "Previous week: {value}{change}",
+    "ftdHint": "The standard fruit fly monitoring figure",
+    "riskBasis": "Against each trap threshold",
+    "onTrapNow": "on trap",
+    "presentNow": "present",
+    "camCatches": "Today +{today} · {ftd}/day",
+    "camPresence": "Today avg {today} · {ftd}/day",
+    "catchStatsTitle": "Flies caught",
+    "catchStatsDesc": "New flies per day, all traps",
+    "statTotal": "Flies caught",
+    "statTotalUnit": "flies",
+    "statFtd": "Flies/trap/day",
+    "statAvgDay": "Average per day",
+    "statAvgDayUnit": "flies/day (all traps)",
+    "statMaxDay": "Busiest day",
+    "catchChartTitle": "Flies caught in the last 14 days",
+    "catchChartDesc": "New flies per day, stacked by trap",
+    "moreAnalytics": "Detailed analytics",
+    "forecastBasis": "Following {name}: forecast new flies per day (+) added to the count on the glue card, against the trap threshold.",
+    "forecastBasisLure": "Following {name}: forecast average flies present per day, against the trap threshold.",
+    "noSnapshotYet": "No analyzed photo yet",
+    "snapshotCount": "{count} insects",
+    "averageToday": "avg today",
+    "withholding": {
+      "title": "{count} area(s) inside a pre-harvest interval: no harvest yet",
+      "item": "after {product}, harvest from {date}",
+      "open": "Open field log"
+    }
+  },
+  "cameras": {
+    "title": "Camera Surveillance & Management",
+    "subtitle": "Stream real-time video, multi-camera grid and control SD card playback",
+    "singleView": "Single Player",
+    "gridView": "Multi-Camera Grid",
+    "addCameraBtn": "Add Camera",
+    "newCameraModal": "Add New Camera",
+    "serialNumber": "Serial Number (SN)",
+    "validateCode": "Verification Code",
+    "updateCode": "Update Code",
+    "deviceName": "Device Name",
+    "liveStream": "Live Stream",
+    "playback": "SD Card Playback",
+    "encryptedWarning": "Camera encryption is currently enabled",
+    "decryptPrompt": "Enter verification code to decrypt video stream",
+    "noCameraSelected": "Please select a camera to start monitoring",
+    "allCameras": "All Cameras (Aggregated)",
+    "playbackTitle": "SD Card Playback",
+    "queryDAS": "Query DAS V3",
+    "backToLive": "Back to Live",
+    "selectDate": "Select Date",
+    "sdRecords": "SD Card Recordings",
+    "clipsUnit": "clips",
+    "clipNumber": "Clip",
+    "playAll": "Play All",
+    "stopAll": "Stop All",
+    "layoutAuto": "Auto",
+    "layout2x2": "Grid 2x2",
+    "layout3x3": "Grid 3x3",
+    "quickInfo": "Quick Info",
+    "status": "Status",
+    "cloudService": "Cloud Service",
+    "cloudConnected": "Connected",
+    "currentStream": "Current Stream",
+    "encrypted": "Video Encryption",
+    "encryptOn": "Enabled (Code Required)",
+    "encryptOff": "Disabled (Direct Stream)",
+    "defence": "Motion Defence",
+    "on": "Enabled",
+    "off": "Disabled",
+    "changeCode": "Change Code",
+    "enterCode": "Enter Code",
+    "waitingConnection": "Connecting...",
+    "streamLive": "Play Stream",
+    "stopStream": "Stop Stream",
+    "viewFull": "Full Player",
+    "viewDetails": "Details",
+    "backToGrid": "Back to Cameras Grid",
+    "cameraDetail": "Camera Details",
+    "connectingStream": "Connecting stream...",
+    "deviceOffline": "Device Offline",
+    "deviceOfflineMsg": "Camera is currently disconnected.",
+    "streamError": "Stream Playback Error",
+    "mute": "Mute Audio",
+    "unmute": "Unmute Audio",
+    "codeDialogTitle": "Camera Verification Code",
+    "codeDialogDesc": "Device Verification Code / Encryption Password",
+    "codeDialogDefault": "The default code is printed on the label at the bottom/body of the camera, or set in your EZVIZ app.",
+    "codeDialogDeviceLabel": "Device",
+    "codeDialogInputPlaceholder": "Enter verification code (e.g. QOKYZO, Gravity01...)",
+    "codeDialogSaveAndPlay": "Save & Play Stream",
+    "connectPrompt": "Enter Serial Number (found on camera base) and Verification Code to connect device to surveillance system.",
+    "selectCamera": "Select camera",
+    "copySerial": "Copy serial number",
+    "copied": "Copied",
+    "live": "Live",
+    "model": "Model",
+    "firmware": "Firmware",
+    "addRequired": "Please enter both the serial number and the verification code.",
+    "added": "Camera added.",
+    "addFailed": "Could not add the camera.",
+    "addRequestFailed": "Error sending the add-camera request.",
+    "player": {
+      "redecrypting": "Decrypting the stream with the new verification code...",
+      "codeRequiredInput": "Please enter the verification code.",
+      "codeUpdated": "Verification code updated.",
+      "codeUpdateFailed": "Could not update the verification code.",
+      "encryptedWithCode": "Video encryption is on. Decryption failed with code [{code}]. Use \"Change Code\" to update it.",
+      "permissionError": "EZVIZ: no permission to view this device (error 5411). Check the device sharing permissions or the verification code.",
+      "invalidParams": "Invalid ezopen stream parameters (error 10001).",
+      "connectionError": "Could not connect to the camera stream.",
+      "initError": "Player initialization error: {error}",
+      "noDevice": "No device selected",
+      "codeMissing": "Video encryption is on but no verification code is set. Enter the code to decrypt the stream.",
+      "codeRequired": "Code required",
+      "loadingLive": "Loading live stream...",
+      "streamUnavailable": "Could not get the video stream.",
+      "disconnected": "Disconnected",
+      "systemError": "Video stream system error.",
+      "loadingPlayback": "Loading recording...",
+      "playbackRange": "Playback ({start} - {end})",
+      "playbackUnavailable": "Could not load the playback stream.",
+      "playbackSegmentFailed": "Could not replay this video segment.",
+      "playbackRequestFailed": "Error requesting the playback stream."
+    },
+    "captureNow": "Capture now",
+    "captureDone": "Snapshot captured: {count} insects",
+    "captureDoneNoAi": "Snapshot captured; AI analysis did not complete.",
+    "captureFailed": "The camera did not return an image. It may be offline.",
+    "health": {
+      "lastSnapshot": "Last snapshot",
+      "snapshots24h": "Snapshots (24h)",
+      "aiSuccess": "AI analyzed (24h)",
+      "schedule": "Capture schedule"
+    },
+    "schedule": {
+      "every": "Every {minutes} min",
+      "daytimeOnly": "daytime only"
+    },
+    "noSharedCameras": "No cameras have been shared with you yet.",
+    "imageQuality": {
+      "label": "Photo quality",
+      "good": "Good",
+      "issues": {
+        "dark": "Too dark",
+        "overexposed": "Too bright",
+        "blurry": "Blurry",
+        "low_contrast": "Dirty lens",
+        "card_full": "Card full"
+      },
+      "hints": {
+        "dark": "The last photo is too dark: night, something covering the camera, or the light is off.",
+        "overexposed": "The last photo is washed out by direct sun or glare. Shade the trap or turn the camera.",
+        "blurry": "Much less sharp than usual: out of focus, or the camera or card moved.",
+        "low_contrast": "Hazy compared with usual: clean the lens, or wipe off condensation or dust.",
+        "card_full": "The sticky card is nearly covered. Replace it so new insects can be counted."
+      }
+    },
+    "prevDay": "Previous day",
+    "nextDay": "Next day",
+    "noClips": "No recordings on this day",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out"
+  },
+  "analytics": {
+    "title": "AI Analytics & Detection History",
+    "subtitle": "Analyze agricultural insect trends, inspect bounding boxes and export reports",
+    "allCameras": "All Cameras (Aggregated)",
+    "tabTrends": "Trends & Charts",
+    "tabHistory": "Detection History",
+    "exportPdf": "Export PDF Report",
+    "exportXlsx": "Export Excel (XLSX)",
+    "time": "Timestamp",
+    "image": "Snapshot",
+    "totalCount": "Total Count",
+    "speciesBreakdown": "Species Breakdown",
+    "aiRemarks": "AI Assessment",
+    "periodHour": "Hour",
+    "periodDay": "Day",
+    "periodMonth": "Month",
+    "densityChart": "Insect Density Variation",
+    "speciesRatio": "Population Ratio",
+    "totalIdentified": "Total Identified (Period)",
+    "insectsCountUnit": "Insects counted",
+    "topSpeciesCard": "Dominant Species",
+    "topSpeciesDesc": "Highest proportion",
+    "scanCountCard": "Logged AI Scans",
+    "dataPointsUnit": "AI Data Points",
+    "forecastCard": "Short-term Forecast",
+    "forecastTrend": "Density Trend",
+    "forecastStable": "Stable",
+    "forecastUp": "Surging",
+    "forecastDown": "Declining",
+    "loadingData": "Loading data...",
+    "noStatsData": "No statistical data available",
+    "noRatioData": "No population distribution data",
+    "inspectSnapshot": "Detected Objects Inspection",
+    "noData": "No AI detection records found for this device",
+    "detectionTime": "Record Time",
+    "targetStats": "Object Statistics",
+    "noInsects": "No insects detected",
+    "detailedDescription": "Detailed Description",
+    "noDetailedDesc": "No detailed description.",
+    "closeWindow": "Close Window",
+    "periodToday": "Today (24h)",
+    "period7Days": "Past 7 Days",
+    "period30Days": "Past 30 Days",
+    "periodCustom": "Custom Range...",
+    "realtimeDensityTrap": "On the trap now",
+    "realtimeHotspotMax": "Highest on any trap",
+    "insectsUnit": "insects",
+    "peakAcrossTraps": "Peak across camera traps",
+    "startDate": "Start date",
+    "endDate": "End date",
+    "exportExcel": "Export Excel",
+    "exporting": "Exporting...",
+    "excelSuccess": "Excel report exported successfully!",
+    "pdfSuccess": "PDF report exported successfully!",
+    "historyLoadFailed": "Failed to load detection history.",
+    "report": {
+      "device": "Device: {name}",
+      "serial": "Serial number: {serial}",
+      "allCameras": "All cameras",
+      "wholeSystem": "Entire camera system",
+      "timeRange": "Time range: {range}",
+      "exportedAt": "Exported at: {time}",
+      "colIndex": "No.",
+      "colTime": "Time",
+      "colScanTime": "Scan time",
+      "colDevice": "Device",
+      "colSerial": "Camera serial",
+      "colSnapshot": "Snapshot",
+      "colCount": "Count",
+      "colInsectCount": "Insect count",
+      "colSpecies": "Species",
+      "colAiAssessment": "AI assessment",
+      "colProvider": "Analysis system",
+      "colImageUrl": "Snapshot URL",
+      "notIdentified": "Not identified",
+      "noDataInRange": "No data in this time range",
+      "noDataToExport": "No detection data in this time range to export.",
+      "sheetName": "Detection history",
+      "pdfExported": "Exported {count} records to PDF.",
+      "excelExported": "Exported {count} records to Excel (XLSX).",
+      "pdfFailed": "PDF export failed: {error}",
+      "excelFailed": "Excel export failed: {error}"
+    },
+    "selectCamera": "Select camera",
+    "compare": {
+      "title": "Period comparison",
+      "subtitle": "Last {days} days vs the {days} days before, all cameras",
+      "days": "{days} days",
+      "totalInsects": "Flies caught",
+      "avgPerScan": "Flies/trap/day",
+      "peak": "Highest on a trap",
+      "vsPrevious": "{change} vs previous period",
+      "noPrevious": "No data in the previous period",
+      "ranking": "Cameras ranked by flies caught",
+      "camera": "Camera",
+      "scans": "Scans",
+      "change": "Change"
+    },
+    "review": {
+      "title": "Human review",
+      "status": {
+        "pending": "AI result, not reviewed",
+        "confirmed": "Confirmed",
+        "corrected": "Corrected"
+      },
+      "aiOriginal": "AI counted",
+      "confirm": "Confirm result",
+      "correct": "Correct counts",
+      "species": "Species",
+      "addSpecies": "Add species",
+      "notePlaceholder": "Note (optional), e.g. two were leaves",
+      "saved": "Review saved. Statistics now use these counts.",
+      "export": "Export corrections",
+      "exportHint": "Corrected snapshots from the last 90 days (AI vs human counts), for retraining the detection model",
+      "exportEmpty": "No corrected snapshots in the last 90 days.",
+      "exported": "Exported {count} corrected snapshots."
+    },
+    "exportMenu": "Export",
+    "catchesChart": "New flies per day",
+    "catchesChartHint": "Flies arriving each day (rise on the glue card; average present for lure traps)",
+    "onTrapChartHint": "Count in the photos: on a glue card it grows until the card is replaced; dashed lines mark card changes",
+    "metricCatches": "New flies",
+    "metricOnTrap": "On trap",
+    "catchesInPeriod": "Flies caught in the period",
+    "catchesInPeriodDesc": "Total new flies in the chosen range",
+    "onTrapHourly": "Count on the trap by hour",
+    "summaryTitle": "Summary",
+    "exportAllPdf": "Export PDF",
+    "exportAllHint": "The PDF holds the three tabs: Trends & Charts, Insights and the detection history with every photo matching its filters. Each part uses the filters set on it. A long history can take a few minutes."
+  },
+  "settings": {
+    "title": "System Settings",
+    "desc": "Manage your account credentials, themes, languages, and AI integration services",
+    "account": "Account",
+    "system": "System",
+    "legal": "Legal",
+    "profileTab": "Profile Information",
+    "passwordTab": "Change Password",
+    "preferencesTab": "Theme & Language",
+    "storageTab": "Storage & AI Models",
+    "camerasTab": "Camera Management",
+    "camerasTitle": "Camera Devices Management",
+    "camerasSubtitle": "Manage your cameras, rename devices, update verification codes, or remove devices",
+    "addCamera": "Add New Camera",
+    "editCamera": "Edit Camera",
+    "deleteCamera": "Remove Device",
+    "deleteCameraConfirm": "Are you sure you want to remove this camera from your account?",
+    "cameraUpdated": "Camera updated successfully!",
+    "cameraDeleted": "Camera removed from account!",
+    "deviceNamePlaceholder": "Display device name...",
+    "validateCodePlaceholder": "Verification code (bottom sticker)...",
+    "viewLiveBtn": "View Live Stream",
+    "noCameras": "No cameras registered in your account yet.",
+    "encryptionStatus": "Video Encryption",
+    "encryptedBadge": "Encrypted",
+    "unencryptedBadge": "Unencrypted",
+    "termsTab": "Terms of Service",
+    "privacyTab": "Privacy Policy",
+    "fullName": "Full Name",
+    "email": "Email Address",
+    "avatarUrl": "Avatar Image URL",
+    "currentPassword": "Current Password",
+    "newPassword": "New Password",
+    "confirmPassword": "Confirm New Password",
+    "saveProfile": "Save Changes",
+    "updatePasswordBtn": "Update Password",
+    "themeSetting": "Interface Theme",
+    "langSetting": "Display Language",
+    "profileSub": "Manage personal profile, display name and credentials",
+    "avatarLabel": "Profile Avatar",
+    "avatarHint": "JPG, PNG max 2MB.",
+    "avatarUpload": "Upload photo",
+    "avatarChange": "Change photo",
+    "avatarRemove": "Remove",
+    "avatarSaved": "Profile photo updated.",
+    "avatarFailed": "The photo could not be saved. Please try again.",
+    "avatarType": "Please choose a JPG or PNG image.",
+    "avatarTooBig": "The image must be 2 MB or smaller.",
+    "namePlaceholder": "Enter full name...",
+    "passwordSub": "Change password periodically to enhance security",
+    "newPasswordHint": "At least 6 characters...",
+    "confirmPasswordHint": "Confirm new password...",
+    "preferencesSub": "Customize appearance and language settings",
+    "currentTheme": "Current",
+    "darkTheme": "Dark Mode",
+    "lightTheme": "Light Mode",
+    "langSub": "Application interface language",
+    "storageSub": "MinIO S3 storage infrastructure and Google Vertex AI model",
+    "storageModel": "Vision AI Model",
+    "storageRetention": "Auto Retention Cycle",
+    "termsSub": "Surveillance usage terms and agricultural data security",
+    "termsP1": "FlyBot captures images for agricultural pest monitoring and smart orchard management.",
+    "termsP2": "All snapshots and video streams are secured via EZVIZ Open Platform and archived locally on MinIO S3 clusters.",
+    "notificationsTab": "Notifications",
+    "notificationsSub": "Choose how you receive pest and camera alerts",
+    "emailAlerts": "Alert emails",
+    "emailAlertsDesc": "Get an email when a trap reaches its threshold, a camera goes offline, or AI analysis keeps failing.",
+    "emailNotVerified": "Your email is not confirmed yet, so alert emails are paused.",
+    "emailVerifiedBadge": "Confirmed",
+    "thresholdsTitle": "Alert threshold per camera",
+    "thresholdsDesc": "An alert fires when one scan counts at least this many insects.",
+    "thresholdUnit": "insects",
+    "thresholdSaved": "Alert threshold saved",
+    "prefsSaved": "Notification settings saved",
+    "passwordFieldsRequired": "Please fill in all password fields.",
+    "passwordChanged": "Password changed. Other devices have been signed out.",
+    "saveFailed": "Could not save. Please try again.",
+    "storageBucket": "S3 bucket (MinIO)",
+    "captureInterval": "Automatic capture",
+    "captureDaytimeOnly": "Daytime only (06:00–18:00)",
+    "captureDaytimeOnlyHint": "Skip night captures; sticky traps are hard to read in the dark.",
+    "sessionsTab": "Signed-in devices",
+    "sessionsSub": "Devices currently signed in to your account",
+    "sessionsUntracked": "This device signed in before device tracking existed, so it is not listed. \"Sign out other devices\" also covers such devices.",
+    "noSessions": "No signed-in devices",
+    "sessionDevice": "Device",
+    "sessionIp": "IP address",
+    "sessionLastActive": "Last active",
+    "sessionSignedIn": "Signed in",
+    "thisDevice": "This device",
+    "signOut": "Sign out",
+    "signOutConfirm": "Sign out {device}?",
+    "signOutThisConfirm": "Sign out of this device?",
+    "signedOutDevice": "Device signed out.",
+    "signOutOthers": "Sign out other devices",
+    "signOutOthersConfirm": "Every other device will need to sign in again. This device stays signed in.",
+    "signedOutOthers": "Other devices have been signed out.",
+    "retentionMonths": "{months} months",
+    "aiProvider": {
+      "vertex": "Google Vertex AI (Gemini)",
+      "roboflow": "Roboflow detection workflow",
+      "both": "Vertex AI + Roboflow"
+    },
+    "usageSnapshots": "Your snapshots",
+    "usageSnapshotsValue": "{snapshots} snapshots ({analyzed} analyzed) from {cameras} cameras",
+    "usageOldest": "Oldest kept snapshot",
+    "telegram": {
+      "title": "Telegram alerts",
+      "desc": "Get the same alerts as email in a Telegram chat with the FlyBot bot.",
+      "connected": "Connected",
+      "connectedAs": "Connected as {'@'}{username}",
+      "connect": "Connect Telegram",
+      "waiting": "Press \"Start\" in the chat with {'@'}{bot} that just opened. This page updates by itself.",
+      "checkNow": "I pressed Start",
+      "linked": "Telegram connected.",
+      "sendTest": "Send test message",
+      "testSent": "Test message sent. Check Telegram.",
+      "disconnect": "Disconnect",
+      "disconnectConfirm": "Stop sending FlyBot alerts to Telegram?",
+      "notConfigured": "Telegram alerts are not set up on this server yet (the administrator needs to add a bot)."
+    }
+  },
+  "assistant": {
+    "title": "FlyBot Assistant",
+    "subtitle": "Your farm and camera assistant",
+    "greeting": "Hello! I'm the FlyBot assistant. I can look up catches, compare traps, check cameras, take a new photo and open the page you need.",
+    "suggest1": "📊 Summarize 24h pest detections",
+    "suggest2": "🪰 Where is fruit fly density highest?",
+    "suggest3": "🔔 Any alerts today?",
+    "suggest4": "📈 This week compared with last week",
+    "inputPlaceholder": "Ask the FlyBot assistant about cameras, insects, traps...",
+    "send": "Send",
+    "thinking": "The assistant is looking into it...",
+    "reset": "Reset conversation",
+    "toolExecutions": "Tool executions ({count})",
+    "unavailable": "The FlyBot assistant is unavailable right now. Please try again in a moment.",
+    "usingTool": "Now {tool}...",
+    "tooMany": "You asked several questions in a row. Please wait a moment before the next one.",
+    "feedback": {
+      "up": "Helpful",
+      "down": "Not right",
+      "upHint": "This answer is right and helpful",
+      "downHint": "This answer is wrong or incomplete"
+    },
+    "tools": {
+      "get_cameras_status": "checking the cameras",
+      "trigger_capture_snapshot": "taking a photo",
+      "get_catch_summary": "reading the trap figures",
+      "get_insect_statistics": "counting catches",
+      "get_recent_snapshots": "looking at the latest photos",
+      "get_overview_metrics": "summing up the figures",
+      "list_reports": "listing reports",
+      "get_report_summary": "summarizing the report",
+      "send_report_to_me": "emailing the report",
+      "get_alerts": "reading alerts",
+      "get_treatments": "reading the logbook",
+      "compare_periods": "comparing periods",
+      "get_pipeline_health": "checking the capture pipeline",
+      "navigate_ui": "opening the page",
+      "inspect_photo": "looking at the photo",
+      "propose_card_change": "preparing the card change",
+      "propose_treatment": "preparing the logbook entry"
+    },
+    "cards": {
+      "count": "{n} insects",
+      "caught": "Catches",
+      "ftd": "{n} per trap per day",
+      "ftdShort": "Per trap per day",
+      "overThreshold": "Traps over threshold",
+      "noData": "No data yet",
+      "compare": "{days}-day comparison",
+      "current": "This period",
+      "previous": "Period before",
+      "up": "Up {pct}%",
+      "down": "Down {pct}%",
+      "openReport": "Open report",
+      "chart": {
+        "hour": "Catches by hour, last 24 hours",
+        "day": "Catches by day, last 30 days",
+        "month": "Catches by month, last 12 months"
+      },
+      "confirm": {
+        "card_change": "Record a sticky card change",
+        "treatment": "Add to the farm logbook",
+        "trap": "Trap:",
+        "when": "When:",
+        "kind": "Treatment:",
+        "product": "Product:",
+        "traps": "Traps in the area:",
+        "ok": "Confirm",
+        "cancel": "Cancel",
+        "state": {
+          "done": "Recorded",
+          "cancelled": "Cancelled",
+          "failed": "Could not record",
+          "running": "Recording..."
+        }
+      }
+    },
+    "askAboutPhoto": "Ask the assistant about this photo",
+    "photoQuestion": "Have a look at this photo: what is on it, does the count look right, is anything wrong with the photo?"
+  },
+  "home": {
+    "tagline": "SMART STICKY TRAPS & AI INSECT COUNTING",
+    "heroTitlePart1": "Count insects",
+    "heroTitlePart2": "on sticky traps",
+    "heroTitleWithAi": "automatically with AI",
+    "heroSubtitle": "FlyBot photographs your sticky traps through EZVIZ cameras on a schedule, AI counts the fruit flies in every photo, and you are alerted when a threshold is crossed. Follow every trap on every farm from one screen, without counting by hand.",
+    "launchAgent": "Open the app",
+    "howItWorks": "See the features",
+    "kineticCaption1": "COUNTED: 14 INSECTS",
+    "kineticCaption2": "ON THE CAPTURE SCHEDULE",
+    "theShineAgent": "How FlyBot works",
+    "introHeading": "Traps that count themselves.<br>You make the decisions.",
+    "introCol1": "An EZVIZ camera facing the sticky card takes photos on a schedule, from every 15 minutes to every 2 hours, daytime only if you like. Photos are stored privately and only people with access can see them.",
+    "introCol2": "AI counts the insects in each photo, works out the new catches per day and checks photo quality (blur, darkness, dirty lens, full card). Technicians can confirm or correct the counts.",
+    "introCol3": "Threshold crossings, sudden rises and offline cameras are reported in the app, by email, Telegram, push notification or webhook, along with a weekly report and a forecast of the next fly wave.",
+    "bento1Title": "AI insect counting",
+    "bento1Desc": "Counts fruit flies in every trap photo, marks each one, and lets technicians confirm or correct the count.",
+    "generatingBeats": "Reviewed",
+    "bento2Title": "Live view of many cameras",
+    "bento2Desc": "Multi-camera grid, live view and SD-card playback, capture on demand, connection status for every camera.",
+    "bento3Title": "Forecast & diagnosis",
+    "bento4Title": "Alerts & reports",
+    "bento4Desc": "Alerts on several channels, weekly reports, a treatment log in VietGAP format, and PDF/Excel export.",
+    "galleryTag": "Use cases",
+    "galleryHeading": "One app for a single orchard or a whole cooperative.",
+    "viewAllExports": "Read the guide",
+    "pricingHeading": "For farms<br>of every size",
+    "getStartedBtn": "Get started",
+    "contactSalesBtn": "Talk to us",
+    "copyrightText": "© 2026 AgrHub. All rights reserved.",
+    "mockLabel": "Fruit fly",
+    "mockHudCount": "AI: 14 per trap",
+    "mockHudPhoto": "Photo: good",
+    "mockPhoto": "PHOTO 07:30 • MANGO PLOT A",
+    "mockAnalyzed": "Analyzed",
+    "mockRow1": "Fruit fly",
+    "mockRow1Value": "14",
+    "mockRow2": "Other insects",
+    "mockRow2Value": "2",
+    "mockRow3": "New today",
+    "mockRow3Value": "+5",
+    "bento3Desc": "7-day trend, degree-day forecast of the next wave of adult flies, and integrated pest management suggestions.",
+    "mockForecastLabel": "Next fly wave",
+    "mockForecastValue": "in about 15 days",
+    "mockForecastProgress": "130 / 350 degree-days",
+    "mockForecastWeather": "Weather favorable for breeding",
+    "mockAlertTitle": "THRESHOLD REACHED: MANGO PLOT A",
+    "mockAlertTime": "Just now",
+    "mockAlertBody": "18 insects on the trap (threshold 15). Check the trap and consider treating soon.",
+    "mockExportPdf": "Export PDF",
+    "mockExportExcel": "Export Excel",
+    "mockExportLog": "VietGAP log",
+    "use1Stat": "Fruit orchards",
+    "use1Title": "Early fruit fly warning",
+    "use1Subtitle": "Mango, pomelo, dragon fruit: know as soon as flies on the traps increase, before the fruit is damaged.",
+    "use2Stat": "Field log",
+    "use2Title": "See whether treatments work",
+    "use2Subtitle": "Log each spray or release of natural enemies; FlyBot compares catches before and after.",
+    "use3Stat": "Cooperatives & companies",
+    "use3Title": "Manage many farms",
+    "use3Subtitle": "Farms and plots on the map, organizations with roles, a weekly report for each person.",
+    "audience1": "Growers",
+    "audience1Desc": "One farm, a few traps.",
+    "audience1Feat1": "See daily fly counts without walking the field",
+    "audience1Feat2": "Phone alerts when a threshold is crossed",
+    "audience1Feat3": "Reminders to replace sticky cards",
+    "audience2": "Cooperatives & companies",
+    "audience2Desc": "Many farms, many people.",
+    "audience2Feat1": "Farms and plots with boundaries on the map",
+    "audience2Feat2": "Organizations with owners, managers and members",
+    "audience2Feat3": "Weekly reports and a VietGAP treatment log",
+    "audience2Feat4": "Custom reports, shareable by link",
+    "audience3": "Technicians & integrators",
+    "audience3Desc": "Expert review and your own systems.",
+    "audience3Feat1": "Review and correct AI counts",
+    "audience3Feat2": "Read-only API and signed webhooks",
+    "audience3Feat3": "Retrain the AI with reviewed photos",
+    "liveEngine": "Live Engine",
+    "startBtn": "Start",
+    "videoTag": "Product tour",
+    "videoHeading": "See FlyBot at work in one minute",
+    "videoDesc": "From trap photos to alerts and forecasts: the main FlyBot screens, with sample data.",
+    "videoCta": "Read the full guide",
+    "watchVideo": "Watch the 1-minute video"
+  },
+  "manual": {
+    "title": "User guide",
+    "subtitle": "Step by step with screenshots: from your first camera to alerts, reports and integrations.",
+    "videoTitle": "FlyBot in one minute",
+    "videoDesc": "A short tour of the main screens. Screenshots and video use sample data.",
+    "stepsLabel": "How to",
+    "zoomHint": "Click the picture to enlarge it",
+    "sections": {
+      "start": {
+        "title": "Getting started",
+        "steps": {
+          "account": {
+            "title": "Sign in & the Overview",
+            "desc": "The Overview shows how many flies arrived today, flies per trap per day, cameras online and the pest risk level.",
+            "items": "Sign up with your email and click the confirmation link in your inbox.\nAccount roles: admins run the whole system; managers add and manage cameras; viewers see what is shared with them.\n\"Flies caught today\" counts new flies on all traps, with yesterday next to it; \"Flies/trap/day (7 days)\" is the standard figure to compare weeks.\nIn the trap list, the bar compares what is on each trap now with its alert threshold; the line below shows today’s new flies and the daily average.\n\"Pest Hotspot\" appears when a trap reaches its threshold; \"Replace card\" when its glue card should be replaced.\nAt the bottom, each trap shows its latest analyzed photo with every insect boxed and named; click it for the details, to confirm or correct the count.\nThe first time you open FlyBot a quick tour shows each part; replay it any time from the account menu, \"Quick tour\".\nChange your name and profile photo in Settings, Profile Information (JPG or PNG, up to 2 MB). Confirm your email to get alert emails and for shared items to reach you."
+          },
+          "camera": {
+            "title": "Add a camera & choose the trap type",
+            "desc": "Each EZVIZ camera is added with the serial number and verification code printed on its label. The trap type decides how FlyBot reads the counts.",
+            "items": "In Cameras, click \"Add Camera\".\nEnter the serial number (SN, 9 characters) and the 6-letter verification code from the label.\nChoose the trap type: \"Sticky trap (glue card)\" when flies stay on the card and the count grows until it is replaced; \"Lure trap (no glue)\" when flies come in and can fly away, so a photo shows the flies present.\nClick \"Add Camera\". The camera joins the first organization you own; the trap type can be changed later in Settings, Camera Management.\nIf it says the camera belongs to another account, ask its owner to share it with you."
+          },
+          "schedule": {
+            "title": "Capture schedule & alert threshold",
+            "desc": "Each camera has its own schedule and threshold, set in Settings.",
+            "items": "Open Settings, Camera Management.\nChoose the capture interval: 15, 30, 60 or 120 minutes. Turn on \"Daytime only\" if the camera has no night vision.\nSet the alert threshold: the number of flies that calls for action (15 by default).\nPlace the camera on the Map page by dragging its pin. The location is needed for weather and the degree-day forecast."
+          }
+        }
+      },
+      "cameras": {
+        "title": "Cameras & traps",
+        "steps": {
+          "live": {
+            "title": "Camera grid",
+            "desc": "The Cameras page shows all your cameras in a grid with their connection status and latest photo.",
+            "items": "Pick a 2x2, 3x3 or Auto grid at the top.\nOnline cameras play live; offline cameras show their latest photo with a \"Refresh\" button.\nClick \"View details\" to open a camera: the live picture on top, recordings right below.\nRecordings: pick a day (arrows step one day), clips run left to right with the nearest AI photo, and a 24-hour bar below colors the recorded spans. Click a clip or a point on the bar to play it; zoom in or out for detail; \"Back to live\" returns.\nFor cameras with video encryption, enter the verification code when asked."
+          },
+          "health": {
+            "title": "Capture now & camera status",
+            "desc": "Camera details tell you whether the camera is capturing and being analyzed regularly.",
+            "items": "Click \"Capture now\" under the picture to take a photo and have the AI count it right away.\nClick \"Quick info\" for the camera details: status, verification code, model, latest photo, photos and AI success in the last 24 hours, capture schedule.\n\"Image quality\" reports too dark, too bright, blurry, dirty lens or full trap; a problem shows right under the picture."
+          },
+          "card": {
+            "title": "Trap upkeep",
+            "desc": "A sticky trap keeps what it catches, so log each card replacement for correct daily figures.",
+            "items": "In camera details, Trap maintenance, click \"Card replaced\" as soon as you replace it.\nLog other work with the add button: lure replaced, lens cleaned, other.\nChoose a reminder after 3 to 30 days; FlyBot reminds you when it is due.\nWhen the count drops sharply, FlyBot records a replacement and tells you; delete it if it was a mistake.\nLure traps have no glue card, so there is no card reminder; just log lure refills and lens cleaning."
+          }
+        }
+      },
+      "ai": {
+        "title": "AI & analytics",
+        "steps": {
+          "count": {
+            "title": "See the AI count on a photo",
+            "desc": "Every photo is counted by the AI; blue boxes mark each insect with its confidence.",
+            "items": "In Analytics open the \"Detection History\" tab, or open a camera and scroll to its detection history.\nThe table has its own filters: cameras (several at once), dates, alarm status (Alarm, Warning, Normal) and review status.\n\"Alarm status\" compares each photo’s count with the camera threshold; with several cameras the table adds a Camera column.\nClick the eye icon on a row to open the photo: detection boxes, counts per species and a ratio chart.\n\"Export\" saves every record matching the filters (not only the page on screen) with the annotated photos: \"PDF with photos\" or \"Excel with photos\" (one sheet per camera)."
+          },
+          "accuracy": {
+            "title": "How accurate the AI count is",
+            "desc": "The fruit fly model was trained on more than 1,500 trap photos with over 85,000 flies marked by hand.",
+            "items": "On a separate set of test photos, the AI finds about 92 of every 100 flies in a photo, and about 93 of every 100 boxes it draws are fruit flies.\nCounts are less reliable when a photo is blurred, too dark, has glare or a dirty lens, when the card is so full that flies overlap, or when other insects look like fruit flies. The camera's \"Photo quality\" shows these cases.\nBefore an important decision (spraying, a report for a partner), open the photo to check the boxes, or click \"Ask the assistant about this photo\" to have the AI look again.\nEach time you click \"Confirm result\" or \"Correct counts\", an admin can send that photo back to retrain the AI, so it counts better on photos from your own farm."
+          },
+          "review": {
+            "title": "Confirm or correct counts",
+            "desc": "Technicians check the AI results so the numbers can be trusted.",
+            "items": "In the photo details, click \"Confirm\" when the AI count is right.\nClick \"Correct counts\" to enter the count of each species and a note.\nCorrected counts feed every statistic, alert and report; in the history table, \"Export\" has the corrections export for retraining."
+          },
+          "analytics": {
+            "title": "Charts & reports",
+            "desc": "The \"Trends & Charts\" tab shows flies over time and by species; the Overview adds a 14-day chart per trap.",
+            "items": "The filters at the top (camera, dates) apply to the whole page; every chart and table has its own filter button (camera, dates, group by, camera status, against threshold, trap type). A dot on the button means that widget uses its own filters; \"Use page filters\" goes back.\nChoose \"New flies\" for flies arriving each day, or \"On trap\" for the count in the photos (on a glue card it grows until replaced; dashed lines mark card changes and treatments). By Hour shows the count on the trap.\nCards on top: count on the trap now, main species, flies caught in the period and the 3-day trend.\nClick \"Export PDF\" to save the three tabs (Trends & Charts, Insights, History) in one file, each part with its own filters."
+          },
+          "insights": {
+            "title": "Insights",
+            "desc": "The \"Insights\" tab finds the most worrying traps and when flies are most active.",
+            "items": "\"Trap summary\" is sorted by flies per trap per day: trap type, now vs threshold, today, 14 days, change vs the week before, a mini chart, card age and photo status. Click a row to open the camera.\n\"Flies per day by trap\": stacked bars over 14 days.\n\"Temperature and flies\": daily high and low at the trap next to the flies (needs a GPS location).\n\"Flies arriving by hour\": the darker the cell, the more flies; the line above names the busiest hours, a good time to bait or check traps."
+          },
+          "forecast": {
+            "title": "AI diagnosis & forecast",
+            "desc": "The AI Copilot panel on the Overview brings risk, trend and suggested actions together.",
+            "items": "Click the AI Agent diagnosis button at the bottom of the Overview.\n\"7-day trend forecast\" follows the busiest trap: expected new flies per day (+) added to the count on its glue card, colored against its threshold.\n\"Next wave of adult flies\": a degree-day estimate from the biggest catch, with progress and generation length.\n\"Recommended actions\": suggestions following integrated pest management. These are estimates; check the field.\n\"Next 3 days\" in the degree-day panel shows which days suit fruit flies (25–33°C, humid, no heavy rain). When two or more of them come as a new wave is due, FlyBot sends the farm a weather warning at 17:00 the day before."
+          }
+        }
+      },
+      "farms": {
+        "title": "Farms, organizations & log",
+        "steps": {
+          "plots": {
+            "title": "Farms & plots",
+            "desc": "Group traps by farm and plot to follow each area.",
+            "items": "Open \"Farms\", create a farm, then click \"Add plot\".\nDraw the plot boundary on the map and enter its area and color.\nPut cameras in the plot and set a plot threshold if needed.\nEach plot shows its traps, the current average and the last 7 days; Low/High follows the risk.\n\"Compare farms\" at the top of Farms shows each farm's flies per trap per day over 7, 30 or 90 days against the period before, its worst plot and its treatments; open a row to compare its plots."
+          },
+          "map": {
+            "title": "Map",
+            "desc": "The Map page shows traps and plots on a street or satellite map.",
+            "items": "Turn on \"Plots\" to color plots by risk; turn on \"Heatmap\" to see where flies concentrate.\nDrag a camera pin to set the trap real position.\nThe list on the right finds traps by name or serial number."
+          },
+          "sharing": {
+            "title": "Sharing & organizations",
+            "desc": "Work as a team by sharing cameras or farms, or with an organization.",
+            "items": "Share a camera in Settings, Camera Management; share a farm with the \"Share\" button on the farm page.\nFor a cooperative or company: Settings, Organizations, \"New organization\".\nAdd members by email as Owner, Manager or Member. Members see every camera and farm of the organization.\nOnly the camera owner or an admin can delete it, share it outside or move it to another organization.\nPeople you invite get access once they confirm their email. Anyone with an account who has not confirmed it shows as \"Not confirmed\": click \"Remind to confirm\" to send the confirmation email again (up to 3 times a day). Admins can also confirm it for them in Settings, Users."
+          },
+          "log": {
+            "title": "Treatment log & VietGAP",
+            "desc": "Record every action taken and see its effect on trap catches.",
+            "items": "Open \"Field log\", click \"Log treatment\".\nChoose the method: spray, protein bait, lure, biological, sanitation, bagging or other; pick the traps in the treated area.\nEnter product, active ingredient, dose, operator and pre-harvest interval.\n\"Effect\" compares average catches before and after; \"Harvest\" shows when the interval has passed.\nClick \"Export VietGAP log\" to save the pesticide use record.\nThe dashboard lists areas inside a pre-harvest interval; on the morning it ends, FlyBot sends an \"OK to harvest\" notice in the app, by email and on Telegram.\nThe \"Effect by active ingredient\" table below the list groups every use of the same ingredient and shows how much catches dropped on average afterwards, to pick what works on your farm."
+          }
+        }
+      },
+      "alerts": {
+        "title": "Alerts & reports",
+        "steps": {
+          "smart": {
+            "title": "In-app notifications",
+            "desc": "The bell at the top shows new alerts.",
+            "items": "Alert types: threshold reached, sudden rise, camera offline or back online, AI analysis failing, photo problems, card due.\nClick a notification to open the related page.\nClick \"Mark all as read\" to clear the bell count."
+          },
+          "channels": {
+            "title": "Channels & quiet hours",
+            "desc": "Choose how alerts reach you when the app is closed.",
+            "items": "Open Settings, Notifications.\nTurn on alert emails, connect Telegram, or enable push notifications on this phone or computer.\nTurn on the weekly report for a Monday summary; \"Send me this week’s report now\" shows an example.\nSet quiet hours for the night, and switch off cameras you do not follow under \"Cameras I follow\".\nTurn on \"Morning brief\" for a summary at 6:30 every morning: yesterday's catches, traps over or near their threshold, cards due, cameras offline (on Telegram, or by email without Telegram).\nTurn on \"Monthly VietGAP record\" to get last month's pesticide use record (PDF) on the 1st of each month; in the Field log, \"Email last month\" sends it right away."
+          },
+          "reports": {
+            "title": "Reports",
+            "desc": "Arrange the charts and numbers you care about.",
+            "items": "Open \"Reports\", create one and add blocks: key figures, flies per day, flies by trap, species, trap table, flies by period, flies by hour, latest photos.\nPick the time range at the top right: last 7 or 30 days, 3, 6 or 12 months, or your own dates; \"Save as default\" keeps it for everyone who opens the report. Figures are compared with the period just before.\nClick \"Export PDF\" to save the report with its charts and tables.\nShare it by email, or turn on a public link for partners. Under \"End of sharing\", pick a date and time after which the link and the people it is shared with lose access, or keep \"Never\".\nBy email: click \"Email me\" to get the report with its PDF now; the owner can open the three-dot menu, \"Email on a schedule\", to send it weekly or monthly (Vietnam time) to themselves or also to the people it is shared with."
+          }
+        }
+      },
+      "assistant": {
+        "title": "FlyBot Assistant",
+        "steps": {
+          "ask": {
+            "title": "Ask in plain words",
+            "desc": "Press \"Assistant\" at the top to open it; the left menu folds to make room.",
+            "items": "Ask as you would a colleague: \"Which trap is worst?\", \"This week compared with last week?\", \"Any alerts today?\", \"Did last week's spray work?\", \"Summarize the season report\".\nThe assistant looks up your real figures before answering, counting catches the same way as the other pages.\nIt only sees the cameras and reports you may see; administrators can also ask about the capture pipeline.\nIt can open the page or tab you need, take a new photo from a camera, or email a report as a PDF to you."
+          },
+          "cards": {
+            "title": "Answers with photos and charts",
+            "desc": "Answers appear as they are written, with result cards.",
+            "items": "Cards for the latest AI photos (click to enlarge), catches by hour, day or month, a two-period comparison, and a report with an \"Open report\" button.\nWhile it looks things up, the panel says what it is doing; open \"Tool executions\" to see the steps.\nPress \"Helpful\" or \"Not right\" under an answer to tell us how it did.\nConversations are kept for 7 days and survive a reload; the refresh button at the top starts a new one."
+          },
+          "photo": {
+            "title": "Ask about a photo",
+            "desc": "Have the AI look at one trap photo.",
+            "items": "Open a photo in the detection history (or on the Camera page) and press \"Ask the assistant about this photo\".\nThe assistant looks at it and tells you what insects are on it, whether the count looks right, and whether the photo has glare, blur, a dirty lens or a full card.\nEach person can ask about photos 20 times an hour."
+          },
+          "confirm": {
+            "title": "Changes you confirm",
+            "desc": "The assistant prepares, you decide.",
+            "items": "Say \"I replaced the card on mango trap A1\" or \"Log an Abamectin spray in plot A this morning\".\nThe assistant shows a card with the details; nothing is recorded until you press \"Confirm\", and \"Cancel\" drops it.\nThe details are checked as in the forms (your access to the camera, the date, the product for a spray), and each card can be used once."
+          }
+        }
+      },
+      "mobile": {
+        "title": "On the phone",
+        "steps": {
+          "app": {
+            "title": "Phone layout",
+            "desc": "FlyBot switches to an app-like layout on phones.",
+            "items": "Bottom bar: Overview, Cameras, Analytics, Map and More.\nLong pages become vertical cards, easy to scroll with one hand."
+          },
+          "more": {
+            "title": "More menu & installing",
+            "desc": "The \"More\" button opens everything else.",
+            "items": "More holds: Reports, Farms, Field log, Settings, Add camera, Guide, language and light/dark theme.\nTo install it as an app: Settings, Notifications, \"Install the app\" (Android, computer), or on iPhone use Safari, Share, \"Add to Home Screen\".\nOnce installed, enable push notifications to get alerts right on the phone."
+          },
+          "offline": {
+            "title": "No signal in the field",
+            "desc": "FlyBot still opens when the phone is offline, with the data you last saw.",
+            "items": "Open FlyBot at least once with a connection: it keeps the pages and the data you viewed on the device.\nWithout signal, the bar at the top says \"You are offline\" and when the data was saved.\nLive video, taking photos, saving changes and the assistant need a connection; numbers update by themselves once you are back online.\nThe data kept on the device is removed when you sign out."
+          }
+        }
+      },
+      "integrations": {
+        "title": "Integrations",
+        "steps": {
+          "api": {
+            "title": "API keys & webhooks",
+            "desc": "Connect FlyBot to your own systems (managers and admins).",
+            "items": "Open Settings, API & Webhooks.\nClick \"Create key\", name it and copy the key right away: it is shown only once.\nUse the key to read cameras, daily counts, analyzed photos and alerts at /api/v1.\nAdd a webhook: enter an HTTPS address, choose events, keep the signing secret to check signatures; click \"Test\" to send a sample event."
+          },
+          "training": {
+            "title": "Retraining the AI",
+            "desc": "Admins can use reviewed photos to improve the model.",
+            "items": "Open Settings, System settings, the \"Retrain the AI with reviewed photos\" card.\nTurn uploading on; confirmed photos go with their detection boxes, corrected ones are tagged with the right count for labeling in Roboflow."
+          }
+        }
+      }
+    }
+  },
+  "privacy": {
+    "title": "Privacy policy",
+    "lastUpdated": "Last updated: October 2026",
+    "intro": "FlyBot is operated by AgrHub. This policy explains what data is collected when you use FlyBot, what it is used for and who can see it.",
+    "sections": {
+      "collect": {
+        "title": "1. Data we collect",
+        "body": "Account: email, name, avatar, password (stored only as a hash), language and notification settings.\nCameras and farms: serial number, camera verification code, name, GPS location, farm and plot boundaries you enter.\nTrap photos and AI results: counts, detection boxes, photo quality, daily totals.\nRecords you keep: card replacements, treatments, review notes.\nTechnical data: sign-in sessions (device, browser, IP address), activity log, push subscriptions, Telegram link."
+      },
+      "purpose": {
+        "title": "2. How we use it",
+        "body": "To run the features: insect counts, alerts, reports, forecasts and sharing; to protect accounts (session management, activity log); and to send the notifications you turned on. Data is not sold and not used for advertising."
+      },
+      "processors": {
+        "title": "3. Third-party services",
+        "body": "EZVIZ: camera connection, live view and photos.\nS3-compatible storage: photos in a private bucket, served only through FlyBot after an access check.\nRoboflow and Google Vertex AI: analysis of trap photos and the AI assistant.\nOpen-Meteo: receives camera coordinates to return the weather.\nGoogle Maps: map tiles.\nEmail provider, Telegram and browser push services: the alerts you turned on.\nWhen an admin turns on AI retraining, reviewed photos are uploaded to the operator Roboflow project."
+      },
+      "access": {
+        "title": "4. Who can see your data",
+        "body": "You; the people you share cameras, farms or reports with; members of organizations that hold your cameras; anyone with a report public link, if you create one; systems using your API keys and webhook addresses; and system administrators."
+      },
+      "retention": {
+        "title": "5. Retention & deletion",
+        "body": "Photos and related data are kept for the period set by the administrator (in months) and then deleted automatically. To delete your account, contact the administrator; deleting it also removes your shares, sessions, notifications, API keys and webhooks."
+      },
+      "security": {
+        "title": "6. Security",
+        "body": "Passwords are hashed; sessions can be reviewed and revoked; photos are in private storage; every request is checked for access; webhooks are signed; admin actions are logged. Note: viewers of a camera with video encryption need its verification code to decrypt video in the browser, so change the code on the device when you stop sharing that camera."
+      },
+      "storage": {
+        "title": "7. Browser storage",
+        "body": "FlyBot uses a sign-in cookie (httpOnly) and browser storage for your session, language and light/dark theme. FlyBot uses no advertising or tracking cookies."
+      },
+      "contact": {
+        "title": "8. Contact & changes",
+        "body": "For questions about your data, write to {email}. When this policy changes, the date at the top of the page is updated."
+      }
+    }
+  },
+  "terms": {
+    "title": "Terms of service",
+    "lastUpdated": "Last updated: October 2026",
+    "intro": "FlyBot is a camera and AI sticky-trap monitoring service operated by AgrHub.",
+    "sections": {
+      "accept": {
+        "title": "1. Acceptance",
+        "body": "By creating an account or using FlyBot you agree to these terms and the privacy policy."
+      },
+      "accounts": {
+        "title": "2. Accounts & roles",
+        "body": "Keep your password secret and sign out of devices you do not own. You are responsible for activity under your account and for the people you share cameras or farms with or invite to organizations."
+      },
+      "devices": {
+        "title": "3. Cameras & devices",
+        "body": "Only add cameras you own or are allowed to use, and keep their verification codes private. You provide power and network at the farm. Use of EZVIZ cameras and services is also subject to the EZVIZ terms."
+      },
+      "ai": {
+        "title": "4. AI results & forecasts",
+        "body": "AI counts can be wrong, for example with blurry photos, overlapping insects or debris on the card. Trend and degree-day forecasts are estimates and suggested actions are guidance only. Check the field before deciding on a treatment."
+      },
+      "pesticides": {
+        "title": "5. Pesticides & records",
+        "body": "You are responsible for following product labels, doses, pre-harvest intervals and applicable rules. The treatment log and VietGAP export are based on what you enter; FlyBot does not certify it."
+      },
+      "use": {
+        "title": "6. Acceptable use",
+        "body": "Use FlyBot only for agricultural monitoring. Do not use the cameras to watch people unlawfully; do not access, scan or disrupt the system without permission; do not use sharing to send spam; stay within the API rate limits."
+      },
+      "data": {
+        "title": "7. Data & sharing",
+        "body": "You keep the rights to your farm data. A report public link can be viewed by anyone who has it. You manage your API keys and webhooks; revoke them when no longer needed."
+      },
+      "service": {
+        "title": "8. Service & changes",
+        "body": "FlyBot is provided as is and may be interrupted for maintenance or by third-party outages. Features may change over time. Accounts that break these terms may be disabled."
+      },
+      "contact": {
+        "title": "9. Contact",
+        "body": "Deployment, integration or questions about these terms: {email}."
+      }
+    }
+  },
+  "contact": {
+    "title": "Contact",
+    "subtitle": "Need advice on deploying smart traps, an integration or help using FlyBot? Leave a message and we will answer by email.",
+    "nameLabel": "Your Name",
+    "namePlaceholder": "e.g. John Doe",
+    "emailLabel": "Email Address",
+    "emailPlaceholder": "you{'@'}orchard.com",
+    "subjectLabel": "Subject",
+    "subjectPlaceholder": "Deployment advice, integration, support...",
+    "messageLabel": "Message",
+    "messagePlaceholder": "Crop, farm size, number of traps or your question...",
+    "sendBtn": "Send message",
+    "successTitle": "Message sent",
+    "successMsg": "Thank you. We have received your message and will reply to the email you gave.",
+    "sendAnother": "Send another message",
+    "required": "Please enter your name, email and message.",
+    "failed": "The message could not be sent. Please try again later.",
+    "directEmail": "Or email us directly at {email}."
+  },
+  "footer": {
+    "appName": "FlyBot",
+    "brandName": "FlyBot",
+    "tagline": "Smart sticky traps and AI insect counting, for early pest detection and evidence-based pest management.",
+    "product": "Product",
+    "company": "Company",
+    "legal": "Legal",
+    "copyright": "© 2026 AgrHub. FlyBot is developed and operated by AgrHub.",
+    "resources": "Resources"
+  },
+  "map": {
+    "safe": "Safe",
+    "moderate": "Moderate (1/3 of threshold)",
+    "alert": "At alert threshold",
+    "locateMe": "Locate Me",
+    "locateMeTitle": "Current GPS Location",
+    "viewWholeOrchard": "Full View",
+    "viewWholeOrchardTitle": "Overview all traps",
+    "dragHint": "Drag and drop the camera pin on the map to update trap GPS coordinates",
+    "trapList": "Trap Roster",
+    "monitoringDevices": "{count} monitoring devices",
+    "fruitFlyShort": "flies",
+    "noAddress": "No orchard address provided",
+    "edit": "Edit",
+    "editModalTitle": "Update Trap Coordinates & Field Information",
+    "editModalHint": "You can enter the actual GPS coordinates of the trap in the orchard, or drag and drop the marker directly on the map.",
+    "trapNameAndSerial": "Trap Name & Serial",
+    "orchardAddress": "Orchard Address / Trap Position",
+    "orchardAddressPlaceholder": "e.g. Lot A - Cat Chu Mango Orchard, Cu Chi",
+    "latitude": "Latitude",
+    "longitude": "Longitude",
+    "trapType": "Trap Type",
+    "trapTypePlaceholder": "Smart Pheromone Sticky Trap",
+    "cropType": "Crop Type",
+    "cropTypePlaceholder": "Cat Chu Mango",
+    "popupTraps": "Trap",
+    "popupFruitFlies": "fruit flies",
+    "popupViewDetails": "View Camera Details",
+    "searchPlaceholder": "Search trap name or serial...",
+    "searchResults": "Found {count} devices",
+    "focusMatching": "Focus on map",
+    "noTrapsFound": "No matching trap cameras found",
+    "clearSearch": "Clear search",
+    "layerStreet": "Google Map (Street)",
+    "layerEarth": "Google Earth (Hybrid)",
+    "satelliteShort": "Satellite",
+    "streetShort": "Map",
+    "geolocationUnsupported": "Your browser does not support geolocation.",
+    "gpsTitle": "GPS location",
+    "gpsFailed": "Could not get your location: {error}",
+    "streamUnavailable": "Could not get the video stream.",
+    "coordsUpdated": "Updated coordinates for {name}: [{lat}, {lng}]",
+    "coordsSaveFailed": "Could not save coordinates: {error}",
+    "locationSaved": "Location and plot details saved.",
+    "locationSaveFailed": "Failed to save: {error}",
+    "heatmap": "Heatmap",
+    "noLocation": "No location",
+    "setLocation": "Set location",
+    "plots": "Plots",
+    "popupToday": "Today",
+    "popupFtd": "Flies/trap/day"
+  },
+  "species": {
+    "fruitFly": "Fruit Fly",
+    "bug": "Bug",
+    "caterpillar": "Caterpillar",
+    "other": "Other",
+    "moth": "Moth"
+  },
+  "notifications": {
+    "markAllRead": "Mark all as read",
+    "loadMore": "Load more",
+    "unreadCount": "{count} unread",
+    "justNow": "Just now",
+    "types": {
+      "pest_threshold": {
+        "title": "Pest threshold reached",
+        "desc": "{deviceName}: {count} insects (threshold {threshold})",
+        "descDaily": "{deviceName}: {count} insects per photo on average today (threshold {threshold})"
+      },
+      "camera_offline": {
+        "title": "Camera offline",
+        "desc": "{deviceName} has gone offline."
+      },
+      "camera_online": {
+        "title": "Camera back online",
+        "desc": "{deviceName} is back online."
+      },
+      "ai_failure": {
+        "title": "AI analysis failing",
+        "desc": "{deviceName}: the last {failures} snapshots could not be analyzed."
+      },
+      "camera_shared": {
+        "title": "Camera shared with you",
+        "desc": "{sharer} shared the camera {deviceName} with you."
+      },
+      "dashboard_shared": {
+        "title": "Report shared with you",
+        "desc": "{sharer} shared the report {dashboardName} with you."
+      },
+      "card_due": {
+        "title": "Sticky card due",
+        "desc": "{deviceName}: the card has been up for {days} days."
+      },
+      "card_change_detected": {
+        "title": "New sticky card detected",
+        "desc": "{deviceName}: the count dropped from {previous} to {count}, so the card was probably replaced. Delete the entry in the camera if not."
+      },
+      "plot_threshold": {
+        "title": "Plot alert",
+        "desc": "{plotName} ({farmName}): traps average {average} insects, threshold {threshold}."
+      },
+      "farm_shared": {
+        "title": "Farm shared with you",
+        "desc": "{sharer} shared the farm {farmName} with you."
+      },
+      "pest_surge": {
+        "title": "Sudden rise",
+        "desc": "{deviceName}: {count} insects, up from {previous} {days} days ago (+{pct}%)."
+      },
+      "weekly_report": {
+        "title": "Weekly report",
+        "desc": "Your weekly report is ready."
+      },
+      "image_quality": {
+        "title": "Photo problem",
+        "desc": "{deviceName}: {issueText}. Counts from these photos may be wrong."
+      },
+      "org_joined": {
+        "title": "Added to an organization",
+        "desc": "{sharer} added you to {orgName}."
+      },
+      "harvest_ready": {
+        "title": "OK to harvest",
+        "desc": "{area}: the pre-harvest interval after {product} ends at {date}."
+      },
+      "weather_risk": {
+        "title": "Weather that suits fruit flies",
+        "desc": "{farmName}: {days}, {minTemp}–{maxTemp}°C, humidity up to {humidity}%; next wave around {waveDate}."
+      }
+    }
+  },
+  "roles": {
+    "admin": "Admin",
+    "manager": "Manager",
+    "user": "Viewer"
+  },
+  "share": {
+    "button": "Share",
+    "cameraTitle": "Share {name}",
+    "cameraDesc": "People you share with can watch the camera and see its statistics. They cannot change, delete or re-share it. Unknown emails get an invitation and gain access once they sign up and confirm their email.",
+    "emailPlaceholder": "Email address",
+    "add": "Share",
+    "email": "Email",
+    "status": "Status",
+    "statusLabel": {
+      "active": "Active",
+      "pending": "Invited",
+      "unverified": "Not confirmed"
+    },
+    "statusHint": {
+      "active": "This person has access.",
+      "pending": "Waiting for this person to sign up and confirm their email.",
+      "unverified": "This person has an account but has not confirmed their email yet. Access starts once they do."
+    },
+    "remind": "Remind to confirm",
+    "reminded": "Confirmation email sent again to {email}.",
+    "empty": "Not shared with anyone yet.",
+    "remove": "Remove access",
+    "removeConfirm": "Remove access for {email}?",
+    "shared": "Shared with {email}.",
+    "invited": "Invitation sent to {email}.",
+    "access": "Access",
+    "accessOwner": "Owner",
+    "accessShared": "Shared with you",
+    "accessAdmin": "Admin access",
+    "sharedCount": "Shared with {count}",
+    "errors": {
+      "SHARE_WITH_OWNER": "This person is the owner.",
+      "ALREADY_SHARED": "Already shared with this email."
+    },
+    "viaFarm": "Via farm",
+    "viaFarmHint": "This person sees the camera through its farm. Remove them on the farm page."
+  },
+  "admin": {
+    "group": "Administration",
+    "saved": "Saved.",
+    "errors": {
+      "SELF_CHANGE": "You cannot change your own role, disable or delete your own account.",
+      "LAST_ADMIN": "At least one active admin is required.",
+      "OWNS_CAMERAS": "This user owns {count} camera(s). Transfer them to another account first.",
+      "NOT_MANAGER": "The new owner must be a manager or an admin.",
+      "USER_NOT_FOUND": "No account with this email."
+    },
+    "users": {
+      "tab": "Users",
+      "title": "Users",
+      "subtitle": "Roles: admins control everything, managers add and share their own cameras and build reports, viewers only see what is shared with them.",
+      "search": "Search by email or name",
+      "allRoles": "All roles",
+      "account": "Account",
+      "you": "You",
+      "role": "Role",
+      "cameras": "Cameras",
+      "status": "Status",
+      "active": "Active",
+      "disabled": "Disabled",
+      "unverified": "Email not confirmed",
+      "allStatuses": "All statuses",
+      "unverifiedHint": "{count} account(s) have not confirmed their email: they get no alert emails, and invitations to them are on hold.",
+      "showUnverified": "Show them",
+      "verifyEmail": "Mark email as confirmed",
+      "verifyEmailConfirm": "Mark {email} as confirmed? Only do this if you know the address belongs to this person. Pending invitations to it take effect right away.",
+      "joined": "Joined",
+      "enable": "Enable",
+      "disable": "Disable",
+      "delete": "Delete account",
+      "roleConfirm": "Change the role of {email} to {role}?",
+      "disableConfirm": "Disable {email}? They are signed out everywhere and cannot sign in until enabled again.",
+      "deleteConfirm": "Delete the account {email}? Their reports, notifications and access to shared cameras are removed. This cannot be undone.",
+      "deleted": "Account deleted."
+    },
+    "cameras": {
+      "tab": "All cameras",
+      "title": "All cameras",
+      "subtitle": "Every camera registered in FlyBot, with its owner. Each device can be registered only once.",
+      "search": "Search by name, serial or owner email",
+      "owner": "Owner",
+      "noOwner": "No owner",
+      "sharedWith": "Shared with",
+      "transfer": "Transfer",
+      "transferTitle": "Transfer ownership",
+      "transferDesc": "Move {name} ({serial}) to another account.",
+      "newOwnerEmail": "New owner email",
+      "keepAccess": "Keep view access for the current owner",
+      "transferHint": "The new owner must be a manager or an admin.",
+      "transferred": "Ownership transferred."
+    },
+    "system": {
+      "tab": "System settings",
+      "title": "System settings",
+      "subtitle": "Settings that apply to every account.",
+      "allowRegistration": "Allow new accounts",
+      "allowRegistrationDesc": "When off, nobody can sign up, including people who were invited by email.",
+      "retentionMonths": "Keep snapshots for",
+      "months": "months",
+      "retentionDesc": "Older photos are deleted automatically. Daily statistics are kept for at least 25 months, for long-range reports.",
+      "defaultThreshold": "Default alert threshold for new cameras",
+      "defaultThresholdDesc": "Owners can change it per camera in Notifications.",
+      "updatedAt": "Last changed {time}"
+    },
+    "training": {
+      "title": "Retrain the AI with reviewed photos",
+      "desc": "Every 15 minutes, photos people confirmed or corrected are uploaded to the Roboflow project. Confirmed photos go up with the AI boxes as labels; corrected ones go up tagged with the right count, to be labeled in Roboflow before the next training.",
+      "notConfigured": "Not set up: set ROBOFLOW_UPLOAD_PROJECT (and a private ROBOFLOW_UPLOAD_API_KEY) on the server. See DEPLOY.md.",
+      "project": "Roboflow project: {project}",
+      "counts": {
+        "pending": "Waiting",
+        "uploaded": "Uploaded",
+        "failed": "Failed"
+      },
+      "lastError": "Last error: {error}",
+      "runNow": "Upload now",
+      "schedule": "Also retries failed uploads.",
+      "ran": "Uploaded {uploaded}, failed {failed}."
+    },
+    "pipeline": {
+      "tab": "Capture pipeline",
+      "title": "Capture pipeline",
+      "subtitle": "Photo capture, AI analysis and background jobs over the last 24 hours.",
+      "updated": "Updated {time}",
+      "cronOff": "This server does not run the background jobs (ENABLE_CRON=false). Photo figures are complete, but job runs only show on the server that runs them.",
+      "stats": {
+        "photos": "Photos taken",
+        "analyzed": "Analyzed",
+        "failed": "Analysis failed",
+        "waitingRetry": "Waiting for a retry",
+        "recovered": "Recovered by a retry",
+        "gaveUp": "Given up"
+      },
+      "rate": "{rate}% of photos",
+      "gaveUpNote": "Failed after {max} retries",
+      "byHour": "Photos by hour",
+      "photosAxis": "Photos",
+      "inProgress": "In progress",
+      "noPhotos": "No photos in the last 24 hours",
+      "cameras": "Cameras",
+      "problemsOnly": "Cameras with problems only",
+      "noProblems": "No camera has a problem",
+      "online": "Online",
+      "offline": "Offline",
+      "cols": {
+        "camera": "Camera",
+        "status": "Status",
+        "photos": "Photos",
+        "failed": "Failed",
+        "lastPhoto": "Latest photo",
+        "problems": "Problems",
+        "job": "Job",
+        "lastRun": "Last run",
+        "duration": "Duration",
+        "result": "Result",
+        "state": "State"
+      },
+      "problems": {
+        "noPhotos": "No photos in 24 h",
+        "failing": "Analysis often fails"
+      },
+      "jobs": "Background jobs",
+      "jobsDesc": "Since the server last started.",
+      "noJobs": "No job has run yet",
+      "notYet": "Not run yet",
+      "states": {
+        "running": "Running",
+        "notYet": "Not run yet",
+        "ok": "Succeeded",
+        "failed": "Failed"
+      },
+      "jobNames": {
+        "capture": "Photo capture",
+        "aiRetry": "AI retry for failed photos",
+        "cleanup": "Old data removal",
+        "pestCount": "Pest count fill-in",
+        "statusSync": "Camera status sync",
+        "scheduledReports": "Scheduled reports",
+        "weeklyReports": "Weekly report",
+        "cardReminders": "Sticky card reminders",
+        "trainingSync": "AI training upload",
+        "ezvizPolicies": "EZVIZ sub-account access",
+        "morningBriefs": "Morning brief",
+        "vietgapMonthly": "Monthly VietGAP record",
+        "harvestReminders": "Harvest reminders",
+        "weatherAlerts": "Weather warnings"
+      },
+      "jobSchedules": {
+        "capture": "Every 5 minutes",
+        "aiRetry": "Every 15 minutes",
+        "cleanup": "Every hour",
+        "pestCount": "Hourly, at :20",
+        "statusSync": "Every minute",
+        "scheduledReports": "Hourly, at :05",
+        "weeklyReports": "Mondays, 7:30",
+        "cardReminders": "Daily, 7:00",
+        "trainingSync": "Every 15 minutes",
+        "ezvizPolicies": "Hourly, at :17",
+        "morningBriefs": "Daily, 6:30",
+        "vietgapMonthly": "Monthly, the 1st at 7:00",
+        "harvestReminders": "Daily at 6:00",
+        "weatherAlerts": "Daily at 17:00"
+      },
+      "results": {
+        "cameras": "{n} camera(s)",
+        "saved": "{n} photo(s) saved",
+        "retried": "{n} retried",
+        "succeeded": "{n} succeeded",
+        "photos": "{n} photo(s)",
+        "files": "{n} file(s)",
+        "failed": "{n} failed",
+        "sent": "{n} sent",
+        "uploaded": "{n} uploaded",
+        "changed": "{n} changed",
+        "more": "more next run",
+        "skipped": "{n} tick(s) skipped while still running"
+      }
+    }
+  },
+  "dashboards": {
+    "title": "Reports",
+    "subtitle": "Build your own trap reports and share them by email or with a public link.",
+    "create": "New report",
+    "createAndEdit": "Create and edit",
+    "empty": "No reports yet. Create one to pick the cameras and charts you care about.",
+    "emptyViewer": "No reports have been shared with you yet.",
+    "noDescription": "No description",
+    "counts": "{widgets} widgets · {cameras} cameras",
+    "sharedBy": "Shared by {owner}",
+    "ownedBy": "Owner: {owner}",
+    "visibility": {
+      "private": "Private",
+      "public": "Public link"
+    },
+    "name": "Name",
+    "nameRequired": "Please enter a report name.",
+    "description": "Description",
+    "cameras": "Cameras",
+    "camerasPlaceholder": "Choose cameras",
+    "template": "Start from",
+    "templates": {
+      "overview": "Overview (all widgets)",
+      "blank": "Blank"
+    },
+    "backToList": "All reports",
+    "edit": "Edit",
+    "editing": "Editing {name}",
+    "delete": "Delete report",
+    "deleteConfirm": "Delete the report {name}? People it is shared with lose access and the public link stops working.",
+    "deleted": "Report deleted.",
+    "saved": "Report saved.",
+    "notFound": "Report not found",
+    "notFoundDesc": "It may have been deleted, or it is no longer shared with you.",
+    "updatedAt": "Updated {time}",
+    "addWidget": "Add widget",
+    "maxWidgets": "A report can have at most 20 widgets.",
+    "noWidgets": "This report has no widgets yet.",
+    "noWidgetsEditing": "Add widgets with the buttons above.",
+    "sharedCamerasHint": "Cameras that were shared with you only appear for people who can see them too, and cannot be used on a public link.",
+    "editWidget": "Widget settings",
+    "removeWidget": "Remove widget",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "widgetType": "Type",
+    "widgetTitle": "Title",
+    "widgetCameras": "Cameras",
+    "allDashboardCameras": "All report cameras",
+    "range": "Time range",
+    "lastDays": "Last {days} days",
+    "width": "Width",
+    "height": "Height",
+    "widths": {
+      "6": "Quarter",
+      "8": "Third",
+      "12": "Half",
+      "16": "Two thirds",
+      "24": "Full"
+    },
+    "heights": {
+      "3": "S",
+      "4": "M",
+      "5": "L",
+      "6": "XL",
+      "8": "XXL"
+    },
+    "widgetTypes": {
+      "kpi": "Key figures",
+      "trend": "Flies per day",
+      "species": "Species",
+      "cameraRanking": "Trap table",
+      "latestSnapshot": "Latest snapshots",
+      "catchesByTrap": "Flies by trap",
+      "dailyTable": "Flies by period",
+      "activity": "Flies by hour"
+    },
+    "kpi": {
+      "cameras": "Cameras",
+      "online": "{count} online",
+      "alertCameras": "Traps over threshold",
+      "scans": "Photos analyzed",
+      "catches": "Flies caught",
+      "fliesUnit": "flies",
+      "vsPrevious": "{change} vs previous period ({previous})",
+      "previousValue": "Previous period: {value}",
+      "ftd": "Flies/trap/day",
+      "avgPerDay": "Average per day",
+      "allTraps": "All traps together",
+      "busiestDay": "Busiest day",
+      "alertHint": "Count now at or above the threshold (lure traps: today’s average)",
+      "noPrevious": "No data for the period before"
+    },
+    "ranking": {
+      "total": "Flies caught",
+      "latest": "Now / threshold",
+      "trap": "Trap",
+      "ftd": "Flies/trap/day",
+      "change": "vs before",
+      "busiestDay": "Busiest day",
+      "dailyAverageShort": "avg today",
+      "dailyAverageHint": "Lure trap: today’s average per photo, as the threshold alert uses"
+    },
+    "noData": "Save the report to load data.",
+    "noDetections": "No insects detected in this period.",
+    "noCameras": "No cameras on this widget.",
+    "noSnapshot": "No snapshot yet",
+    "errors": {
+      "PUBLIC_FOREIGN_CAMERA": "A public report can only use cameras you own. Remove: {cameras}",
+      "CAMERA_NOT_FOUND": "Some cameras are not available: {cameras}",
+      "SHARE_WITH_OWNER": "This person owns the report.",
+      "ALREADY_SHARED": "Already shared with this email.",
+      "FORBIDDEN": "You cannot change this report."
+    },
+    "share": {
+      "title": "Share {name}",
+      "publicTitle": "Public link",
+      "publicDesc": "Anyone with the link can view this report without signing in. Only cameras you own are shown.",
+      "publicConfirm": "Anyone with the link will be able to see this report, including its snapshots. Continue?",
+      "publicHint": "Create a new link to stop the old one from working.",
+      "copy": "Copy",
+      "copied": "Link copied.",
+      "copyFailed": "Could not copy. Select the link and copy it manually.",
+      "rotate": "New link",
+      "rotateConfirm": "The current link stops working. Continue?",
+      "rotated": "New link created.",
+      "peopleTitle": "People",
+      "peopleDesc": "People you add can view the report after signing in. Unknown emails get an invitation."
+    },
+    "public": {
+      "badge": "Public report",
+      "by": "By {owner}",
+      "notFound": "This link is not available",
+      "notFoundDesc": "The report may have been made private, or a new link was created.",
+      "home": "Go to FlyBot",
+      "expired": "This link has expired",
+      "expiredDesc": "The owner set an end date for this report. Ask them for a new link."
+    },
+    "ranges": {
+      "7d": "Last 7 days",
+      "30d": "Last 30 days",
+      "3m": "Last 3 months",
+      "6m": "Last 6 months",
+      "12m": "Last 12 months",
+      "custom": "Custom dates"
+    },
+    "defaultRange": "Default time range",
+    "rangeFrom": "From",
+    "rangeTo": "To",
+    "rangeTooLong": "Choose at most {days} days.",
+    "saveDefaultRange": "Save as default",
+    "defaultRangeSaved": "Default time range saved.",
+    "activityWindow": "Hourly activity covers the last {days} days of the range.",
+    "thisPeriod": "This period",
+    "previousPeriod": "Previous period",
+    "periodUnit": {
+      "day": "Day",
+      "week": "Week",
+      "month": "Month"
+    },
+    "topSpecies": "Main species",
+    "exportPdf": "Export PDF",
+    "pdfFailed": "Could not create the PDF.",
+    "pdf": {
+      "range": "Time range: {range} ({from} - {to})",
+      "generated": "Generated: {time}",
+      "figure": "Figure",
+      "value": "Value",
+      "hour": "Hour",
+      "count": "On trap",
+      "time": "Photo time",
+      "ownRange": "Own range: {from} - {to}"
+    },
+    "expiry": {
+      "title": "End of sharing",
+      "desc": "After this time, the public link stops working and the people above lose access. You keep the report.",
+      "never": "Never",
+      "onDate": "On a date",
+      "pick": "Pick a date and time",
+      "saved": "End of sharing saved.",
+      "mustBeFuture": "Pick a time in the future.",
+      "expired": "Sharing ended",
+      "until": "Shared until {time}",
+      "expiredHint": "Sharing has ended. Pick a later date or choose Never to share it again."
+    },
+    "widgetRange": {
+      "report": "Report range",
+      "own": "Own range"
+    },
+    "granularity": {
+      "auto": "Auto",
+      "day": "Day",
+      "week": "Week",
+      "month": "Month"
+    },
+    "sendNow": "Email me",
+    "sendNowHint": "Send the report with its PDF to your email now",
+    "sentNow": "Sending the report to {email}.",
+    "schedule": {
+      "menu": "Email on a schedule",
+      "title": "Email on a schedule: {name}",
+      "desc": "FlyBot sends the report with its PDF by email, and by Telegram to people who linked it, on a schedule (Vietnam time).",
+      "frequency": "How often",
+      "frequencies": {
+        "off": "Off",
+        "weekly": "Weekly",
+        "monthly": "Monthly"
+      },
+      "weekday": "Day of the week",
+      "weekdays": {
+        "1": "Monday",
+        "2": "Tuesday",
+        "3": "Wednesday",
+        "4": "Thursday",
+        "5": "Friday",
+        "6": "Saturday",
+        "7": "Sunday"
+      },
+      "monthDay": "Day of the month",
+      "dayOfMonth": "Day {day}",
+      "hour": "Time",
+      "recipients": "Recipients",
+      "recipientsOwner": "Only me",
+      "recipientsAll": "Me and the people it is shared with",
+      "covers": {
+        "weekly": "Each email covers the last 7 days.",
+        "monthly": "Each email covers the last 30 days."
+      },
+      "lastSent": "Last sent: {time}",
+      "saved": "Schedule saved.",
+      "labelWeekly": "Emailed {day} {time}",
+      "labelMonthly": "Emailed monthly on day {day} {time}",
+      "receive": "Receive scheduled reports",
+      "receiveOff": "Scheduled reports are off for you.",
+      "receiveOn": "Scheduled reports are on again."
+    }
+  },
+  "audit": {
+    "tab": "Activity log",
+    "title": "Activity log",
+    "subtitle": "Sign-ins, account changes, camera and report sharing, and system settings changes.",
+    "export": "Export CSV",
+    "allCategories": "All activity",
+    "search": "Search by email, camera, report or IP",
+    "from": "From",
+    "to": "To",
+    "time": "Time",
+    "action": "Action",
+    "actor": "By",
+    "target": "Object",
+    "details": "Details",
+    "ip": "IP address",
+    "system": "System",
+    "empty": "No activity found.",
+    "retention": "Entries are kept for 12 months.",
+    "invited": "invited",
+    "keptAccess": "previous owner keeps view access",
+    "categories": {
+      "auth": "Sign-in & security",
+      "user": "Accounts",
+      "camera": "Cameras",
+      "dashboard": "Reports",
+      "settings": "System settings",
+      "treatment": "Treatments",
+      "farm": "Farms",
+      "org": "Organization",
+      "integration": "API & webhooks"
+    },
+    "actions": {
+      "auth": {
+        "register": "Account created",
+        "login": "Signed in",
+        "login_failed": "Failed sign-in",
+        "password_reset": "Password reset by email",
+        "password_changed": "Password changed",
+        "sessions_revoked": "Signed out other devices"
+      },
+      "user": {
+        "role_changed": "Role changed",
+        "disabled": "Account disabled",
+        "enabled": "Account enabled",
+        "confirm_reminded": "Reminder to confirm email sent",
+        "email_verified": "Email confirmed by an admin",
+        "deleted": "Account deleted"
+      },
+      "camera": {
+        "added": "Camera added",
+        "updated": "Camera changed",
+        "deleted": "Camera deleted",
+        "shared": "Camera shared",
+        "unshared": "Camera access removed",
+        "transferred": "Camera ownership transferred"
+      },
+      "dashboard": {
+        "created": "Report created",
+        "deleted": "Report deleted",
+        "shared": "Report shared",
+        "unshared": "Report access removed",
+        "published": "Public link turned on",
+        "unpublished": "Public link turned off",
+        "link_rotated": "New public link created",
+        "expiry_changed": "End of sharing changed",
+        "schedule_changed": "Report schedule changed"
+      },
+      "settings": {
+        "updated": "System settings changed"
+      },
+      "treatment": {
+        "created": "Treatment logged",
+        "updated": "Treatment changed",
+        "deleted": "Treatment deleted"
+      },
+      "farm": {
+        "created": "Farm created",
+        "deleted": "Farm deleted",
+        "shared": "Farm shared",
+        "unshared": "Farm access removed",
+        "cameras_changed": "Change plot cameras"
+      },
+      "org": {
+        "created": "Create organization",
+        "updated": "Rename organization",
+        "deleted": "Delete organization",
+        "member_added": "Add member",
+        "member_updated": "Change member role",
+        "member_removed": "Remove member",
+        "member_reminded": "Remind member to confirm email",
+        "cameras_changed": "Move cameras"
+      },
+      "integration": {
+        "key_created": "Create API key",
+        "key_revoked": "Revoke API key",
+        "webhook_created": "Add webhook",
+        "webhook_deleted": "Delete webhook",
+        "webhook_updated": "Change webhook"
+      }
+    },
+    "reasons": {
+      "wrong_password": "Wrong password",
+      "unknown_account": "No such account",
+      "disabled": "Account disabled"
+    },
+    "fields": {
+      "deviceName": "Name",
+      "validateCode": "Verification code",
+      "alertThreshold": "Alert threshold",
+      "captureIntervalMinutes": "Capture interval",
+      "captureDaytimeOnly": "Daytime only",
+      "allowRegistration": "Allow new accounts",
+      "retentionMonths": "Snapshot retention (months)",
+      "defaultAlertThreshold": "Default alert threshold",
+      "role": "Role",
+      "visibility": "Visibility",
+      "owner": "Owner",
+      "sharedWith": "Shared with"
+    }
+  },
+  "push": {
+    "title": "Push notifications on this device",
+    "desc": "Pest alerts, cameras going offline and new shares pop up on this phone or computer, even when FlyBot is closed.",
+    "onThisDevice": "On for this device",
+    "enabled": "Push notifications are on for this device.",
+    "disabled": "Push notifications are off for this device.",
+    "failed": "Could not change push notifications. Please try again.",
+    "test": "Send a test",
+    "testSent": "Test sent to {count} device(s).",
+    "testNone": "No device received it. Turn push notifications off and on again.",
+    "install": "Install the app",
+    "installed": "FlyBot was installed.",
+    "unsupported": "This browser does not support push notifications.",
+    "notConfigured": "Push notifications are not set up on the server yet. Ask an administrator.",
+    "blocked": "Notifications are blocked for FlyBot in this browser.",
+    "blockedHelp": "Allow notifications for this site in the browser settings (the icon next to the address bar), then reload the page.",
+    "iosTitle": "On iPhone and iPad, add FlyBot to the Home Screen first",
+    "iosSteps": "Open FlyBot in Safari, tap Share, then \"Add to Home Screen\". Open FlyBot from the new icon and turn on notifications here."
+  },
+  "maintenance": {
+    "title": "Trap maintenance",
+    "cardReplaced": "Card replaced",
+    "addOther": "Record",
+    "types": {
+      "card_replaced": "Sticky card replaced",
+      "lure_replaced": "Lure replaced",
+      "lens_cleaned": "Lens cleaned",
+      "other": "Other work"
+    },
+    "cardSince": "Current card since",
+    "cardAge": "Card age",
+    "never": "Not recorded",
+    "days": "{count} days",
+    "reminder": "Remind to replace",
+    "reminderOff": "Off",
+    "everyDays": "After {count} days",
+    "hint": "The trap counts insects on the current card. Press \"Card replaced\" when you change it so counts and reminders start over.",
+    "empty": "No maintenance recorded yet.",
+    "detected": "Automatic",
+    "detectedHint": "Recorded because the count dropped sharply. Delete it if the card was not replaced.",
+    "delete": "Delete entry",
+    "deleteConfirm": "Delete this maintenance entry?",
+    "saved": "Saved.",
+    "when": "When",
+    "note": "Note",
+    "overdue": "Replace card",
+    "dueSoon": "Card due soon",
+    "ok": "Card OK",
+    "chartMarker": "New card"
+  },
+  "logbook": {
+    "title": "Field log",
+    "subtitle": "Sprays, baits and other treatments, with their effect on trap catches. Export it as the VietGAP pesticide-use record.",
+    "add": "Log treatment",
+    "edit": "Edit treatment",
+    "delete": "Delete",
+    "deleteConfirm": "Delete this treatment from the log?",
+    "export": "Export VietGAP log",
+    "empty": "No treatments logged yet.",
+    "allTypes": "All treatments",
+    "saved": "Saved.",
+    "camerasRequired": "Choose the traps in the treated area.",
+    "nothingToExport": "Nothing to export for these filters.",
+    "exported": "Exported {count} treatments.",
+    "sheetName": "Pesticide use",
+    "chartMarker": "Treatment",
+    "date": "Date",
+    "type": "Treatment",
+    "product": "Product",
+    "activeIngredient": "Active ingredient",
+    "dose": "Dose",
+    "dosePlaceholder": "e.g. 10 ml / 16 l",
+    "area": "Area",
+    "areaPlaceholder": "e.g. 0.5 ha, rows 1-12",
+    "operator": "Applied by",
+    "phi": "Harvest",
+    "phiDays": "Pre-harvest interval (days)",
+    "phiPlaceholder": "As on the label",
+    "note": "Note",
+    "cameras": "Traps in the treated area",
+    "camerasPlaceholder": "Choose traps",
+    "effect": "Effect",
+    "harvestFrom": "Harvest from {date}",
+    "harvestOk": "OK to harvest",
+    "types": {
+      "spray": "Spray",
+      "bait": "Protein bait",
+      "lure": "Lure / pheromone",
+      "biological": "Biological control",
+      "sanitation": "Field sanitation",
+      "bagging": "Fruit bagging",
+      "other": "Other"
+    },
+    "effectTitle": "Effect on trap catches",
+    "effectExplain": "Average insects caught per trap per day, {days} days before vs after the treatment day. A sticky card only accumulates, so a day's catch is how much its count rose; card changes are taken into account.",
+    "before": "Before",
+    "after": "After",
+    "change": "Change",
+    "perDay": "/ day",
+    "effectShort": {
+      "pending": "Too early",
+      "no_data": "No data",
+      "effective": "Effective",
+      "partial": "Partial",
+      "not_effective": "No effect"
+    },
+    "effectStatus": {
+      "pending": "Too early to judge: wait at least 2 days after the treatment.",
+      "no_data": "Not enough trap data around the treatment date.",
+      "effective": "Catches dropped by 30% or more after the treatment.",
+      "partial": "Catches dropped, but by less than 30%.",
+      "not_effective": "Catches did not drop after the treatment."
+    },
+    "col": {
+      "index": "No.",
+      "date": "Date",
+      "plot": "Plot / traps",
+      "type": "Treatment",
+      "product": "Product name",
+      "activeIngredient": "Active ingredient",
+      "dose": "Dose",
+      "area": "Area",
+      "operator": "Applied by",
+      "phi": "PHI (days)",
+      "harvestFrom": "Harvest from",
+      "note": "Note"
+    },
+    "sendMonthly": "Email last month",
+    "sendMonthlyHint": "Send last month's pesticide use record (PDF) to your email and Telegram",
+    "monthlySent": "The {month} record ({count} treatment(s)) is on its way.",
+    "monthlyEmpty": "No treatment recorded in {month}: nothing to send.",
+    "byIngredient": {
+      "title": "Effect by active ingredient",
+      "desc": "Each active ingredient (or product, when none is written) across all its uses: how flies per trap per day changed in the 7 days after compared with the 7 days before. Uses less than 2 days old or without data are left out of the average. Without dates, the last 12 months.",
+      "name": "Active ingredient",
+      "uses": "Uses",
+      "usesValue": "{uses} uses ({measured} measured)",
+      "avgChange": "Average change",
+      "clearlyWorked": "Clear drop (30%+)",
+      "last": "Last used",
+      "notJudged": "Not enough data",
+      "empty": "No treatment with a product or active ingredient yet."
+    }
+  },
+  "farms": {
+    "title": "Farms",
+    "subtitle": "Group traps into farms and plots, draw plot boundaries and share a whole farm.",
+    "create": "New farm",
+    "empty": "No farms yet. Create one, add its plots, then put traps in them.",
+    "emptyViewer": "No farms have been shared with you yet.",
+    "counts": "{plots} plots · {cameras} traps",
+    "name": "Farm name",
+    "notFound": "Farm not found",
+    "backToList": "All farms",
+    "rename": "Rename",
+    "delete": "Delete farm",
+    "deleteConfirm": "Delete the farm {name}? Its plots are deleted; the traps stay but are no longer shared through it.",
+    "sharedHint": "Shared with you by {owner}. You can see its plots and traps.",
+    "noPlots": "No plots yet.",
+    "addPlot": "Add plot",
+    "editPlot": "Edit plot",
+    "deletePlot": "Delete plot",
+    "deletePlotConfirm": "Delete the plot {name}? Its traps are kept but leave the plot.",
+    "plotName": "Plot name",
+    "crop": "Crop",
+    "areaHa": "Area (ha)",
+    "alertThreshold": "Plot alert (average per trap)",
+    "alertOff": "Off",
+    "alertAt": "Alert when traps average {count} or more",
+    "color": "Color",
+    "noCameras": "No traps in this plot",
+    "otherFarm": "Another farm",
+    "assignCameras": "Traps in this plot",
+    "assignTitle": "Traps in {name}",
+    "assignHint": "Choose the traps in this plot. A trap can be in one plot only: choosing one from another plot moves it here.",
+    "shareTitle": "Share {name}",
+    "shareDesc": "People you add can see every trap in this farm (view only), including traps added later. Unknown emails get an invitation.",
+    "stats": {
+      "traps": "Traps",
+      "average": "Avg now",
+      "week": "Last 7 days"
+    },
+    "risk": {
+      "high": "High",
+      "moderate": "Moderate",
+      "low": "Low"
+    },
+    "boundary": {
+      "title": "Boundary",
+      "hint": "Click on the map to add the corners of the plot (at least 3).",
+      "done": "{count} corners. Keep clicking to add more.",
+      "undo": "Undo",
+      "clear": "Clear",
+      "needThree": "A boundary needs at least 3 corners (or clear it)."
+    },
+    "compare": {
+      "title": "Compare farms",
+      "desc": "Flies per trap per day on each farm over the period, against the period before. Open a row to see its plots.",
+      "days": "{days} days",
+      "ftd": "Flies/trap/day",
+      "change": "vs. period before",
+      "farm": "Farm",
+      "plot": "Plot",
+      "trapsCol": "Traps",
+      "traps": "{count} traps",
+      "worstPlot": "Worst plot",
+      "worstPlotValue": "{name} ({ftd})",
+      "treatments": "Treatments",
+      "treatmentsCount": "{count} treatments",
+      "noPlots": "No plot with traps on this farm yet.",
+      "empty": "No farm with traps to compare yet.",
+      "noCatches": "No catches in this period yet."
+    }
+  },
+  "alertPrefs": {
+    "weekly": {
+      "title": "Weekly report",
+      "desc": "Every Monday morning: insects caught last week vs the week before, fast-rising traps, cards to replace, offline cameras and treatments.",
+      "sendNow": "Send me this week's report now",
+      "summary": "Last 7 days: {count} insects (previous week {previous}).",
+      "sent": "Report sent by {channels}.",
+      "noChannel": "Nothing sent: confirm your email, connect Telegram or turn on push notifications.",
+      "noCameras": "No cameras yet, so no report.",
+      "pushChannel": "push"
+    },
+    "quiet": {
+      "title": "Quiet hours",
+      "desc": "No push notifications or Telegram messages in these hours (farm time). Alerts still appear in the app and by email."
+    },
+    "follow": {
+      "title": "Cameras I follow",
+      "desc": "Turn a camera off to stop all of its notifications for you (other people are not affected)."
+    },
+    "morning": {
+      "title": "Morning brief",
+      "desc": "Every morning at 6:30: yesterday's catches, traps over or near their threshold, sticky cards due, cameras offline. On Telegram when linked, otherwise by email."
+    },
+    "vietgap": {
+      "title": "Monthly VietGAP record",
+      "desc": "On the 1st of each month at 7:00: last month's pesticide use record as a PDF, by email and on Telegram if linked. Nothing is sent for a month without treatments."
+    }
+  },
+  "degreeDays": {
+    "title": "Next wave of adult flies",
+    "modelNote": "Degree-day model for the oriental fruit fly: development counts only the warmth above {base} °C, and one generation (egg to adult) needs about {dd} degree-days. Counted from the biggest catch of the last 30 days. A planning estimate, not an exact date.",
+    "unavailable": "Needs the GPS location of a camera and weather data. Add a location in Camera settings.",
+    "waveIn": "In about {days} day | In about {days} days",
+    "waveNow": "Expected now",
+    "generation": "Generation {n}",
+    "estimated": "Beyond the 16-day forecast",
+    "noPeak": "No big catch in the last 30 days, so there is no wave to time.",
+    "progress": "{acc} / {total} degree-days",
+    "fromPeak": "from the peak on {day} ({count} insects)",
+    "pace": "At the coming week's temperatures one generation takes about {days} days ({dd} degree-days a day).",
+    "tooCold": "Too cold this week for flies to develop.",
+    "chartLabel": "Degree-days per day",
+    "dayTip": "{day}: {dd} degree-days ({min}–{max} °C)",
+    "past": "Last 14 days",
+    "forecast": "Forecast",
+    "outlook": {
+      "title": "Next 3 days",
+      "high": "Weather that suits fruit flies just as a new wave is due: get treatments ready",
+      "elevated": "Weather that suits fruit flies",
+      "low": "Weather not very favorable to fruit flies",
+      "favorable": "Suits flies",
+      "dayTip": "{day}: {min}–{max}°C, humidity {humidity}%, rain {rain} mm",
+      "noHumidity": "--"
+    }
+  },
+  "orgs": {
+    "tab": "Organizations",
+    "title": "Organizations",
+    "subtitle": "Your farm business or team: members see all of its cameras and farms. Owners and managers manage them.",
+    "create": "New organization",
+    "empty": "You are not in any organization yet.",
+    "summary": "{members} members · {cameras} cameras · {farms} farms",
+    "actions": "Organization actions",
+    "rename": "Rename",
+    "delete": "Delete organization",
+    "deleteConfirm": "Delete \"{name}\"? Cameras and farms stay with their owners; members lose the access they had through it.",
+    "namePrompt": "Organization name",
+    "nameRequired": "Please enter a name",
+    "members": "Members",
+    "emailPlaceholder": "Email address",
+    "addMember": "Add",
+    "added": "Member added.",
+    "invited": "Invitation sent. They get access once they create an account and confirm this email.",
+    "pending": "Invited, no account yet",
+    "unverified": "Has an account, email not confirmed yet. Access starts once it is confirmed.",
+    "remind": "Remind them to confirm",
+    "reminded": "Confirmation email sent again to {email}.",
+    "remove": "Remove",
+    "removeConfirm": "Remove {email} from the organization?",
+    "leave": "Leave",
+    "leaveConfirm": "Leave \"{name}\"? You lose access to its cameras and farms.",
+    "cameras": "Cameras",
+    "noCameras": "No cameras yet.",
+    "pickCameras": "Cameras you manage",
+    "addCameras": "Add to organization",
+    "camerasHint": "A camera belongs to one organization at a time. New cameras and farms go into the first organization you own.",
+    "roles": {
+      "owner": "Owner",
+      "manager": "Manager",
+      "member": "Member"
+    }
+  },
+  "integrations": {
+    "tab": "API & Webhooks",
+    "title": "API & Webhooks",
+    "subtitle": "Connect FlyBot to your own systems: read data with an API key, and receive alerts as they happen with a webhook. Full guide: API.md in the FlyBot repository.",
+    "never": "never",
+    "showOnce": "Copy it now: it will not be shown again.",
+    "copy": "Copy",
+    "copied": "Copied.",
+    "done": "Done",
+    "keys": {
+      "title": "API keys",
+      "desc": "Read-only access to the cameras, counts and alerts you can see, at /api/v1. Keep keys secret; revoke one you no longer use.",
+      "create": "Create key",
+      "empty": "No API keys.",
+      "namePrompt": "What is this key for? (for example \"ERP sync\")",
+      "nameRequired": "Please enter a name",
+      "created": "Your new API key",
+      "example": "Try it:",
+      "lastUsed": "last used: {time}",
+      "revoke": "Revoke",
+      "revokeConfirm": "Revoke the key \"{name}\"? Anything using it stops working right away."
+    },
+    "hooks": {
+      "title": "Webhooks",
+      "desc": "FlyBot sends a signed HTTPS POST to your address for each alert you choose.",
+      "events": "Events",
+      "create": "Add webhook",
+      "empty": "No webhooks.",
+      "created": "Signing secret of the new webhook",
+      "test": "Test",
+      "testOk": "Delivered (HTTP {status}).",
+      "testFailed": "Not delivered: {error}",
+      "delete": "Delete webhook",
+      "deleteConfirm": "Delete the webhook to {url}?",
+      "off": "Off",
+      "lastDelivery": "Last delivery {time}",
+      "noDelivery": "Nothing sent yet.",
+      "docs": "Check the X-FlyBot-Signature header with your secret before trusting a request. After 15 failures in a row a webhook is switched off."
+    }
+  },
+  "legal": {
+    "contactFallback": "the Contact page"
+  },
+  "trapKind": {
+    "label": "Trap type",
+    "sticky": {
+      "name": "Sticky trap (glue card)",
+      "short": "Sticky",
+      "hint": "Flies stick to the card, so the count grows until the card is replaced. Daily catch = the rise."
+    },
+    "lure": {
+      "name": "Lure trap (no glue)",
+      "short": "Lure",
+      "hint": "Only an attractant: flies come in and can fly away. A photo shows the flies present; the daily figure = average per photo. The threshold alert compares the day’s average.",
+      "maintenanceHint": "A lure trap has no glue card, so there is no card reminder. Log lure refills and lens cleaning."
+    }
+  },
+  "insights": {
+    "tab": "Insights",
+    "howToRead": "Sticky traps: the daily catch is the rise on the glue card (card-change days are not counted). Lure traps: the average number of flies present per photo. \"Flies per trap per day\" is the standard figure to compare traps and weeks.",
+    "dailyTitle": "Flies per day by trap",
+    "dailyDesc": "Last {days} days, stacked by trap",
+    "catchesAxis": "Flies per day",
+    "weatherTitle": "Temperature and flies",
+    "weatherDesc": "Daily high and low at the trap location, next to the total flies",
+    "weatherMissing": "Add a GPS location to a camera to see temperatures",
+    "tempAxis": "Temperature (°C)",
+    "tempMax": "High (°C)",
+    "tempMin": "Low (°C)",
+    "activityTitle": "Flies arriving by hour",
+    "activityDesc": "The darker, the more flies arrived in that hour (last 14 days)",
+    "activityPeak": "Most flies arrive around {from}:00 to {to}:00, a good time to bait or check traps",
+    "activityCell": "{day}, {hour}:00: {value}",
+    "less": "Less",
+    "more": "More",
+    "tableTitle": "Trap summary",
+    "tableDesc": "Sorted by flies per trap per day over the last 7 days; click a row to open the camera",
+    "days": "{n} days",
+    "col": {
+      "trap": "Trap",
+      "kind": "Type",
+      "onTrap": "Now / threshold",
+      "today": "Today",
+      "total": "{days} days",
+      "ftd": "Flies/trap/day",
+      "change": "vs before",
+      "trend": "14 days",
+      "card": "Card age",
+      "photo": "Photo"
+    },
+    "lastDaysNote": "Insights cover the last {days} days, not the exact dates chosen."
+  },
+  "filters": {
+    "dateRange": "Dates",
+    "ranges": {
+      "today": "Today",
+      "7d": "Last 7 days",
+      "30d": "Last 30 days",
+      "90d": "Last 90 days",
+      "custom": "Custom dates"
+    },
+    "own": "This widget’s filters",
+    "ownActive": "This widget uses its own filters",
+    "useShared": "Use page filters",
+    "camera": "Camera",
+    "cameras": "Cameras",
+    "granularity": "Group by",
+    "granularities": {
+      "hour": "Hour",
+      "day": "Day",
+      "month": "Month"
+    },
+    "status": "Camera status",
+    "statuses": {
+      "all": "All",
+      "online": "Online",
+      "offline": "Offline"
+    },
+    "threshold": "Against threshold",
+    "risks": {
+      "all": "All",
+      "high": "At or over threshold",
+      "moderate": "Getting close",
+      "low": "Below"
+    },
+    "allKinds": "All types",
+    "summary": "{camera} · {range}",
+    "pageHint": "Each chart and table starts from these filters; use its filter button to set its own.",
+    "pdfNote": "Each section follows the filters set on it."
+  },
+  "history": {
+    "subtitle": "Every analyzed photo with its count, alarm status and AI notes",
+    "cameraTitle": "Detection history of this camera",
+    "export": "Export",
+    "exportPdf": "PDF with photos",
+    "exportXlsx": "Excel with photos",
+    "allStatus": "All alarm states",
+    "allReviews": "All reviews",
+    "risk": {
+      "high": "Alarm",
+      "moderate": "Warning",
+      "low": "Normal"
+    },
+    "review": {
+      "none": "Not reviewed",
+      "confirmed": "Confirmed",
+      "corrected": "Corrected"
+    },
+    "colCamera": "Camera",
+    "colAlarm": "Alarm status",
+    "colReview": "Review",
+    "colThreshold": "Threshold",
+    "progress": {
+      "records": "Reading {done}/{total}",
+      "images": "Photos {done}/{total}"
+    },
+    "largeExport": "{count} photos match the filters. The file includes every photo with its detection boxes, so it can take a few minutes and be large. Continue?",
+    "exported": "{count} records exported.",
+    "exportFailed": "Could not export the history.",
+    "exportCount": "{count} records",
+    "filterCameras": "Cameras: {cameras}",
+    "filterRange": "Dates: {range}",
+    "filterRisk": "Alarm status: {risk}",
+    "filterReview": "Review: {review}"
+  },
+  "tour": {
+    "menu": "Quick tour",
+    "steps": {
+      "welcome": {
+        "title": "Welcome to FlyBot",
+        "desc": "A one-minute tour: FlyBot uses cameras to photograph insect traps, the AI counts every insect and alerts you over the threshold. Click Next to see the main parts."
+      },
+      "dashboard": {
+        "title": "Overview",
+        "desc": "Flies caught today, flies per trap per day, each trap’s risk, the latest annotated photos and the AI forecast."
+      },
+      "addCamera": {
+        "title": "Add a camera",
+        "desc": "Enter the serial number and verification code from the EZVIZ label and choose a sticky or lure trap."
+      },
+      "cameras": {
+        "title": "Cameras",
+        "desc": "Live view, recordings on a timeline, capture now, trap upkeep and each camera’s detection history."
+      },
+      "analytics": {
+        "title": "Analytics",
+        "desc": "Charts, insights and detection history. Each widget has its own filters; export PDF or Excel with photos."
+      },
+      "reports": {
+        "title": "Reports",
+        "desc": "Build your own reports, pick the time range, share with an end date, export PDF or email them on a schedule."
+      },
+      "farms": {
+        "title": "Farms",
+        "desc": "Add farms, draw plots on the map and assign cameras to plots."
+      },
+      "logbook": {
+        "title": "Field log",
+        "desc": "Record sprays, baits and card changes to compare flies before and after."
+      },
+      "map": {
+        "title": "Map",
+        "desc": "Where the traps are, colored by risk."
+      },
+      "more": {
+        "title": "More",
+        "desc": "Reports, Farms, Field log, Settings, language and light/dark theme."
+      },
+      "notifications": {
+        "title": "Notifications",
+        "desc": "Threshold alerts, sudden rises, offline cameras and card reminders. Choose channels in Settings."
+      },
+      "assistant": {
+        "title": "FlyBot Assistant",
+        "desc": "Ask in plain words: which trap is worrying, this week against last. It answers with photos and charts, and records changes only when you confirm."
+      },
+      "profile": {
+        "title": "Account",
+        "desc": "Profile, password, the detailed guide and a button to replay this tour."
+      },
+      "done": {
+        "title": "All set",
+        "desc": "Start by adding your first camera. Replay this tour any time from the account menu, \"Quick tour\"."
+      }
+    }
+  },
+  "offline": {
+    "noSignal": "You are offline. Some data may not load until the connection is back.",
+    "savedCopy": "You are offline. Showing data saved on this device at {time}.",
+    "needsNetwork": "No connection: this needs the network. Try again when you have signal.",
+    "noConnection": "No network connection"
+  }
+}

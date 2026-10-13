@@ -1,0 +1,12 @@
+# Files NOT uploaded by `gcloud builds submit`
+.gcloudignore
+.git
+.gitignore
+
+# Same exclusions as git: secrets (.env, GCP keys), node_modules, dist, tmp, origin
+#!include:.gitignore
+# ...but the build needs the Cloud Run settings the deploy script generates
+!deploy/cloudrun.env.generated.yaml
+
+server/tests
+server/test_ezopen.js

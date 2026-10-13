@@ -1,0 +1,40 @@
+{
+  "name": "flybot-server",
+  "version": "1.1.0",
+  "description": "FlyBot API server: EZVIZ cameras, AI insect detection, alerts",
+  "main": "dist/app.js",
+  "scripts": {
+    "start": "node dist/app.js",
+    "dev": "node --watch src/app.js",
+    "copy:client": "node scripts/copy-client.js",
+    "build": "esbuild src/app.js --bundle --platform=node --packages=external --outfile=dist/app.js && node scripts/copy-client.js",
+    "test": "node --test"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "type": "commonjs",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.958.0",
+    "@aws-sdk/s3-request-presigner": "^3.958.0",
+    "@google/genai": "^2.24.0",
+    "axios": "^1.13.2",
+    "bcryptjs": "^3.0.3",
+    "body-parser": "^2.2.1",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "jpeg-js": "^0.4.4",
+    "jsonwebtoken": "^9.0.3",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.8",
+    "mongoose": "^9.1.1",
+    "node-cron": "^4.2.1",
+    "nodemailer": "^10.0.10",
+    "web-push": "^3.6.7"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "mongodb-memory-server-core": "^11.2.0"
+  }
+}

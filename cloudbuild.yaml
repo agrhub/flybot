@@ -1,0 +1,50 @@
+# Cloud Run deployment: gcloud builds submit --config cloudbuild.yaml --substitutions=_MAPS_KEY=...
+# See DEPLOY.md for the one-time setup (Artifact Registry, secrets, service account).
+substitutions:
+  _REGION: asia-southeast1
+  _SERVICE: flybot
+  _REPO: flybot
+  _MAPS_KEY: ""
+  # Optional secrets, e.g. ",SMTP_PASS=flybot-smtp-pass:latest" (set by the deploy script when present)
+  _EXTRA_SECRETS: ""
+  # The deploy script passes the file it generates from the template and .env
+  _ENV_VARS_FILE: deploy/cloudrun.env.yaml
+
+steps:
+  - id: build
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - --build-arg=VITE_GOOGLE_MAP_KEY=${_MAPS_KEY}
+      - -t=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_SERVICE}:${BUILD_ID}
+      - .
+
+  - id: push
+    name: gcr.io/cloud-builders/docker
+    args: [push, "${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_SERVICE}:${BUILD_ID}"]
+
+  - id: deploy
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - ${_SERVICE}
+      - --image=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_SERVICE}:${BUILD_ID}
+      - --region=${_REGION}
+      - --service-account=flybot-run@${PROJECT_ID}.iam.gserviceaccount.com
+      - --allow-unauthenticated
+      - --port=8080
+      - --memory=1Gi
+      # Cron jobs and in-memory state (rate limits, chat history, streams) need exactly one always-on instance
+      - --min-instances=1
+      - --max-instances=1
+      - --no-cpu-throttling
+      - --env-vars-file=${_ENV_VARS_FILE}
+      - --set-secrets=JWT_SECRET=flybot-jwt-secret:latest,MONGO_URI=flybot-mongo-uri:latest,APP_KEY=flybot-ezviz-app-key:latest,SECRET_KEY=flybot-ezviz-secret-key:latest,S3_ACCESS_KEY=flybot-s3-access-key:latest,S3_SECRET_KEY=flybot-s3-secret-key:latest,ROBOFLOW_API_KEY=flybot-roboflow-api-key:latest${_EXTRA_SECRETS}
+
+images:
+  - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_SERVICE}:${BUILD_ID}
+
+options:
+  logging: CLOUD_LOGGING_ONLY
