@@ -3,14 +3,16 @@ const router = express.Router();
 const farmController = require('../controllers/farmController');
 const { authenticate, requireRole } = require('../middlewares/auth');
 const { requireStringFields } = require('../middlewares/validate');
-const { shareLimiter } = require('../middlewares/rateLimit');
+const { shareLimiter, analyticsLimiter, reportSendLimiter } = require('../middlewares/rateLimit');
 
 // Organization roles: members see (and owners/managers edit) the organization's farms
 router.use(authenticate, requireStringFields, require('../services/orgService').attachOrgRoles);
 
 router.get('/', farmController.listFarms);
 router.get('/map', farmController.mapPlots);
-router.get('/compare', farmController.compareFarms);
+router.get('/compare', analyticsLimiter, farmController.compareFarms);
+router.get('/season-report', analyticsLimiter, farmController.downloadSeasonReport);
+router.post('/season-report/send', reportSendLimiter, farmController.sendSeasonReport);
 // Viewers (role "user") only see farms shared with them
 router.post('/', requireRole('admin', 'manager'), farmController.createFarm);
 router.get('/:id', farmController.getFarm);

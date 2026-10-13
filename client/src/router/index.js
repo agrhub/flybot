@@ -172,13 +172,13 @@ const router = createRouter({
 });
 
 // Navigation Guard for authentication
-router.beforeEach((to, _from, next) => {
+// (returns the redirect instead of calling next(), which vue-router has deprecated)
+router.beforeEach((to) => {
   const user = localStorage.getItem('user');
   if (to.meta.requiresAuth && !user) {
-    next({ path: '/auth/login', query: { redirect: to.fullPath } });
-  } else {
-    next();
+    return { path: '/auth/login', query: { redirect: to.fullPath } };
   }
+  return true;
 });
 
 export default router;

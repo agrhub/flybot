@@ -125,10 +125,10 @@ const CANNOT_SEE_CAMERA = { success: false, message: "You cannot see this camera
 async function listTreatments(req, res) {
     try {
         const visible = new Set(await getViewableSerials(req.user));
-        if (!visible.size) return res.json({ success: true, total: 0, treatments: [] });
-
+        // A camera they cannot see is refused the same way whether or not they have cameras
         const { filter, forbidden } = treatmentFilter(req.query, visible);
         if (forbidden) return res.status(403).json(CANNOT_SEE_CAMERA);
+        if (!visible.size) return res.json({ success: true, total: 0, treatments: [] });
 
         const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
         const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 20, 1), MAX_PAGE_SIZE);
@@ -139,12 +139,19 @@ async function listTreatments(req, res) {
 
         // Effect summary per row (small queries on the daily rollup); skipped for big exports
         const withEffect = req.query.effect === '1' && limit <= 50;
-        const treatments = await Promise.all(items.map(async (t) => {
+        // The page's rollup read once for all its rows
+        let data = null;
+        if (withEffect && items.length) {
+            const serials = [...new Set(items.flatMap(t => t.cameraSerials.filter(sr => visible.has(sr))))];
+            const now = new Date();
+            const keys = items.map(t => treatmentService.effectRange(t, treatmentService.DEFAULT_WINDOW_DAYS, now));
+            data = await treatmentService.loadEffectData(serials, keys.map(k => k.fromKey).sort()[0], keys.map(k => k.toKey).sort().at(-1));
+        }
+        const treatments = items.map((t) => {
             if (!withEffect) return toClient(t, visible);
-            const serials = t.cameraSerials.filter(s => visible.has(s));
-            const effect = await treatmentService.effectOf(t, serials);
+            const effect = treatmentService.computeEffect(t, t.cameraSerials.filter(sr => visible.has(sr)), data);
             return toClient(t, visible, { status: effect.status, changePct: effect.changePct, before: effect.before, after: effect.after });
-        }));
+        });
         res.json({ success: true, total, page, limit, treatments });
     } catch (err) {
         sendServerError(res, err, { context: 'List treatments' });
@@ -163,9 +170,9 @@ const DEFAULT_EFFECTIVENESS_DAYS = 365;
 async function getEffectiveness(req, res) {
     try {
         const visible = new Set(await getViewableSerials(req.user));
-        if (!visible.size) return res.json({ success: true, ingredients: [] });
         const { filter, forbidden } = treatmentFilter(req.query, visible);
         if (forbidden) return res.status(403).json(CANNOT_SEE_CAMERA);
+        if (!visible.size) return res.json({ success: true, ingredients: [] });
         if (!filter.at) filter.at = { $gte: new Date(Date.now() - DEFAULT_EFFECTIVENESS_DAYS * 24 * 60 * 60 * 1000) };
         const treatments = await Treatment.find(filter).sort({ at: -1 }).limit(MAX_EFFECTIVENESS_TREATMENTS).lean();
         res.json({ success: true, ingredients: await treatmentService.effectivenessByIngredient(treatments, visible) });

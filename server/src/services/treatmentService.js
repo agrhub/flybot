@@ -64,29 +64,51 @@ const percentChange = (before, after) => {
     return Math.round(((after - before) / before) * 100);
 };
 
-/**
- * Catches per day in the window before the treatment day vs the window after it,
- * per camera and summed over cameras. `serials` limits it to cameras the viewer can see.
- */
-async function effectOf(treatment, serials, { windowDays = DEFAULT_WINDOW_DAYS, now = new Date() } = {}) {
+/** The days a treatment's effect looks at: the window before and after its day, up to today. */
+function effectRange(treatment, windowDays, now) {
     const treatedDay = dayKeyOf(treatment.at);
     const todayKey = dayKeyOf(now);
-    // One extra day before the window, to compute the first day's rise
-    const fromKey = addDays(treatedDay, -(windowDays + 1));
     const lastAfter = addDays(treatedDay, windowDays);
-    const toKey = lastAfter < todayKey ? lastAfter : todayKey;
+    return {
+        treatedDay,
+        todayKey,
+        // One extra day before the window, to compute the first day's rise
+        fromKey: addDays(treatedDay, -(windowDays + 1)),
+        toKey: lastAfter < todayKey ? lastAfter : todayKey
+    };
+}
 
-    const [rows, cardEvents] = await Promise.all([
+/**
+ * The daily rollup, card changes and trap kinds of some cameras over some days, in one go,
+ * for one treatment or many (the summary per ingredient reads them once for all).
+ */
+async function loadEffectData(serials, fromKey, toKey) {
+    const [rows, cardEvents, cameras] = await Promise.all([
         DailyStat.find({ deviceSerial: { $in: serials }, day: { $gte: fromKey, $lte: toKey } }).select('deviceSerial day peak total scans').lean(),
         MaintenanceEvent.find({
             deviceSerial: { $in: serials },
             type: 'card_replaced',
             // Padded a day each side: day keys are local time, the query is UTC
             at: { $gte: new Date(new Date(`${fromKey}T00:00:00Z`).getTime() - DAY_MS), $lte: new Date(new Date(`${toKey}T23:59:59Z`).getTime() + DAY_MS) }
-        }).select('deviceSerial at').lean()
+        }).select('deviceSerial at').lean(),
+        Camera.find({ deviceSerial: { $in: serials } }).select('deviceSerial trapKind').lean()
     ]);
+    const rowsBySerial = new Map();
+    for (const r of rows) {
+        if (!rowsBySerial.has(r.deviceSerial)) rowsBySerial.set(r.deviceSerial, []);
+        rowsBySerial.get(r.deviceSerial).push(r);
+    }
+    const cardDaysBySerial = new Map();
+    for (const e of cardEvents) {
+        if (!cardDaysBySerial.has(e.deviceSerial)) cardDaysBySerial.set(e.deviceSerial, new Set());
+        cardDaysBySerial.get(e.deviceSerial).add(dayKeyOf(e.at));
+    }
+    return { rowsBySerial, cardDaysBySerial, kinds: new Map(cameras.map(c => [c.deviceSerial, trapKindOf(c)])) };
+}
 
-    const kinds = new Map((await Camera.find({ deviceSerial: { $in: serials } }).select('deviceSerial trapKind').lean()).map(c => [c.deviceSerial, trapKindOf(c)]));
+/** A treatment's effect from data already loaded (loadEffectData covering its range). */
+function computeEffect(treatment, serials, data, { windowDays = DEFAULT_WINDOW_DAYS, now = new Date() } = {}) {
+    const { treatedDay, todayKey, fromKey, toKey } = effectRange(treatment, windowDays, now);
     const beforeKeys = [];
     for (let i = windowDays; i >= 1; i--) beforeKeys.push(addDays(treatedDay, -i));
     const afterKeys = [];
@@ -96,8 +118,8 @@ async function effectOf(treatment, serials, { windowDays = DEFAULT_WINDOW_DAYS, 
     }
 
     const cameras = serials.map(serial => {
-        const cardDays = new Set(cardEvents.filter(e => e.deviceSerial === serial).map(e => dayKeyOf(e.at)));
-        const catches = dailyValues(rows.filter(r => r.deviceSerial === serial), cardDays, fromKey, toKey, kinds.get(serial));
+        // Rows outside the range only fill the padding day before it, which is not averaged
+        const catches = dailyValues(data.rowsBySerial.get(serial) || [], data.cardDaysBySerial.get(serial) || new Set(), fromKey, toKey, data.kinds.get(serial));
         const before = average(beforeKeys.map(k => catches.get(k) ?? null));
         const after = average(afterKeys.map(k => catches.get(k) ?? null));
         return { deviceSerial: serial, before, after, changePct: percentChange(before, after) };
@@ -105,8 +127,8 @@ async function effectOf(treatment, serials, { windowDays = DEFAULT_WINDOW_DAYS, 
 
     // Farm-level: sum of per-trap daily averages (cameras with data on both sides)
     const comparable = cameras.filter(c => c.before !== null && c.after !== null);
-    const before = comparable.length ? Math.round(comparable.reduce((s, c) => s + c.before, 0) * 10) / 10 : null;
-    const after = comparable.length ? Math.round(comparable.reduce((s, c) => s + c.after, 0) * 10) / 10 : null;
+    const before = comparable.length ? Math.round(comparable.reduce((sum, c) => sum + c.before, 0) * 10) / 10 : null;
+    const after = comparable.length ? Math.round(comparable.reduce((sum, c) => sum + c.after, 0) * 10) / 10 : null;
     const changePct = percentChange(before, after);
 
     let status;
@@ -117,6 +139,16 @@ async function effectOf(treatment, serials, { windowDays = DEFAULT_WINDOW_DAYS, 
     else status = 'not_effective';
 
     return { windowDays, daysAfter: afterKeys.length, before, after, changePct, status, cameras };
+}
+
+/**
+ * Catches per day in the window before the treatment day vs the window after it,
+ * per camera and summed over cameras. `serials` limits it to cameras the viewer can see.
+ */
+async function effectOf(treatment, serials, { windowDays = DEFAULT_WINDOW_DAYS, now = new Date() } = {}) {
+    const { fromKey, toKey } = effectRange(treatment, windowDays, now);
+    const data = await loadEffectData(serials, fromKey, toKey);
+    return computeEffect(treatment, serials, data, { windowDays, now });
 }
 
 // Same name written differently ("Abamectin ", "abamectin") is one group
@@ -131,6 +163,15 @@ const groupKey = (text) => String(text || '').trim().toLowerCase().replace(/\s+/
  * `treatments` are newest first; `visible` limits each one to the traps the viewer can see.
  */
 async function effectivenessByIngredient(treatments, visible) {
+    // Everything the treatments' windows need, read once
+    const now = new Date();
+    const usable = treatments.filter(t => !NO_INGREDIENT_TYPES.has(t.type) && t.cameraSerials.some(sr => visible.has(sr)));
+    const allSerials = [...new Set(usable.flatMap(t => t.cameraSerials.filter(sr => visible.has(sr))))];
+    let data = null;
+    if (usable.length) {
+        const ranges = usable.map(t => effectRange(t, DEFAULT_WINDOW_DAYS, now));
+        data = await loadEffectData(allSerials, ranges.reduce((m, r) => (r.fromKey < m ? r.fromKey : m), ranges[0].fromKey), ranges.reduce((m, r) => (r.toKey > m ? r.toKey : m), ranges[0].toKey));
+    }
     const groups = new Map();
     for (const t of treatments) {
         if (NO_INGREDIENT_TYPES.has(t.type)) continue;
@@ -147,7 +188,7 @@ async function effectivenessByIngredient(treatments, visible) {
         group.types.add(t.type);
         const serials = t.cameraSerials.filter(s => visible.has(s));
         if (!serials.length) continue;
-        const effect = await effectOf(t, serials);
+        const effect = computeEffect(t, serials, data, { now });
         if (effect.changePct === null || effect.status === 'pending' || effect.status === 'no_data') continue;
         group.measured++;
         group.changes.push(effect.changePct);
@@ -175,5 +216,8 @@ module.exports = {
     dailyCatches,
     dailyValues,
     effectOf,
+    effectRange,
+    loadEffectData,
+    computeEffect,
     effectivenessByIngredient
 };

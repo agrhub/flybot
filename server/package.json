@@ -1,6 +1,6 @@
 {
   "name": "flybot-server",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "FlyBot API server: EZVIZ cameras, AI insect detection, alerts",
   "main": "dist/app.js",
   "scripts": {
@@ -15,8 +15,8 @@
   "license": "MIT",
   "type": "commonjs",
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.958.0",
-    "@aws-sdk/s3-request-presigner": "^3.958.0",
+    "@aws-sdk/client-s3": "^3.1146.0",
+    "@aws-sdk/s3-request-presigner": "^3.1146.0",
     "@google/genai": "^2.24.0",
     "axios": "^1.13.2",
     "bcryptjs": "^3.0.3",
@@ -35,6 +35,9 @@
   },
   "devDependencies": {
     "esbuild": "^0.28.2",
-    "mongodb-memory-server-core": "^11.2.0"
+    "mongodb-memory-server-core": "^11.3.0"
+  },
+  "engines": {
+    "node": ">=22.12.0"
   }
 }

@@ -379,7 +379,10 @@
     "this_has_already_been_handled": "Mục này đã được xử lý rồi.",
     "unknown_action": "Thao tác không hợp lệ.",
     "invalid_request": "Yêu cầu không hợp lệ.",
-    "confirm_your_email_or_link_telegram_to_receive_the_record": "Hãy xác nhận email hoặc liên kết Telegram để nhận sổ."
+    "confirm_your_email_or_link_telegram_to_receive_the_record": "Hãy xác nhận email hoặc liên kết Telegram để nhận sổ.",
+    "dates_must_be_yyyy_mm_dd": "Ngày phải theo dạng YYYY-MM-DD.",
+    "the_period_must_end_today_at_the_latest_and_start_before_it_ends": "Kỳ báo cáo phải kết thúc muộn nhất là hôm nay và bắt đầu trước ngày kết thúc.",
+    "the_period_can_be_at_most_a_year": "Kỳ báo cáo dài tối đa một năm."
   },
   "reportPdf": {
     "range": "Khoảng thời gian: {from} - {to} ({days} ngày)",
@@ -491,6 +494,43 @@
       "sanitation": "Vệ sinh vườn",
       "bagging": "Bao trái",
       "other": "Khác"
+    }
+  },
+  "season": {
+    "title": "Báo cáo mùa vụ {from} – {to}",
+    "subtitle": "{owner} · {farms} vườn · {days} ngày · FlyBot lập ngày {date}",
+    "ftdNote": "Ruồi/bẫy/ngày: số ruồi mới vào bẫy mỗi ngày, chia cho số bẫy có số liệu (chỉ số chuẩn để so sánh vườn và tháng).",
+    "farmsTitle": "1. Các vườn",
+    "monthsTitle": "2. Ruồi/bẫy/ngày theo tháng",
+    "monthsMore": "Chỉ hiện {count} vườn nhiều ruồi nhất.",
+    "ingredientsTitle": "3. Hiệu quả theo hoạt chất",
+    "recordTitle": "Phụ lục: sổ ghi chép xử lý (VietGAP)",
+    "usesValue": "{uses} lần ({measured} đo được)",
+    "noTreatments": "Không có lần xử lý nào ghi tên thuốc hoặc hoạt chất trong kỳ.",
+    "footer": "FlyBot · số liệu từ bẫy camera và AI đếm côn trùng; hiệu quả xử lý so ruồi/bẫy/ngày 7 ngày trước và sau.",
+    "intro": "Báo cáo mùa vụ {from} – {to} cho {farms} vườn: ruồi/bẫy/ngày theo vườn và theo tháng, ngày nặng nhất, các lần xử lý và hiệu quả theo hoạt chất.",
+    "attached": "Báo cáo được đính kèm dạng PDF.",
+    "button": "Mở trang Vườn",
+    "col": {
+      "farm": "Vườn",
+      "traps": "Số bẫy",
+      "ftd": "Ruồi/bẫy/ngày",
+      "worstPlot": "Lô nặng nhất",
+      "peaks": "Ngày nặng nhất (ruồi/bẫy)",
+      "treatments": "Lần xử lý",
+      "month": "Tháng",
+      "ingredient": "Hoạt chất",
+      "products": "Tên thuốc",
+      "uses": "Số lần dùng",
+      "avgChange": "Thay đổi trung bình",
+      "clearlyWorked": "Giảm rõ (từ 30%)",
+      "date": "Ngày giờ",
+      "trapsList": "Bẫy",
+      "type": "Biện pháp",
+      "product": "Tên thuốc / vật tư",
+      "dose": "Liều lượng",
+      "operator": "Người thực hiện",
+      "phi": "Cách ly (ngày)"
     }
   }
 }

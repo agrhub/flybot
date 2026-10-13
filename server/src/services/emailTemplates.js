@@ -194,6 +194,25 @@ function vietgapEmail({ user, language, params, url, attachments }) {
 }
 
 /**
+ * The season report sent on request, as a PDF attachment.
+ */
+function seasonEmail({ user, language, params, url, attachments }) {
+    const t = (key, p) => translate(language, key, p);
+    return {
+        to: user.email,
+        subject: t('season.title', params),
+        ...layout({
+            language,
+            user,
+            paragraphs: [t('season.intro', params), t('season.attached')],
+            button: url ? { label: t('season.button'), url } : null,
+            footerKey: 'season.footer'
+        }),
+        attachments
+    };
+}
+
+/**
  * A report sent on its schedule (or on request), with the report as a PDF attachment.
  */
 function scheduledReportEmail({ user, language, params, lines = [], url, attachments }) {
@@ -231,6 +250,7 @@ function contactEmail({ to, language, name, email, subject, message }) {
 }
 
 module.exports = {
+    seasonEmail,
     contactEmail,
     shareEmail,
     weeklyReportEmail,

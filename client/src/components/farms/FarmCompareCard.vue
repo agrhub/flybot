@@ -6,9 +6,12 @@
           <h3 class="section-title">{{ t('farms.compare.title') }}</h3>
           <p class="section-desc">{{ t('farms.compare.desc') }}</p>
         </div>
-        <el-radio-group v-model="period" size="small" @change="load">
-          <el-radio-button v-for="p in PERIODS" :key="p" :value="p">{{ t('farms.compare.days', { days: p }) }}</el-radio-button>
-        </el-radio-group>
+        <div class="flex flex-wrap items-center gap-2">
+          <el-radio-group v-model="period" size="small" @change="load">
+            <el-radio-button v-for="p in PERIODS" :key="p" :value="p">{{ t('farms.compare.days', { days: p }) }}</el-radio-button>
+          </el-radio-group>
+          <el-button size="small" :icon="Download" :disabled="!withTraps.length" :loading="exporting" @click="exportExcel">{{ t('farms.compare.export') }}</el-button>
+        </div>
       </div>
     </template>
 
@@ -93,6 +96,8 @@ import api from '@/services/api';
 import { useBreakpoints } from '@/composables/useBreakpoints';
 import { requestErrorText } from '@/utils/requestError';
 import CatchBarChart from '@/components/charts/CatchBarChart.vue';
+import { Download } from '@element-plus/icons-vue';
+import { farmCompareSheets, downloadSheets } from '@/utils/tableExport';
 
 const PERIODS = [7, 30, 90];
 // Lines for the busiest farms; more would not be readable
@@ -139,6 +144,19 @@ const load = async () => {
     ElMessage.error(requestErrorText(t, err, t('common.error')));
   } finally {
     loading.value = false;
+  }
+};
+
+// The table as it is shown (farms with traps first), one sheet for farms and one for plots
+const exporting = ref(false);
+const exportExcel = async () => {
+  exporting.value = true;
+  try {
+    await downloadSheets(`FlyBot_farms_${period.value}d_${new Date().toISOString().slice(0, 10)}.xlsx`, farmCompareSheets(farms.value, period.value, t));
+  } catch (err) {
+    ElMessage.error(requestErrorText(t, err, t('common.error')));
+  } finally {
+    exporting.value = false;
   }
 };
 

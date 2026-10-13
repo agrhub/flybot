@@ -102,8 +102,13 @@
     <!-- Which active ingredients worked, across all their uses (same filters as the list) -->
     <el-card shadow="never" class="mt-4" v-loading="ingredientsLoading">
       <template #header>
-        <h3 class="section-title">{{ t('logbook.byIngredient.title') }}</h3>
-        <p class="log-meta mt-1">{{ t('logbook.byIngredient.desc') }}</p>
+        <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+          <div class="min-w-0">
+            <h3 class="section-title">{{ t('logbook.byIngredient.title') }}</h3>
+            <p class="log-meta mt-1">{{ t('logbook.byIngredient.desc') }}</p>
+          </div>
+          <el-button size="small" :icon="Download" :disabled="!ingredients.length" @click="exportIngredients">{{ t('logbook.byIngredient.export') }}</el-button>
+        </div>
       </template>
       <el-empty v-if="!ingredients.length && !ingredientsLoading" :image-size="80" :description="t('logbook.byIngredient.empty')" />
 
@@ -228,6 +233,7 @@ import { useAuth } from '@/composables/useAuth';
 import { useCameras } from '@/composables/useCameras';
 import { useBreakpoints } from '@/composables/useBreakpoints';
 import { loadExcelWriter } from '@/utils/lazyLibs';
+import { ingredientSheets, downloadSheets } from '@/utils/tableExport';
 import PageHeader from '@/components/common/PageHeader.vue';
 import StatCard from '@/components/common/StatCard.vue';
 
@@ -328,6 +334,13 @@ const reload = () => {
 };
 
 // ---------- Effectiveness per active ingredient ----------
+const exportIngredients = async () => {
+  try {
+    await downloadSheets(`FlyBot_ingredients_${new Date().toISOString().slice(0, 10)}.xlsx`, ingredientSheets(ingredients.value, t));
+  } catch (err) {
+    ElMessage.error(errorText(err));
+  }
+};
 const ingredients = ref([]);
 const ingredientsLoading = ref(false);
 const loadIngredients = async () => {

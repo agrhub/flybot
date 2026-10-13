@@ -97,6 +97,9 @@ module.exports = {
     ],
     // Assistant confirm and rating clicks: 60 per person per minute
     chatActionLimiter: rateLimit({ windowMs: 60 * 1000, max: 60, includeIp: false, keyFn: (req) => `chat-action:${req.user?.id || ''}` }),
+    // Summaries computed over many days and traps (farm comparison, effect by ingredient):
+    // a page load needs one call, so 30 a minute per person is plenty
+    analyticsLimiter: rateLimit({ windowMs: 60 * 1000, max: 30, includeIp: false, keyFn: (req) => `analytics:${req.user?.id || ''}` }),
     // Share invitations send email to any address: limit per sharer
     shareLimiter: rateLimit({ windowMs: 60 * 60 * 1000, max: 30, includeIp: false, keyFn: (req) => `share:${req.user?.id || ''}` }),
     // Express middleware over reportSendQuota (per user)

@@ -9,6 +9,7 @@ const emailTemplates = require('../services/emailTemplates');
 const notificationService = require('../services/notificationService');
 const farmService = require('../services/farmService');
 const farmCompareService = require('../services/farmCompareService');
+const seasonReportService = require('../services/seasonReportService');
 const { EMAIL_REGEX, normalizeEmail, findUserByEmail, safeUrl, withAccountStatus } = require('./shareController');
 
 const MAX_FARMS_PER_OWNER = 50;
@@ -143,6 +144,47 @@ async function compareFarms(req, res) {
         res.json({ success: true, ...(await farmCompareService.compareFarms(farms, visible, days)) });
     } catch (err) {
         sendServerError(res, err, { context: 'Compare farms' });
+    }
+}
+
+/**
+ * GET /api/farms/season-report?from=YYYY-MM-DD&to=YYYY-MM-DD: the season report PDF
+ * (the last 6 months by default).
+ */
+async function downloadSeasonReport(req, res) {
+    try {
+        const period = seasonReportService.parsePeriod(req.query);
+        if (period.error) return res.status(400).json({ success: false, message: period.error });
+        const data = await seasonReportService.seasonData(req.user, period);
+        const pdf = seasonReportService.buildSeasonPdf(data, { language: req.user.language, owner: req.user.name || req.user.email });
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="FlyBot_season_${period.fromKey}_${period.toKey}.pdf"`);
+        res.setHeader('Cache-Control', 'no-store');
+        res.send(pdf);
+    } catch (err) {
+        sendServerError(res, err, { context: 'Season report' });
+    }
+}
+
+/**
+ * POST /api/farms/season-report/send { from, to }: the same PDF to the user's email.
+ */
+async function sendSeasonReport(req, res) {
+    try {
+        if (!req.user.emailVerified) return res.status(400).json({ success: false, message: "Confirm your email address first." });
+        const period = seasonReportService.parsePeriod(req.body || {});
+        if (period.error) return res.status(400).json({ success: false, message: period.error });
+        const data = await seasonReportService.seasonData(req.user, period);
+        const language = normalizeLanguage(req.user.language);
+        const pdf = seasonReportService.buildSeasonPdf(data, { language, owner: req.user.name || req.user.email });
+        const params = { from: period.fromKey.split('-').reverse().join('/'), to: period.toKey.split('-').reverse().join('/'), farms: data.farms.length };
+        queueMail(emailTemplates.seasonEmail({
+            user: req.user, language, params, url: safeUrl('/farms'),
+            attachments: [{ filename: `FlyBot_season_${period.fromKey}_${period.toKey}.pdf`, content: pdf, contentType: 'application/pdf' }]
+        }));
+        res.json({ success: true, farms: data.farms.length });
+    } catch (err) {
+        sendServerError(res, err, { context: 'Send season report' });
     }
 }
 
@@ -446,6 +488,8 @@ async function claimPendingFarmShares(user) {
 
 module.exports = {
     compareFarms,
+    downloadSeasonReport,
+    sendSeasonReport,
     listFarms,
     createFarm,
     getFarm,
