@@ -36,5 +36,8 @@
   "devDependencies": {
     "esbuild": "^0.28.2",
     "mongodb-memory-server-core": "^11.3.0"
+  },
+  "engines": {
+    "node": ">=22.12.0"
   }
 }
