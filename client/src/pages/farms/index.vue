@@ -6,6 +6,9 @@
       </template>
     </PageHeader>
 
+    <!-- Several farms (a cooperative): side by side -->
+    <FarmCompareCard v-if="farms.length" />
+
     <div v-loading="loading">
       <el-card v-if="!farms.length && !loading" shadow="never">
         <el-empty :description="canManageCameras ? t('farms.empty') : t('farms.emptyViewer')">
@@ -55,6 +58,7 @@ import { Plus, Place } from '@element-plus/icons-vue';
 import api from '@/services/api';
 import { useAuth } from '@/composables/useAuth';
 import PageHeader from '@/components/common/PageHeader.vue';
+import FarmCompareCard from '@/components/farms/FarmCompareCard.vue';
 
 const router = useRouter();
 const { t } = useI18n();

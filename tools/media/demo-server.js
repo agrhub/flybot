@@ -171,13 +171,15 @@ async function seedShowcase() {
     const viewer = await mk('viewer@flybot.test', L('Trần Thị Lan', 'Lan Tran'), 'user');
 
     const farm = await models.Farm.create({ ownerId: manager._id, name: L('Vườn Hòa Lộc', 'Hoa Loc Orchard'), description: L('Xoài cát Hòa Lộc và bưởi da xanh, Cái Bè, Tiền Giang', 'Hoa Loc mango and green-skin pomelo, Cai Be, Tien Giang') });
+    // A second grower's farm, so farms can be compared
+    const farm2 = await models.Farm.create({ ownerId: manager._id, name: L('Vườn thanh long Chợ Gạo', 'Cho Gao dragon fruit farm'), description: L('Thanh long ruột đỏ, Chợ Gạo, Tiền Giang', 'Red dragon fruit, Cho Gao, Tien Giang') });
     const plotDefs = [
         { name: L('Lô xoài A', 'Mango plot A'), color: '#3ecf8e', areaHa: 1.2, boundary: [[10.3402, 106.0301], [10.3406, 106.0322], [10.3389, 106.0326], [10.3385, 106.0304]] },
         { name: L('Lô bưởi B', 'Pomelo plot B'), color: '#409eff', areaHa: 0.9, boundary: [[10.3385, 106.0304], [10.3389, 106.0326], [10.3373, 106.0329], [10.3370, 106.0307]] },
-        { name: L('Lô thanh long C', 'Dragon fruit plot C'), color: '#e6a23c', areaHa: 0.6, boundary: [[10.3406, 106.0322], [10.3409, 106.0338], [10.3393, 106.0341], [10.3389, 106.0326]] }
+        { farm: farm2, name: L('Lô thanh long C', 'Dragon fruit plot C'), color: '#e6a23c', areaHa: 0.6, boundary: [[10.3406, 106.0322], [10.3409, 106.0338], [10.3393, 106.0341], [10.3389, 106.0326]] }
     ];
     const plots = [];
-    for (const p of plotDefs) plots.push(await models.Plot.create({ farmId: farm._id, ...p }));
+    for (const { farm: owner = farm, ...p } of plotDefs) plots.push(await models.Plot.create({ farmId: owner._id, ...p }));
 
     // trend: daily catch multiplier by days ago (0 = today); sprayDay drops catches afterwards
     const cams = [
@@ -195,7 +197,7 @@ async function seedShowcase() {
     for (const c of cams) {
         await models.Camera.create({
             userId: manager._id, deviceSerial: c.serial, deviceName: c.name, status: c.offline ? 0 : 1,
-            alertThreshold: c.threshold, latitude: c.lat, longitude: c.lng, farmId: farm._id, plotId: plots[c.plot]._id,
+            alertThreshold: c.threshold, latitude: c.lat, longitude: c.lng, farmId: plots[c.plot].farmId, plotId: plots[c.plot]._id,
             captureIntervalMinutes: 60, captureDaytimeOnly: true, cardReminderDays: CARD_DAYS,
             model: 'EZVIZ C3TN', deviceType: 'CS-C3TN', sharedWith: [], trapKind: c.lure ? 'lure' : 'sticky', addedAt: new Date(Date.now() - 40 * DAY),
             locationAddress: `${plotDefs[c.plot].name}, ${L('Vườn Hòa Lộc, Cái Bè', 'Hoa Loc Orchard, Cai Be')}`

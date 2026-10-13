@@ -349,6 +349,9 @@ export default {
     return apiClient.put(`/orgs/${id}/cameras`, data);
   },
   // Farms and plots
+  compareFarms(days = 30) {
+    return apiClient.get('/farms/compare', { params: { days } });
+  },
   listFarms() {
     return apiClient.get('/farms');
   },

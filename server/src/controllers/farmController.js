@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const { Farm, Plot, Camera } = require('../models');
-const { canManageCamera } = require('../utils/ownership');
+const { canManageCamera, getViewableSerials } = require('../utils/ownership');
 const { sendServerError } = require('../utils/http');
 const { normalizeLanguage } = require('../utils/i18n');
 const { recordAudit } = require('../services/auditService');
@@ -8,6 +8,7 @@ const { queueMail } = require('../services/mailService');
 const emailTemplates = require('../services/emailTemplates');
 const notificationService = require('../services/notificationService');
 const farmService = require('../services/farmService');
+const farmCompareService = require('../services/farmCompareService');
 const { EMAIL_REGEX, normalizeEmail, findUserByEmail, safeUrl, withAccountStatus } = require('./shareController');
 
 const MAX_FARMS_PER_OWNER = 50;
@@ -127,6 +128,21 @@ async function listFarms(req, res) {
         });
     } catch (err) {
         sendServerError(res, err, { context: 'List farms' });
+    }
+}
+
+/**
+ * GET /api/farms/compare?days=7|30|90
+ * The viewer's farms side by side: flies per trap per day against the period before, per plot.
+ */
+async function compareFarms(req, res) {
+    try {
+        const farms = await Farm.find(farmService.farmViewFilter(req.user)).select('name').lean();
+        const visible = new Set(await getViewableSerials(req.user));
+        const days = parseInt(req.query.days, 10);
+        res.json({ success: true, ...(await farmCompareService.compareFarms(farms, visible, days)) });
+    } catch (err) {
+        sendServerError(res, err, { context: 'Compare farms' });
     }
 }
 
@@ -429,6 +445,7 @@ async function claimPendingFarmShares(user) {
 }
 
 module.exports = {
+    compareFarms,
     listFarms,
     createFarm,
     getFarm,

@@ -924,7 +924,7 @@
           "plots": {
             "title": "Vườn & lô",
             "desc": "Nhóm bẫy theo vườn và lô để theo dõi theo khu vực.",
-            "items": "Vào \"Vườn & lô\", tạo vườn mới, rồi bấm \"Thêm lô\".\nVẽ ranh giới lô trên bản đồ, nhập diện tích và màu.\nGán camera vào lô và đặt ngưỡng cảnh báo cho lô nếu cần.\nMỗi lô cho biết số bẫy, số ruồi trung bình hiện tại và tổng 7 ngày qua; nhãn Thấp/Cao theo mức nguy cơ."
+            "items": "Vào \"Vườn & lô\", tạo vườn mới, rồi bấm \"Thêm lô\".\nVẽ ranh giới lô trên bản đồ, nhập diện tích và màu.\nGán camera vào lô và đặt ngưỡng cảnh báo cho lô nếu cần.\nMỗi lô cho biết số bẫy, số ruồi trung bình hiện tại và tổng 7 ngày qua; nhãn Thấp/Cao theo mức nguy cơ.\nĐầu trang Vườn & lô có bảng \"So sánh vườn\": ruồi/bẫy/ngày từng vườn trong 7, 30 hoặc 90 ngày so với kỳ trước, lô nặng nhất và số lần xử lý; mở một dòng để so sánh các lô."
           },
           "map": {
             "title": "Bản đồ",
@@ -2042,6 +2042,24 @@
       "undo": "Hoàn tác",
       "clear": "Xoá hết",
       "needThree": "Ranh giới cần ít nhất 3 góc (hoặc xoá hết)."
+    },
+    "compare": {
+      "title": "So sánh vườn",
+      "desc": "Ruồi/bẫy/ngày của từng vườn trong kỳ, so với kỳ liền trước. Bấm mũi tên ở đầu dòng để xem từng lô.",
+      "days": "{days} ngày",
+      "ftd": "Ruồi/bẫy/ngày",
+      "change": "So với kỳ trước",
+      "farm": "Vườn",
+      "plot": "Lô",
+      "trapsCol": "Số bẫy",
+      "traps": "{count} bẫy",
+      "worstPlot": "Lô nặng nhất",
+      "worstPlotValue": "{name} ({ftd})",
+      "treatments": "Lần xử lý",
+      "treatmentsCount": "{count} lần xử lý",
+      "noPlots": "Vườn này chưa có lô nào gắn bẫy.",
+      "empty": "Chưa có vườn nào gắn bẫy để so sánh.",
+      "noCatches": "Chưa có số ruồi trong kỳ này."
     }
   },
   "alertPrefs": {

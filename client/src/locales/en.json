@@ -924,7 +924,7 @@
           "plots": {
             "title": "Farms & plots",
             "desc": "Group traps by farm and plot to follow each area.",
-            "items": "Open \"Farms\", create a farm, then click \"Add plot\".\nDraw the plot boundary on the map and enter its area and color.\nPut cameras in the plot and set a plot threshold if needed.\nEach plot shows its traps, the current average and the last 7 days; Low/High follows the risk."
+            "items": "Open \"Farms\", create a farm, then click \"Add plot\".\nDraw the plot boundary on the map and enter its area and color.\nPut cameras in the plot and set a plot threshold if needed.\nEach plot shows its traps, the current average and the last 7 days; Low/High follows the risk.\n\"Compare farms\" at the top of Farms shows each farm's flies per trap per day over 7, 30 or 90 days against the period before, its worst plot and its treatments; open a row to compare its plots."
           },
           "map": {
             "title": "Map",
@@ -2042,6 +2042,24 @@
       "undo": "Undo",
       "clear": "Clear",
       "needThree": "A boundary needs at least 3 corners (or clear it)."
+    },
+    "compare": {
+      "title": "Compare farms",
+      "desc": "Flies per trap per day on each farm over the period, against the period before. Open a row to see its plots.",
+      "days": "{days} days",
+      "ftd": "Flies/trap/day",
+      "change": "vs. period before",
+      "farm": "Farm",
+      "plot": "Plot",
+      "trapsCol": "Traps",
+      "traps": "{count} traps",
+      "worstPlot": "Worst plot",
+      "worstPlotValue": "{name} ({ftd})",
+      "treatments": "Treatments",
+      "treatmentsCount": "{count} treatments",
+      "noPlots": "No plot with traps on this farm yet.",
+      "empty": "No farm with traps to compare yet.",
+      "noCatches": "No catches in this period yet."
     }
   },
   "alertPrefs": {

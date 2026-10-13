@@ -10,6 +10,7 @@ router.use(authenticate, requireStringFields, require('../services/orgService').
 
 router.get('/', farmController.listFarms);
 router.get('/map', farmController.mapPlots);
+router.get('/compare', farmController.compareFarms);
 // Viewers (role "user") only see farms shared with them
 router.post('/', requireRole('admin', 'manager'), farmController.createFarm);
 router.get('/:id', farmController.getFarm);

@@ -145,7 +145,7 @@ test('the monthly VietGAP switch is saved', { timeout: 60000 }, async () => {
 test('on a phone the pages fit the screen', { timeout: 120000 }, async () => {
   await page.viewport(390, 844, true);
   const wide = [];
-  for (const url of ['/dashboard', '/logbook', '/settings?tab=notifications']) {
+  for (const url of ['/dashboard', '/logbook', '/farms', '/settings?tab=notifications']) {
     await page.goto(BASE + url, 3000);
     const { scroll, width } = await page.eval('return { scroll: document.documentElement.scrollWidth, width: innerWidth };');
     if (scroll > width + 1) wide.push(`${url}: ${scroll}px wide`);
