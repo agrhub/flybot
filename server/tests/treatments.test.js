@@ -109,3 +109,50 @@ test('list filters by camera, type and date, with an effect summary on request',
     assert.equal(recent.body.total, 1);
     assert.equal(recent.body.treatments[0].effect.status, 'pending');
 });
+
+test('effectiveness per active ingredient across its uses', async () => {
+    const owner = await createUser({ role: 'manager' });
+    const other = await createUser({ role: 'manager' });
+    await createCamera(owner, { deviceSerial: 'CAM1' });
+    await createCamera(owner, { deviceSerial: 'CAM2' });
+    await createCamera(other, { deviceSerial: 'XCAM' });
+    // CAM1: 6 a day, 2 a day from 5 days ago. CAM2: 4 a day throughout
+    const docs = [];
+    let one = 0, two = 0;
+    for (let i = 12; i >= 0; i--) {
+        one += i > 5 ? 6 : 2;
+        two += 4;
+        docs.push({ deviceSerial: 'CAM1', day: dayAgo(i), scans: 4, total: one, peak: one, min: 0, species: [] });
+        docs.push({ deviceSerial: 'CAM2', day: dayAgo(i), scans: 4, total: two, peak: two, min: 0, species: [] });
+    }
+    await models.DailyStat.insertMany(docs);
+    const at = new Date(Date.now() - 5 * DAY_MS);
+    const treat = (serials, extra) => models.Treatment.create({ cameraSerials: serials, type: 'spray', at, ...extra });
+    await treat(['CAM1'], { product: 'Radiant 60SC', activeIngredient: 'Spinetoram' });
+    await treat(['CAM2'], { product: 'Radiant 60SC', activeIngredient: ' spinetoram ' }); // same, written differently
+    await treat(['CAM2'], { product: 'Sherpa', activeIngredient: 'Cypermethrin' });
+    await treat(['CAM1'], { product: 'Ento-Pro', type: 'bait', at: new Date() });          // too recent to judge
+    await treat(['CAM1'], { type: 'sanitation', product: 'Collect fallen fruit' });         // no ingredient to compare
+    await treat(['XCAM'], { product: 'Hidden', activeIngredient: 'Hidden' });               // not theirs
+
+    const res = await json(await request('/api/treatments/effectiveness', { as: owner }));
+    assert.equal(res.status, 200);
+    const byName = Object.fromEntries(res.body.ingredients.map(g => [g.name.toLowerCase(), g]));
+    assert.deepEqual(Object.keys(byName).sort(), ['cypermethrin', 'ento-pro', 'spinetoram']);
+    // -67% on CAM1 and 0% on CAM2: average -33%, one clear success
+    assert.equal(byName.spinetoram.uses, 2);
+    assert.equal(byName.spinetoram.measured, 2);
+    assert.equal(byName.spinetoram.effective, 1);
+    assert.equal(byName.spinetoram.avgChangePct, -33);
+    assert.deepEqual(byName.spinetoram.products, ['Radiant 60SC']);
+    assert.equal(byName.cypermethrin.avgChangePct, 0);
+    assert.equal(byName['ento-pro'].measured, 0);
+    assert.equal(byName['ento-pro'].avgChangePct, null);
+    // Strongest drop first, unjudged last
+    assert.deepEqual(res.body.ingredients.map(g => g.name.toLowerCase()), ['spinetoram', 'cypermethrin', 'ento-pro']);
+
+    // The same filters as the list
+    const camTwo = await json(await request('/api/treatments/effectiveness?deviceSerial=CAM2', { as: owner }));
+    assert.deepEqual(camTwo.body.ingredients.map(g => g.name.toLowerCase()).sort(), ['cypermethrin', 'spinetoram']);
+    assert.equal((await request('/api/treatments/effectiveness?deviceSerial=XCAM', { as: owner })).status, 403);
+});

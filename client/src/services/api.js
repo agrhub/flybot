@@ -392,6 +392,9 @@ export default {
   sendVietGapRecord() {
     return apiClient.post('/treatments/vietgap/send');
   },
+  getTreatmentEffectiveness(params = {}) {
+    return apiClient.get('/treatments/effectiveness', { params });
+  },
   listTreatments(params = {}) {
     return apiClient.get('/treatments', { params });
   },

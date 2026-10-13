@@ -939,7 +939,7 @@
           "log": {
             "title": "Treatment log & VietGAP",
             "desc": "Record every action taken and see its effect on trap catches.",
-            "items": "Open \"Field log\", click \"Log treatment\".\nChoose the method: spray, protein bait, lure, biological, sanitation, bagging or other; pick the traps in the treated area.\nEnter product, active ingredient, dose, operator and pre-harvest interval.\n\"Effect\" compares average catches before and after; \"Harvest\" shows when the interval has passed.\nClick \"Export VietGAP log\" to save the pesticide use record.\nThe dashboard lists areas inside a pre-harvest interval; on the morning it ends, FlyBot sends an \"OK to harvest\" notice in the app, by email and on Telegram."
+            "items": "Open \"Field log\", click \"Log treatment\".\nChoose the method: spray, protein bait, lure, biological, sanitation, bagging or other; pick the traps in the treated area.\nEnter product, active ingredient, dose, operator and pre-harvest interval.\n\"Effect\" compares average catches before and after; \"Harvest\" shows when the interval has passed.\nClick \"Export VietGAP log\" to save the pesticide use record.\nThe dashboard lists areas inside a pre-harvest interval; on the morning it ends, FlyBot sends an \"OK to harvest\" notice in the app, by email and on Telegram.\nThe \"Effect by active ingredient\" table below the list groups every use of the same ingredient and shows how much catches dropped on average afterwards, to pick what works on your farm."
           }
         }
       },
@@ -1972,7 +1972,19 @@
     "sendMonthly": "Email last month",
     "sendMonthlyHint": "Send last month's pesticide use record (PDF) to your email and Telegram",
     "monthlySent": "The {month} record ({count} treatment(s)) is on its way.",
-    "monthlyEmpty": "No treatment recorded in {month}: nothing to send."
+    "monthlyEmpty": "No treatment recorded in {month}: nothing to send.",
+    "byIngredient": {
+      "title": "Effect by active ingredient",
+      "desc": "Each active ingredient (or product, when none is written) across all its uses: how flies per trap per day changed in the 7 days after compared with the 7 days before. Uses less than 2 days old or without data are left out of the average. Without dates, the last 12 months.",
+      "name": "Active ingredient",
+      "uses": "Uses",
+      "usesValue": "{uses} uses ({measured} measured)",
+      "avgChange": "Average change",
+      "clearlyWorked": "Clear drop (30%+)",
+      "last": "Last used",
+      "notJudged": "Not enough data",
+      "empty": "No treatment with a product or active ingredient yet."
+    }
   },
   "farms": {
     "title": "Farms",

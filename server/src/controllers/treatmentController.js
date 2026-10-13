@@ -95,6 +95,31 @@ async function listWithholding(req, res) {
 }
 
 /**
+ * The query filter for ?deviceSerial=&type=&from=&to= on the viewer's traps.
+ * Returns { filter } or { forbidden: true } for a camera they cannot see.
+ */
+function treatmentFilter(query, visible) {
+    const filter = {};
+    if (typeof query.deviceSerial === 'string' && query.deviceSerial && query.deviceSerial !== 'all') {
+        if (!visible.has(query.deviceSerial)) return { forbidden: true };
+        filter.cameraSerials = query.deviceSerial;
+    } else {
+        filter.cameraSerials = { $in: [...visible] };
+    }
+    if (TREATMENT_TYPES.includes(query.type)) filter.type = query.type;
+    const from = query.from ? new Date(query.from) : null;
+    const to = query.to ? new Date(query.to) : null;
+    if ((from && !isNaN(from)) || (to && !isNaN(to))) {
+        filter.at = {};
+        if (from && !isNaN(from)) filter.at.$gte = from;
+        if (to && !isNaN(to)) filter.at.$lte = to;
+    }
+    return { filter };
+}
+
+const CANNOT_SEE_CAMERA = { success: false, message: "You cannot see this camera." };
+
+/**
  * GET /api/treatments?deviceSerial=&type=&from=&to=&page=&limit=&effect=1
  */
 async function listTreatments(req, res) {
@@ -102,21 +127,8 @@ async function listTreatments(req, res) {
         const visible = new Set(await getViewableSerials(req.user));
         if (!visible.size) return res.json({ success: true, total: 0, treatments: [] });
 
-        const filter = {};
-        if (typeof req.query.deviceSerial === 'string' && req.query.deviceSerial && req.query.deviceSerial !== 'all') {
-            if (!visible.has(req.query.deviceSerial)) return res.status(403).json({ success: false, message: "You cannot see this camera." });
-            filter.cameraSerials = req.query.deviceSerial;
-        } else {
-            filter.cameraSerials = { $in: [...visible] };
-        }
-        if (TREATMENT_TYPES.includes(req.query.type)) filter.type = req.query.type;
-        const from = req.query.from ? new Date(req.query.from) : null;
-        const to = req.query.to ? new Date(req.query.to) : null;
-        if ((from && !isNaN(from)) || (to && !isNaN(to))) {
-            filter.at = {};
-            if (from && !isNaN(from)) filter.at.$gte = from;
-            if (to && !isNaN(to)) filter.at.$lte = to;
-        }
+        const { filter, forbidden } = treatmentFilter(req.query, visible);
+        if (forbidden) return res.status(403).json(CANNOT_SEE_CAMERA);
 
         const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
         const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 20, 1), MAX_PAGE_SIZE);
@@ -136,6 +148,29 @@ async function listTreatments(req, res) {
         res.json({ success: true, total, page, limit, treatments });
     } catch (err) {
         sendServerError(res, err, { context: 'List treatments' });
+    }
+}
+
+// Uses judged per ingredient: enough for a season, bounded so the summary stays quick
+const MAX_EFFECTIVENESS_TREATMENTS = 200;
+const DEFAULT_EFFECTIVENESS_DAYS = 365;
+
+/**
+ * GET /api/treatments/effectiveness?deviceSerial=&type=&from=&to=
+ * Each active ingredient (or product) with its uses and average effect on catches.
+ * Without dates: the last 12 months.
+ */
+async function getEffectiveness(req, res) {
+    try {
+        const visible = new Set(await getViewableSerials(req.user));
+        if (!visible.size) return res.json({ success: true, ingredients: [] });
+        const { filter, forbidden } = treatmentFilter(req.query, visible);
+        if (forbidden) return res.status(403).json(CANNOT_SEE_CAMERA);
+        if (!filter.at) filter.at = { $gte: new Date(Date.now() - DEFAULT_EFFECTIVENESS_DAYS * 24 * 60 * 60 * 1000) };
+        const treatments = await Treatment.find(filter).sort({ at: -1 }).limit(MAX_EFFECTIVENESS_TREATMENTS).lean();
+        res.json({ success: true, ingredients: await treatmentService.effectivenessByIngredient(treatments, visible) });
+    } catch (err) {
+        sendServerError(res, err, { context: 'Treatment effectiveness' });
     }
 }
 
@@ -249,6 +284,7 @@ async function sendVietGapRecord(req, res) {
 
 module.exports = {
     listWithholding,
+    getEffectiveness,
     sendVietGapRecord,
     validateInput,
     listTreatments,

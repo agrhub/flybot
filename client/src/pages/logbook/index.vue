@@ -80,7 +80,7 @@
         <el-table-column :label="t('logbook.cameras')" min-width="160">
           <template #default="{ row }"><span class="log-meta">{{ cameraNames(row) }}</span></template>
         </el-table-column>
-        <el-table-column :label="t('logbook.phi')" width="150">
+        <el-table-column :label="t('logbook.phi')" width="190">
           <template #default="{ row }"><PhiTag :row="row" /></template>
         </el-table-column>
         <el-table-column :label="t('logbook.effect')" width="150">
@@ -97,6 +97,49 @@
       <div v-if="total > pageSize" class="flex justify-end mt-4">
         <el-pagination v-model:current-page="page" :page-size="pageSize" :total="total" layout="total, prev, pager, next" background size="small" @current-change="load" />
       </div>
+    </el-card>
+
+    <!-- Which active ingredients worked, across all their uses (same filters as the list) -->
+    <el-card shadow="never" class="mt-4" v-loading="ingredientsLoading">
+      <template #header>
+        <h3 class="section-title">{{ t('logbook.byIngredient.title') }}</h3>
+        <p class="log-meta mt-1">{{ t('logbook.byIngredient.desc') }}</p>
+      </template>
+      <el-empty v-if="!ingredients.length && !ingredientsLoading" :image-size="80" :description="t('logbook.byIngredient.empty')" />
+
+      <div v-else-if="isMobile" class="flex flex-col gap-3">
+        <div v-for="g in ingredients" :key="g.name" class="log-row">
+          <div class="flex items-start justify-between gap-2">
+            <div class="min-w-0">
+              <p class="log-strong">{{ g.name }}</p>
+              <p v-if="g.products.length" class="log-meta">{{ g.products.join(', ') }}</p>
+              <p class="log-meta">{{ t('logbook.byIngredient.usesValue', { uses: g.uses, measured: g.measured }) }} · {{ formatDate(g.lastAt) }}</p>
+            </div>
+            <ChangeTag :pct="g.avgChangePct" />
+          </div>
+        </div>
+      </div>
+
+      <el-table v-else :data="ingredients" row-key="name" style="width: 100%">
+        <el-table-column :label="t('logbook.byIngredient.name')" min-width="220">
+          <template #default="{ row }">
+            <div class="log-strong">{{ row.name }}</div>
+            <div v-if="row.products.length" class="log-meta">{{ row.products.join(', ') }}</div>
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('logbook.byIngredient.uses')" min-width="150">
+          <template #default="{ row }"><span class="log-meta">{{ t('logbook.byIngredient.usesValue', { uses: row.uses, measured: row.measured }) }}</span></template>
+        </el-table-column>
+        <el-table-column :label="t('logbook.byIngredient.avgChange')" width="170">
+          <template #default="{ row }"><ChangeTag :pct="row.avgChangePct" /></template>
+        </el-table-column>
+        <el-table-column :label="t('logbook.byIngredient.clearlyWorked')" width="160">
+          <template #default="{ row }"><span class="log-meta">{{ row.measured ? `${row.effective}/${row.measured}` : '--' }}</span></template>
+        </el-table-column>
+        <el-table-column :label="t('logbook.byIngredient.last')" width="130">
+          <template #default="{ row }"><span class="log-meta">{{ formatDate(row.lastAt) }}</span></template>
+        </el-table-column>
+      </el-table>
     </el-card>
 
     <!-- Add / edit -->
@@ -233,6 +276,18 @@ const PhiTag = defineComponent({
   }
 });
 
+// Average change in catches after an ingredient: a clear drop, some drop, or none
+const ChangeTag = defineComponent({
+  props: { pct: { type: Number, default: null } },
+  setup(props) {
+    return () => {
+      if (props.pct === null) return h(ElTag, { type: 'info', effect: 'light', round: true, size: 'small' }, () => t('logbook.byIngredient.notJudged'));
+      const type = props.pct <= -30 ? 'success' : props.pct < 0 ? 'warning' : 'danger';
+      return h(ElTag, { type, effect: 'light', round: true, size: 'small' }, () => `${props.pct > 0 ? '+' : ''}${props.pct}%`);
+    };
+  }
+});
+
 // ---------- List ----------
 const items = ref([]);
 const total = ref(0);
@@ -269,6 +324,22 @@ const load = async () => {
 const reload = () => {
   page.value = 1;
   load();
+  loadIngredients();
+};
+
+// ---------- Effectiveness per active ingredient ----------
+const ingredients = ref([]);
+const ingredientsLoading = ref(false);
+const loadIngredients = async () => {
+  ingredientsLoading.value = true;
+  try {
+    ingredients.value = (await api.getTreatmentEffectiveness(queryParams())).data.ingredients || [];
+  } catch (err) {
+    ingredients.value = [];
+    ElMessage.error(errorText(err));
+  } finally {
+    ingredientsLoading.value = false;
+  }
 };
 
 // ---------- Add / edit ----------
@@ -302,6 +373,7 @@ const save = async () => {
     ElMessage.success(t('logbook.saved'));
     formVisible.value = false;
     load();
+    loadIngredients();
   } catch (err) {
     ElMessage.error(errorText(err));
   } finally {
@@ -318,6 +390,7 @@ const remove = async (row) => {
   try {
     await api.deleteTreatment(row.id);
     load();
+    loadIngredients();
   } catch (err) {
     ElMessage.error(errorText(err));
   }
@@ -404,10 +477,19 @@ const exportVietGap = async () => {
   }
 };
 
-onMounted(load);
+onMounted(() => {
+  load();
+  loadIngredients();
+});
 </script>
 
 <style scoped>
+.section-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
 .log-strong {
   margin: 0;
   font-size: 14px;

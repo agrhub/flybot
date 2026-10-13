@@ -119,9 +119,61 @@ async function effectOf(treatment, serials, { windowDays = DEFAULT_WINDOW_DAYS, 
     return { windowDays, daysAfter: afterKeys.length, before, after, changePct, status, cameras };
 }
 
+// Same name written differently ("Abamectin ", "abamectin") is one group
+// Field sanitation and fruit bagging use no product: they have no ingredient to compare
+const NO_INGREDIENT_TYPES = new Set(['sanitation', 'bagging']);
+const groupKey = (text) => String(text || '').trim().toLowerCase().replace(/\s+/g, ' ');
+
+/**
+ * How well each active ingredient (or product, when none is written) worked across its uses:
+ * the average change in flies per trap per day after it, and how many uses clearly worked.
+ * Uses too recent to judge or without data count as uses but not in the average.
+ * `treatments` are newest first; `visible` limits each one to the traps the viewer can see.
+ */
+async function effectivenessByIngredient(treatments, visible) {
+    const groups = new Map();
+    for (const t of treatments) {
+        if (NO_INGREDIENT_TYPES.has(t.type)) continue;
+        const name = (t.activeIngredient || t.product || '').trim();
+        if (!name) continue;
+        const key = groupKey(name);
+        if (!groups.has(key)) {
+            // Newest first: the latest spelling names the group
+            groups.set(key, { name, products: new Set(), types: new Set(), uses: 0, measured: 0, effective: 0, changes: [], lastAt: t.at });
+        }
+        const group = groups.get(key);
+        group.uses++;
+        if (t.product && groupKey(t.product) !== key) group.products.add(t.product.trim());
+        group.types.add(t.type);
+        const serials = t.cameraSerials.filter(s => visible.has(s));
+        if (!serials.length) continue;
+        const effect = await effectOf(t, serials);
+        if (effect.changePct === null || effect.status === 'pending' || effect.status === 'no_data') continue;
+        group.measured++;
+        group.changes.push(effect.changePct);
+        if (effect.status === 'effective') group.effective++;
+    }
+    return [...groups.values()]
+        .map(g => ({
+            name: g.name,
+            products: [...g.products],
+            types: [...g.types],
+            uses: g.uses,
+            measured: g.measured,
+            effective: g.effective,
+            avgChangePct: g.changes.length ? Math.round(g.changes.reduce((a, b) => a + b, 0) / g.changes.length) : null,
+            lastAt: g.lastAt
+        }))
+        // Judged ones first, the strongest drop on top; then by how often they were used
+        .sort((a, b) => (a.avgChangePct === null) - (b.avgChangePct === null)
+            || (a.avgChangePct ?? 0) - (b.avgChangePct ?? 0)
+            || b.uses - a.uses);
+}
+
 module.exports = {
     DEFAULT_WINDOW_DAYS,
     dailyCatches,
     dailyValues,
-    effectOf
+    effectOf,
+    effectivenessByIngredient
 };

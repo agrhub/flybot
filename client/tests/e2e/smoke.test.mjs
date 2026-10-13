@@ -9,7 +9,7 @@ import fs from 'node:fs';
 import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const MEDIA = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../tools/media');
 const BASE = 'http://localhost:3010';
@@ -17,7 +17,7 @@ const TMP = path.join(os.tmpdir(), 'flybot-e2e');
 // Its own Chrome port and profile, so it can run next to the screenshot scripts
 process.env.FLYBOT_CDP_PORT ||= '9444';
 process.env.FLYBOT_SHOT_PROFILE ||= path.join(TMP, 'chrome');
-const { launch, sleep } = await import(path.join(MEDIA, 'cdp.mjs').replace(/\\/g, '/').replace(/^([A-Z]):/, 'file:///$1:'));
+const { launch, sleep } = await import(pathToFileURL(path.join(MEDIA, 'cdp.mjs')).href);
 
 const children = [];
 let page;
@@ -125,6 +125,8 @@ test('the overview shows the area still inside its pre-harvest interval', { time
 test('the field log sends last month\'s VietGAP record', { timeout: 60000 }, async () => {
   await page.goto(`${BASE}/logbook`, 2500);
   assert.ok(await waitForText('Radiant 60SC'), 'treatments listed');
+  assert.ok(await waitForText('Hiệu quả theo hoạt chất'), 'effect by ingredient');
+  assert.ok(await waitForText('Spinetoram'));
   await page.eval(`[...document.querySelectorAll('button')].find(b => b.innerText.includes('Gửi sổ tháng trước')).click(); return true;`);
   assert.ok(await waitForText('Đang gửi sổ tháng'), 'sent message');
 });

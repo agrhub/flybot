@@ -939,7 +939,7 @@
           "log": {
             "title": "Nhật ký xử lý & VietGAP",
             "desc": "Ghi lại mọi biện pháp đã làm và xem hiệu quả trên số ruồi vào bẫy.",
-            "items": "Vào \"Nhật ký vườn\", bấm \"Ghi nhận xử lý\".\nChọn biện pháp: phun thuốc, bả protein, mồi, sinh học, vệ sinh vườn, bao trái hoặc khác; chọn bẫy trong khu vực xử lý.\nNhập tên thuốc, hoạt chất, liều lượng, người thực hiện và thời gian cách ly.\nCột \"Hiệu quả\" so số bắt trung bình trước và sau xử lý; cột \"Thu hoạch\" báo khi đã qua thời gian cách ly.\nBấm \"Xuất sổ VietGAP\" để lưu sổ ghi chép sử dụng thuốc.\nTổng quan báo các khu vực đang trong thời gian cách ly; sáng ngày hết cách ly, FlyBot gửi thông báo \"Được thu hoạch\" qua ứng dụng, email và Telegram."
+            "items": "Vào \"Nhật ký vườn\", bấm \"Ghi nhận xử lý\".\nChọn biện pháp: phun thuốc, bả protein, mồi, sinh học, vệ sinh vườn, bao trái hoặc khác; chọn bẫy trong khu vực xử lý.\nNhập tên thuốc, hoạt chất, liều lượng, người thực hiện và thời gian cách ly.\nCột \"Hiệu quả\" so số bắt trung bình trước và sau xử lý; cột \"Thu hoạch\" báo khi đã qua thời gian cách ly.\nBấm \"Xuất sổ VietGAP\" để lưu sổ ghi chép sử dụng thuốc.\nTổng quan báo các khu vực đang trong thời gian cách ly; sáng ngày hết cách ly, FlyBot gửi thông báo \"Được thu hoạch\" qua ứng dụng, email và Telegram.\nBảng \"Hiệu quả theo hoạt chất\" dưới danh sách gom mọi lần dùng cùng một hoạt chất, cho biết trung bình số ruồi giảm bao nhiêu sau khi xử lý, để chọn thuốc hợp với vườn mình."
           }
         }
       },
@@ -1972,7 +1972,19 @@
     "sendMonthly": "Gửi sổ tháng trước",
     "sendMonthlyHint": "Gửi sổ ghi chép sử dụng thuốc BVTV tháng trước (PDF) tới email và Telegram của bạn",
     "monthlySent": "Đang gửi sổ tháng {month} ({count} lần xử lý).",
-    "monthlyEmpty": "Tháng {month} chưa ghi lần xử lý nào: không có gì để gửi."
+    "monthlyEmpty": "Tháng {month} chưa ghi lần xử lý nào: không có gì để gửi.",
+    "byIngredient": {
+      "title": "Hiệu quả theo hoạt chất",
+      "desc": "Mỗi hoạt chất (hoặc tên thuốc nếu không ghi hoạt chất) qua mọi lần dùng: số ruồi/bẫy/ngày thay đổi bao nhiêu trong 7 ngày sau so với 7 ngày trước. Lần mới dùng chưa đủ 2 ngày hoặc thiếu số liệu không tính vào trung bình. Không ghi ngày thì xét 12 tháng gần nhất.",
+      "name": "Hoạt chất",
+      "uses": "Số lần dùng",
+      "usesValue": "{uses} lần ({measured} đo được)",
+      "avgChange": "Thay đổi trung bình",
+      "clearlyWorked": "Giảm rõ (từ 30%)",
+      "last": "Lần gần nhất",
+      "notJudged": "Chưa đủ dữ liệu",
+      "empty": "Chưa có lần xử lý nào ghi tên thuốc hoặc hoạt chất."
+    }
   },
   "farms": {
     "title": "Vườn & lô",
