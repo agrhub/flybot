@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### FlyBot assistant
+- Also answers which active ingredients worked best, how the farms compare, and whether the next 3 days suit fruit flies.
+
+### Development
+- Node.js 22.12 or later (Node 20 reached end of life in April 2026).
+- vue-router 5, concurrently 10, AWS SDK 3.1146; the sign-in redirect is covered by the end-to-end test.
+
 ## 1.1.0 (2026-10-13)
 
 ### Catches and alerts
@@ -36,7 +45,6 @@
 - Streams its answers with photo, chart, comparison and report cards, formatted text (headings, lists, tables), and can open the right page.
 - Looks at a photo on request, takes a new photo, emails a report, and proposes card changes or treatments that are saved only after you press **Confirm**.
 - Keeps conversations for 7 days; rate answers as helpful or not. Morning brief at 06:30 by Telegram or email.
-- Also answers which active ingredients worked best, how the farms compare, and whether the next 3 days suit fruit flies.
 
 ### Accounts, organizations and sharing
 - Profile photo upload (cropped, resized, location data removed), shown in the top bar and in member, share and user lists to people who share something with you.
