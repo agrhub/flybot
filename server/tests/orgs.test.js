@@ -197,3 +197,40 @@ test('share lists mark unconfirmed accounts, and the sharer can remind them', as
     const farmRes = await json(await request(`/api/farms/${farm._id}/share`, { method: 'POST', as: owner, body: { email: 'slow@example.test' } }));
     assert.equal(farmRes.body.shares?.[0]?.status, 'unverified');
 });
+
+test('inviting many people at once: one result per address, one email each', async () => {
+    const owner = await createUser({ role: 'manager' });
+    const outsider = await createUser({ role: 'manager' });
+    const org = await newOrg(owner);
+    const ready = await createUser({ email: 'ready@example.test' });
+    await createUser({ email: 'late@example.test', emailVerified: false });
+    await request(`/api/orgs/${org.id}/members`, { method: 'POST', as: owner, body: { email: 'already@example.test' } });
+    const before = sentMails.length;
+
+    const res = await json(await request(`/api/orgs/${org.id}/members/bulk`, {
+        method: 'POST', as: owner,
+        body: { emails: 'Ready@Example.test, late@example.test; new@example.test\nalready@example.test not-an-email ready@example.test', role: 'member' }
+    }));
+    assert.equal(res.status, 200);
+    assert.deepEqual(res.body.results, [
+        { email: 'ready@example.test', status: 'added' },
+        { email: 'late@example.test', status: 'invited' },
+        { email: 'new@example.test', status: 'invited' },
+        { email: 'already@example.test', status: 'already' },
+        { email: 'not-an-email', status: 'invalid' }
+    ]);
+    assert.equal(sentMails.length, before + 3, 'one email per new member');
+    assert.ok(await models.Notification.exists({ userId: ready._id, type: 'org_joined' }));
+    const saved = await models.Organization.findById(org.id).lean();
+    assert.equal(saved.members.filter(m => ['ready@example.test', 'late@example.test', 'new@example.test'].includes(m.email)).length, 3);
+    assert.equal(String(saved.members.find(m => m.email === 'ready@example.test').userId), String(ready._id));
+    assert.equal(saved.members.find(m => m.email === 'late@example.test').userId, null, 'access after confirming the address');
+
+    // An array works too; limits and permissions
+    assert.equal((await json(await request(`/api/orgs/${org.id}/members/bulk`, { method: 'POST', as: owner, body: { emails: ['x1@example.test'] } }))).body.results[0].status, 'invited');
+    const many = Array.from({ length: 51 }, (_, i) => `p${i}@example.test`);
+    assert.equal((await request(`/api/orgs/${org.id}/members/bulk`, { method: 'POST', as: owner, body: { emails: many } })).status, 400);
+    assert.equal((await request(`/api/orgs/${org.id}/members/bulk`, { method: 'POST', as: owner, body: { emails: 'a@example.test', role: 'boss' } })).status, 400);
+    assert.equal((await request(`/api/orgs/${org.id}/members/bulk`, { method: 'POST', as: owner, body: {} })).status, 400);
+    assert.equal((await request(`/api/orgs/${org.id}/members/bulk`, { method: 'POST', as: outsider, body: { emails: 'a@example.test' } })).status, 404);
+});

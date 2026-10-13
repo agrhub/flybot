@@ -936,7 +936,7 @@
           "sharing": {
             "title": "Chia sẻ & tổ chức",
             "desc": "Làm việc nhóm bằng chia sẻ từng camera, từng vườn, hoặc bằng tổ chức.",
-            "items": "Chia sẻ camera trong Cài đặt, mục Quản lý Camera; chia sẻ vườn bằng nút \"Chia sẻ\" trên trang vườn.\nVới hợp tác xã hay doanh nghiệp: vào Cài đặt, mục Tổ chức, bấm \"Tạo tổ chức\".\nThêm thành viên theo email với vai trò Chủ sở hữu, Quản lý hoặc Thành viên. Thành viên xem mọi camera và vườn của tổ chức.\nChỉ chủ camera hoặc quản trị viên mới xoá, chia sẻ ra ngoài hay chuyển camera sang tổ chức khác.\nNgười được mời chỉ có quyền khi đã xác nhận email. Ai đã có tài khoản mà chưa xác nhận hiện \"Chưa xác nhận\": bấm \"Nhắc xác nhận\" để gửi lại email xác nhận (tối đa 3 lần mỗi ngày). Quản trị viên cũng có thể xác nhận hộ trong Cài đặt, mục Người dùng."
+            "items": "Chia sẻ camera trong Cài đặt, mục Quản lý Camera; chia sẻ vườn bằng nút \"Chia sẻ\" trên trang vườn.\nVới hợp tác xã hay doanh nghiệp: vào Cài đặt, mục Tổ chức, bấm \"Tạo tổ chức\".\nThêm thành viên theo email với vai trò Chủ sở hữu, Quản lý hoặc Thành viên. Thành viên xem mọi camera và vườn của tổ chức.\nChỉ chủ camera hoặc quản trị viên mới xoá, chia sẻ ra ngoài hay chuyển camera sang tổ chức khác.\nNgười được mời chỉ có quyền khi đã xác nhận email. Ai đã có tài khoản mà chưa xác nhận hiện \"Chưa xác nhận\": bấm \"Nhắc xác nhận\" để gửi lại email xác nhận (tối đa 3 lần mỗi ngày). Quản trị viên cũng có thể xác nhận hộ trong Cài đặt, mục Người dùng.\n\"Mời nhiều người\" trong mục Tổ chức: dán danh sách email hoặc chọn file CSV để mời cả hợp tác xã một lần (tối đa 50 địa chỉ mỗi lần), kèm kết quả từng địa chỉ."
           },
           "log": {
             "title": "Nhật ký xử lý & VietGAP",
@@ -1820,7 +1820,8 @@
         "member_updated": "Đổi vai trò thành viên",
         "member_removed": "Gỡ thành viên",
         "member_reminded": "Nhắc thành viên xác nhận email",
-        "cameras_changed": "Chuyển camera"
+        "cameras_changed": "Chuyển camera",
+        "members_added": "Mời nhiều thành viên"
       },
       "integration": {
         "key_created": "Tạo API key",
@@ -2171,6 +2172,27 @@
       "owner": "Chủ sở hữu",
       "manager": "Quản lý",
       "member": "Thành viên"
+    },
+    "bulk": {
+      "open": "Mời nhiều người",
+      "title": "Mời nhiều người vào {name}",
+      "hint": "Dán danh sách email (mỗi dòng một địa chỉ, hoặc cách nhau bởi dấu phẩy), hoặc chọn file CSV: mọi địa chỉ email trong file đều được lấy. Mỗi lần tối đa 50 địa chỉ.",
+      "placeholder": "nguyenvana{'@'}gmail.com\ntranthib{'@'}gmail.com",
+      "count": "{count} địa chỉ",
+      "csv": "Chọn file CSV",
+      "email": "Email",
+      "result": "Kết quả",
+      "send": "Mời {count} người",
+      "done": "Đã thêm hoặc mời {count} người.",
+      "tooBig": "File quá lớn cho một danh sách thành viên (tối đa 200 KB).",
+      "status": {
+        "added": "Đã thêm",
+        "invited": "Đã gửi lời mời",
+        "already": "Đã là thành viên",
+        "invalid": "Email không hợp lệ",
+        "full": "Tổ chức đã đủ thành viên",
+        "limit": "Vượt giới hạn mời trong ngày"
+      }
     }
   },
   "integrations": {

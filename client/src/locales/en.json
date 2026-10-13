@@ -936,7 +936,7 @@
           "sharing": {
             "title": "Sharing & organizations",
             "desc": "Work as a team by sharing cameras or farms, or with an organization.",
-            "items": "Share a camera in Settings, Camera Management; share a farm with the \"Share\" button on the farm page.\nFor a cooperative or company: Settings, Organizations, \"New organization\".\nAdd members by email as Owner, Manager or Member. Members see every camera and farm of the organization.\nOnly the camera owner or an admin can delete it, share it outside or move it to another organization.\nPeople you invite get access once they confirm their email. Anyone with an account who has not confirmed it shows as \"Not confirmed\": click \"Remind to confirm\" to send the confirmation email again (up to 3 times a day). Admins can also confirm it for them in Settings, Users."
+            "items": "Share a camera in Settings, Camera Management; share a farm with the \"Share\" button on the farm page.\nFor a cooperative or company: Settings, Organizations, \"New organization\".\nAdd members by email as Owner, Manager or Member. Members see every camera and farm of the organization.\nOnly the camera owner or an admin can delete it, share it outside or move it to another organization.\nPeople you invite get access once they confirm their email. Anyone with an account who has not confirmed it shows as \"Not confirmed\": click \"Remind to confirm\" to send the confirmation email again (up to 3 times a day). Admins can also confirm it for them in Settings, Users.\n\"Invite many\" under Organizations: paste the email addresses or pick a CSV file to invite a whole cooperative at once (up to 50 addresses each time), with the result for each address."
           },
           "log": {
             "title": "Treatment log & VietGAP",
@@ -1820,7 +1820,8 @@
         "member_updated": "Change member role",
         "member_removed": "Remove member",
         "member_reminded": "Remind member to confirm email",
-        "cameras_changed": "Move cameras"
+        "cameras_changed": "Move cameras",
+        "members_added": "Invite many members"
       },
       "integration": {
         "key_created": "Create API key",
@@ -2171,6 +2172,27 @@
       "owner": "Owner",
       "manager": "Manager",
       "member": "Member"
+    },
+    "bulk": {
+      "open": "Invite many",
+      "title": "Invite many people to {name}",
+      "hint": "Paste the email addresses (one per line, or separated by commas), or pick a CSV file: every email address in it is taken. At most 50 addresses at a time.",
+      "placeholder": "grower.one{'@'}gmail.com\ngrower.two{'@'}gmail.com",
+      "count": "{count} addresses",
+      "csv": "Pick a CSV file",
+      "email": "Email",
+      "result": "Result",
+      "send": "Invite {count}",
+      "done": "Added or invited {count} people.",
+      "tooBig": "The file is too big for a member list (at most 200 KB).",
+      "status": {
+        "added": "Added",
+        "invited": "Invitation sent",
+        "already": "Already a member",
+        "invalid": "Not a valid email",
+        "full": "The organization is full",
+        "limit": "Over today's invitation limit"
+      }
     }
   },
   "integrations": {

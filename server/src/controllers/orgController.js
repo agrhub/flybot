@@ -10,6 +10,7 @@ const mailService = require('../services/mailService');
 const emailTemplates = require('../services/emailTemplates');
 const notificationService = require('../services/notificationService');
 const orgService = require('../services/orgService');
+const { inviteQuota } = require('../middlewares/rateLimit');
 const { avatarUrlsFor } = require('../services/avatarService');
 const { EMAIL_REGEX, normalizeEmail, findUserByEmail, safeUrl, emailsWithAccount, sendConfirmReminder } = require('./shareController');
 
@@ -183,6 +184,65 @@ async function addMember(req, res) {
     }
 }
 
+const MAX_BULK = 50;
+
+/**
+ * POST /api/orgs/:id/members/bulk { emails: [..] or "a@x, b@y", role }: invite many people at
+ * once (a cooperative's growers). One result per address: added (access now), invited (no
+ * confirmed account yet), already, invalid, full (member limit) or limit (daily invitations).
+ */
+async function addMembersBulk(req, res) {
+    try {
+        const role = req.body.role || 'member';
+        if (!validRole(role)) return res.status(400).json({ success: false, message: "Invalid role." });
+        const raw = Array.isArray(req.body.emails) ? req.body.emails
+            : typeof req.body.emails === 'string' ? req.body.emails.split(/[\s,;]+/) : null;
+        if (!raw) return res.status(400).json({ success: false, message: "Send a list of email addresses." });
+        const emails = [...new Set(raw.filter(e => typeof e === 'string').map(normalizeEmail).filter(Boolean))];
+        if (!emails.length) return res.status(400).json({ success: false, message: "Send a list of email addresses." });
+        if (emails.length > MAX_BULK) return res.status(400).json({ success: false, message: `At most ${MAX_BULK} addresses at a time.` });
+        const org = await loadOrg(req, res, { manage: true });
+        if (!org) return;
+        if (role === 'owner' && !orgService.isOrgOwner(req.user, org)) {
+            return res.status(403).json({ success: false, code: 'FORBIDDEN', message: "Only owners can add owners." });
+        }
+
+        const results = [];
+        const added = [];
+        for (const email of emails) {
+            if (!EMAIL_REGEX.test(email) || email.length > 254) { results.push({ email, status: 'invalid' }); continue; }
+            if (org.members.some(m => m.email === email)) { results.push({ email, status: 'already' }); continue; }
+            if (org.members.length >= MAX_MEMBERS) { results.push({ email, status: 'full' }); continue; }
+            if (!inviteQuota.take(String(req.user.id))) { results.push({ email, status: 'limit' }); continue; }
+            const recipient = await findUserByEmail(email);
+            // Only a confirmed address gets access right away
+            const active = !!recipient?.emailVerified;
+            org.members.push({ userId: active ? recipient._id : null, email, role, addedBy: req.user.id, addedAt: new Date() });
+            added.push({ email, recipient, active });
+            results.push({ email, status: active ? 'added' : 'invited' });
+        }
+
+        if (added.length) {
+            await org.save();
+            await orgService.syncOrgShares(org);
+            recordAudit(req, { action: 'org.members_added', target: orgTarget(org), details: { role, count: added.length, emails: added.map(a => a.email) } });
+            const sharer = req.user.name || req.user.email;
+            const params = { orgName: org.name };
+            for (const { email, recipient, active } of added) {
+                if (active) await notificationService.notifyUser({ userId: recipient._id, type: 'org_joined', params: { ...params, sharer } });
+                if (recipient) {
+                    mailService.queueMail(emailTemplates.shareEmail({ kind: 'orgShared', to: recipient.email, user: recipient, language: normalizeLanguage(recipient.language), sharer, params, url: safeUrl('/settings', { tab: 'organizations' }) }));
+                } else {
+                    mailService.queueMail(emailTemplates.shareEmail({ kind: 'orgInvite', to: email, language: normalizeLanguage(req.user.language), sharer, params, url: safeUrl('/auth/login', { mode: 'register', email }) }));
+                }
+            }
+        }
+        res.json({ success: true, results, organization: await toClientOrg(org, req.user) });
+    } catch (err) {
+        sendServerError(res, err, { context: 'Add organization members' });
+    }
+}
+
 /**
  * POST /api/orgs/:id/members/remind { email }: owners and managers send the confirmation email
  * again to a member who has an account but has not confirmed its address yet.
@@ -286,6 +346,7 @@ async function setCameras(req, res) {
 }
 
 module.exports = {
+    addMembersBulk,
     listOrgs,
     createOrg,
     updateOrg,

@@ -39,6 +39,7 @@
           <el-option v-for="role in assignableRoles(org)" :key="role" :label="t(`orgs.roles.${role}`)" :value="role" />
         </el-select>
         <el-button :icon="Plus" :loading="busy === `add:${org.id}`" @click="addMember(org)">{{ t('orgs.addMember') }}</el-button>
+        <el-button :icon="UserFilled" @click="openBulk(org)">{{ t('orgs.bulk.open') }}</el-button>
       </div>
       <template v-for="(m, idx) in org.members" :key="m.email">
         <el-divider v-if="idx > 0" class="!my-0" />
@@ -109,6 +110,34 @@
       </div>
       <p v-if="org.canManage" class="org-meta mt-2">{{ t('orgs.camerasHint') }}</p>
     </el-card>
+
+    <!-- Many people at once: pasted addresses or a CSV file -->
+    <el-dialog v-model="bulk.visible" :title="t('orgs.bulk.title', { name: bulk.org?.name || '' })" width="560px" align-center>
+      <p class="org-meta mb-2">{{ t('orgs.bulk.hint') }}</p>
+      <el-input v-model="bulk.text" type="textarea" :rows="6" :placeholder="t('orgs.bulk.placeholder')" />
+      <div class="flex flex-wrap items-center justify-between gap-2 mt-2">
+        <span class="org-meta">{{ t('orgs.bulk.count', { count: bulkEmails.length }) }}</span>
+        <div class="flex items-center gap-2">
+          <el-select v-if="bulk.org" v-model="bulk.role" size="small" class="!w-36">
+            <el-option v-for="role in assignableRoles(bulk.org)" :key="role" :label="t(`orgs.roles.${role}`)" :value="role" />
+          </el-select>
+          <el-button size="small" :icon="Upload" @click="pickCsv">{{ t('orgs.bulk.csv') }}</el-button>
+          <input ref="csvInput" type="file" accept=".csv,.txt,text/csv,text/plain" class="hidden" @change="readCsv" />
+        </div>
+      </div>
+      <el-table v-if="bulk.results.length" :data="bulk.results" size="small" class="mt-3" max-height="260">
+        <el-table-column :label="t('orgs.bulk.email')" prop="email" min-width="220" />
+        <el-table-column :label="t('orgs.bulk.result')" width="190">
+          <template #default="{ row }">
+            <el-tag :type="BULK_TAG[row.status]" effect="light" size="small">{{ t(`orgs.bulk.status.${row.status}`) }}</el-tag>
+          </template>
+        </el-table-column>
+      </el-table>
+      <template #footer>
+        <el-button @click="bulk.visible = false">{{ t('common.close') }}</el-button>
+        <el-button type="primary" :disabled="!bulkEmails.length || bulkEmails.length > 50" :loading="bulk.sending" @click="sendBulk">{{ t('orgs.bulk.send', { count: bulkEmails.length }) }}</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -116,7 +145,7 @@
 import { ref, reactive, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { Plus, OfficeBuilding, MoreFilled, Edit, Delete, SwitchButton } from '@element-plus/icons-vue';
+import { Plus, OfficeBuilding, MoreFilled, Edit, Delete, SwitchButton, UserFilled, Upload } from '@element-plus/icons-vue';
 import api from '@/services/api';
 import PageHeader from '@/components/common/PageHeader.vue';
 import { useAuth } from '@/composables/useAuth';
@@ -215,6 +244,42 @@ const addMember = async (org) => {
     ElMessage.error(errorText(err));
   } finally {
     busy.value = null;
+  }
+};
+
+// ---------- Many people at once ----------
+const BULK_TAG = { added: 'success', invited: 'primary', already: 'info', invalid: 'danger', full: 'warning', limit: 'warning' };
+const bulk = reactive({ visible: false, org: null, text: '', role: 'member', results: [], sending: false });
+const csvInput = ref(null);
+// Every address in the text (a CSV keeps them in any column)
+const bulkEmails = computed(() => [...new Set((bulk.text.match(/[^\s,;"'<>]+@[^\s,;"'<>]+/g) || []).map((e) => e.toLowerCase()))]);
+const openBulk = (org) => {
+  Object.assign(bulk, { visible: true, org, text: '', role: 'member', results: [] });
+};
+const pickCsv = () => csvInput.value?.click();
+const readCsv = async (event) => {
+  const file = event.target.files?.[0];
+  event.target.value = '';
+  if (!file) return;
+  // A member list is small; anything bigger is not one
+  if (file.size > 200 * 1024) {
+    ElMessage.error(t('orgs.bulk.tooBig'));
+    return;
+  }
+  bulk.text = [bulk.text, await file.text()].filter(Boolean).join('\n');
+};
+const sendBulk = async () => {
+  bulk.sending = true;
+  try {
+    const res = await api.addOrgMembersBulk(bulk.org.id, { emails: bulkEmails.value, role: bulk.role });
+    bulk.results = res.data.results || [];
+    replace(res.data.organization);
+    const done = bulk.results.filter((r) => r.status === 'added' || r.status === 'invited').length;
+    ElMessage.success(t('orgs.bulk.done', { count: done }));
+  } catch (err) {
+    ElMessage.error(errorText(err));
+  } finally {
+    bulk.sending = false;
   }
 };
 

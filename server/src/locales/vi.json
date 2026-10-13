@@ -383,7 +383,9 @@
     "dates_must_be_yyyy_mm_dd": "Ngày phải theo dạng YYYY-MM-DD.",
     "the_period_must_end_today_at_the_latest_and_start_before_it_ends": "Kỳ báo cáo phải kết thúc muộn nhất là hôm nay và bắt đầu trước ngày kết thúc.",
     "the_period_can_be_at_most_a_year": "Kỳ báo cáo dài tối đa một năm.",
-    "clientid_must_be_8_to_64_letters_digits_or_dashes": "clientId phải gồm 8 đến 64 chữ cái, chữ số hoặc dấu gạch ngang."
+    "clientid_must_be_8_to_64_letters_digits_or_dashes": "clientId phải gồm 8 đến 64 chữ cái, chữ số hoặc dấu gạch ngang.",
+    "send_a_list_of_email_addresses": "Hãy gửi danh sách địa chỉ email.",
+    "at_most_max_addresses_at_a_time": "Mỗi lần tối đa {max} địa chỉ."
   },
   "reportPdf": {
     "range": "Khoảng thời gian: {from} - {to} ({days} ngày)",

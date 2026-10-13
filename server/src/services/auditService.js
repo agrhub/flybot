@@ -41,6 +41,7 @@ const AUDIT_ACTIONS = [
     'org.updated',
     'org.deleted',
     'org.member_added',
+    'org.members_added',
     'org.member_updated',
     'org.member_removed',
     'org.member_reminded',

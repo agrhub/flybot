@@ -67,6 +67,8 @@ function createQuota({ windowMs, max }) {
 const captureQuota = createQuota({ windowMs: 60 * 1000, max: 3 });
 // "Email me" builds a report and its PDF: 5 per person per hour, from the page or the assistant
 const reportSendQuota = createQuota({ windowMs: 60 * 60 * 1000, max: 5 });
+// Organization invitations email each address: 100 addresses a day per person
+const inviteQuota = createQuota({ windowMs: 24 * 60 * 60 * 1000, max: 100 });
 
 const emailKey = (req) => (typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '');
 
@@ -83,6 +85,7 @@ module.exports = {
     createQuota,
     captureQuota,
     reportSendQuota,
+    inviteQuota,
     // Express middleware over captureQuota (user + camera)
     captureLimiter: (req, res, next) => {
         const key = `${req.user?.id}:${req.body?.deviceSerial}`;

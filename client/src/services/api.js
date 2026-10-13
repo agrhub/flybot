@@ -341,6 +341,9 @@ export default {
   remindOrgMember(id, email) {
     return apiClient.post(`/orgs/${id}/members/remind`, { email });
   },
+  addOrgMembersBulk(id, data) {
+    return apiClient.post(`/orgs/${id}/members/bulk`, data);
+  },
   addOrgMember(id, data) {
     return apiClient.post(`/orgs/${id}/members`, data);
   },
