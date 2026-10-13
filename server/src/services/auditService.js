@@ -7,6 +7,7 @@ const AUDIT_ACTIONS = [
     'auth.password_reset',
     'auth.password_changed',
     'auth.sessions_revoked',
+    'auth.data_exported',
     'user.role_changed',
     'user.disabled',
     'user.enabled',

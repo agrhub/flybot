@@ -145,6 +145,13 @@
               </el-form-item>
             </el-form>
           </el-card>
+
+          <!-- Everything this account owns, as one file -->
+          <el-card shadow="never" class="mt-4">
+            <template #header>{{ t('settings.myData.title') }}</template>
+            <p class="text-sm text-[var(--el-text-color-secondary)] mb-3">{{ t('settings.myData.desc') }}</p>
+            <el-button :loading="exportingData" @click="exportMyData">{{ t('settings.myData.download') }}</el-button>
+          </el-card>
         </div>
 
         <!-- 2. Password -->
@@ -1160,6 +1167,30 @@ const saveProfile = async () => {
     ElNotification({ title: t('common.error'), message: t('settings.saveFailed'), type: 'error' });
   } finally {
     savingProfile.value = false;
+  }
+};
+
+// "Download all my data": a ZIP of CSV and JSON files
+const exportingData = ref(false);
+const exportMyData = async () => {
+  exportingData.value = true;
+  try {
+    const res = await api.exportMyData();
+    const url = URL.createObjectURL(new Blob([res.data], { type: 'application/zip' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `FlyBot_data_${new Date().toISOString().slice(0, 10)}.zip`;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+  } catch (err) {
+    // The error comes back as a blob too
+    let message = requestErrorText(t, err, t('common.error'));
+    try {
+      if (err.response?.data instanceof Blob) message = JSON.parse(await err.response.data.text()).message || message;
+    } catch { /* not JSON */ }
+    ElNotification({ title: t('common.error'), message, type: 'error' });
+  } finally {
+    exportingData.value = false;
   }
 };
 

@@ -161,6 +161,18 @@ test('the monthly VietGAP switch is saved', { timeout: 60000 }, async () => {
   assert.equal(prefs.vietgapMonthly, true);
 });
 
+test('"download all my data" gives a ZIP of the account', { timeout: 60000 }, async () => {
+  await page.goto(`${BASE}/settings?tab=profile`, 2000);
+  assert.ok(await waitForText('Tải toàn bộ dữ liệu'));
+  // The same request the button makes; the file's first bytes are the ZIP signature
+  const got = await page.eval(`const r = await fetch('/api/auth/export', { headers: { Authorization: 'Bearer ' + localStorage.getItem('token') } });
+    const bytes = new Uint8Array(await r.arrayBuffer());
+    return { status: r.status, type: r.headers.get('content-type'), zip: bytes[0] === 0x50 && bytes[1] === 0x4b, size: bytes.length };`);
+  assert.equal(got.status, 200);
+  assert.equal(got.type, 'application/zip');
+  assert.ok(got.zip && got.size > 1000, `a ZIP with the demo data (${got.size} bytes)`);
+});
+
 test('without signal a card change waits on the device, then goes out when the signal is back', { timeout: 120000 }, async () => {
   await page.goto(`${BASE}/cameras`, 2000);
   assert.ok(await waitForText('Bẫy xoài A1'));

@@ -11,7 +11,8 @@ const {
     forgotPasswordLimiter,
     tokenLimiter,
     resendVerificationLimiter,
-    avatarLimiter
+    avatarLimiter,
+    dataExportLimiter
 } = require('../middlewares/rateLimit');
 const { AVATAR_MAX_BYTES } = require('../services/avatarService');
 
@@ -37,6 +38,7 @@ router.post('/resend-verification', authenticate, resendVerificationLimiter, aut
 router.post('/session', authenticate, authController.refreshSession);
 router.get('/config', authController.getAuthConfig);
 router.get('/me', authenticate, authController.getMe);
+router.get('/export', authenticate, dataExportLimiter, authController.exportMyData);
 router.get('/sessions', authenticate, authController.listSessions);
 router.post('/sessions/revoke-others', authenticate, authController.revokeOtherSessions);
 router.delete('/sessions/:sessionId', authenticate, authController.revokeSession);

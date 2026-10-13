@@ -215,6 +215,10 @@ export default {
     const newPassword = args.length >= 3 ? args[2] : args[1];
     return apiClient.post('/auth/change-password', { currentPassword, newPassword });
   },
+  // "Download all my data" (ZIP)
+  exportMyData() {
+    return apiClient.get('/auth/export', { responseType: 'blob' });
+  },
   uploadAvatar(blob) {
     return apiClient.post('/auth/avatar', blob, { headers: { 'Content-Type': 'image/jpeg' } });
   },

@@ -670,7 +670,12 @@
       "notConfigured": "Máy chủ chưa được thiết lập cảnh báo Telegram (quản trị viên cần thêm bot)."
     },
     "thresholdSuggestion": "Đề xuất {value} theo {days} ngày qua: ngưỡng hiện tại vượt {now} ngày, ngưỡng đề xuất vượt {then} ngày.",
-    "applySuggestion": "Áp dụng"
+    "applySuggestion": "Áp dụng",
+    "myData": {
+      "title": "Dữ liệu của bạn",
+      "desc": "Tải về một file ZIP gồm mọi thứ bạn sở hữu: camera, vườn và lô, số ruồi theo ngày, kết quả phân tích từng ảnh, nhật ký phun xịt, các lần thay bẫy, báo cáo và các cuộc trò chuyện với trợ lý. Bảng ở dạng CSV (mở bằng Excel), phần còn lại ở dạng JSON. Ảnh chụp không nằm trong file. Mỗi giờ tải tối đa 3 lần.",
+      "download": "Tải toàn bộ dữ liệu"
+    }
   },
   "assistant": {
     "title": "Trợ lý FlyBot",
@@ -851,7 +856,7 @@
           "account": {
             "title": "Đăng nhập & xem Tổng quan",
             "desc": "Trang Tổng quan cho biết hôm nay có bao nhiêu ruồi vào bẫy, chỉ số ruồi/bẫy/ngày, số camera trực tuyến và mức nguy cơ dịch hại.",
-            "items": "Đăng ký bằng email rồi bấm liên kết xác nhận trong hộp thư.\nVai trò của tài khoản: quản trị viên quản lý toàn hệ thống; quản lý thêm và quản lý camera; người xem chỉ thấy những gì được chia sẻ.\n\"Ruồi vào bẫy hôm nay\" là số ruồi mới trên tất cả các bẫy, kèm số hôm qua; \"Ruồi/bẫy/ngày (7 ngày)\" là chỉ số chuẩn để so sánh giữa các tuần.\nTrong danh sách bẫy, thanh màu so số hiện có trên bẫy với ngưỡng cảnh báo; dòng dưới cho biết hôm nay có thêm bao nhiêu con và trung bình mỗi ngày.\nNhãn \"Điểm nóng dịch hại\" xuất hiện khi bẫy chạm ngưỡng; \"Cần thay bẫy\" khi tấm keo đã đến hạn thay.\nCuối trang, mỗi bẫy có ảnh phân tích mới nhất: AI khoanh từng con kèm tên loài; bấm vào ảnh để xem chi tiết, xác nhận hoặc sửa số đếm.\nLần đầu mở FlyBot có phần giới thiệu nhanh từng mục; xem lại bất cứ lúc nào ở menu tài khoản, \"Hướng dẫn nhanh\".\nĐổi tên và ảnh đại diện trong Cài đặt, mục Thông tin cá nhân (ảnh JPG hoặc PNG, tối đa 2 MB). Hãy xác nhận email để nhận cảnh báo qua email và để lời mời chia sẻ có hiệu lực."
+            "items": "Đăng ký bằng email rồi bấm liên kết xác nhận trong hộp thư.\nVai trò của tài khoản: quản trị viên quản lý toàn hệ thống; quản lý thêm và quản lý camera; người xem chỉ thấy những gì được chia sẻ.\n\"Ruồi vào bẫy hôm nay\" là số ruồi mới trên tất cả các bẫy, kèm số hôm qua; \"Ruồi/bẫy/ngày (7 ngày)\" là chỉ số chuẩn để so sánh giữa các tuần.\nTrong danh sách bẫy, thanh màu so số hiện có trên bẫy với ngưỡng cảnh báo; dòng dưới cho biết hôm nay có thêm bao nhiêu con và trung bình mỗi ngày.\nNhãn \"Điểm nóng dịch hại\" xuất hiện khi bẫy chạm ngưỡng; \"Cần thay bẫy\" khi tấm keo đã đến hạn thay.\nCuối trang, mỗi bẫy có ảnh phân tích mới nhất: AI khoanh từng con kèm tên loài; bấm vào ảnh để xem chi tiết, xác nhận hoặc sửa số đếm.\nLần đầu mở FlyBot có phần giới thiệu nhanh từng mục; xem lại bất cứ lúc nào ở menu tài khoản, \"Hướng dẫn nhanh\".\nĐổi tên và ảnh đại diện trong Cài đặt, mục Thông tin cá nhân (ảnh JPG hoặc PNG, tối đa 2 MB). Hãy xác nhận email để nhận cảnh báo qua email và để lời mời chia sẻ có hiệu lực.\nMuốn giữ một bản riêng hoặc chuyển sang công cụ khác: Cài đặt, mục Thông tin cá nhân, \"Tải toàn bộ dữ liệu\" tải về một file ZIP gồm camera, vườn, số ruồi theo ngày, kết quả từng ảnh, nhật ký vườn và báo cáo (bảng CSV mở được bằng Excel)."
           },
           "camera": {
             "title": "Thêm camera & chọn loại bẫy",
@@ -1768,7 +1773,8 @@
         "login_failed": "Đăng nhập thất bại",
         "password_reset": "Đặt lại mật khẩu qua email",
         "password_changed": "Đổi mật khẩu",
-        "sessions_revoked": "Đăng xuất các thiết bị khác"
+        "sessions_revoked": "Đăng xuất các thiết bị khác",
+        "data_exported": "Tải toàn bộ dữ liệu"
       },
       "user": {
         "role_changed": "Đổi vai trò",

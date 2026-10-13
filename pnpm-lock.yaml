@@ -120,6 +120,9 @@ importers:
       express:
         specifier: ^5.2.1
         version: 5.2.1
+      fflate:
+        specifier: ^0.8.3
+        version: 0.8.3
       jpeg-js:
         specifier: ^0.4.4
         version: 0.4.4

@@ -670,7 +670,12 @@
       "notConfigured": "Telegram alerts are not set up on this server yet (the administrator needs to add a bot)."
     },
     "thresholdSuggestion": "Suggested {value} from the last {days} days: the current threshold was reached on {now} days, the suggested one on {then}.",
-    "applySuggestion": "Apply"
+    "applySuggestion": "Apply",
+    "myData": {
+      "title": "Your data",
+      "desc": "Download one ZIP file with everything you own: cameras, farms and plots, daily fly counts, the analysis of each photo, the spray log, trap changes, reports and your conversations with the assistant. Tables are CSV (they open in Excel), the rest is JSON. Photos are not included. Up to 3 downloads an hour.",
+      "download": "Download all my data"
+    }
   },
   "assistant": {
     "title": "FlyBot Assistant",
@@ -851,7 +856,7 @@
           "account": {
             "title": "Sign in & the Overview",
             "desc": "The Overview shows how many flies arrived today, flies per trap per day, cameras online and the pest risk level.",
-            "items": "Sign up with your email and click the confirmation link in your inbox.\nAccount roles: admins run the whole system; managers add and manage cameras; viewers see what is shared with them.\n\"Flies caught today\" counts new flies on all traps, with yesterday next to it; \"Flies/trap/day (7 days)\" is the standard figure to compare weeks.\nIn the trap list, the bar compares what is on each trap now with its alert threshold; the line below shows today’s new flies and the daily average.\n\"Pest Hotspot\" appears when a trap reaches its threshold; \"Replace card\" when its glue card should be replaced.\nAt the bottom, each trap shows its latest analyzed photo with every insect boxed and named; click it for the details, to confirm or correct the count.\nThe first time you open FlyBot a quick tour shows each part; replay it any time from the account menu, \"Quick tour\".\nChange your name and profile photo in Settings, Profile Information (JPG or PNG, up to 2 MB). Confirm your email to get alert emails and for shared items to reach you."
+            "items": "Sign up with your email and click the confirmation link in your inbox.\nAccount roles: admins run the whole system; managers add and manage cameras; viewers see what is shared with them.\n\"Flies caught today\" counts new flies on all traps, with yesterday next to it; \"Flies/trap/day (7 days)\" is the standard figure to compare weeks.\nIn the trap list, the bar compares what is on each trap now with its alert threshold; the line below shows today’s new flies and the daily average.\n\"Pest Hotspot\" appears when a trap reaches its threshold; \"Replace card\" when its glue card should be replaced.\nAt the bottom, each trap shows its latest analyzed photo with every insect boxed and named; click it for the details, to confirm or correct the count.\nThe first time you open FlyBot a quick tour shows each part; replay it any time from the account menu, \"Quick tour\".\nChange your name and profile photo in Settings, Profile Information (JPG or PNG, up to 2 MB). Confirm your email to get alert emails and for shared items to reach you.\nTo keep your own copy or move to another tool: Settings, Personal info, \"Download all my data\" gives one ZIP file with your cameras, farms, daily fly counts, the result of each photo, the field log and reports (CSV tables that open in Excel)."
           },
           "camera": {
             "title": "Add a camera & choose the trap type",
@@ -1768,7 +1773,8 @@
         "login_failed": "Failed sign-in",
         "password_reset": "Password reset by email",
         "password_changed": "Password changed",
-        "sessions_revoked": "Signed out other devices"
+        "sessions_revoked": "Signed out other devices",
+        "data_exported": "Downloaded all data"
       },
       "user": {
         "role_changed": "Role changed",

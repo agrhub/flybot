@@ -5,6 +5,12 @@
 ### Works without signal
 - A treatment in the Field log or a card change recorded without signal is kept on the device and sent when the network is back; a bar at the top shows what is waiting, and anything the server refused with its reason. Each carries an id, so a send that did arrive but lost its answer is never recorded twice.
 
+### Organizations
+- **Invite many**: paste a list of email addresses or pick a CSV file to invite a whole cooperative at once (up to 50 addresses each time, 100 invitations a day per person), with the result for each address.
+
+### Your data
+- Settings, Personal info: **Download all my data** gives one ZIP file with your cameras, farms and plots, daily counts, the analysis of every photo, treatments, trap changes, reports and assistant conversations (CSV tables and JSON). Values a spreadsheet would run as a formula are escaped; 3 downloads an hour.
+
 ## 1.2.0 (2026-10-13)
 
 ### Season report

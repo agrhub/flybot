@@ -78,8 +78,12 @@ const remindQuota = createQuota({ windowMs: 24 * 60 * 60 * 1000, max: 3 });
 // Avatar changes: 20 per person per 10 minutes
 const avatarLimiter = rateLimit({ windowMs: 10 * 60 * 1000, max: 20, includeIp: false, keyFn: (req) => `avatar:${req.user?.id}` });
 
+// "Download all my data" reads a person's whole history: 3 per person per hour
+const dataExportLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 3, includeIp: false, keyFn: (req) => `export:${req.user?.id}` });
+
 module.exports = {
     rateLimit,
+    dataExportLimiter,
     avatarLimiter,
     remindQuota,
     createQuota,
