@@ -128,3 +128,29 @@ test('Monday digest: owners and managers get the members to visit, unless turned
     // Once a week
     assert.deepEqual(await sendOrgDigests(), { sent: 0 });
 });
+
+test('cooperative report: members ranked, PDF download and email, owners and managers only', async () => {
+    const { lead, busy, org } = await seed();
+    const { coopData, buildCoopPdf } = require('../src/services/coopReportService');
+    const { parsePeriod } = require('../src/services/seasonReportService');
+    const data = await coopData(await models.Organization.findById(org._id), parsePeriod({ from: dayAgo(6), to: dayAgo(0) }));
+    assert.deepEqual(data.members.map(m => m.name), ['Ba', 'Tu'], 'busiest first, only members with traps');
+    assert.equal(data.members[0].ftd, 7);
+    assert.equal(data.members[1].treatments, 1);
+    assert.equal(data.totals.traps, 3);
+    assert.equal(data.treatments[0].member, 'Tu');
+    assert.ok(buildCoopPdf(data, { language: 'vi', owner: 'Lan' }).subarray(0, 4).equals(Buffer.from('%PDF')));
+
+    const res = await request(`/api/orgs/${org._id}/report?from=${dayAgo(29)}&to=${dayAgo(0)}`, { as: lead });
+    assert.equal(res.status, 200);
+    assert.equal(res.headers.get('content-type'), 'application/pdf');
+    assert.ok(Buffer.from(await res.arrayBuffer()).subarray(0, 4).equals(Buffer.from('%PDF')));
+    assert.equal((await request(`/api/orgs/${org._id}/report`, { as: busy })).status, 403);
+    assert.equal((await request(`/api/orgs/${org._id}/report?from=2026-13-01`, { as: lead })).status, 400);
+
+    const sent = await json(await request(`/api/orgs/${org._id}/report/send`, { method: 'POST', as: lead, body: {} }));
+    assert.equal(sent.status, 200);
+    const mail = sentMails.find(m => m.to === 'lan@example.test' && m.attachments?.length);
+    assert.match(mail.subject, /Hoa Loc cooperative/);
+    assert.match(mail.attachments[0].filename, /^FlyBot_cooperative_.*\.pdf$/);
+});

@@ -5,6 +5,7 @@
 ### Cooperatives
 - **Cooperative overview** (Farms, for organization owners and managers): one row per member with flies per trap per day against the period before (7 or 30 days), traps at their threshold, cameras without a photo for a day and the last treatment. Members with traps at the threshold and no treatment logged in the period come first, for a field visit. Exports to Excel.
 - **Reminders**: from the cooperative overview, "Remind" asks a member to check their traps and log their work (in the app, by email and Telegram; once a day each). Owners and managers get the list of members to visit on Monday mornings (Settings, Notifications to turn it off).
+- **Cooperative report (PDF)** at the bottom of the overview: for a chosen period, the members ranked by flies per trap per day against the period before, month by month, the effect by active ingredient across members and their treatment record; downloaded or emailed.
 
 ### Field log
 - **Log by voice**: a microphone in the assistant box (browsers with speech recognition). Say "this morning I sprayed Radiant on mango plot A, 7 days pre-harvest": the assistant finds the plot's traps and fills a card with the product, area and pre-harvest interval to Confirm. The words only fill the box; nothing is sent until you press Send.

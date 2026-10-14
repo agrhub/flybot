@@ -547,5 +547,41 @@
       "operator": "Operator",
       "phi": "PHI (days)"
     }
+  },
+  "coop": {
+    "title": "Cooperative report {org}: {from} – {to}",
+    "subtitle": "{owner} · {members} members with traps · {traps} traps · {days} days · made by FlyBot on {date}",
+    "summary": "Whole cooperative: {ftd} flies per trap per day (period before {previous}, {change}); {treatments} treatments logged.",
+    "membersTitle": "1. Members (busiest first)",
+    "monthsTitle": "2. Flies per trap per day by month",
+    "ingredientsTitle": "3. Effect by active ingredient (all members)",
+    "recordTitle": "Appendix: the members' treatment record (VietGAP)",
+    "usesValue": "{uses} uses ({measured} measured)",
+    "noTreatments": "No treatment with a product or active ingredient was logged in the period.",
+    "footer": "FlyBot · flies per trap per day: new flies on the traps each day divided by the traps with data; treatment effect compares the 7 days before and after.",
+    "emailSubject": "Cooperative report {org}: {from} – {to}",
+    "emailIntro": "The {org} cooperative report from {from} to {to} for {members} members with traps: each member's flies per trap per day against the period before, by month, the effect by active ingredient and the members' treatment record.",
+    "col": {
+      "member": "Member",
+      "traps": "Traps",
+      "ftd": "Flies/trap/day",
+      "previous": "Period before",
+      "change": "Change",
+      "treatments": "Treatments",
+      "lastTreatment": "Last one",
+      "month": "Month",
+      "ingredient": "Active ingredient",
+      "products": "Products",
+      "uses": "Uses",
+      "avgChange": "Average change",
+      "clearlyWorked": "Clear drop (30%+)",
+      "date": "Date and time",
+      "trapsList": "Traps",
+      "type": "Type",
+      "product": "Product",
+      "dose": "Dose",
+      "operator": "Operator",
+      "phi": "Pre-harvest days"
+    }
   }
 }

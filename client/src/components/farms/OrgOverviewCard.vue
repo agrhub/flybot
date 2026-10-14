@@ -86,6 +86,9 @@
           </template>
         </el-table-column>
       </el-table>
+
+      <!-- The cooperative's report for its board -->
+      <SeasonReportCard :org-id="orgId" embedded />
     </template>
   </el-card>
 </template>
@@ -99,6 +102,7 @@ import api from '@/services/api';
 import { useBreakpoints } from '@/composables/useBreakpoints';
 import { requestErrorText } from '@/utils/requestError';
 import { orgOverviewSheets, downloadSheets } from '@/utils/tableExport';
+import SeasonReportCard from './SeasonReportCard.vue';
 
 const PERIODS = [7, 30];
 const { t, locale } = useI18n();

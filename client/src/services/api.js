@@ -330,6 +330,12 @@ export default {
   listOrgs() {
     return apiClient.get('/orgs');
   },
+  downloadCoopReport(id, params = {}) {
+    return apiClient.get(`/orgs/${id}/report`, { params, responseType: 'blob' });
+  },
+  sendCoopReport(id, body = {}) {
+    return apiClient.post(`/orgs/${id}/report/send`, body);
+  },
   remindOrgMembers(id, userIds) {
     return apiClient.post(`/orgs/${id}/remind`, { userIds });
   },

@@ -961,7 +961,7 @@
           "sharing": {
             "title": "Chia sẻ & tổ chức",
             "desc": "Làm việc nhóm bằng chia sẻ từng camera, từng vườn, hoặc bằng tổ chức.",
-            "items": "Chia sẻ camera trong Cài đặt, mục Quản lý Camera; chia sẻ vườn bằng nút \"Chia sẻ\" trên trang vườn.\nVới hợp tác xã hay doanh nghiệp: vào Cài đặt, mục Tổ chức, bấm \"Tạo tổ chức\".\nThêm thành viên theo email với vai trò Chủ sở hữu, Quản lý hoặc Thành viên. Thành viên xem mọi camera và vườn của tổ chức.\nChỉ chủ camera hoặc quản trị viên mới xoá, chia sẻ ra ngoài hay chuyển camera sang tổ chức khác.\nNgười được mời chỉ có quyền khi đã xác nhận email. Ai đã có tài khoản mà chưa xác nhận hiện \"Chưa xác nhận\": bấm \"Nhắc xác nhận\" để gửi lại email xác nhận (tối đa 3 lần mỗi ngày). Quản trị viên cũng có thể xác nhận hộ trong Cài đặt, mục Người dùng.\n\"Mời nhiều người\" trong mục Tổ chức: dán danh sách email hoặc chọn file CSV để mời cả hợp tác xã một lần (tối đa 50 địa chỉ mỗi lần), kèm kết quả từng địa chỉ.\n\"Tổng quan hợp tác xã\" (Vườn & lô, cho chủ và quản lý tổ chức): mỗi hộ một dòng với số ruồi/bẫy/ngày so với kỳ trước, bẫy chạm ngưỡng, camera không gửi ảnh và lần phun gần nhất; hộ có bẫy chạm ngưỡng mà chưa ghi biện pháp được đưa lên đầu để đi thăm vườn. Xuất được ra Excel.\nNút \"Nhắc\" (hoặc \"Nhắc các hộ cần thăm\") gửi lời nhắc kiểm tra bẫy và ghi nhật ký tới hộ đó, qua thông báo, email và Telegram; mỗi hộ tối đa một lần mỗi ngày. Sáng thứ Hai, chủ và quản lý tổ chức nhận danh sách hộ cần thăm vườn (tắt trong Cài đặt, Thông báo)."
+            "items": "Chia sẻ camera trong Cài đặt, mục Quản lý Camera; chia sẻ vườn bằng nút \"Chia sẻ\" trên trang vườn.\nVới hợp tác xã hay doanh nghiệp: vào Cài đặt, mục Tổ chức, bấm \"Tạo tổ chức\".\nThêm thành viên theo email với vai trò Chủ sở hữu, Quản lý hoặc Thành viên. Thành viên xem mọi camera và vườn của tổ chức.\nChỉ chủ camera hoặc quản trị viên mới xoá, chia sẻ ra ngoài hay chuyển camera sang tổ chức khác.\nNgười được mời chỉ có quyền khi đã xác nhận email. Ai đã có tài khoản mà chưa xác nhận hiện \"Chưa xác nhận\": bấm \"Nhắc xác nhận\" để gửi lại email xác nhận (tối đa 3 lần mỗi ngày). Quản trị viên cũng có thể xác nhận hộ trong Cài đặt, mục Người dùng.\n\"Mời nhiều người\" trong mục Tổ chức: dán danh sách email hoặc chọn file CSV để mời cả hợp tác xã một lần (tối đa 50 địa chỉ mỗi lần), kèm kết quả từng địa chỉ.\n\"Tổng quan hợp tác xã\" (Vườn & lô, cho chủ và quản lý tổ chức): mỗi hộ một dòng với số ruồi/bẫy/ngày so với kỳ trước, bẫy chạm ngưỡng, camera không gửi ảnh và lần phun gần nhất; hộ có bẫy chạm ngưỡng mà chưa ghi biện pháp được đưa lên đầu để đi thăm vườn. Xuất được ra Excel.\nNút \"Nhắc\" (hoặc \"Nhắc các hộ cần thăm\") gửi lời nhắc kiểm tra bẫy và ghi nhật ký tới hộ đó, qua thông báo, email và Telegram; mỗi hộ tối đa một lần mỗi ngày. Sáng thứ Hai, chủ và quản lý tổ chức nhận danh sách hộ cần thăm vườn (tắt trong Cài đặt, Thông báo).\n\"Báo cáo hợp tác xã (PDF)\" cuối thẻ Tổng quan hợp tác xã: chọn khoảng thời gian rồi tải về hoặc gửi email, gồm xếp hạng các hộ, ruồi/bẫy/ngày theo tháng, hiệu quả theo hoạt chất và sổ ghi chép xử lý của cả hợp tác xã."
           },
           "log": {
             "title": "Nhật ký xử lý & VietGAP",
@@ -1859,7 +1859,8 @@
         "member_reminded": "Nhắc thành viên xác nhận email",
         "cameras_changed": "Chuyển camera",
         "members_added": "Mời nhiều thành viên",
-        "log_reminded": "Nhắc ghi nhật ký"
+        "log_reminded": "Nhắc ghi nhật ký",
+        "report_sent": "Gửi báo cáo hợp tác xã"
       },
       "integration": {
         "key_created": "Tạo API key",
@@ -2560,6 +2561,11 @@
     "remind": "Nhắc",
     "remindAll": "Nhắc {count} hộ cần thăm",
     "reminded": "Đã gửi lời nhắc tới {count} hộ.",
-    "alreadyReminded": "{count} hộ đã được nhắc hôm nay."
+    "alreadyReminded": "{count} hộ đã được nhắc hôm nay.",
+    "report": {
+      "title": "Báo cáo hợp tác xã (PDF)",
+      "desc": "Cho ban quản lý: ruồi/bẫy/ngày từng hộ so với kỳ trước và xếp hạng, theo tháng, hiệu quả theo hoạt chất và sổ ghi chép xử lý của các hộ.",
+      "sent": "Đang gửi báo cáo hợp tác xã tới email của bạn."
+    }
   }
 }

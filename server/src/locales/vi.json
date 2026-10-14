@@ -547,5 +547,41 @@
       "operator": "Người thực hiện",
       "phi": "Cách ly (ngày)"
     }
+  },
+  "coop": {
+    "title": "Báo cáo hợp tác xã {org}: {from} – {to}",
+    "subtitle": "{owner} · {members} hộ có bẫy · {traps} bẫy · {days} ngày · FlyBot lập ngày {date}",
+    "summary": "Cả hợp tác xã: {ftd} ruồi/bẫy/ngày (kỳ trước {previous}, {change}); {treatments} lần xử lý được ghi.",
+    "membersTitle": "1. Các hộ thành viên (nhiều ruồi nhất trước)",
+    "monthsTitle": "2. Ruồi/bẫy/ngày theo tháng",
+    "ingredientsTitle": "3. Hiệu quả theo hoạt chất (mọi hộ)",
+    "recordTitle": "Phụ lục: sổ ghi chép xử lý của các hộ (VietGAP)",
+    "usesValue": "{uses} lần ({measured} đo được)",
+    "noTreatments": "Không có lần xử lý nào ghi tên thuốc hoặc hoạt chất trong kỳ.",
+    "footer": "FlyBot · ruồi/bẫy/ngày: số ruồi mới vào bẫy mỗi ngày chia cho số bẫy có số liệu; hiệu quả xử lý so 7 ngày trước và sau.",
+    "emailSubject": "Báo cáo hợp tác xã {org}: {from} – {to}",
+    "emailIntro": "Báo cáo hợp tác xã {org} từ {from} đến {to} cho {members} hộ có bẫy: ruồi/bẫy/ngày từng hộ so với kỳ trước, theo tháng, hiệu quả theo hoạt chất và sổ ghi chép xử lý của các hộ.",
+    "col": {
+      "member": "Hộ thành viên",
+      "traps": "Số bẫy",
+      "ftd": "Ruồi/bẫy/ngày",
+      "previous": "Kỳ trước",
+      "change": "Thay đổi",
+      "treatments": "Lần xử lý",
+      "lastTreatment": "Lần gần nhất",
+      "month": "Tháng",
+      "ingredient": "Hoạt chất",
+      "products": "Tên thuốc",
+      "uses": "Số lần dùng",
+      "avgChange": "Thay đổi trung bình",
+      "clearlyWorked": "Giảm rõ (từ 30%)",
+      "date": "Ngày giờ",
+      "trapsList": "Bẫy",
+      "type": "Biện pháp",
+      "product": "Tên thuốc / vật tư",
+      "dose": "Liều lượng",
+      "operator": "Người thực hiện",
+      "phi": "Cách ly (ngày)"
+    }
   }
 }

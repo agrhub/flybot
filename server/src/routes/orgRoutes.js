@@ -3,13 +3,15 @@ const router = express.Router();
 const orgController = require('../controllers/orgController');
 const { authenticate, requireRole } = require('../middlewares/auth');
 const { requireStringFields } = require('../middlewares/validate');
-const { shareLimiter, analyticsLimiter } = require('../middlewares/rateLimit');
+const { shareLimiter, analyticsLimiter, reportSendLimiter } = require('../middlewares/rateLimit');
 
 router.use(authenticate, requireStringFields);
 
 router.get('/', orgController.listOrgs);
 router.get('/:id/overview', analyticsLimiter, orgController.getOverview);
 router.post('/:id/remind', shareLimiter, orgController.remindLog);
+router.get('/:id/report', analyticsLimiter, orgController.downloadReport);
+router.post('/:id/report/send', reportSendLimiter, orgController.sendReport);
 // Viewers (role "user") join organizations but do not create them
 router.post('/', requireRole('admin', 'manager'), orgController.createOrg);
 router.put('/:id', orgController.updateOrg);
