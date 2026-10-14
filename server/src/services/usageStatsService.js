@@ -65,21 +65,22 @@ async function usageStats(now = new Date()) {
         ])
     ]);
 
-    // Twelve weeks, the oldest first, each ending at the same time of day as now
-    const weeks = [];
-    for (let i = WEEKS - 1; i >= 0; i--) {
-        const until = new Date(now.getTime() - i * 7 * DAY_MS);
+    // Twelve weeks, the oldest first, each ending at the same time of day as now. All weeks run
+    // at once (each week was a separate round-trip, so the series was as slow as twelve in a row).
+    const weeks = await Promise.all(Array.from({ length: WEEKS }, (_, k) => {
+        const until = new Date(now.getTime() - (WEEKS - 1 - k) * 7 * DAY_MS);
         const since = new Date(until.getTime() - 7 * DAY_MS);
-        const [people, logged, scans] = await Promise.all([
+        return Promise.all([
             activeUsers(since, until),
             Treatment.countDocuments({ createdAt: { $gte: since, $lt: until } }),
             DailyStat.aggregate([
                 { $match: { day: { $gte: dailyStats.dayKeyOf(since), $lt: dailyStats.dayKeyOf(until) } } },
                 { $group: { _id: null, n: { $sum: '$scans' } } }
             ])
-        ]);
-        weeks.push({ from: dailyStats.dayKeyOf(since), activeUsers: people, treatments: logged, photos: scans[0]?.n || 0 });
-    }
+        ]).then(([people, logged, scans]) => ({
+            from: dailyStats.dayKeyOf(since), activeUsers: people, treatments: logged, photos: scans[0]?.n || 0
+        }));
+    }));
 
     return {
         generatedAt: now.toISOString(),
