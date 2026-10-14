@@ -96,11 +96,12 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, h, defineComponent } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { ElMessage, ElTag } from 'element-plus';
+import { ElMessage } from 'element-plus';
 import { Download, Bell } from '@element-plus/icons-vue';
 import api from '@/services/api';
+import ChangeTag from '@/components/common/ChangeTag.vue';
 import { useBreakpoints } from '@/composables/useBreakpoints';
 import { requestErrorText } from '@/utils/requestError';
 import { orgOverviewSheets, downloadSheets } from '@/utils/tableExport';
@@ -117,18 +118,6 @@ const overview = ref(null);
 const loading = ref(false);
 const members = computed(() => overview.value?.members || []);
 const totals = computed(() => overview.value?.totals || {});
-
-// Fewer flies than the period before is good news
-const ChangeTag = defineComponent({
-  props: { pct: { type: Number, default: null } },
-  setup(props) {
-    return () => {
-      if (props.pct === null) return h('span', { class: 'cmp-meta' }, '--');
-      const type = props.pct <= -10 ? 'success' : props.pct >= 10 ? 'danger' : 'info';
-      return h(ElTag, { type, effect: 'light', round: true, size: 'small' }, () => `${props.pct > 0 ? '+' : ''}${props.pct}%`);
-    };
-  }
-});
 
 const lastTreatmentText = (m) => {
   if (!m.lastTreatmentAt) return t('orgOverview.neverTreated');

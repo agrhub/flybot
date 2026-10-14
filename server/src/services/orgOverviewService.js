@@ -3,7 +3,7 @@ const catchStats = require('./catchStats');
 const { latestProcessedByCamera, latestSnapshotTimeByCamera } = require('./snapshotQueries');
 const { thresholdOf } = require('../constants/risk');
 const { isSticky } = require('../constants/trap');
-const { ftdOf } = require('./farmCompareService');
+const { ftdOver: ftdOf, ftdChange: change } = catchStats;
 const { countPests } = require('./notificationService');
 
 /**
@@ -16,7 +16,6 @@ const PERIODS = [7, 30];
 const DEFAULT_PERIOD = 7;
 const SILENT_MS = 24 * 60 * 60 * 1000;
 
-const change = (current, previous) => (current === null || previous === null || previous === 0 ? null : Math.round(((current - previous) / previous) * 100));
 
 async function orgOverview(org, days = DEFAULT_PERIOD, now = new Date()) {
     const period = PERIODS.includes(days) ? days : DEFAULT_PERIOD;

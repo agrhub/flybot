@@ -1,6 +1,8 @@
 const { Farm, Plot, Camera, Treatment } = require('../models');
 const catchStats = require('./catchStats');
 
+const { ftdOver: ftdOf, ftdChange: change } = catchStats;
+
 /**
  * Farms side by side (and the plots inside each), for a cooperative that follows several
  * growers: flies per trap per day (FTD) over a period against the period before, its daily
@@ -9,26 +11,6 @@ const catchStats = require('./catchStats');
  */
 const PERIODS = [7, 30, 90];
 const DEFAULT_PERIOD = 30;
-
-const round1 = (n) => Math.round(n * 10) / 10;
-const change = (current, previous) => (current === null || previous === null || previous === 0 ? null : Math.round(((current - previous) / previous) * 100));
-
-/** FTD of some cameras over some days (unknown days left out). */
-function ftdOf(serials, cameras, dayKeys) {
-    let total = 0;
-    let trapDays = 0;
-    for (const serial of serials) {
-        const byDay = cameras.get(serial)?.total;
-        if (!byDay) continue;
-        for (const day of dayKeys) {
-            const v = byDay.get(day);
-            if (v === null || v === undefined) continue;
-            total += v;
-            trapDays++;
-        }
-    }
-    return { ftd: trapDays ? round1(total / trapDays) : null, total: round1(total), trapDays };
-}
 
 /**
  * @param farms   farms the viewer can see (lean documents)
@@ -99,6 +81,5 @@ async function compareFarms(farms, visible, days = DEFAULT_PERIOD, now = new Dat
 module.exports = {
     PERIODS,
     DEFAULT_PERIOD,
-    ftdOf,
     compareFarms
 };

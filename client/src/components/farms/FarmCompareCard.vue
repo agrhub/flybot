@@ -89,10 +89,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, h, defineComponent } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { ElMessage, ElTag } from 'element-plus';
+import { ElMessage } from 'element-plus';
 import api from '@/services/api';
+import ChangeTag from '@/components/common/ChangeTag.vue';
 import { useBreakpoints } from '@/composables/useBreakpoints';
 import { requestErrorText } from '@/utils/requestError';
 import CatchBarChart from '@/components/charts/CatchBarChart.vue';
@@ -121,18 +122,6 @@ const series = computed(() => withTraps.value.slice(0, MAX_LINES).map((farm, i) 
   type: 'line',
   color: cssVar(LINE_COLORS[i]) || undefined
 })));
-
-// Change against the period before: fewer flies is good news
-const ChangeTag = defineComponent({
-  props: { pct: { type: Number, default: null } },
-  setup(props) {
-    return () => {
-      if (props.pct === null) return h('span', { class: 'cmp-meta' }, '--');
-      const type = props.pct <= -10 ? 'success' : props.pct >= 10 ? 'danger' : 'info';
-      return h(ElTag, { type, effect: 'light', round: true, size: 'small' }, () => `${props.pct > 0 ? '+' : ''}${props.pct}%`);
-    };
-  }
-});
 
 const load = async () => {
   loading.value = true;

@@ -1,6 +1,7 @@
 const { Treatment, Camera, User } = require('../models');
 const { getViewableSerials } = require('../utils/ownership');
 const notificationService = require('./notificationService');
+const { FARM_OFFSET_MS, farmDateTime } = require('../utils/farmTime');
 
 /**
  * Pre-harvest intervals (PHI) of the logged treatments: which areas cannot be harvested yet,
@@ -8,8 +9,6 @@ const notificationService = require('./notificationService');
  */
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-// Farm time (UTC+7, no daylight saving)
-const FARM_OFFSET_MS = 7 * 60 * 60 * 1000;
 // The longest interval accepted when logging a treatment
 const MAX_PHI_DAYS = 365;
 // A reminder that could not go out (server down) is still sent this long after the date
@@ -21,12 +20,6 @@ function harvestAllowedFrom(treatment) {
     return new Date(new Date(treatment.at).getTime() + treatment.preHarvestDays * DAY_MS);
 }
 
-const pad = (n) => String(n).padStart(2, '0');
-/** dd/mm/yyyy hh:mm in farm time */
-function farmDateTime(date) {
-    const d = new Date(new Date(date).getTime() + FARM_OFFSET_MS);
-    return `${pad(d.getUTCDate())}/${pad(d.getUTCMonth() + 1)}/${d.getUTCFullYear()} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`;
-}
 
 /** The end of the farm day `now` falls in. */
 function endOfFarmDay(now) {

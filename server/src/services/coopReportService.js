@@ -1,11 +1,8 @@
-const { jsPDF } = require('jspdf');
-const { autoTable } = require('jspdf-autotable');
-// Same Vietnamese-capable font as the report PDFs
-const { addQuicksandFonts } = require('../../../client/src/utils/pdfFonts.js');
 const { Camera, Treatment, User } = require('../models');
 const { translate, normalizeLanguage } = require('../utils/i18n');
 const catchStats = require('./catchStats');
 const treatmentService = require('./treatmentService');
+const { FARM_OFFSET_MS, dayMonthYear, farmDateTime, createReport } = require('./reportPdfKit');
 
 /**
  * Cooperative report for its board: over a chosen period, every member's traps with flies per
@@ -13,38 +10,11 @@ const treatmentService = require('./treatmentService');
  * active ingredients worked across all members, and the treatment record as an appendix.
  * The period is parsed like the season report's (services/seasonReportService.parsePeriod).
  */
-const FARM_OFFSET_MS = 7 * 60 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
-const BRAND = [16, 185, 129];
-const TEXT = [60, 60, 60];
-const MUTED = [120, 120, 120];
-const MARGIN = 12;
-const round1 = (n) => Math.round(n * 10) / 10;
-const change = (current, previous) => (current === null || previous === null || previous === 0 ? null : Math.round(((current - previous) / previous) * 100));
-
-const dayMonthYear = (key) => `${key.slice(8, 10)}/${key.slice(5, 7)}/${key.slice(0, 4)}`;
-const farmDateTime = (date) => {
-    const d = new Date(new Date(date).getTime() + FARM_OFFSET_MS);
-    const pad = (n) => String(n).padStart(2, '0');
-    return `${pad(d.getUTCDate())}/${pad(d.getUTCMonth() + 1)}/${d.getUTCFullYear()} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`;
-};
+const change = catchStats.ftdChange;
 
 /** FTD of some cameras over some days; null without data. */
-function ftdOf(serials, catches, dayKeys) {
-    let total = 0;
-    let trapDays = 0;
-    for (const serial of serials) {
-        const byDay = catches.get(serial)?.total;
-        if (!byDay) continue;
-        for (const day of dayKeys) {
-            const v = byDay.get(day);
-            if (v === null || v === undefined) continue;
-            total += v;
-            trapDays++;
-        }
-    }
-    return trapDays ? round1(total / trapDays) : null;
-}
+const ftdOf = (serials, catches, dayKeys) => catchStats.ftdOver(serials, catches, dayKeys).ftd;
 
 /** Everything the report shows, for one organization and period. */
 async function coopData(org, period) {
@@ -112,45 +82,12 @@ async function coopData(org, period) {
 function buildCoopPdf(data, { language, owner, generatedAt = new Date() }) {
     const lang = normalizeLanguage(language);
     const t = (key, params) => translate(lang, `coop.${key}`, params);
-    const doc = new jsPDF({ orientation: 'l', unit: 'mm', format: 'a4', putOnlyUsedFonts: true });
-    addQuicksandFonts(doc);
-    const table = (startY, head, body, extra = {}) => autoTable(doc, {
-        startY,
-        margin: { left: MARGIN, right: MARGIN, bottom: 14 },
-        head: [head],
-        body,
-        theme: 'grid',
-        styles: { font: 'Quicksand', fontSize: 8.5, valign: 'middle', textColor: TEXT, cellPadding: 1.8 },
-        headStyles: { fillColor: BRAND, textColor: [255, 255, 255], fontStyle: 'bold' },
-        didDrawPage: () => {
-            const h = doc.internal.pageSize.getHeight();
-            doc.setFontSize(7.5);
-            doc.setTextColor(...MUTED);
-            doc.text(t('footer'), MARGIN, h - 7);
-        },
-        ...extra
-    });
-    const heading = (text, y) => {
-        doc.setFont('Quicksand', 'bold');
-        doc.setFontSize(12);
-        doc.setTextColor(...TEXT);
-        doc.text(text, MARGIN, y);
-        doc.setFont('Quicksand', 'normal');
-        return y + 3;
-    };
-    const after = () => doc.lastAutoTable.finalY + 10;
-    const value = (v) => (v === null || v === undefined ? '--' : String(v));
+    const { doc, table, heading, title, note, after, value, pdf } = createReport(t('footer'));
     const pct = (v) => (v === null || v === undefined ? '--' : `${v > 0 ? '+' : ''}${v}%`);
-
-    doc.setFont('Quicksand', 'bold');
-    doc.setFontSize(16);
-    doc.setTextColor(...TEXT);
-    doc.text(t('title', { org: data.org.name, from: dayMonthYear(data.period.fromKey), to: dayMonthYear(data.period.toKey) }), MARGIN, 16);
-    doc.setFont('Quicksand', 'normal');
-    doc.setFontSize(9);
-    doc.setTextColor(...MUTED);
-    doc.text(t('subtitle', { owner, members: data.members.length, traps: data.totals.traps, days: data.period.days, date: farmDateTime(generatedAt) }), MARGIN, 22);
-    doc.text(t('summary', { ftd: value(data.totals.ftd), previous: value(data.totals.ftdPrevious), change: pct(data.totals.change), treatments: data.totals.treatments }), MARGIN, 27);
+    title(t('title', { org: data.org.name, from: dayMonthYear(data.period.fromKey), to: dayMonthYear(data.period.toKey) }), [
+        t('subtitle', { owner, members: data.members.length, traps: data.totals.traps, days: data.period.days, date: farmDateTime(generatedAt) }),
+        t('summary', { ftd: value(data.totals.ftd), previous: value(data.totals.ftdPrevious), change: pct(data.totals.change), treatments: data.totals.treatments })
+    ]);
 
     // 1. Members, the busiest first
     let y = heading(t('membersTitle'), 36);
@@ -172,9 +109,7 @@ function buildCoopPdf(data, { language, owner, generatedAt = new Date() }) {
         table(y, [t('col.ingredient'), t('col.products'), t('col.uses'), t('col.avgChange'), t('col.clearlyWorked')],
             data.ingredients.map(g => [g.name, g.products.join(', ') || '--', t('usesValue', { uses: g.uses, measured: g.measured }), pct(g.avgChangePct), g.measured ? `${g.effective}/${g.measured}` : '--']));
     } else {
-        doc.setFontSize(9);
-        doc.setTextColor(...MUTED);
-        doc.text(t('noTreatments'), MARGIN, y + 4);
+        note(t('noTreatments'), y + 4);
     }
 
     // Appendix: the treatment record of every member
@@ -187,9 +122,9 @@ function buildCoopPdf(data, { language, owner, generatedAt = new Date() }) {
                 translate(lang, `vietgap.types.${r.type}`), r.product || '', r.activeIngredient || '', r.dose || '',
                 r.operator || r.createdByEmail || '', Number.isInteger(r.preHarvestDays) ? String(r.preHarvestDays) : ''
             ]),
-            { styles: { font: 'Quicksand', fontSize: 7.5, valign: 'middle', textColor: TEXT, cellPadding: 1.5 }, columnStyles: { 0: { cellWidth: 8, halign: 'center' }, 1: { cellWidth: 26 }, 9: { cellWidth: 14, halign: 'center' } } });
+            { styles: { font: 'Quicksand', fontSize: 7.5, valign: 'middle', cellPadding: 1.5 }, columnStyles: { 0: { cellWidth: 8, halign: 'center' }, 1: { cellWidth: 26 }, 9: { cellWidth: 14, halign: 'center' } } });
     }
-    return Buffer.from(doc.output('arraybuffer'));
+    return pdf();
 }
 
 module.exports = {
