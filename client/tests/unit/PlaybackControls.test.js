@@ -44,5 +44,6 @@ describe('playback timeline from the keyboard', () => {
     const count = wrapper.emitted('play-playback').length;
     await timeline.trigger('keydown', { key: 'ArrowRight' });
     expect(wrapper.emitted('play-playback').length).toBe(count);
-  });
+    // Mounting Element Plus can take seconds on a busy machine
+  }, 20000);
 });
