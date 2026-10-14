@@ -74,6 +74,8 @@ const BITRATE = Number(process.env.FLYBOT_VIDEO_BITRATE) || 8000000;
 // FLYBOT_POSTER_ONLY=1: only the still frame, no recording
 const POSTER_ONLY = process.env.FLYBOT_POSTER_ONLY === '1';
 
+// Drawing and encoding the whole tour is one long call
+process.env.FLYBOT_CDP_TIMEOUT ||= String(15 * 60 * 1000);
 const page = await launch();
 try {
     // Laid out at 1280x720 and drawn at SCALE (1.5 = 1920x1080); sharp with shots taken at FLYBOT_SHOT_SCALE=2

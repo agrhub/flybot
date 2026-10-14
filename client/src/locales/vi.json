@@ -759,11 +759,23 @@
           "cancelled": "Đã hủy",
           "failed": "Không ghi được",
           "running": "Đang ghi..."
-        }
+        },
+        "area": "Khu vực:",
+        "preHarvest": "Cách ly:",
+        "days": "{count} ngày"
       }
     },
     "askAboutPhoto": "Hỏi trợ lý về ảnh này",
-    "photoQuestion": "Xem giúp ảnh này: có những gì, số đếm có đúng không, ảnh có vấn đề gì không?"
+    "photoQuestion": "Xem giúp ảnh này: có những gì, số đếm có đúng không, ảnh có vấn đề gì không?",
+    "voice": {
+      "start": "Nói thay vì gõ",
+      "stop": "Dừng nghe",
+      "errors": {
+        "denied": "Trình duyệt chưa được phép dùng micro. Hãy cho phép micro cho trang này rồi thử lại.",
+        "no-speech": "Không nghe thấy gì. Bấm micro rồi nói lại.",
+        "failed": "Không nhận dạng được giọng nói lúc này."
+      }
+    }
   },
   "home": {
     "tagline": "BẪY DÍNH THÔNG MINH & AI ĐẾM CÔN TRÙNG",
@@ -949,12 +961,12 @@
           "sharing": {
             "title": "Chia sẻ & tổ chức",
             "desc": "Làm việc nhóm bằng chia sẻ từng camera, từng vườn, hoặc bằng tổ chức.",
-            "items": "Chia sẻ camera trong Cài đặt, mục Quản lý Camera; chia sẻ vườn bằng nút \"Chia sẻ\" trên trang vườn.\nVới hợp tác xã hay doanh nghiệp: vào Cài đặt, mục Tổ chức, bấm \"Tạo tổ chức\".\nThêm thành viên theo email với vai trò Chủ sở hữu, Quản lý hoặc Thành viên. Thành viên xem mọi camera và vườn của tổ chức.\nChỉ chủ camera hoặc quản trị viên mới xoá, chia sẻ ra ngoài hay chuyển camera sang tổ chức khác.\nNgười được mời chỉ có quyền khi đã xác nhận email. Ai đã có tài khoản mà chưa xác nhận hiện \"Chưa xác nhận\": bấm \"Nhắc xác nhận\" để gửi lại email xác nhận (tối đa 3 lần mỗi ngày). Quản trị viên cũng có thể xác nhận hộ trong Cài đặt, mục Người dùng.\n\"Mời nhiều người\" trong mục Tổ chức: dán danh sách email hoặc chọn file CSV để mời cả hợp tác xã một lần (tối đa 50 địa chỉ mỗi lần), kèm kết quả từng địa chỉ."
+            "items": "Chia sẻ camera trong Cài đặt, mục Quản lý Camera; chia sẻ vườn bằng nút \"Chia sẻ\" trên trang vườn.\nVới hợp tác xã hay doanh nghiệp: vào Cài đặt, mục Tổ chức, bấm \"Tạo tổ chức\".\nThêm thành viên theo email với vai trò Chủ sở hữu, Quản lý hoặc Thành viên. Thành viên xem mọi camera và vườn của tổ chức.\nChỉ chủ camera hoặc quản trị viên mới xoá, chia sẻ ra ngoài hay chuyển camera sang tổ chức khác.\nNgười được mời chỉ có quyền khi đã xác nhận email. Ai đã có tài khoản mà chưa xác nhận hiện \"Chưa xác nhận\": bấm \"Nhắc xác nhận\" để gửi lại email xác nhận (tối đa 3 lần mỗi ngày). Quản trị viên cũng có thể xác nhận hộ trong Cài đặt, mục Người dùng.\n\"Mời nhiều người\" trong mục Tổ chức: dán danh sách email hoặc chọn file CSV để mời cả hợp tác xã một lần (tối đa 50 địa chỉ mỗi lần), kèm kết quả từng địa chỉ.\n\"Tổng quan hợp tác xã\" (Vườn & lô, cho chủ và quản lý tổ chức): mỗi hộ một dòng với số ruồi/bẫy/ngày so với kỳ trước, bẫy chạm ngưỡng, camera không gửi ảnh và lần phun gần nhất; hộ có bẫy chạm ngưỡng mà chưa ghi biện pháp được đưa lên đầu để đi thăm vườn. Xuất được ra Excel.\nNút \"Nhắc\" (hoặc \"Nhắc các hộ cần thăm\") gửi lời nhắc kiểm tra bẫy và ghi nhật ký tới hộ đó, qua thông báo, email và Telegram; mỗi hộ tối đa một lần mỗi ngày. Sáng thứ Hai, chủ và quản lý tổ chức nhận danh sách hộ cần thăm vườn (tắt trong Cài đặt, Thông báo).\n\"Báo cáo hợp tác xã (PDF)\" cuối thẻ Tổng quan hợp tác xã: chọn khoảng thời gian rồi tải về hoặc gửi email, gồm xếp hạng các hộ, ruồi/bẫy/ngày theo tháng, hiệu quả theo hoạt chất và sổ ghi chép xử lý của cả hợp tác xã."
           },
           "log": {
             "title": "Nhật ký xử lý & VietGAP",
             "desc": "Ghi lại mọi biện pháp đã làm và xem hiệu quả trên số ruồi vào bẫy.",
-            "items": "Vào \"Nhật ký vườn\", bấm \"Ghi nhận xử lý\".\nChọn biện pháp: phun thuốc, bả protein, mồi, sinh học, vệ sinh vườn, bao trái hoặc khác; chọn bẫy trong khu vực xử lý.\nNhập tên thuốc, hoạt chất, liều lượng, người thực hiện và thời gian cách ly.\nCột \"Hiệu quả\" so số bắt trung bình trước và sau xử lý; cột \"Thu hoạch\" báo khi đã qua thời gian cách ly.\nBấm \"Xuất sổ VietGAP\" để lưu sổ ghi chép sử dụng thuốc.\nTổng quan báo các khu vực đang trong thời gian cách ly; sáng ngày hết cách ly, FlyBot gửi thông báo \"Được thu hoạch\" qua ứng dụng, email và Telegram.\nBảng \"Hiệu quả theo hoạt chất\" dưới danh sách gom mọi lần dùng cùng một hoạt chất, cho biết trung bình số ruồi giảm bao nhiêu sau khi xử lý, để chọn thuốc hợp với vườn mình."
+            "items": "Vào \"Nhật ký vườn\", bấm \"Ghi nhận xử lý\".\nChọn biện pháp: phun thuốc, bả protein, mồi, sinh học, vệ sinh vườn, bao trái hoặc khác; chọn bẫy trong khu vực xử lý.\nNhập tên thuốc, hoạt chất, liều lượng, người thực hiện và thời gian cách ly.\nCột \"Hiệu quả\" so số bắt trung bình trước và sau xử lý; cột \"Thu hoạch\" báo khi đã qua thời gian cách ly.\nBấm \"Xuất sổ VietGAP\" để lưu sổ ghi chép sử dụng thuốc.\nTổng quan báo các khu vực đang trong thời gian cách ly; sáng ngày hết cách ly, FlyBot gửi thông báo \"Được thu hoạch\" qua ứng dụng, email và Telegram.\nBảng \"Hiệu quả theo hoạt chất\" dưới danh sách gom mọi lần dùng cùng một hoạt chất, cho biết trung bình số ruồi giảm bao nhiêu sau khi xử lý, để chọn thuốc hợp với vườn mình.\nNhật ký giấy hoặc trên Excel: \"Nhập từ file\" đọc file .xlsx hoặc .csv (có file mẫu), kiểm tra từng dòng và cho xem trước; dòng đã có trong nhật ký được bỏ qua."
           }
         }
       },
@@ -999,7 +1011,7 @@
           "confirm": {
             "title": "Ghi nhận cần bạn xác nhận",
             "desc": "Trợ lý chuẩn bị, bạn quyết định.",
-            "items": "Nói \"Tôi đã thay tấm keo bẫy xoài A1\" hoặc \"Ghi lần phun Abamectin ở lô A sáng nay\".\nTrợ lý hiện một thẻ với đầy đủ thông tin; chỉ khi bạn bấm \"Xác nhận\" thì mới được ghi vào hệ thống, bấm \"Hủy\" để bỏ.\nThông tin được kiểm tra như khi nhập bằng form (quyền với camera, ngày, tên thuốc khi phun); mỗi thẻ chỉ dùng được một lần."
+            "items": "Nói \"Tôi đã thay tấm keo bẫy xoài A1\" hoặc \"Ghi lần phun Abamectin ở lô A sáng nay\".\nTrợ lý hiện một thẻ với đầy đủ thông tin; chỉ khi bạn bấm \"Xác nhận\" thì mới được ghi vào hệ thống, bấm \"Hủy\" để bỏ.\nThông tin được kiểm tra như khi nhập bằng form (quyền với camera, ngày, tên thuốc khi phun); mỗi thẻ chỉ dùng được một lần.\nGhi nhật ký bằng giọng nói: bấm micro trong ô trợ lý và nói, ví dụ \"sáng nay phun Radiant cho lô xoài A, cách ly 7 ngày\"; trợ lý điền sẵn thẻ ghi nhận (thuốc, bẫy của lô, thời gian cách ly) để bấm Xác nhận. Giọng nói do trình duyệt chuyển thành chữ (Chrome và Edge dùng máy chủ của hãng)."
           }
         }
       },
@@ -1280,6 +1292,14 @@
       "weather_risk": {
         "title": "Thời tiết thuận lợi cho ruồi vàng",
         "desc": "{farmName}: {days}, {minTemp}–{maxTemp}°C, ẩm đến {humidity}%; đợt ruồi mới khoảng {waveDate}."
+      },
+      "log_reminder": {
+        "title": "Nhắc ghi nhật ký",
+        "desc": "{sender} ({orgName}): {atThreshold}/{cameras} bẫy chạm ngưỡng, 7 ngày chưa ghi biện pháp."
+      },
+      "org_digest": {
+        "title": "Hộ cần thăm vườn",
+        "desc": "{orgName}: {count} hộ có bẫy chạm ngưỡng mà chưa ghi biện pháp: {names}."
       }
     }
   },
@@ -1473,7 +1493,8 @@
         "morningBriefs": "Bản tin sáng",
         "vietgapMonthly": "Sổ VietGAP hằng tháng",
         "harvestReminders": "Nhắc hết cách ly",
-        "weatherAlerts": "Cảnh báo thời tiết"
+        "weatherAlerts": "Cảnh báo thời tiết",
+        "orgDigests": "Hộ cần thăm vườn"
       },
       "jobSchedules": {
         "capture": "Mỗi 5 phút",
@@ -1489,7 +1510,8 @@
         "morningBriefs": "Hằng ngày, 6:30",
         "vietgapMonthly": "Hằng tháng, ngày 1 lúc 7:00",
         "harvestReminders": "Hằng ngày lúc 6:00",
-        "weatherAlerts": "Hằng ngày lúc 17:00"
+        "weatherAlerts": "Hằng ngày lúc 17:00",
+        "orgDigests": "Thứ Hai, 7:00"
       },
       "results": {
         "cameras": "{n} camera",
@@ -1817,7 +1839,8 @@
       "treatment": {
         "created": "Ghi nhận xử lý",
         "updated": "Sửa lần xử lý",
-        "deleted": "Xoá lần xử lý"
+        "deleted": "Xoá lần xử lý",
+        "imported": "Nhập nhật ký từ file"
       },
       "farm": {
         "created": "Tạo vườn",
@@ -1835,7 +1858,9 @@
         "member_removed": "Gỡ thành viên",
         "member_reminded": "Nhắc thành viên xác nhận email",
         "cameras_changed": "Chuyển camera",
-        "members_added": "Mời nhiều thành viên"
+        "members_added": "Mời nhiều thành viên",
+        "log_reminded": "Nhắc ghi nhật ký",
+        "report_sent": "Gửi báo cáo hợp tác xã"
       },
       "integration": {
         "key_created": "Tạo API key",
@@ -2012,6 +2037,62 @@
       "products": "Tên thuốc",
       "measured": "Số lần đo được",
       "avgChangePct": "Thay đổi trung bình (%)"
+    },
+    "import": {
+      "open": "Nhập từ file",
+      "title": "Nhập nhật ký từ file Excel hoặc CSV",
+      "step1": "Tải file mẫu, hoặc dùng file của anh/chị: dòng đầu là tên cột (Ngày, Biện pháp, Bẫy là bắt buộc).",
+      "step2": "Mỗi dòng một lần làm. Bẫy ghi theo tên hoặc mã camera, nhiều bẫy cách nhau bởi dấu phẩy; ngày dạng 13/10/2026 hoặc 13/10/2026 06:30.",
+      "step3": "Chọn file: FlyBot kiểm tra từng dòng và cho xem trước; dòng đã có trong nhật ký được bỏ qua. Mỗi lần tối đa 500 dòng.",
+      "template": "Tải file mẫu",
+      "templateFile": "FlyBot_mau_nhat_ky.csv",
+      "pick": "Chọn file (.xlsx, .csv)",
+      "example": "13/10/2026 06:30|Phun thuốc|Bẫy xoài A1, Bẫy xoài A2|Radiant 60SC|Spinetoram|15 ml/bình 16 lít|Lô xoài A|Nguyễn Văn Tư|7|Phun chiều mát",
+      "columns": {
+        "date": "Ngày",
+        "type": "Biện pháp",
+        "cameras": "Bẫy",
+        "product": "Thuốc",
+        "activeIngredient": "Hoạt chất",
+        "dose": "Liều lượng",
+        "area": "Diện tích",
+        "operator": "Người thực hiện",
+        "preHarvestDays": "Cách ly (ngày)",
+        "note": "Ghi chú"
+      },
+      "missingColumns": "File thiếu cột: {columns}.",
+      "truncated": "Chỉ đọc {max} dòng đầu; hãy nhập phần còn lại ở lần sau.",
+      "countReady": "{count} dòng sẵn sàng",
+      "countDuplicate": "{count} dòng đã có",
+      "countError": "{count} dòng lỗi",
+      "line": "Dòng",
+      "result": "Kết quả",
+      "run": "Nhập {count} dòng",
+      "done": "Đã nhập {count} dòng vào nhật ký.",
+      "tooBig": "File quá lớn (tối đa 2 MB).",
+      "unreadable": "Không đọc được file. Hãy dùng file .xlsx hoặc .csv.",
+      "status": {
+        "ready": "Sẵn sàng",
+        "imported": "Đã nhập",
+        "duplicate": "Đã có",
+        "error": "Lỗi"
+      },
+      "problems": {
+        "badDate": "Ngày không hợp lệ: \"{value}\"",
+        "badType": "Biện pháp không rõ: \"{value}\"",
+        "unknownTraps": "Không tìm thấy bẫy: {value}",
+        "noTraps": "Chưa ghi bẫy",
+        "badPhi": "Số ngày cách ly phải là số nguyên: \"{value}\"",
+        "INVALID_TYPE": "Biện pháp không hợp lệ",
+        "INVALID_DATE": "Ngày phải trong vòng một năm qua, không ở tương lai",
+        "INVALID_CAMERAS": "Mỗi dòng từ 1 đến 50 bẫy",
+        "CAMERA_NOT_FOUND": "Có bẫy anh/chị không quản lý",
+        "TEXT_TOO_LONG": "Cột \"{column}\" quá dài",
+        "INVALID_PHI": "Số ngày cách ly từ 0 đến 365",
+        "PRODUCT_REQUIRED": "Phun thuốc cần ghi tên thuốc",
+        "INVALID_ROW": "Dòng không hợp lệ",
+        "DUPLICATE": "Đã có trong nhật ký"
+      }
     }
   },
   "farms": {
@@ -2123,6 +2204,10 @@
     "vietgap": {
       "title": "Sổ VietGAP hằng tháng",
       "desc": "Ngày 1 hằng tháng lúc 7:00: sổ ghi chép sử dụng thuốc BVTV của tháng trước dạng PDF, gửi qua email và Telegram nếu đã liên kết. Tháng không có lần xử lý nào thì không gửi."
+    },
+    "orgDigest": {
+      "title": "Hộ cần thăm vườn (thứ Hai)",
+      "desc": "Cho chủ và quản lý tổ chức: sáng thứ Hai lúc 7:00, danh sách hộ có bẫy chạm ngưỡng mà tuần qua chưa ghi biện pháp nào. Không có hộ nào thì không gửi."
     }
   },
   "degreeDays": {
@@ -2451,5 +2536,36 @@
     "refused": "Không gửi được \"{label}\": {reason}",
     "remove": "Xóa",
     "sent": "Đã gửi {count} mục ghi khi mất sóng. | Đã gửi {count} mục ghi khi mất sóng."
+  },
+  "orgOverview": {
+    "title": "Tổng quan hợp tác xã",
+    "desc": "Từng hộ thành viên: số ruồi/bẫy/ngày so với kỳ trước, bẫy chạm ngưỡng, camera không gửi ảnh, lần phun gần nhất. Hộ có bẫy chạm ngưỡng mà chưa ghi biện pháp nào trong kỳ được đưa lên đầu.",
+    "organization": "Tổ chức",
+    "member": "Hộ thành viên",
+    "name": "Tên",
+    "email": "Email",
+    "ftd": "Ruồi/bẫy/ngày",
+    "cameras": "Bẫy",
+    "atThreshold": "Bẫy chạm ngưỡng",
+    "silent": "Camera không gửi ảnh (1 ngày)",
+    "needsVisit": "Cần thăm vườn",
+    "status": "Tình trạng",
+    "visit": "Cần thăm vườn",
+    "atThresholdCount": "{count} bẫy chạm ngưỡng",
+    "silentCount": "{count} camera không gửi ảnh",
+    "allGood": "Ổn",
+    "noCameras": "Chưa có bẫy",
+    "lastTreatment": "Lần phun gần nhất",
+    "neverTreated": "Chưa ghi biện pháp",
+    "sheetName": "Hợp tác xã {days} ngày",
+    "remind": "Nhắc",
+    "remindAll": "Nhắc {count} hộ cần thăm",
+    "reminded": "Đã gửi lời nhắc tới {count} hộ.",
+    "alreadyReminded": "{count} hộ đã được nhắc hôm nay.",
+    "report": {
+      "title": "Báo cáo hợp tác xã (PDF)",
+      "desc": "Cho ban quản lý: ruồi/bẫy/ngày từng hộ so với kỳ trước và xếp hạng, theo tháng, hiệu quả theo hoạt chất và sổ ghi chép xử lý của các hộ.",
+      "sent": "Đang gửi báo cáo hợp tác xã tới email của bạn."
+    }
   }
 }

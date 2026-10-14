@@ -188,6 +188,17 @@
           :disabled="isThinking"
           class="flex-1"
         />
+        <!-- Say it instead of typing (browsers with speech recognition) -->
+        <el-button
+          v-if="speech.supported"
+          :aria-label="speech.listening.value ? t('assistant.voice.stop') : t('assistant.voice.start')"
+          :title="speech.listening.value ? t('assistant.voice.stop') : t('assistant.voice.start')"
+          :type="speech.listening.value ? 'danger' : 'default'"
+          :icon="Microphone"
+          :disabled="isThinking"
+          :class="{ 'is-listening': speech.listening.value }"
+          @click="toggleVoice"
+        />
         <el-button :aria-label="t('assistant.send')"
           type="primary"
           native-type="submit"
@@ -213,8 +224,11 @@ import {
   Loading,
   Promotion,
   CircleCheck,
-  CircleClose
+  CircleClose,
+  Microphone
 } from '@element-plus/icons-vue';
+import { ElMessage } from 'element-plus';
+import { useSpeechInput } from '@/composables/useSpeechInput';
 import AssistantCard from './AssistantCard.vue';
 import { useTheme } from '@/utils/theme';
 import api from '@/services/api';
@@ -236,7 +250,7 @@ const props = defineProps({
 
 const emit = defineEmits(['navigate', 'select-camera']);
 
-const { t, te } = useI18n();
+const { t, te, locale } = useI18n();
 // The page the assistant answers about, by its menu name
 const contextLabel = computed(() => (te(`nav.${props.activeContext}`) ? t(`nav.${props.activeContext}`) : ''));
 const { isAssistantOpen, closeAssistant, assistantQuestion } = useTheme();
@@ -245,6 +259,18 @@ const { isDesktop } = useBreakpoints();
 
 const chatContainer = ref(null);
 const inputQuery = ref('');
+
+// Voice: the words fill the box; the user reads them and presses Send
+const speech = useSpeechInput();
+const toggleVoice = () => {
+  if (speech.listening.value) return speech.stop();
+  const before = inputQuery.value.trim();
+  speech.start({
+    language: locale.value,
+    onText: (text) => { inputQuery.value = before ? `${before} ${text}` : text; },
+    onError: (code) => ElMessage.warning(t(`assistant.voice.errors.${code}`))
+  });
+};
 const isThinking = ref(false);
 // One conversation per signed-in user, kept across reloads (stored on the server for 7 days)
 const storedUser = () => {
@@ -666,5 +692,15 @@ onMounted(() => {
 .thinking {
   font-size: 12px;
   color: var(--el-color-primary);
+}
+.is-listening {
+  animation: voice-pulse 1.2s ease-in-out infinite;
+}
+@keyframes voice-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 var(--el-color-danger-light-5); }
+  50% { box-shadow: 0 0 0 6px transparent; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .is-listening { animation: none; }
 }
 </style>

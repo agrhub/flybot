@@ -163,6 +163,19 @@ function rows(serials, fromKey, toKey = null) {
 }
 
 /**
+ * Analyzed photos of these cameras over their whole history, from the rollup (one row per
+ * camera and day) rather than counting every photo.
+ */
+async function scanCount(serials) {
+    if (!serials.length) return 0;
+    const [row] = await DailyStat.aggregate([
+        { $match: { deviceSerial: { $in: serials } } },
+        { $group: { _id: null, scans: { $sum: '$scans' } } }
+    ]);
+    return row?.scans || 0;
+}
+
+/**
  * Species totals (sum of counts over scans) across rows, largest first.
  */
 function speciesTotals(list, field = 'total') {
@@ -219,6 +232,7 @@ module.exports = {
     rebuildAll,
     backfillIfEmpty,
     rows,
+    scanCount,
     speciesTotals,
     speciesSeries
 };

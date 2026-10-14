@@ -6,6 +6,8 @@
       </template>
     </PageHeader>
 
+    <!-- A cooperative's growers side by side (organization owners and managers) -->
+    <OrgOverviewCard />
     <!-- Several farms (a cooperative): side by side -->
     <FarmCompareCard v-if="farms.length" />
     <SeasonReportCard v-if="farms.length" />
@@ -60,6 +62,7 @@ import api from '@/services/api';
 import { useAuth } from '@/composables/useAuth';
 import PageHeader from '@/components/common/PageHeader.vue';
 import FarmCompareCard from '@/components/farms/FarmCompareCard.vue';
+import OrgOverviewCard from '@/components/farms/OrgOverviewCard.vue';
 import SeasonReportCard from '@/components/farms/SeasonReportCard.vue';
 
 const router = useRouter();

@@ -18,6 +18,8 @@ const TEXT_KEYS = {
     image_quality: 'email.alerts.image_quality',
     harvest_ready: 'email.alerts.harvest_ready',
     weather_risk: 'email.alerts.weather_risk',
+    log_reminder: 'email.alerts.log_reminder',
+    org_digest: 'email.alerts.org_digest',
     farm_shared: 'email.farmShared',
     org_joined: 'email.orgShared',
     camera_shared: 'email.cameraShared',
@@ -35,6 +37,8 @@ const TARGET_PATH = {
     image_quality: '/cameras',
     harvest_ready: '/logbook',
     weather_risk: '/dashboard',
+    log_reminder: '/logbook',
+    org_digest: '/farms',
     camera_shared: '/cameras',
     org_joined: '/settings?tab=organizations'
 };

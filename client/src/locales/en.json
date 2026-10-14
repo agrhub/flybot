@@ -759,11 +759,23 @@
           "cancelled": "Cancelled",
           "failed": "Could not record",
           "running": "Recording..."
-        }
+        },
+        "area": "Area:",
+        "preHarvest": "Pre-harvest:",
+        "days": "{count} days"
       }
     },
     "askAboutPhoto": "Ask the assistant about this photo",
-    "photoQuestion": "Have a look at this photo: what is on it, does the count look right, is anything wrong with the photo?"
+    "photoQuestion": "Have a look at this photo: what is on it, does the count look right, is anything wrong with the photo?",
+    "voice": {
+      "start": "Speak instead of typing",
+      "stop": "Stop listening",
+      "errors": {
+        "denied": "The browser may not use the microphone. Allow it for this site and try again.",
+        "no-speech": "Nothing was heard. Press the microphone and speak again.",
+        "failed": "Speech could not be recognized just now."
+      }
+    }
   },
   "home": {
     "tagline": "SMART STICKY TRAPS & AI INSECT COUNTING",
@@ -949,12 +961,12 @@
           "sharing": {
             "title": "Sharing & organizations",
             "desc": "Work as a team by sharing cameras or farms, or with an organization.",
-            "items": "Share a camera in Settings, Camera Management; share a farm with the \"Share\" button on the farm page.\nFor a cooperative or company: Settings, Organizations, \"New organization\".\nAdd members by email as Owner, Manager or Member. Members see every camera and farm of the organization.\nOnly the camera owner or an admin can delete it, share it outside or move it to another organization.\nPeople you invite get access once they confirm their email. Anyone with an account who has not confirmed it shows as \"Not confirmed\": click \"Remind to confirm\" to send the confirmation email again (up to 3 times a day). Admins can also confirm it for them in Settings, Users.\n\"Invite many\" under Organizations: paste the email addresses or pick a CSV file to invite a whole cooperative at once (up to 50 addresses each time), with the result for each address."
+            "items": "Share a camera in Settings, Camera Management; share a farm with the \"Share\" button on the farm page.\nFor a cooperative or company: Settings, Organizations, \"New organization\".\nAdd members by email as Owner, Manager or Member. Members see every camera and farm of the organization.\nOnly the camera owner or an admin can delete it, share it outside or move it to another organization.\nPeople you invite get access once they confirm their email. Anyone with an account who has not confirmed it shows as \"Not confirmed\": click \"Remind to confirm\" to send the confirmation email again (up to 3 times a day). Admins can also confirm it for them in Settings, Users.\n\"Invite many\" under Organizations: paste the email addresses or pick a CSV file to invite a whole cooperative at once (up to 50 addresses each time), with the result for each address.\n\"Cooperative overview\" (Farms, for organization owners and managers): one row per member with flies per trap per day against the period before, traps at their threshold, cameras without photos and the last treatment; members with traps at the threshold and no treatment logged come first, for a field visit. It exports to Excel.\n\"Remind\" (or \"Remind ... to visit\") sends the member a reminder to check the traps and log the work, in the app, by email and Telegram; at most once a day each. On Monday mornings, organization owners and managers get the list of members to visit (turn it off under Settings, Notifications).\n\"Cooperative report (PDF)\" at the bottom of the cooperative overview: choose a period, then download it or email it; it ranks the members and has flies per trap per day by month, the effect by active ingredient and the whole cooperative's treatment record."
           },
           "log": {
             "title": "Treatment log & VietGAP",
             "desc": "Record every action taken and see its effect on trap catches.",
-            "items": "Open \"Field log\", click \"Log treatment\".\nChoose the method: spray, protein bait, lure, biological, sanitation, bagging or other; pick the traps in the treated area.\nEnter product, active ingredient, dose, operator and pre-harvest interval.\n\"Effect\" compares average catches before and after; \"Harvest\" shows when the interval has passed.\nClick \"Export VietGAP log\" to save the pesticide use record.\nThe dashboard lists areas inside a pre-harvest interval; on the morning it ends, FlyBot sends an \"OK to harvest\" notice in the app, by email and on Telegram.\nThe \"Effect by active ingredient\" table below the list groups every use of the same ingredient and shows how much catches dropped on average afterwards, to pick what works on your farm."
+            "items": "Open \"Field log\", click \"Log treatment\".\nChoose the method: spray, protein bait, lure, biological, sanitation, bagging or other; pick the traps in the treated area.\nEnter product, active ingredient, dose, operator and pre-harvest interval.\n\"Effect\" compares average catches before and after; \"Harvest\" shows when the interval has passed.\nClick \"Export VietGAP log\" to save the pesticide use record.\nThe dashboard lists areas inside a pre-harvest interval; on the morning it ends, FlyBot sends an \"OK to harvest\" notice in the app, by email and on Telegram.\nThe \"Effect by active ingredient\" table below the list groups every use of the same ingredient and shows how much catches dropped on average afterwards, to pick what works on your farm.\nA paper or spreadsheet log: \"Import from file\" reads an .xlsx or .csv file (a template is provided), checks every row and shows a preview; rows already in the log are skipped."
           }
         }
       },
@@ -999,7 +1011,7 @@
           "confirm": {
             "title": "Changes you confirm",
             "desc": "The assistant prepares, you decide.",
-            "items": "Say \"I replaced the card on mango trap A1\" or \"Log an Abamectin spray in plot A this morning\".\nThe assistant shows a card with the details; nothing is recorded until you press \"Confirm\", and \"Cancel\" drops it.\nThe details are checked as in the forms (your access to the camera, the date, the product for a spray), and each card can be used once."
+            "items": "Say \"I replaced the card on mango trap A1\" or \"Log an Abamectin spray in plot A this morning\".\nThe assistant shows a card with the details; nothing is recorded until you press \"Confirm\", and \"Cancel\" drops it.\nThe details are checked as in the forms (your access to the camera, the date, the product for a spray), and each card can be used once.\nLog by voice: press the microphone in the assistant box and say, for example, \"this morning I sprayed Radiant on mango plot A, 7 days pre-harvest\"; the assistant fills a card (product, the plot's traps, pre-harvest interval) for you to Confirm. The browser turns speech into text (Chrome and Edge use their maker's servers)."
           }
         }
       },
@@ -1280,6 +1292,14 @@
       "weather_risk": {
         "title": "Weather that suits fruit flies",
         "desc": "{farmName}: {days}, {minTemp}–{maxTemp}°C, humidity up to {humidity}%; next wave around {waveDate}."
+      },
+      "log_reminder": {
+        "title": "Log your work",
+        "desc": "{sender} ({orgName}): {atThreshold}/{cameras} traps at threshold, nothing logged in 7 days."
+      },
+      "org_digest": {
+        "title": "Members to visit",
+        "desc": "{orgName}: {count} members with traps at threshold and no treatment logged: {names}."
       }
     }
   },
@@ -1473,7 +1493,8 @@
         "morningBriefs": "Morning brief",
         "vietgapMonthly": "Monthly VietGAP record",
         "harvestReminders": "Harvest reminders",
-        "weatherAlerts": "Weather warnings"
+        "weatherAlerts": "Weather warnings",
+        "orgDigests": "Members to visit"
       },
       "jobSchedules": {
         "capture": "Every 5 minutes",
@@ -1489,7 +1510,8 @@
         "morningBriefs": "Daily, 6:30",
         "vietgapMonthly": "Monthly, the 1st at 7:00",
         "harvestReminders": "Daily at 6:00",
-        "weatherAlerts": "Daily at 17:00"
+        "weatherAlerts": "Daily at 17:00",
+        "orgDigests": "Monday, 7:00"
       },
       "results": {
         "cameras": "{n} camera(s)",
@@ -1817,7 +1839,8 @@
       "treatment": {
         "created": "Treatment logged",
         "updated": "Treatment changed",
-        "deleted": "Treatment deleted"
+        "deleted": "Treatment deleted",
+        "imported": "Imported field log"
       },
       "farm": {
         "created": "Farm created",
@@ -1835,7 +1858,9 @@
         "member_removed": "Remove member",
         "member_reminded": "Remind member to confirm email",
         "cameras_changed": "Move cameras",
-        "members_added": "Invite many members"
+        "members_added": "Invite many members",
+        "log_reminded": "Reminded to log work",
+        "report_sent": "Sent cooperative report"
       },
       "integration": {
         "key_created": "Create API key",
@@ -2012,6 +2037,62 @@
       "products": "Products",
       "measured": "Measured uses",
       "avgChangePct": "Average change (%)"
+    },
+    "import": {
+      "open": "Import from file",
+      "title": "Import the field log from an Excel or CSV file",
+      "step1": "Download the template, or use your own file: the first row names the columns (Date, Type and Traps are required).",
+      "step2": "One row per piece of work. Traps by name or camera serial, several separated by commas; dates like 13/10/2026 or 13/10/2026 06:30 (day first).",
+      "step3": "Pick the file: FlyBot checks every row and shows a preview; rows already in the log are skipped. Up to 500 rows each time.",
+      "template": "Download the template",
+      "templateFile": "FlyBot_log_template.csv",
+      "pick": "Pick a file (.xlsx, .csv)",
+      "example": "13/10/2026 06:30|Spray|Mango trap A1, Mango trap A2|Radiant 60SC|Spinetoram|15 ml per 16 l tank|Mango plot A|Tu Nguyen|7|Sprayed in the evening",
+      "columns": {
+        "date": "Date",
+        "type": "Type",
+        "cameras": "Traps",
+        "product": "Product",
+        "activeIngredient": "Active ingredient",
+        "dose": "Dose",
+        "area": "Area",
+        "operator": "Operator",
+        "preHarvestDays": "Pre-harvest days",
+        "note": "Note"
+      },
+      "missingColumns": "The file has no column for: {columns}.",
+      "truncated": "Only the first {max} rows were read; import the rest next time.",
+      "countReady": "{count} rows ready",
+      "countDuplicate": "{count} already in the log",
+      "countError": "{count} rows with errors",
+      "line": "Row",
+      "result": "Result",
+      "run": "Import {count} rows",
+      "done": "Imported {count} rows into the log.",
+      "tooBig": "The file is too big (at most 2 MB).",
+      "unreadable": "The file could not be read. Use an .xlsx or .csv file.",
+      "status": {
+        "ready": "Ready",
+        "imported": "Imported",
+        "duplicate": "Already there",
+        "error": "Error"
+      },
+      "problems": {
+        "badDate": "Not a valid date: \"{value}\"",
+        "badType": "Unknown type: \"{value}\"",
+        "unknownTraps": "Traps not found: {value}",
+        "noTraps": "No trap given",
+        "badPhi": "Pre-harvest days must be a whole number: \"{value}\"",
+        "INVALID_TYPE": "Not a valid type",
+        "INVALID_DATE": "The date must be within the past year, not in the future",
+        "INVALID_CAMERAS": "From 1 to 50 traps per row",
+        "CAMERA_NOT_FOUND": "Some traps are not yours to manage",
+        "TEXT_TOO_LONG": "The \"{column}\" column is too long",
+        "INVALID_PHI": "Pre-harvest days from 0 to 365",
+        "PRODUCT_REQUIRED": "A spray needs the product name",
+        "INVALID_ROW": "Not a valid row",
+        "DUPLICATE": "Already in the log"
+      }
     }
   },
   "farms": {
@@ -2123,6 +2204,10 @@
     "vietgap": {
       "title": "Monthly VietGAP record",
       "desc": "On the 1st of each month at 7:00: last month's pesticide use record as a PDF, by email and on Telegram if linked. Nothing is sent for a month without treatments."
+    },
+    "orgDigest": {
+      "title": "Members to visit (Mondays)",
+      "desc": "For organization owners and managers: Monday at 7:00, the members with traps at their threshold and no treatment logged in the past week. Nothing is sent when there are none."
     }
   },
   "degreeDays": {
@@ -2451,5 +2536,36 @@
     "refused": "Could not send \"{label}\": {reason}",
     "remove": "Remove",
     "sent": "Sent {count} entry recorded offline. | Sent {count} entries recorded offline."
+  },
+  "orgOverview": {
+    "title": "Cooperative overview",
+    "desc": "Each member: flies per trap per day against the period before, traps at their threshold, cameras without photos, the last treatment. Members with traps at the threshold and no treatment logged in the period come first.",
+    "organization": "Organization",
+    "member": "Member",
+    "name": "Name",
+    "email": "Email",
+    "ftd": "Flies/trap/day",
+    "cameras": "Traps",
+    "atThreshold": "Traps at threshold",
+    "silent": "Cameras without photos (1 day)",
+    "needsVisit": "Needs a visit",
+    "status": "Status",
+    "visit": "Needs a visit",
+    "atThresholdCount": "{count} at threshold",
+    "silentCount": "{count} without photos",
+    "allGood": "Fine",
+    "noCameras": "No traps yet",
+    "lastTreatment": "Last treatment",
+    "neverTreated": "None logged",
+    "sheetName": "Cooperative {days} days",
+    "remind": "Remind",
+    "remindAll": "Remind {count} to visit",
+    "reminded": "Reminder sent to {count} members.",
+    "alreadyReminded": "{count} members were already reminded today.",
+    "report": {
+      "title": "Cooperative report (PDF)",
+      "desc": "For the board: each member's flies per trap per day against the period before, ranked, by month, the effect by active ingredient and the members' treatment record.",
+      "sent": "Sending the cooperative report to your email."
+    }
   }
 }

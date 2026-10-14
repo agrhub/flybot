@@ -33,7 +33,11 @@ const COOLDOWN_MINUTES = {
     // One per treatment (the job marks the treatment as reminded)
     harvest_ready: 0,
     // One weather warning per farm a day
-    weather_risk: 20 * 60
+    weather_risk: 20 * 60,
+    // A cooperative's reminder to log the work: once a day per member and organization
+    log_reminder: 20 * 60,
+    // The Monday list of members to visit: once a week per organization
+    org_digest: 6 * 24 * 60
 };
 
 const SEVERITY = {
@@ -52,11 +56,13 @@ const SEVERITY = {
     image_quality: 'warning',
     org_joined: 'info',
     harvest_ready: 'info',
-    weather_risk: 'warning'
+    weather_risk: 'warning',
+    log_reminder: 'warning',
+    org_digest: 'info'
 };
 
 // "Back online" is good news: in-app only
-const EMAIL_TYPES = new Set(['pest_threshold', 'camera_offline', 'ai_failure', 'card_due', 'plot_threshold', 'pest_surge', 'image_quality', 'harvest_ready', 'weather_risk']);
+const EMAIL_TYPES = new Set(['pest_threshold', 'camera_offline', 'ai_failure', 'card_due', 'plot_threshold', 'pest_surge', 'image_quality', 'harvest_ready', 'weather_risk', 'log_reminder', 'org_digest']);
 // Phone/browser push: the alerts, plus something new shared with you
 const PUSH_TYPES = new Set([...EMAIL_TYPES, 'camera_shared', 'dashboard_shared', 'farm_shared', 'org_joined']);
 

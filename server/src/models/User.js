@@ -25,6 +25,8 @@ const userSchema = new mongoose.Schema({
         morningBrief: { type: Boolean, default: false },
         // The month's pesticide-use record (VietGAP) on the 1st
         vietgapMonthly: { type: Boolean, default: false },
+        // Owners and managers of a cooperative: Monday list of members to visit
+        orgDigest: { type: Boolean, default: true },
         // No push / Telegram during these local hours (in-app and email still arrive)
         quietHours: {
             enabled: { type: Boolean, default: false },

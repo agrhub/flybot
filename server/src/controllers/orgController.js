@@ -10,6 +10,10 @@ const mailService = require('../services/mailService');
 const emailTemplates = require('../services/emailTemplates');
 const notificationService = require('../services/notificationService');
 const orgService = require('../services/orgService');
+const { orgOverview } = require('../services/orgOverviewService');
+const { remindMembers } = require('../services/orgReminderService');
+const coopReportService = require('../services/coopReportService');
+const { parsePeriod } = require('../services/seasonReportService');
 const { inviteQuota } = require('../middlewares/rateLimit');
 const { avatarUrlsFor } = require('../services/avatarService');
 const { EMAIL_REGEX, normalizeEmail, findUserByEmail, safeUrl, emailsWithAccount, sendConfirmReminder } = require('./shareController');
@@ -345,7 +349,92 @@ async function setCameras(req, res) {
     }
 }
 
+/**
+ * GET /api/orgs/:id/overview?days=7|30: each member's traps side by side (owners and managers)
+ */
+async function getOverview(req, res) {
+    try {
+        const org = await loadOrg(req, res, { manage: true });
+        if (!org) return;
+        res.json({ success: true, organization: { id: String(org._id), name: org.name }, overview: await orgOverview(org, Number(req.query.days)) });
+    } catch (err) {
+        sendServerError(res, err, { context: 'Organization overview' });
+    }
+}
+
+/**
+ * POST /api/orgs/:id/remind { userIds }: ask members to check their traps and log their work
+ * (owners and managers). Per member: sent, already (reminded today) or skipped (no traps here).
+ */
+async function remindLog(req, res) {
+    try {
+        const ids = Array.isArray(req.body?.userIds) ? [...new Set(req.body.userIds.filter(id => typeof id === 'string'))] : [];
+        if (!ids.length) return res.status(400).json({ success: false, message: "Choose the members to remind." });
+        if (ids.length > MAX_MEMBERS) return res.status(400).json({ success: false, message: `At most ${MAX_MEMBERS} members at a time.` });
+        const org = await loadOrg(req, res, { manage: true });
+        if (!org) return;
+        const results = await remindMembers(org, req.user, ids);
+        const sent = results.filter(r => r.status === 'sent').length;
+        if (sent) recordAudit(req, { action: 'org.log_reminded', target: orgTarget(org), details: { count: sent } });
+        res.json({ success: true, results });
+    } catch (err) {
+        sendServerError(res, err, { context: 'Remind organization members' });
+    }
+}
+
+const coopFileName = (period) => `FlyBot_cooperative_${period.fromKey}_${period.toKey}.pdf`;
+
+/**
+ * GET /api/orgs/:id/report?from=YYYY-MM-DD&to=YYYY-MM-DD: the cooperative report PDF
+ * (owners and managers; the last 6 months by default)
+ */
+async function downloadReport(req, res) {
+    try {
+        const period = parsePeriod(req.query);
+        if (period.error) return res.status(400).json({ success: false, message: period.error });
+        const org = await loadOrg(req, res, { manage: true });
+        if (!org) return;
+        const data = await coopReportService.coopData(org, period);
+        const pdf = coopReportService.buildCoopPdf(data, { language: req.user.language, owner: req.user.name || req.user.email });
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="${coopFileName(period)}"`);
+        res.setHeader('Cache-Control', 'no-store');
+        res.send(pdf);
+    } catch (err) {
+        sendServerError(res, err, { context: 'Cooperative report' });
+    }
+}
+
+/**
+ * POST /api/orgs/:id/report/send { from, to }: the same PDF to the requester's email
+ */
+async function sendReport(req, res) {
+    try {
+        if (!req.user.emailVerified) return res.status(400).json({ success: false, message: "Confirm your email address first." });
+        const period = parsePeriod(req.body || {});
+        if (period.error) return res.status(400).json({ success: false, message: period.error });
+        const org = await loadOrg(req, res, { manage: true });
+        if (!org) return;
+        const data = await coopReportService.coopData(org, period);
+        const language = normalizeLanguage(req.user.language);
+        const pdf = coopReportService.buildCoopPdf(data, { language, owner: req.user.name || req.user.email });
+        const params = { org: org.name, from: period.fromKey.split('-').reverse().join('/'), to: period.toKey.split('-').reverse().join('/'), members: data.members.length };
+        mailService.queueMail(emailTemplates.coopReportEmail({
+            user: req.user, language, params, url: safeUrl('/farms'),
+            attachments: [{ filename: coopFileName(period), content: pdf, contentType: 'application/pdf' }]
+        }));
+        recordAudit(req, { action: 'org.report_sent', target: orgTarget(org), details: { from: period.fromKey, to: period.toKey } });
+        res.json({ success: true, members: data.members.length });
+    } catch (err) {
+        sendServerError(res, err, { context: 'Send cooperative report' });
+    }
+}
+
 module.exports = {
+    downloadReport,
+    sendReport,
+    remindLog,
+    getOverview,
     addMembersBulk,
     listOrgs,
     createOrg,

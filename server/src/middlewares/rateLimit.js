@@ -81,8 +81,12 @@ const avatarLimiter = rateLimit({ windowMs: 10 * 60 * 1000, max: 20, includeIp: 
 // "Download all my data" reads a person's whole history: 3 per person per hour
 const dataExportLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 3, includeIp: false, keyFn: (req) => `export:${req.user?.id}` });
 
+// Importing a log checks and writes up to 500 rows: 20 tries (previews included) per person per hour
+const treatmentImportLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 20, includeIp: false, keyFn: (req) => `treatment-import:${req.user?.id}` });
+
 module.exports = {
     rateLimit,
+    treatmentImportLimiter,
     dataExportLimiter,
     avatarLimiter,
     remindQuota,

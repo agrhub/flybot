@@ -212,6 +212,23 @@ function seasonEmail({ user, language, params, url, attachments }) {
     };
 }
 
+/** The cooperative report (PDF attached) for an organization's owner or manager. */
+function coopReportEmail({ user, language, params, url, attachments }) {
+    const t = (key, p) => translate(language, key, p);
+    return {
+        to: user.email,
+        subject: t('coop.emailSubject', params),
+        ...layout({
+            language,
+            user,
+            paragraphs: [t('coop.emailIntro', params), t('season.attached')],
+            button: url ? { label: t('season.button'), url } : null,
+            footerKey: 'season.footer'
+        }),
+        attachments
+    };
+}
+
 /**
  * A report sent on its schedule (or on request), with the report as a PDF attachment.
  */
@@ -250,6 +267,7 @@ function contactEmail({ to, language, name, email, subject, message }) {
 }
 
 module.exports = {
+    coopReportEmail,
     seasonEmail,
     contactEmail,
     shareEmail,

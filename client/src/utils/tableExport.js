@@ -30,6 +30,21 @@ export function farmCompareSheets(farms, period, t) {
   ];
 }
 
+/** A cooperative's members side by side, as one sheet. */
+export function orgOverviewSheets(orgName, overview, t) {
+  const rows = (overview?.members || []).map((m) => [
+    m.name, m.email, m.cameras, cell(m.ftd), cell(m.ftdPrevious), cell(m.change), m.atThreshold, m.silent,
+    day(m.lastTreatmentAt), m.needsVisit ? t('orgOverview.visit') : ''
+  ]);
+  return [{
+    name: t('orgOverview.sheetName', { days: overview?.days || '' }),
+    rows: [header([t('orgOverview.name'), t('orgOverview.email'), t('farms.compare.trapsCol'), t('orgOverview.ftd'),
+      t('farms.compare.previousFtd'), t('farms.compare.changePctCol'), t('orgOverview.atThreshold'), t('orgOverview.silent'),
+      t('orgOverview.lastTreatment'), t('orgOverview.needsVisit')]), ...rows],
+    widths: [22, 28, 10, 14, 16, 14, 14, 16, 16, 14]
+  }];
+}
+
 /** Active ingredients and their effect, as one sheet. */
 export function ingredientSheets(groups, t) {
   const rows = groups.map((g) => [

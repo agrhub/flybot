@@ -330,6 +330,18 @@ export default {
   listOrgs() {
     return apiClient.get('/orgs');
   },
+  downloadCoopReport(id, params = {}) {
+    return apiClient.get(`/orgs/${id}/report`, { params, responseType: 'blob' });
+  },
+  sendCoopReport(id, body = {}) {
+    return apiClient.post(`/orgs/${id}/report/send`, body);
+  },
+  remindOrgMembers(id, userIds) {
+    return apiClient.post(`/orgs/${id}/remind`, { userIds });
+  },
+  getOrgOverview(id, days) {
+    return apiClient.get(`/orgs/${id}/overview`, { params: { days } });
+  },
   createOrg(data) {
     return apiClient.post('/orgs', data);
   },
@@ -418,6 +430,9 @@ export default {
   },
   listTreatments(params = {}) {
     return apiClient.get('/treatments', { params });
+  },
+  importTreatments(data) {
+    return apiClient.post('/treatments/import', data);
   },
   createTreatment(data, config = {}) {
     return apiClient.post('/treatments', data, config);

@@ -157,17 +157,34 @@ const shots = [
     { name: 'assistant-chart', url: '/dashboard', settle: 4000, action: ASK(W('24 giờ qua thế nào?', 'How were the last 24 hours?')) },
     { name: 'assistant-confirm', url: '/dashboard', settle: 4000, action: ASK(W('Tôi đã thay tấm keo bẫy xoài A1', 'I replaced the card on mango trap A1')) },
     { name: 'assistant-photo', url: '/analytics?tab=history', settle: 4000, action: PHOTO_ASK },
+    // A spray said in words (as the microphone would type it): the card to Confirm
+    { name: 'assistant-treatment', url: '/logbook', settle: 4000, action: ASK(W('Sáng nay phun Radiant 60SC cho lô xoài A, cách ly 7 ngày', 'This morning I sprayed Radiant 60SC on mango plot A, 7 days pre-harvest')) },
     // The chat panel alone, for slides (same scenes as above)
     { name: 'chat-photos', url: '/dashboard', settle: 4000, clip: [1021, 100, 419, 620], action: ASK(W('Ảnh mới nhất của các bẫy?', 'Latest photos of the traps?')) },
     { name: 'chat-chart', url: '/dashboard', settle: 4000, clip: [1021, 210, 419, 470], action: ASK(W('24 giờ qua thế nào?', 'How were the last 24 hours?')) },
     { name: 'chat-photo', url: '/analytics?tab=history', settle: 4000, clip: [1021, 110, 419, 580], action: PHOTO_ASK },
     { name: 'chat-confirm', url: '/dashboard', settle: 4000, clip: [1021, 210, 419, 362], action: ASK(W('Tôi đã thay tấm keo bẫy xoài A1', 'I replaced the card on mango trap A1')) },
     { name: 'farms', url: '/farms', settle: 3000 },
+    // The cooperative overview card, its members and its report row
+    { name: 'org-overview', url: '/farms', settle: 4000, action: `
+        const card = [...document.querySelectorAll('.el-card')].find(c => c.innerText.includes(${JSON.stringify(W('Tổng quan hợp tác xã', 'Cooperative overview'))}));
+        card.scrollIntoView({ block: 'start' }); window.scrollBy(0, -80); await sleep(800);` },
     { name: 'farm-map', url: '/farms', action: `
         const link = [...document.querySelectorAll('a, .el-card')].find(e => e.innerText && e.innerText.includes(${JSON.stringify(W('Vườn Hòa Lộc', 'Hoa Loc Orchard'))}));
         link.click(); await sleep(5000);`, settle: 2000 },
     { name: 'map', url: '/map', settle: 6000 },
     { name: 'logbook', url: '/logbook', settle: 3000 },
+    // The import dialog with a small file: two rows ready, one missing its product, one wrong
+    { name: 'log-import', url: '/logbook', settle: 3000, action: `
+        await click('button', ${JSON.stringify(W('Nhập từ file', 'Import from file'))}, 1000);
+        const csv = ${JSON.stringify(W(
+            'Ngày,Biện pháp,Bẫy,Thuốc,Cách ly (ngày)\n12/10/2026 06:30,Phun thuốc,"Bẫy xoài A1, Bẫy xoài A2",Radiant 60SC,7\n11/10/2026,Bả protein,Bẫy bưởi B1,Ento-Pro,\n10/10/2026,Phun thuốc,Bẫy xoài A1,,\n32/10/2026,Tưới nước,Bẫy Z9,,\n',
+            'Date,Type,Traps,Product,Pre-harvest days\n12/10/2026 06:30,Spray,"Mango trap A1, Mango trap A2",Radiant 60SC,7\n11/10/2026,Protein bait,Pomelo trap B1,Ento-Pro,\n10/10/2026,Spray,Mango trap A1,,\n32/10/2026,Watering,Trap Z9,,\n'))};
+        const input = document.querySelector('.el-dialog input[type=file]');
+        const dt = new DataTransfer(); dt.items.add(new File([csv], ${JSON.stringify(W('nhat-ky.csv', 'field-log.csv'))}, { type: 'text/csv' }));
+        input.files = dt.files; input.dispatchEvent(new Event('change'));
+        for (let i = 0; i < 40 && !document.querySelector('.el-dialog .el-table__body tr'); i++) await sleep(250);
+        await sleep(1500);` },
     { name: 'logbook-ingredients', url: '/logbook', settle: 5000, action: `
         const card = [...document.querySelectorAll('.el-card')].find(c => c.innerText.includes(${JSON.stringify(W('Hiệu quả theo hoạt chất', 'Effect by active ingredient'))}));
         card.scrollIntoView({ block: 'start' }); window.scrollBy(0, -80); await sleep(600);` },

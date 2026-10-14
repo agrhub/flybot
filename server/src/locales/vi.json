@@ -67,6 +67,14 @@
       "weather_risk": {
         "subject": "🌦️ Thời tiết thuận lợi cho ruồi vàng: {farmName}",
         "body": "Dự báo các ngày {days} ở {farmName}: {minTemp}–{maxTemp}°C, độ ẩm đến {humidity}%, rất thuận lợi cho ruồi vàng hoạt động và đẻ trứng. Theo độ-ngày, đợt ruồi trưởng thành tiếp theo dự kiến khoảng {waveDate}. Nên kiểm tra bẫy, thu gom trái rụng và chuẩn bị phun bả trước các ngày này."
+      },
+      "log_reminder": {
+        "subject": "📝 {orgName}: nhớ kiểm tra bẫy và ghi nhật ký",
+        "body": "{sender} ({orgName}) nhắc bạn: {atThreshold} trong {cameras} bẫy của bạn đang chạm ngưỡng cảnh báo mà 7 ngày qua chưa ghi biện pháp xử lý nào. Hãy kiểm tra vườn và ghi lại việc đã làm vào Nhật ký vườn (phun thuốc, đặt bả, thu gom trái rụng...)."
+      },
+      "org_digest": {
+        "subject": "🧑‍🌾 {orgName}: {count} hộ cần thăm vườn tuần này",
+        "body": "Tuần qua ở {orgName} (trung bình {ftd} ruồi/bẫy/ngày), {count} hộ có bẫy chạm ngưỡng mà chưa ghi biện pháp nào: {names}. Xem chi tiết và gửi lời nhắc trong Vườn & lô, Tổng quan hợp tác xã."
       }
     },
     "cameraShared": {
@@ -385,7 +393,11 @@
     "the_period_can_be_at_most_a_year": "Kỳ báo cáo dài tối đa một năm.",
     "clientid_must_be_8_to_64_letters_digits_or_dashes": "clientId phải gồm 8 đến 64 chữ cái, chữ số hoặc dấu gạch ngang.",
     "send_a_list_of_email_addresses": "Hãy gửi danh sách địa chỉ email.",
-    "at_most_max_addresses_at_a_time": "Mỗi lần tối đa {max} địa chỉ."
+    "at_most_max_addresses_at_a_time": "Mỗi lần tối đa {max} địa chỉ.",
+    "send_the_rows_to_import": "Hãy gửi các dòng cần nhập.",
+    "at_most_max_rows_at_a_time": "Mỗi lần tối đa {max} dòng.",
+    "choose_the_members_to_remind": "Hãy chọn thành viên cần nhắc.",
+    "at_most_max_members_at_a_time": "Mỗi lần tối đa {max} thành viên."
   },
   "reportPdf": {
     "range": "Khoảng thời gian: {from} - {to} ({days} ngày)",
@@ -521,6 +533,42 @@
       "worstPlot": "Lô nặng nhất",
       "peaks": "Ngày nặng nhất (ruồi/bẫy)",
       "treatments": "Lần xử lý",
+      "month": "Tháng",
+      "ingredient": "Hoạt chất",
+      "products": "Tên thuốc",
+      "uses": "Số lần dùng",
+      "avgChange": "Thay đổi trung bình",
+      "clearlyWorked": "Giảm rõ (từ 30%)",
+      "date": "Ngày giờ",
+      "trapsList": "Bẫy",
+      "type": "Biện pháp",
+      "product": "Tên thuốc / vật tư",
+      "dose": "Liều lượng",
+      "operator": "Người thực hiện",
+      "phi": "Cách ly (ngày)"
+    }
+  },
+  "coop": {
+    "title": "Báo cáo hợp tác xã {org}: {from} – {to}",
+    "subtitle": "{owner} · {members} hộ có bẫy · {traps} bẫy · {days} ngày · FlyBot lập ngày {date}",
+    "summary": "Cả hợp tác xã: {ftd} ruồi/bẫy/ngày (kỳ trước {previous}, {change}); {treatments} lần xử lý được ghi.",
+    "membersTitle": "1. Các hộ thành viên (nhiều ruồi nhất trước)",
+    "monthsTitle": "2. Ruồi/bẫy/ngày theo tháng",
+    "ingredientsTitle": "3. Hiệu quả theo hoạt chất (mọi hộ)",
+    "recordTitle": "Phụ lục: sổ ghi chép xử lý của các hộ (VietGAP)",
+    "usesValue": "{uses} lần ({measured} đo được)",
+    "noTreatments": "Không có lần xử lý nào ghi tên thuốc hoặc hoạt chất trong kỳ.",
+    "footer": "FlyBot · ruồi/bẫy/ngày: số ruồi mới vào bẫy mỗi ngày chia cho số bẫy có số liệu; hiệu quả xử lý so 7 ngày trước và sau.",
+    "emailSubject": "Báo cáo hợp tác xã {org}: {from} – {to}",
+    "emailIntro": "Báo cáo hợp tác xã {org} từ {from} đến {to} cho {members} hộ có bẫy: ruồi/bẫy/ngày từng hộ so với kỳ trước, theo tháng, hiệu quả theo hoạt chất và sổ ghi chép xử lý của các hộ.",
+    "col": {
+      "member": "Hộ thành viên",
+      "traps": "Số bẫy",
+      "ftd": "Ruồi/bẫy/ngày",
+      "previous": "Kỳ trước",
+      "change": "Thay đổi",
+      "treatments": "Lần xử lý",
+      "lastTreatment": "Lần gần nhất",
       "month": "Tháng",
       "ingredient": "Hoạt chất",
       "products": "Tên thuốc",

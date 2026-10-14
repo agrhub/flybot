@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.4.0 (2026-10-14)
+
+### Cooperatives
+- **Cooperative overview** (Farms, for organization owners and managers): one row per member with flies per trap per day against the period before (7 or 30 days), traps at their threshold, cameras without a photo for a day and the last treatment. Members with traps at the threshold and no treatment logged in the period come first, for a field visit. Exports to Excel.
+- **Reminders**: from the cooperative overview, "Remind" asks a member to check their traps and log their work (in the app, by email and Telegram; once a day each). Owners and managers get the list of members to visit on Monday mornings (Settings, Notifications to turn it off).
+- **Cooperative report (PDF)** at the bottom of the overview: for a chosen period, the members ranked by flies per trap per day against the period before, month by month, the effect by active ingredient across members and their treatment record; downloaded or emailed.
+
+### Field log
+- **Log by voice**: a microphone in the assistant box (browsers with speech recognition). Say "this morning I sprayed Radiant on mango plot A, 7 days pre-harvest": the assistant finds the plot's traps and fills a card with the product, area and pre-harvest interval to Confirm. The words only fill the box; nothing is sent until you press Send.
+- **Import from file**: an Excel (.xlsx) or CSV file of past treatments, with a template. Columns and values in Vietnamese or English, traps by name or serial; every row is checked and previewed, rows already in the log are skipped, up to 500 rows at a time.
+
+### Speed and reliability
+- The dashboard overview runs its queries at the same time and counts photos from the daily rollup: with 20 traps and a year of photos, about 1-2 s down to 0.4-0.6 s.
+- The end-to-end test no longer hangs: a dead Chrome or a navigation left unanswered fails at once, and a cold dev server is warmed up first.
+- The guide has pictures of the cooperative overview, the log import and voice logging.
+
 ## 1.3.0 (2026-10-13)
 
 ### Works without signal

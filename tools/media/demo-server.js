@@ -78,6 +78,8 @@ ezvizService.getPlaybackAddress = async () => ({ responseData: { code: '500', ms
 // Assistant without Vertex: picks a real tool from the question, then writes a short answer from
 // its result, streamed in small pieces like the model does
 const QUESTION_TOOLS = [
+    // A treatment said in words (the voice input): the plot's traps, product and pre-harvest days
+    [/phun|sprayed|spray/i, 'propose_treatment', () => ({ plot: L('Lô xoài A', 'Mango plot A'), type: 'spray', product: 'Radiant 60SC', activeIngredient: 'Spinetoram', preHarvestDays: 7, at: new Date(new Date().setHours(7, 0, 0, 0)).toISOString() })],
     [/đã thay|replaced/i, 'propose_card_change', { deviceSerial: 'BC1001' }],
     [/ảnh|photo|picture/i, 'get_recent_snapshots', { limit: 4 }],
     [/tuần|week|so sánh|compare/i, 'compare_periods', { days: 7 }],
@@ -99,6 +101,7 @@ function demoAnswer(name, result) {
     if (name === 'get_insect_statistics') return L(`Trong 24 giờ qua có **${round(result.records.reduce((s, r) => s + r.caught, 0))} con** vào bẫy, nhiều nhất vào buổi trưa.`, `**${round(result.records.reduce((s, r) => s + r.caught, 0))} insects** were caught over the last 24 hours, most around midday.`);
     if (name === 'list_reports') return L(`Bạn có ${result.total} báo cáo: ${result.reports.map(r => `**${r.name}**`).join(', ')}.`, `You have ${result.total} report(s): ${result.reports.map(r => `**${r.name}**`).join(', ')}.`);
     if (name === 'inspect_photo') return result.observation;
+    if (name === 'propose_treatment') return L('Tôi đã chuẩn bị ghi nhận lần phun này vào nhật ký. Kiểm tra thông tin rồi bấm **Xác nhận**.', 'I have prepared this spray for the field log. Check the details and press **Confirm**.');
     if (name === 'propose_card_change') return L('Tôi đã chuẩn bị ghi nhận thay tấm keo. Kiểm tra thông tin rồi bấm **Xác nhận**.', 'I have prepared the card change. Check the details and press **Confirm**.');
     if (name === 'get_alerts') return L(`Có ${result.alerts.length} cảnh báo trong 7 ngày qua; ${result.cardsDue.length} tấm keo đến hạn thay.`, `${result.alerts.length} alert(s) over the last 7 days; ${result.cardsDue.length} sticky card(s) due.`);
     const worst = result.traps?.[0];
@@ -126,7 +129,8 @@ req('src/agent/agent').setModelClient({
             await sleep(300);
             return (async function* () { yield { candidates: [{ content: { role: 'model', parts: [{ functionCall: { name: 'inspect_photo', args: { snapshotId: photo[1] } } }] } }] }; })();
         }
-        const [, name, args] = QUESTION_TOOLS.find(([re]) => re.test(question)) || [null, 'get_catch_summary', {}];
+        const [, name, argsOf] = QUESTION_TOOLS.find(([re]) => re.test(question)) || [null, 'get_catch_summary', {}];
+        const args = typeof argsOf === 'function' ? argsOf() : argsOf;
         await sleep(300);
         return (async function* () { yield { candidates: [{ content: { role: 'model', parts: [{ functionCall: { name, args } }] } }] }; })();
     }
