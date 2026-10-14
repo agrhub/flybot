@@ -195,8 +195,11 @@ async function executeGetOverviewMetrics({ userId, user }) {
         }
         const baseMatch = { aiProcessed: true, deviceSerial: { $in: allowedSerials } };
 
-        const totalSnapshots = await Snapshot.countDocuments(baseMatch);
-        const last24hCount = await Snapshot.countDocuments({ ...baseMatch, createdAt: { $gte: new Date(Date.now() - 24 * HOUR_MS) } });
+        const [totalSnapshots, last24hCount] = await Promise.all([
+            // From the daily rollup: counting every photo grows with the history
+            dailyStats.scanCount(allowedSerials),
+            Snapshot.countDocuments({ ...baseMatch, createdAt: { $gte: new Date(Date.now() - 24 * HOUR_MS) } })
+        ]);
 
         const rollup = await dailyStats.rows(allowedSerials, dailyStats.startKeyForDays(30));
         const speciesAgg = dailyStats.speciesTotals(rollup, 'total').map(sp => ({ _id: sp.name, total: sp.value }));

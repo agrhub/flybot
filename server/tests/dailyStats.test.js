@@ -145,3 +145,14 @@ test('backfill runs only when the rollup has never been built', async () => {
     await dailyStats.backfillIfEmpty();
     assert.equal((await models.DailyStat.findOne().lean()).peak, 999, 'an existing rollup is left alone');
 });
+
+test('photo count from the rollup: every day of the given cameras, no others', async () => {
+    await models.DailyStat.insertMany([
+        { deviceSerial: 'A', day: '2026-01-01', scans: 24, total: 0, peak: 0, min: 0, species: [] },
+        { deviceSerial: 'A', day: '2026-06-01', scans: 20, total: 0, peak: 0, min: 0, species: [] },
+        { deviceSerial: 'B', day: '2026-06-01', scans: 5, total: 0, peak: 0, min: 0, species: [] },
+        { deviceSerial: 'C', day: '2026-06-01', scans: 99, total: 0, peak: 0, min: 0, species: [] }
+    ]);
+    assert.equal(await dailyStats.scanCount(['A', 'B']), 49);
+    assert.equal(await dailyStats.scanCount([]), 0);
+});

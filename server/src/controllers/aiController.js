@@ -473,12 +473,23 @@ async function getAiOverview(req, res) {
         let peakRealtimeInsects = 0;
         let peakCamera = null;
         let totalRealtimeInsects = 0;
-        const latestByCamera = await latestProcessedByCamera(cameraSerials);
         // Lure traps are judged by today's average per photo, as their threshold alert is
         const lureSerials = dedupedCameras.filter(c => trapKindOf(c) === 'lure').map(c => c.deviceSerial);
         const todayKey = dailyStats.dayKeyOf(new Date());
-        const lureAverage = new Map((lureSerials.length ? await dailyStats.rows(lureSerials, todayKey, todayKey) : [])
-            .filter(r => r.scans).map(r => [r.deviceSerial, Math.round((r.total / r.scans) * 10) / 10]));
+        const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        // Independent reads, at the same time: the dashboard waits for the slowest one only
+        const [latestByCamera, lureRows, statsDay, rollup30, totalSnapshots, catches] = await Promise.all([
+            latestProcessedByCamera(cameraSerials),
+            dailyStats.rows(lureSerials, todayKey, todayKey),
+            // Last 24 h from snapshots (rolling window); 7 and 30 days from the daily rollup
+            computePeriodStats({ ...matchQuery, createdAt: { $gte: last24h } }),
+            dailyStats.rows(cameraSerials, dailyStats.startKeyForDays(30)),
+            // From the rollup: counting every photo grows with the history
+            dailyStats.scanCount(cameraSerials),
+            // Catches: insects that arrived per day (rise of each card), the figure to act on
+            catchStats.overview(cameraSerials)
+        ]);
+        const lureAverage = new Map(lureRows.filter(r => r.scans).map(r => [r.deviceSerial, Math.round((r.total / r.scans) * 10) / 10]));
 
         for (const cam of dedupedCameras) {
             // Same counting as alerts and diagnosis: pests only (no people, cars...)
@@ -551,24 +562,12 @@ async function getAiOverview(req, res) {
         }
 
         // 2. Real historical stats (Min, Max, Avg, totalScans) for Day (24h), Week (7d), Month (30d)
-        const now = Date.now();
-        const last24h = new Date(now - 24 * 60 * 60 * 1000);
-
-        // Last 24 h from snapshots (rolling window); 7 and 30 days from the daily rollup
-        const [statsDay, rollup30] = await Promise.all([
-            computePeriodStats({ ...matchQuery, createdAt: { $gte: last24h } }),
-            dailyStats.rows(cameraSerials, dailyStats.startKeyForDays(30))
-        ]);
         const rollup7 = rollup30.filter(r => r.day >= dailyStats.startKeyForDays(7));
         const statsWeek = rollupPeriodStats(rollup7);
         const statsMonth = rollupPeriodStats(rollup30);
 
-        // 3. Total processed snapshots & 24h count
-        const totalSnapshots = await Snapshot.countDocuments(matchQuery);
-        const last24hCount = statsDay.totalScans || await Snapshot.countDocuments({
-            ...matchQuery,
-            createdAt: { $gte: last24h }
-        });
+        // 3. Processed photos in the last 24 h (the day's stats counted them)
+        const last24hCount = statsDay.totalScans || 0;
 
         // 4. Species breakdown over the last 30 days
         const speciesAgg = dailyStats.speciesTotals(rollup30, 'total').map(sp => ({ _id: sp.name, total: sp.value }));
@@ -584,8 +583,7 @@ async function getAiOverview(req, res) {
             ? `${speciesAgg[0]._id} (${Math.round((speciesAgg[0].total / (allTimeSum || 1)) * 100)}%)`
             : '--';
 
-        // 5. Catches: insects that arrived per day (rise of each card), the figure to act on
-        const catches = await catchStats.overview(cameraSerials);
+        // 5. Catches per camera
         for (const row of cameraRealtimeList) {
             Object.assign(row, catches.perCamera[row.deviceSerial] || {});
             const cam = cameraMap.get(row.deviceSerial);
