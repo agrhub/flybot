@@ -14,7 +14,7 @@
           <el-radio-group v-model="period" size="small" @change="load">
             <el-radio-button v-for="p in PERIODS" :key="p" :value="p">{{ t('farms.compare.days', { days: p }) }}</el-radio-button>
           </el-radio-group>
-          <el-button size="small" :icon="Bell" :disabled="!toVisit.length" :loading="reminding === 'all'" @click="remind(toVisit, 'all')">{{ t('orgOverview.remindAll', { count: toVisit.length }) }}</el-button>
+          <el-button v-if="toVisit.length" size="small" :icon="Bell" :loading="reminding === 'all'" @click="remind(toVisit, 'all')">{{ t('orgOverview.remindAll', { count: toVisit.length }) }}</el-button>
           <el-button size="small" :icon="Download" :disabled="!members.length" :loading="exporting" @click="exportExcel">{{ t('farms.compare.export') }}</el-button>
         </div>
       </div>

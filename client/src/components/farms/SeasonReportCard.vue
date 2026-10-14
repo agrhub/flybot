@@ -13,6 +13,7 @@
           unlink-panels
           size="small"
           value-format="YYYY-MM-DD"
+          format="DD/MM/YYYY"
           :disabled-date="(d) => d > new Date()"
           :start-placeholder="t('audit.from')"
           :end-placeholder="t('audit.to')"
