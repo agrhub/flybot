@@ -2566,6 +2566,7 @@
       "title": "Cooperative report (PDF)",
       "desc": "For the board: each member's flies per trap per day against the period before, ranked, by month, the effect by active ingredient and the members' treatment record.",
       "sent": "Sending the cooperative report to your email."
-    }
+    },
+    "former": "Left the organization"
   }
 }

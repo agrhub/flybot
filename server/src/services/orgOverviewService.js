@@ -55,6 +55,9 @@ async function orgOverview(org, days = DEFAULT_PERIOD, now = new Date()) {
                 name: user?.name || '',
                 email: user?.email || email || member?.email || '',
                 role: member?.role || null,
+                // A camera left in the organization by someone who is no longer a member:
+                // its figures count, but they are never reminded or listed for a visit
+                member: !!member,
                 serials: [],
                 cameras: 0,
                 silent: 0,
@@ -93,7 +96,7 @@ async function orgOverview(org, days = DEFAULT_PERIOD, now = new Date()) {
             change: change(now7.ftd, before.ftd),
             total: now7.total,
             // Busy traps and nothing logged: worth a call or a visit
-            needsVisit: row.atThreshold > 0 && !treatedInPeriod
+            needsVisit: row.member && row.atThreshold > 0 && !treatedInPeriod
         };
     }).sort((a, b) => (b.needsVisit - a.needsVisit) || ((b.ftd ?? -1) - (a.ftd ?? -1)) || a.email.localeCompare(b.email));
 

@@ -1,3 +1,4 @@
+const { once } = require('events');
 const { Zip, ZipDeflate, strToU8 } = require('fflate');
 const { Camera, Farm, Plot, DailyStat, Snapshot, Treatment, MaintenanceEvent, Dashboard, ChatSession } = require('../models');
 
@@ -65,6 +66,10 @@ function writeExport(user, out, now = new Date()) {
                 if (buffer.length > CHUNK) {
                     file.push(strToU8(buffer));
                     buffer = '';
+                    // A slow connection: wait for it to take what was sent before reading more
+                    // (or for it to close, when the person gave up)
+                    if (out.writableNeedDrain) await Promise.race([once(out, 'drain'), once(out, 'close')]);
+                    if (out.destroyed) throw new Error('The download was closed.');
                 }
             }
             file.push(strToU8(buffer), true);

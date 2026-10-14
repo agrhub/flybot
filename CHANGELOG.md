@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Security
+- A grower who left a cooperative is no longer reminded or listed for a visit; their cameras left in the organization still count in its figures and are marked "Left the organization".
+- "Download all my data" waits for a slow connection instead of holding the archive in memory, and stops when the download is closed.
+- More access tests: another organization cannot see, remind or report one it is not in; a camera shared for viewing only cannot take an imported log.
+
 ## 1.4.0 (2026-10-14)
 
 ### Cooperatives

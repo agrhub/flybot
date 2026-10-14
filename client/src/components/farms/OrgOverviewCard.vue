@@ -38,8 +38,9 @@
             <div class="min-w-0">
               <p class="cmp-strong truncate">{{ m.name || m.email }}</p>
               <p class="cmp-meta">{{ t('farms.compare.traps', { count: m.cameras }) }} · {{ lastTreatmentText(m) }}</p>
-              <el-button v-if="m.userId && m.cameras" link type="primary" size="small" :icon="Bell" :loading="reminding === m.userId" @click="remind([m], m.userId)">{{ t('orgOverview.remind') }}</el-button>
+              <el-button v-if="m.userId && m.cameras && m.member" link type="primary" size="small" :icon="Bell" :loading="reminding === m.userId" @click="remind([m], m.userId)">{{ t('orgOverview.remind') }}</el-button>
               <div class="flex flex-wrap gap-1 mt-1">
+                <el-tag v-if="!m.member" type="info" effect="plain" round size="small">{{ t('orgOverview.former') }}</el-tag>
                 <el-tag v-if="m.needsVisit" type="danger" effect="light" round size="small">{{ t('orgOverview.visit') }}</el-tag>
                 <el-tag v-if="m.atThreshold" type="warning" effect="light" round size="small">{{ t('orgOverview.atThresholdCount', { count: m.atThreshold }) }}</el-tag>
                 <el-tag v-if="m.silent" type="info" effect="light" round size="small">{{ t('orgOverview.silentCount', { count: m.silent }) }}</el-tag>
@@ -70,10 +71,11 @@
         <el-table-column :label="t('orgOverview.status')" min-width="220">
           <template #default="{ row }">
             <div class="flex flex-wrap gap-1">
+              <el-tag v-if="!row.member" type="info" effect="plain" round size="small">{{ t('orgOverview.former') }}</el-tag>
               <el-tag v-if="row.needsVisit" type="danger" effect="light" round size="small">{{ t('orgOverview.visit') }}</el-tag>
               <el-tag v-if="row.atThreshold" type="warning" effect="light" round size="small">{{ t('orgOverview.atThresholdCount', { count: row.atThreshold }) }}</el-tag>
               <el-tag v-if="row.silent" type="info" effect="light" round size="small">{{ t('orgOverview.silentCount', { count: row.silent }) }}</el-tag>
-              <span v-if="!row.needsVisit && !row.atThreshold && !row.silent" class="cmp-meta">{{ row.cameras ? t('orgOverview.allGood') : t('orgOverview.noCameras') }}</span>
+              <span v-if="row.member && !row.needsVisit && !row.atThreshold && !row.silent" class="cmp-meta">{{ row.cameras ? t('orgOverview.allGood') : t('orgOverview.noCameras') }}</span>
             </div>
           </template>
         </el-table-column>
@@ -82,7 +84,7 @@
         </el-table-column>
         <el-table-column width="110" align="right">
           <template #default="{ row }">
-            <el-button v-if="row.userId && row.cameras" link type="primary" size="small" :icon="Bell" :loading="reminding === row.userId" @click="remind([row], row.userId)">{{ t('orgOverview.remind') }}</el-button>
+            <el-button v-if="row.userId && row.cameras && row.member" link type="primary" size="small" :icon="Bell" :loading="reminding === row.userId" @click="remind([row], row.userId)">{{ t('orgOverview.remind') }}</el-button>
           </template>
         </el-table-column>
       </el-table>

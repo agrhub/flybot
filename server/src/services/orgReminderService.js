@@ -18,8 +18,9 @@ async function remindMembers(org, sender, userIds) {
     const results = [];
     for (const userId of userIds) {
         const member = byId.get(userId);
-        // Only members with traps here: a reminder about nothing helps no one
-        if (!member || !member.cameras) {
+        // Only current members with traps here: a reminder about nothing helps no one, and
+        // someone who left the organization gets nothing from it
+        if (!member || !member.member || !member.cameras) {
             results.push({ userId, status: 'skipped' });
             continue;
         }

@@ -154,3 +154,29 @@ test('cooperative report: members ranked, PDF download and email, owners and man
     assert.match(mail.subject, /Hoa Loc cooperative/);
     assert.match(mail.attachments[0].filename, /^FlyBot_cooperative_.*\.pdf$/);
 });
+
+test('someone who left the organization: their cameras still count, but no reminder, no visit list', async () => {
+    const { lead, busy, org } = await seed();
+    // Ba leaves; the cameras stay in the organization
+    await models.Organization.updateOne({ _id: org._id }, { $pull: { members: { email: 'ba@example.test' } } });
+    const { body } = await json(await request(`/api/orgs/${org._id}/overview`, { as: lead }));
+    const ba = body.overview.members.find(m => m.email === 'ba@example.test');
+    assert.equal(ba.member, false);
+    assert.equal(ba.cameras, 2);
+    assert.equal(ba.needsVisit, false);
+    assert.equal(body.overview.totals.needsVisit, 0);
+
+    const remind = await json(await request(`/api/orgs/${org._id}/remind`, { method: 'POST', as: lead, body: { userIds: [String(busy._id)] } }));
+    assert.deepEqual(remind.body.results.map(r => r.status), ['skipped']);
+    assert.equal(await models.Notification.countDocuments({ userId: busy._id, type: 'log_reminder' }), 0);
+    assert.deepEqual(await sendOrgDigests(), { sent: 0 });
+});
+
+test('another organization cannot see, remind or report this one', async () => {
+    const { org, outsider } = await seed();
+    await models.Organization.create({ name: 'Other', members: [{ userId: outsider._id, email: outsider.email, role: 'owner' }] });
+    assert.equal((await request(`/api/orgs/${org._id}/overview`, { as: outsider })).status, 404);
+    assert.equal((await request(`/api/orgs/${org._id}/report`, { as: outsider })).status, 404);
+    assert.equal((await request(`/api/orgs/${org._id}/report/send`, { method: 'POST', as: outsider, body: {} })).status, 404);
+    assert.equal((await request(`/api/orgs/${org._id}/remind`, { method: 'POST', as: outsider, body: { userIds: ['x'] } })).status, 404);
+});
