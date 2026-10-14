@@ -521,9 +521,13 @@ const initEzOpen = async (url, accessToken, areaDomain, customCode) => {
           isPlaceholderVisible.value = true
           placeholderText.value = t('cameras.player.encryptedWithCode', { code: code || '—' })
           openValidateCodeDialog()
-        } else if (error.retcode === 5411 || error.code === 5411) {
+        } else if (String(error.retcode ?? error.code) === '5411') {
           isPlaceholderVisible.value = true
           placeholderText.value = t('cameras.player.permissionError')
+        } else if (String(error.retcode ?? error.code) === '5556') {
+          // EZVIZ cloud could not pull the live stream (sleeping battery/4G cam, or EZVIZ service)
+          isPlaceholderVisible.value = true
+          placeholderText.value = t('cameras.player.streamServiceError')
         } else if (error.code === '10001' || error.msg?.includes('illegal parameter')) {
           isPlaceholderVisible.value = true
           placeholderText.value = t('cameras.player.invalidParams')

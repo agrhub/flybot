@@ -482,9 +482,13 @@ const initPlayer = async (url, accessToken, areaDomain, code) => {
           }
           hasError.value = true;
           errorMessage.value = t('cameras.encryptedWarning');
-        } else if (error.retcode === 5411 || error.code === 5411) {
+        } else if (String(error.retcode ?? error.code) === '5411') {
           hasError.value = true;
           errorMessage.value = t('cameras.player.permissionError');
+        } else if (String(error.retcode ?? error.code) === '5556') {
+          // EZVIZ cloud could not pull the live stream (sleeping battery/4G cam, or EZVIZ service)
+          hasError.value = true;
+          errorMessage.value = t('cameras.player.streamServiceError');
         } else {
           hasError.value = true;
           errorMessage.value = error.msg || t('cameras.streamError');
