@@ -69,12 +69,15 @@ jobs:
           key: mongodb-binaries-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
           restore-keys: mongodb-binaries-${{ runner.os }}-
       - run: npm ci
-      # Chrome comes with the runner image
-      - run: node --test --test-concurrency=1 --test-reporter=spec --test-reporter-destination=stdout --test-reporter=tap --test-reporter-destination=e2e-results.tap tests/e2e/smoke.test.mjs
+      # Chrome comes with the runner image. The step has its own limit, shorter than the job's,
+      # so a hang still leaves time to annotate what ran
+      - timeout-minutes: 15
+        run: node --test --test-concurrency=1 --test-reporter=spec --test-reporter-destination=stdout --test-reporter=tap --test-reporter-destination=e2e-results.tap tests/e2e/smoke.test.mjs
         working-directory: client
         env:
           CHROME_PATH: /usr/bin/google-chrome
           # Ubuntu 24.04 runners block Chrome's sandbox (no unprivileged user namespaces)
           FLYBOT_CHROME_ARGS: --no-sandbox
-      - if: failure()
+      # Also after a timeout (the step is then cancelled, not failed)
+      - if: ${{ !success() }}
         run: node .github/scripts/tap-annotations.js client/e2e-results.tap

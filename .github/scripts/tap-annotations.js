@@ -32,4 +32,13 @@ for (let i = 0; i < lines.length; i++) {
     const where = file ? ` file=${file},line=${location[2]}` : '';
     console.log(`::error${where},title=${escape(match[1]).slice(0, 200)}::${escape(detail || yaml.slice(0, 1500))}`);
 }
+// Which tests finished and how long each took: after a timeout, the slow or missing one stands out
+const done = [];
+for (let i = 0; i < lines.length; i++) {
+    const match = lines[i].match(/^(\s*)(not ok|ok) \d+ - (.*)$/);
+    if (!match || match[1].length) continue;
+    const ms = (lines.slice(i + 1, i + 12).join('\n').match(/duration_ms: ([\d.]+)/) || [])[1];
+    done.push(`${match[2] === 'ok' ? 'ok' : 'FAILED'} ${Math.round(Number(ms || 0) / 1000)}s ${match[3]}`);
+}
+if (done.length) console.log(`::notice title=Tests that finished (${done.length})::${escape(done.join('\n'))}`);
 console.log(`${failures} failed test(s) annotated`);
