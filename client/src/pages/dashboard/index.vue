@@ -19,6 +19,9 @@
     </el-alert>
 
     <!-- Key metrics -->
+    <!-- What to do next on each plot (when something needs doing) -->
+    <SprayPlanCard />
+
     <section class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
       <!-- Insects that arrived today, all traps -->
       <StatCard
@@ -439,6 +442,7 @@ import PageHeader from '@/components/common/PageHeader.vue';
 import StatCard from '@/components/common/StatCard.vue';
 import CatchBarChart from '@/components/charts/CatchBarChart.vue';
 import DegreeDayPanel from '@/components/dashboard/DegreeDayPanel.vue';
+import SprayPlanCard from '@/components/dashboard/SprayPlanCard.vue';
 import { speciesShare } from '@/utils/species';
 
 const router = useRouter();

@@ -234,6 +234,7 @@ import { ElMessage, ElMessageBox, ElTag } from 'element-plus';
 import { Plus, Download, Edit, Delete, VideoCamera, Message, Upload } from '@element-plus/icons-vue';
 import LogImportDialog from '@/components/logbook/LogImportDialog.vue';
 import api from '@/services/api';
+import { useRoute, useRouter } from 'vue-router';
 import { useAuth } from '@/composables/useAuth';
 import { useCameras } from '@/composables/useCameras';
 import { useBreakpoints } from '@/composables/useBreakpoints';
@@ -511,9 +512,23 @@ const exportVietGap = async () => {
   }
 };
 
+// From a suggestion ("To do" on the dashboard): the form opens filled in, and the link is consumed
+const route = useRoute();
+const router = useRouter();
+const openFromLink = () => {
+  const q = route.query;
+  if (!q.new) return;
+  openForm();
+  if (TYPES.includes(q.type)) form.type = q.type;
+  if (typeof q.cameras === 'string' && q.cameras) form.cameraSerials = q.cameras.split(',');
+  if (typeof q.area === 'string') form.area = q.area.slice(0, 60);
+  router.replace({ path: '/logbook' });
+};
+
 onMounted(() => {
   load();
   loadIngredients();
+  openFromLink();
 });
 </script>
 

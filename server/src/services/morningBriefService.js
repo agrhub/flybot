@@ -11,6 +11,7 @@ const { queueMail } = require('./mailService');
 const emailTemplates = require('./emailTemplates');
 const telegramService = require('./telegramService');
 const { appUrl } = require('./authTokenService');
+const sprayPlanService = require('./sprayPlanService');
 
 const HOUR_MS = 60 * 60 * 1000;
 const MAX_NAMES = 5;
@@ -34,6 +35,9 @@ async function buildMorningBrief(user, now = new Date()) {
     ]);
     for (const row of latest.values()) row.count = countPests(plain(row.summary));
     const judged = await judgedCounts(unique, latest, now);
+    // The most urgent thing to do on a plot today, if any
+    const plan = await sprayPlanService.planFor(user, now).catch(() => ({ items: [] }));
+    const next = plan.items.find(i => i.action !== 'monitor' && (!i.date || i.date <= plan.today));
     const name = (c) => c.deviceName || c.deviceSerial;
     const risk = (c) => riskLevel(judged.get(c.deviceSerial)?.value || 0, thresholdOf(c));
     return {
@@ -48,7 +52,8 @@ async function buildMorningBrief(user, now = new Date()) {
             return due && due <= now;
         }).map(name),
         offline: unique.filter(c => c.status !== 1).map(name),
-        alerts
+        alerts,
+        todo: next ? { action: next.action, place: next.plot ? `${next.farm} · ${next.plot}` : next.farm, rotateFrom: next.rotateFrom, waitUntil: next.waitUntil } : null
     };
 }
 
@@ -70,6 +75,10 @@ function briefLines(brief, language) {
     if (brief.cardsDue.length) lines.push(t('cardsDue', { list: list(brief.cardsDue) }));
     if (brief.offline.length) lines.push(t('offline', { list: list(brief.offline) }));
     if (brief.alerts) lines.push(t('alerts', { count: brief.alerts }));
+    if (brief.todo) {
+        const until = brief.todo.waitUntil ? `${brief.todo.waitUntil.slice(8, 10)}/${brief.todo.waitUntil.slice(5, 7)}` : '';
+        lines.push(t(`todo.${brief.todo.action}`, { place: brief.todo.place, until }) + (brief.todo.rotateFrom ? ' ' + t('todo.rotate', { ingredient: brief.todo.rotateFrom }) : ''));
+    }
     return lines;
 }
 

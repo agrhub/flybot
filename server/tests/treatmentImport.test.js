@@ -69,3 +69,13 @@ test('import: rows are required, 500 at most, signed in only', async () => {
     assert.match(tooMany.body.message, /500/);
     assert.equal((await request('/api/treatments/import', { method: 'POST', body: { rows: ROWS } })).status, 401);
 });
+
+test('import: a camera shared for viewing only cannot be written to', async () => {
+    const owner = await createUser({ role: 'manager' });
+    const viewer = await createUser();
+    await createCamera(owner, { deviceSerial: 'SH1', sharedWith: [{ userId: viewer._id, email: viewer.email, status: 'active' }] });
+    const res = await json(await request('/api/treatments/import', { method: 'POST', as: viewer, body: { rows: [{ type: 'spray', at: daysAgo(1), cameraSerials: ['SH1'], product: 'Abc' }] } }));
+    assert.equal(res.status, 200);
+    assert.deepEqual(res.body.results, [{ row: 0, status: 'error', code: 'CAMERA_NOT_FOUND' }]);
+    assert.equal(await models.Treatment.countDocuments(), 0);
+});

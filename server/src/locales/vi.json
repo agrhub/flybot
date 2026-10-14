@@ -477,7 +477,14 @@
     "offline": "Camera mất kết nối: {list}.",
     "alerts": "{count} cảnh báo trong 24 giờ qua.",
     "button": "Mở FlyBot",
-    "footer": "Bạn nhận bản tin này vì đã bật \"Bản tin sáng\". Tắt trong Cài đặt › Thông báo."
+    "footer": "Bạn nhận bản tin này vì đã bật \"Bản tin sáng\". Tắt trong Cài đặt › Thông báo.",
+    "todo": {
+      "treat_now": "Việc nên làm hôm nay: xử lý {place} (bẫy chạm ngưỡng, tuần qua chưa xử lý).",
+      "wait_check": "Việc nên làm: {place} vừa được xử lý, kiểm tra hiệu quả sau {until}.",
+      "bait_before_wave": "Việc nên làm hôm nay: đặt bả ở {place} trước đợt ruồi mới.",
+      "sanitation": "Việc nên làm hôm nay: thu gom trái rụng, kiểm tra bẫy ở {place} (thời tiết thuận lợi cho ruồi).",
+      "rotate": "Lần tới nên đổi hoạt chất (hai lần gần nhất đều dùng {ingredient})."
+    }
   },
   "vietgap": {
     "title": "Sổ ghi chép sử dụng thuốc BVTV tháng {month}",

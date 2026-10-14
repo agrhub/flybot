@@ -427,6 +427,17 @@ async function exportAuditLog(req, res) {
  * POST /api/admin/training-sync/run: upload the next batch now (also retries failed ones)
  */
 /**
+ * GET /api/admin/usage: how the app is used (people active, features, twelve weeks), counts only
+ */
+async function getUsage(req, res) {
+    try {
+        res.json({ success: true, usage: await require('../services/usageStatsService').usageStats() });
+    } catch (err) {
+        sendServerError(res, err, { context: 'Usage statistics' });
+    }
+}
+
+/**
  * GET /api/admin/pipeline: capture, AI analysis and background jobs over the last 24 hours
  */
 async function getPipeline(req, res) {
@@ -461,6 +472,7 @@ async function runTrainingSync(req, res) {
 }
 
 module.exports = {
+    getUsage,
     getPipeline,
     getTrainingSync,
     runTrainingSync,

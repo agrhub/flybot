@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.5.0 (2026-10-14)
+
+### What to do next
+- **To do** on the dashboard: one suggestion per plot from simple rules: treat now when traps are at their threshold and nothing was done in the past week, check the effect after a recent treatment, bait a few days before the next fly generation (degree-days), sanitation when the weather favors flies. Dates skip days with heavy rain, and a reminder to change the active ingredient comes when the last two sprays used the same one. The morning brief carries the most urgent suggestion; the assistant answers "when should I spray" from it (get_spray_plan). GET /api/farms/plan.
+- On each suggestion, **Done** opens the field log form filled in (the plot's traps, the measure, the area) and **Later** hides it for the rest of the day on that device.
+
+### For administrators
+- **Usage** (Settings, administration): people active over 7 and 30 days, accounts, the features used over the last 30 days (log entries by form, assistant and import, card changes, assistant questions, data downloads, cooperative reminders and reports), the cameras, and twelve weeks of active people, log entries and photos. Counted from what FlyBot already stores; no outside tracking, no content. GET /api/admin/usage.
+
+### Guide and tour
+- A **Cooperatives** section in the guide: setting up the organization and inviting growers, bringing their traps in, following them up and reminding them, their field logs, and the report for the board (Vietnamese and English, with pictures).
+- The farm picture in the guide shows a farm's plots again (it had shown the farm list since the cooperative cards were added).
+- The tour videos (99 s) show the To do card, the cooperative overview, the log import and voice logging; the guide pictures show the To do card.
+
+### Code
+- One flies-per-trap-per-day helper, one report PDF kit and one change tag replace their copies.
+
+### Security
+- A grower who left a cooperative is no longer reminded or listed for a visit; their cameras left in the organization still count in its figures and are marked "Left the organization".
+- "Download all my data" waits for a slow connection instead of holding the archive in memory, and stops when the download is closed.
+- More access tests: another organization cannot see, remind or report one it is not in; a camera shared for viewing only cannot take an imported log.
+
 ## 1.4.0 (2026-10-14)
 
 ### Cooperatives

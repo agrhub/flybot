@@ -941,7 +941,7 @@
           "forecast": {
             "title": "AI diagnosis & forecast",
             "desc": "The AI Copilot panel on the Overview brings risk, trend and suggested actions together.",
-            "items": "Click the AI Agent diagnosis button at the bottom of the Overview.\n\"7-day trend forecast\" follows the busiest trap: expected new flies per day (+) added to the count on its glue card, colored against its threshold.\n\"Next wave of adult flies\": a degree-day estimate from the biggest catch, with progress and generation length.\n\"Recommended actions\": suggestions following integrated pest management. These are estimates; check the field.\n\"Next 3 days\" in the degree-day panel shows which days suit fruit flies (25–33°C, humid, no heavy rain). When two or more of them come as a new wave is due, FlyBot sends the farm a weather warning at 17:00 the day before."
+            "items": "Click the AI Agent diagnosis button at the bottom of the Overview.\n\"7-day trend forecast\" follows the busiest trap: expected new flies per day (+) added to the count on its glue card, colored against its threshold.\n\"Next wave of adult flies\": a degree-day estimate from the biggest catch, with progress and generation length.\n\"Recommended actions\": suggestions following integrated pest management. These are estimates; check the field.\n\"Next 3 days\" in the degree-day panel shows which days suit fruit flies (25–33°C, humid, no heavy rain). When two or more of them come as a new wave is due, FlyBot sends the farm a weather warning at 17:00 the day before.\n\"To do\" on the dashboard: one suggestion per plot (treat now when traps are at their threshold and nothing was done in the past week, check the effect after a recent treatment, bait before the next wave of flies, sanitation when the weather favors flies), on a day without heavy rain, with a reminder to change the active ingredient when the last two sprays used the same one. The morning brief carries the most urgent one.\nOn each suggestion: \"Done\" opens the log form filled in (the plot, the measure, today) to record it; \"Later\" hides it for the rest of the day on this device."
           }
         }
       },
@@ -961,12 +961,42 @@
           "sharing": {
             "title": "Sharing & organizations",
             "desc": "Work as a team by sharing cameras or farms, or with an organization.",
-            "items": "Share a camera in Settings, Camera Management; share a farm with the \"Share\" button on the farm page.\nFor a cooperative or company: Settings, Organizations, \"New organization\".\nAdd members by email as Owner, Manager or Member. Members see every camera and farm of the organization.\nOnly the camera owner or an admin can delete it, share it outside or move it to another organization.\nPeople you invite get access once they confirm their email. Anyone with an account who has not confirmed it shows as \"Not confirmed\": click \"Remind to confirm\" to send the confirmation email again (up to 3 times a day). Admins can also confirm it for them in Settings, Users.\n\"Invite many\" under Organizations: paste the email addresses or pick a CSV file to invite a whole cooperative at once (up to 50 addresses each time), with the result for each address.\n\"Cooperative overview\" (Farms, for organization owners and managers): one row per member with flies per trap per day against the period before, traps at their threshold, cameras without photos and the last treatment; members with traps at the threshold and no treatment logged come first, for a field visit. It exports to Excel.\n\"Remind\" (or \"Remind ... to visit\") sends the member a reminder to check the traps and log the work, in the app, by email and Telegram; at most once a day each. On Monday mornings, organization owners and managers get the list of members to visit (turn it off under Settings, Notifications).\n\"Cooperative report (PDF)\" at the bottom of the cooperative overview: choose a period, then download it or email it; it ranks the members and has flies per trap per day by month, the effect by active ingredient and the whole cooperative's treatment record."
+            "items": "Share a camera in Settings, Camera Management; share a farm with the \"Share\" button on the farm page.\nFor a cooperative or company: Settings, Organizations, \"New organization\".\nAdd members by email as Owner, Manager or Member. Members see every camera and farm of the organization.\nOnly the camera owner or an admin can delete it, share it outside or move it to another organization.\nPeople you invite get access once they confirm their email. Anyone with an account who has not confirmed it shows as \"Not confirmed\": click \"Remind to confirm\" to send the confirmation email again (up to 3 times a day). Admins can also confirm it for them in Settings, Users.\nWorking with a whole cooperative (inviting growers, following up, reminders, reports): see the Cooperatives section."
           },
           "log": {
             "title": "Treatment log & VietGAP",
             "desc": "Record every action taken and see its effect on trap catches.",
             "items": "Open \"Field log\", click \"Log treatment\".\nChoose the method: spray, protein bait, lure, biological, sanitation, bagging or other; pick the traps in the treated area.\nEnter product, active ingredient, dose, operator and pre-harvest interval.\n\"Effect\" compares average catches before and after; \"Harvest\" shows when the interval has passed.\nClick \"Export VietGAP log\" to save the pesticide use record.\nThe dashboard lists areas inside a pre-harvest interval; on the morning it ends, FlyBot sends an \"OK to harvest\" notice in the app, by email and on Telegram.\nThe \"Effect by active ingredient\" table below the list groups every use of the same ingredient and shows how much catches dropped on average afterwards, to pick what works on your farm.\nA paper or spreadsheet log: \"Import from file\" reads an .xlsx or .csv file (a template is provided), checks every row and shows a preview; rows already in the log are skipped."
+          }
+        }
+      },
+      "coop": {
+        "title": "Cooperatives",
+        "steps": {
+          "setup": {
+            "title": "Set up the organization & invite the growers",
+            "desc": "An organization brings the cooperative's members, cameras and farms together.",
+            "items": "The board (an account with the Manager role) goes to Settings, Organizations, presses \"New organization\" and names the cooperative.\nRoles: Owners and Managers manage members and cameras and see the cooperative overview; Members see every camera and farm of the organization.\n\"Invite many\": paste the email addresses (one per line) or pick a CSV file, up to 50 at a time; the result table shows who was added and who was invited.\nGrowers without an account get an invitation to sign up; access starts once they confirm their email. For someone with an account who has not confirmed their email: press \"Remind them to confirm\"."
+          },
+          "traps": {
+            "title": "Bring the growers' traps in",
+            "desc": "Each grower keeps their cameras; the organization sees and follows them.",
+            "items": "Each grower adds their own cameras (\"Add camera\"), with the trap kind and the alert threshold.\nUnder Settings, Organizations, the camera's owner picks it and presses \"Add to organization\"; every member sees it at once.\nAssign the traps to farms and plots (Farms) to compare plots and get a \"To do\" suggestion for each.\nOnly a camera's owner (or an administrator) deletes it, shares it outside or moves it to another organization. Growers who leave are no longer reminded."
+          },
+          "follow": {
+            "title": "Follow the growers",
+            "desc": "Who needs a visit this week, and a reminder in one press.",
+            "items": "\"Cooperative overview\" (Farms): one row per member with flies per trap per day against the period before (7 or 30 days), traps at threshold, cameras without photos and the last treatment.\nMembers with traps at their threshold and no treatment logged in the period come first, marked \"Needs a visit\".\n\"Remind\" asks that member to check their traps and log their work (in the app, by email, Telegram), at most once a day each; \"Remind ... to visit\" reminds them all at once.\nMonday at 7:00, owners and managers get the list of members to visit (turn it off under Settings, Notifications)."
+          },
+          "log": {
+            "title": "The growers' field logs",
+            "desc": "Quick logging keeps the whole cooperative's VietGAP record complete.",
+            "items": "Log with the form in the Field log, or tell the assistant (\"this morning I sprayed Radiant on mango plot A, 7 days pre-harvest\") and press Confirm.\nNo signal in the field: the entry stays on the phone and goes out when the network is back.\nA paper log or an old Excel file: \"Import from file\" reads an .xlsx or .csv (a template is provided), checks every row and skips those already logged.\nEach grower can turn on the \"Monthly VietGAP record\" to get the PDF on the 1st of each month."
+          },
+          "report": {
+            "title": "Reports for the board",
+            "desc": "One file for the meeting: the members, the trend and the treatments used.",
+            "items": "\"Cooperative report (PDF)\" at the bottom of the cooperative overview: choose the period, then download it or email it.\nIt ranks the members by flies per trap per day against the period before, gives the months, the effect by active ingredient across members and the whole cooperative's treatment record.\nThe overview and the farm comparison export to Excel for further work."
           }
         }
       },
@@ -1527,6 +1557,40 @@
         "more": "more next run",
         "skipped": "{n} tick(s) skipped while still running"
       }
+    },
+    "usage": {
+      "tab": "Usage",
+      "title": "Usage",
+      "subtitle": "How FlyBot is used, from what the system already stores (no outside tracking, counts only).",
+      "people": "People",
+      "active7": "Active in the last 7 days",
+      "active30": "Active in the last 30 days",
+      "users": "Accounts in use",
+      "newUsers30": "New accounts (30 days)",
+      "features": "Features used (last 30 days)",
+      "feature": {
+        "treatmentsLogged": "Log entries (form)",
+        "treatmentsByAssistant": "Log entries via the assistant",
+        "treatmentsImported": "Log rows imported",
+        "cardChanges": "Card changes",
+        "assistantQuestions": "Questions to the assistant",
+        "assistantUsers": "Assistant users",
+        "dataExports": "Full data downloads",
+        "remindersSent": "Cooperative reminders",
+        "cooperativeReportsSent": "Cooperative reports sent"
+      },
+      "cameras": "Cameras",
+      "camerasTotal": "Cameras",
+      "camerasOnline": "Online",
+      "photo24h": "With a photo in 24 hours",
+      "photos30": "Photos analyzed (30 days)",
+      "weeks": "Last 12 weeks",
+      "week": "Week starting",
+      "activeUsers": "Active people",
+      "treatments": "Log entries",
+      "photos": "Photos analyzed",
+      "noData": "No data yet",
+      "note": "A person counts as active when they sign in, use the app (an open session), log a treatment or change a card in that period. The audit log is kept for 365 days."
     }
   },
   "dashboards": {
@@ -2566,6 +2630,32 @@
       "title": "Cooperative report (PDF)",
       "desc": "For the board: each member's flies per trap per day against the period before, ranked, by month, the effect by active ingredient and the members' treatment record.",
       "sent": "Sending the cooperative report to your email."
-    }
+    },
+    "former": "Left the organization"
+  },
+  "plan": {
+    "title": "To do",
+    "desc": "A suggestion for each plot from the catches, the field log, the next fly generation (degree-days) and the rain forecast.",
+    "log": "Field log",
+    "actions": {
+      "treat_now": "Treat now",
+      "wait_check": "Check effect",
+      "bait_before_wave": "Bait",
+      "sanitation": "Sanitation"
+    },
+    "reasons": {
+      "treat_now": "{count} traps at threshold, nothing in the past 7 days ({ftd} flies/trap/day).",
+      "wait_check": "Just treated: see whether the catches fell after {until} before treating again.",
+      "bait_before_wave": "A new wave of flies is due around {wave}: put out protein bait a few days before.",
+      "sanitation": "The next days favor flies: collect fallen fruit and check the traps."
+    },
+    "rainMoved": "Moved to a day without heavy rain.",
+    "rotate": "Change the active ingredient this time: the last two sprays both used {ingredient}.",
+    "today": "Today",
+    "more": "Show {count} more plots",
+    "less": "Show less",
+    "note": "Suggestions only; always follow the product label (dose, pre-harvest interval).",
+    "done": "Done",
+    "later": "Later"
   }
 }

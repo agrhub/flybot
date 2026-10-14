@@ -1,7 +1,3 @@
-const { jsPDF } = require('jspdf');
-const { autoTable } = require('jspdf-autotable');
-// Same Vietnamese-capable font as the report PDFs
-const { addQuicksandFonts } = require('../../../client/src/utils/pdfFonts.js');
 const { Farm, Plot, Camera, Treatment } = require('../models');
 const { getViewableSerials } = require('../utils/ownership');
 const { translate, normalizeLanguage } = require('../utils/i18n');
@@ -10,6 +6,7 @@ const dailyStats = require('./dailyStats');
 const treatmentService = require('./treatmentService');
 const farmService = require('./farmService');
 const { orgRolesOf } = require('./orgService');
+const { FARM_OFFSET_MS, MARGIN, MUTED, dayMonthYear, farmDateTime, createReport } = require('./reportPdfKit');
 
 /**
  * Season report for a cooperative: over a chosen period, every farm the person can see with
@@ -22,20 +19,7 @@ const DEFAULT_DAYS = 182;
 const MONTH_COLUMNS = 6;
 const PEAK_DAYS = 3;
 
-const FARM_OFFSET_MS = 7 * 60 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
-const BRAND = [16, 185, 129];
-const TEXT = [60, 60, 60];
-const MUTED = [120, 120, 120];
-const MARGIN = 12;
-const round1 = (n) => Math.round(n * 10) / 10;
-
-const dayMonthYear = (key) => `${key.slice(8, 10)}/${key.slice(5, 7)}/${key.slice(0, 4)}`;
-const farmDateTime = (date) => {
-    const d = new Date(new Date(date).getTime() + FARM_OFFSET_MS);
-    const pad = (n) => String(n).padStart(2, '0');
-    return `${pad(d.getUTCDate())}/${pad(d.getUTCMonth() + 1)}/${d.getUTCFullYear()} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`;
-};
 
 /**
  * The period from ?from=YYYY-MM-DD&to=YYYY-MM-DD (farm days, both included), the last 6 months
@@ -53,22 +37,8 @@ function parsePeriod({ from, to } = {}, now = new Date()) {
     return { fromKey, toKey, days };
 }
 
-/** FTD of some cameras over some days, from catchesBySerial's per-camera maps. */
-function ftdOf(serials, catches, dayKeys) {
-    let total = 0;
-    let trapDays = 0;
-    for (const serial of serials) {
-        const byDay = catches.get(serial)?.total;
-        if (!byDay) continue;
-        for (const day of dayKeys) {
-            const v = byDay.get(day);
-            if (v === null || v === undefined) continue;
-            total += v;
-            trapDays++;
-        }
-    }
-    return trapDays ? round1(total / trapDays) : null;
-}
+/** FTD of some cameras over some days; null without data. */
+const ftdOf = (serials, catches, dayKeys) => catchStats.ftdOver(serials, catches, dayKeys).ftd;
 
 /** Everything the report shows, for one person and period. */
 async function seasonData(user, period) {
@@ -135,44 +105,11 @@ async function seasonData(user, period) {
 function buildSeasonPdf(data, { language, owner, generatedAt = new Date() }) {
     const lang = normalizeLanguage(language);
     const t = (key, params) => translate(lang, `season.${key}`, params);
-    const doc = new jsPDF({ orientation: 'l', unit: 'mm', format: 'a4', putOnlyUsedFonts: true });
-    addQuicksandFonts(doc);
-    const table = (startY, head, body, extra = {}) => autoTable(doc, {
-        startY,
-        margin: { left: MARGIN, right: MARGIN, bottom: 14 },
-        head: [head],
-        body,
-        theme: 'grid',
-        styles: { font: 'Quicksand', fontSize: 8.5, valign: 'middle', textColor: TEXT, cellPadding: 1.8 },
-        headStyles: { fillColor: BRAND, textColor: [255, 255, 255], fontStyle: 'bold' },
-        didDrawPage: () => {
-            const h = doc.internal.pageSize.getHeight();
-            doc.setFontSize(7.5);
-            doc.setTextColor(...MUTED);
-            doc.text(t('footer'), MARGIN, h - 7);
-        },
-        ...extra
-    });
-    const heading = (text, y) => {
-        doc.setFont('Quicksand', 'bold');
-        doc.setFontSize(12);
-        doc.setTextColor(...TEXT);
-        doc.text(text, MARGIN, y);
-        doc.setFont('Quicksand', 'normal');
-        return y + 3;
-    };
-    const after = () => doc.lastAutoTable.finalY + 10;
-    const value = (v) => (v === null || v === undefined ? '--' : String(v));
-
-    doc.setFont('Quicksand', 'bold');
-    doc.setFontSize(16);
-    doc.setTextColor(...TEXT);
-    doc.text(t('title', { from: dayMonthYear(data.period.fromKey), to: dayMonthYear(data.period.toKey) }), MARGIN, 16);
-    doc.setFont('Quicksand', 'normal');
-    doc.setFontSize(9);
-    doc.setTextColor(...MUTED);
-    doc.text(t('subtitle', { owner, farms: data.farms.length, days: data.period.days, date: farmDateTime(generatedAt) }), MARGIN, 22);
-    doc.text(t('ftdNote'), MARGIN, 27);
+    const { doc, table, heading, title, note, after, value, pdf } = createReport(t('footer'));
+    title(t('title', { from: dayMonthYear(data.period.fromKey), to: dayMonthYear(data.period.toKey) }), [
+        t('subtitle', { owner, farms: data.farms.length, days: data.period.days, date: farmDateTime(generatedAt) }),
+        t('ftdNote')
+    ]);
 
     // 1. Farms
     let y = heading(t('farmsTitle'), 36);
@@ -209,9 +146,7 @@ function buildSeasonPdf(data, { language, owner, generatedAt = new Date() }) {
                 g.measured ? `${g.effective}/${g.measured}` : '--'
             ]));
     } else {
-        doc.setFontSize(9);
-        doc.setTextColor(...MUTED);
-        doc.text(t('noTreatments'), MARGIN, y + 4);
+        note(t('noTreatments'), y + 4);
     }
 
     // 4. Appendix: the treatment record (VietGAP)
@@ -224,9 +159,9 @@ function buildSeasonPdf(data, { language, owner, generatedAt = new Date() }) {
                 translate(lang, `vietgap.types.${r.type}`), r.product || '', r.activeIngredient || '', r.dose || '',
                 r.operator || r.createdByEmail || '', Number.isInteger(r.preHarvestDays) ? String(r.preHarvestDays) : ''
             ]),
-            { styles: { font: 'Quicksand', fontSize: 7.5, valign: 'middle', textColor: TEXT, cellPadding: 1.5 }, columnStyles: { 0: { cellWidth: 8, halign: 'center' }, 1: { cellWidth: 26 }, 9: { cellWidth: 14, halign: 'center' } } });
+            { styles: { font: 'Quicksand', fontSize: 7.5, valign: 'middle', cellPadding: 1.5 }, columnStyles: { 0: { cellWidth: 8, halign: 'center' }, 1: { cellWidth: 26 }, 9: { cellWidth: 14, halign: 'center' } } });
     }
-    return Buffer.from(doc.output('arraybuffer'));
+    return pdf();
 }
 
 module.exports = {

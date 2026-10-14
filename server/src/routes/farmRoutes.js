@@ -11,6 +11,7 @@ router.use(authenticate, requireStringFields, require('../services/orgService').
 router.get('/', farmController.listFarms);
 router.get('/map', farmController.mapPlots);
 router.get('/compare', analyticsLimiter, farmController.compareFarms);
+router.get('/plan', analyticsLimiter, farmController.getPlan);
 router.get('/season-report', analyticsLimiter, farmController.downloadSeasonReport);
 router.post('/season-report/send', reportSendLimiter, farmController.sendSeasonReport);
 // Viewers (role "user") only see farms shared with them

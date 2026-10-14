@@ -24,6 +24,29 @@ const { addDays } = dailyStats;
 const percentChange = (current, previous) => (previous > 0 ? Math.round(((current - previous) / previous) * 100) : null);
 
 /**
+ * Flies per trap per day of some cameras over some days, from catchesBySerial's per-camera
+ * maps (days without data left out): { ftd, total, trapDays }, ftd null without data.
+ */
+function ftdOver(serials, cameras, dayKeys) {
+    let total = 0;
+    let trapDays = 0;
+    for (const serial of serials) {
+        const byDay = cameras.get(serial)?.total;
+        if (!byDay) continue;
+        for (const day of dayKeys) {
+            const v = byDay.get(day);
+            if (v === null || v === undefined) continue;
+            total += v;
+            trapDays++;
+        }
+    }
+    return { ftd: trapDays ? round1(total / trapDays) : null, total: round1(total), trapDays };
+}
+
+/** Change of one FTD against another, in %; null when either is unknown. */
+const ftdChange = (current, previous) => (current === null || current === undefined ? null : percentChange(current, previous));
+
+/**
  * Daily catches of each camera, total and per species, for the last `days` days (today included).
  * @returns {{ dayKeys: string[], cameras: Map<serial, { total: Map<day, n|null>, species: Map<name, Map<day, n|null>> }> }}
  */
@@ -274,5 +297,7 @@ module.exports = {
     overview,
     speciesCatchSeries,
     activityByHour,
-    percentChange
+    percentChange,
+    ftdOver,
+    ftdChange
 };

@@ -941,7 +941,7 @@
           "forecast": {
             "title": "Chẩn đoán AI & dự báo",
             "desc": "Khung chẩn đoán AI ở Tổng quan tổng hợp nguy cơ, xu hướng và biện pháp gợi ý.",
-            "items": "Bấm \"Chẩn đoán lại bằng AI\" ở cuối trang Tổng quan.\n\"Dự báo xu hướng 7 ngày tới\" theo dõi bẫy nhiều ruồi nhất: dự báo số ruồi mới mỗi ngày (+) rồi cộng dồn vào số trên tấm keo, màu theo ngưỡng của bẫy.\n\"Đợt ruồi trưởng thành tiếp theo\": tính theo độ-ngày từ đợt bắt nhiều nhất, kèm tiến độ và thời gian một thế hệ.\n\"Biện pháp xử lý khuyến nghị\": gợi ý theo nguyên tắc quản lý dịch hại tổng hợp. Đây là ước tính để tham khảo, hãy kiểm tra thực tế tại vườn.\n\"3 ngày tới\" trong khung độ-ngày cho biết ngày nào thời tiết thuận lợi cho ruồi vàng (25–33°C, ẩm, không mưa to). Khi có từ 2 ngày như vậy đúng lúc sắp có đợt ruồi mới, FlyBot gửi cảnh báo thời tiết cho vườn lúc 17:00 hôm trước."
+            "items": "Bấm \"Chẩn đoán lại bằng AI\" ở cuối trang Tổng quan.\n\"Dự báo xu hướng 7 ngày tới\" theo dõi bẫy nhiều ruồi nhất: dự báo số ruồi mới mỗi ngày (+) rồi cộng dồn vào số trên tấm keo, màu theo ngưỡng của bẫy.\n\"Đợt ruồi trưởng thành tiếp theo\": tính theo độ-ngày từ đợt bắt nhiều nhất, kèm tiến độ và thời gian một thế hệ.\n\"Biện pháp xử lý khuyến nghị\": gợi ý theo nguyên tắc quản lý dịch hại tổng hợp. Đây là ước tính để tham khảo, hãy kiểm tra thực tế tại vườn.\n\"3 ngày tới\" trong khung độ-ngày cho biết ngày nào thời tiết thuận lợi cho ruồi vàng (25–33°C, ẩm, không mưa to). Khi có từ 2 ngày như vậy đúng lúc sắp có đợt ruồi mới, FlyBot gửi cảnh báo thời tiết cho vườn lúc 17:00 hôm trước.\n\"Việc nên làm\" trên Tổng quan: mỗi lô một gợi ý (xử lý ngay khi bẫy chạm ngưỡng mà tuần qua chưa xử lý, chờ hiệu quả sau lần vừa xử lý, đặt bả trước đợt ruồi mới, vệ sinh vườn khi thời tiết thuận lợi cho ruồi), vào ngày không mưa lớn, kèm nhắc đổi hoạt chất khi hai lần phun gần nhất dùng cùng một loại. Bản tin sáng cũng ghi việc gấp nhất.\nỞ mỗi gợi ý: \"Đã làm\" mở sẵn form nhật ký (đúng lô, biện pháp, ngày hôm nay) để ghi lại; \"Để sau\" ẩn gợi ý đến hết hôm nay trên máy này."
           }
         }
       },
@@ -961,12 +961,42 @@
           "sharing": {
             "title": "Chia sẻ & tổ chức",
             "desc": "Làm việc nhóm bằng chia sẻ từng camera, từng vườn, hoặc bằng tổ chức.",
-            "items": "Chia sẻ camera trong Cài đặt, mục Quản lý Camera; chia sẻ vườn bằng nút \"Chia sẻ\" trên trang vườn.\nVới hợp tác xã hay doanh nghiệp: vào Cài đặt, mục Tổ chức, bấm \"Tạo tổ chức\".\nThêm thành viên theo email với vai trò Chủ sở hữu, Quản lý hoặc Thành viên. Thành viên xem mọi camera và vườn của tổ chức.\nChỉ chủ camera hoặc quản trị viên mới xoá, chia sẻ ra ngoài hay chuyển camera sang tổ chức khác.\nNgười được mời chỉ có quyền khi đã xác nhận email. Ai đã có tài khoản mà chưa xác nhận hiện \"Chưa xác nhận\": bấm \"Nhắc xác nhận\" để gửi lại email xác nhận (tối đa 3 lần mỗi ngày). Quản trị viên cũng có thể xác nhận hộ trong Cài đặt, mục Người dùng.\n\"Mời nhiều người\" trong mục Tổ chức: dán danh sách email hoặc chọn file CSV để mời cả hợp tác xã một lần (tối đa 50 địa chỉ mỗi lần), kèm kết quả từng địa chỉ.\n\"Tổng quan hợp tác xã\" (Vườn & lô, cho chủ và quản lý tổ chức): mỗi hộ một dòng với số ruồi/bẫy/ngày so với kỳ trước, bẫy chạm ngưỡng, camera không gửi ảnh và lần phun gần nhất; hộ có bẫy chạm ngưỡng mà chưa ghi biện pháp được đưa lên đầu để đi thăm vườn. Xuất được ra Excel.\nNút \"Nhắc\" (hoặc \"Nhắc các hộ cần thăm\") gửi lời nhắc kiểm tra bẫy và ghi nhật ký tới hộ đó, qua thông báo, email và Telegram; mỗi hộ tối đa một lần mỗi ngày. Sáng thứ Hai, chủ và quản lý tổ chức nhận danh sách hộ cần thăm vườn (tắt trong Cài đặt, Thông báo).\n\"Báo cáo hợp tác xã (PDF)\" cuối thẻ Tổng quan hợp tác xã: chọn khoảng thời gian rồi tải về hoặc gửi email, gồm xếp hạng các hộ, ruồi/bẫy/ngày theo tháng, hiệu quả theo hoạt chất và sổ ghi chép xử lý của cả hợp tác xã."
+            "items": "Chia sẻ camera trong Cài đặt, mục Quản lý Camera; chia sẻ vườn bằng nút \"Chia sẻ\" trên trang vườn.\nVới hợp tác xã hay doanh nghiệp: vào Cài đặt, mục Tổ chức, bấm \"Tạo tổ chức\".\nThêm thành viên theo email với vai trò Chủ sở hữu, Quản lý hoặc Thành viên. Thành viên xem mọi camera và vườn của tổ chức.\nChỉ chủ camera hoặc quản trị viên mới xoá, chia sẻ ra ngoài hay chuyển camera sang tổ chức khác.\nNgười được mời chỉ có quyền khi đã xác nhận email. Ai đã có tài khoản mà chưa xác nhận hiện \"Chưa xác nhận\": bấm \"Nhắc xác nhận\" để gửi lại email xác nhận (tối đa 3 lần mỗi ngày). Quản trị viên cũng có thể xác nhận hộ trong Cài đặt, mục Người dùng.\nCách làm việc với cả hợp tác xã (mời các hộ, theo dõi, nhắc, báo cáo): xem mục Hợp tác xã."
           },
           "log": {
             "title": "Nhật ký xử lý & VietGAP",
             "desc": "Ghi lại mọi biện pháp đã làm và xem hiệu quả trên số ruồi vào bẫy.",
             "items": "Vào \"Nhật ký vườn\", bấm \"Ghi nhận xử lý\".\nChọn biện pháp: phun thuốc, bả protein, mồi, sinh học, vệ sinh vườn, bao trái hoặc khác; chọn bẫy trong khu vực xử lý.\nNhập tên thuốc, hoạt chất, liều lượng, người thực hiện và thời gian cách ly.\nCột \"Hiệu quả\" so số bắt trung bình trước và sau xử lý; cột \"Thu hoạch\" báo khi đã qua thời gian cách ly.\nBấm \"Xuất sổ VietGAP\" để lưu sổ ghi chép sử dụng thuốc.\nTổng quan báo các khu vực đang trong thời gian cách ly; sáng ngày hết cách ly, FlyBot gửi thông báo \"Được thu hoạch\" qua ứng dụng, email và Telegram.\nBảng \"Hiệu quả theo hoạt chất\" dưới danh sách gom mọi lần dùng cùng một hoạt chất, cho biết trung bình số ruồi giảm bao nhiêu sau khi xử lý, để chọn thuốc hợp với vườn mình.\nNhật ký giấy hoặc trên Excel: \"Nhập từ file\" đọc file .xlsx hoặc .csv (có file mẫu), kiểm tra từng dòng và cho xem trước; dòng đã có trong nhật ký được bỏ qua."
+          }
+        }
+      },
+      "coop": {
+        "title": "Hợp tác xã",
+        "steps": {
+          "setup": {
+            "title": "Lập tổ chức & mời các hộ",
+            "desc": "Một tổ chức gom các hộ thành viên, camera và vườn của hợp tác xã.",
+            "items": "Ban quản lý (tài khoản vai trò Quản lý) vào Cài đặt, mục Tổ chức, bấm \"Tạo tổ chức\" và đặt tên hợp tác xã.\nVai trò trong tổ chức: Chủ sở hữu và Quản lý quản lý thành viên, camera và xem Tổng quan hợp tác xã; Thành viên xem mọi camera và vườn của tổ chức.\n\"Mời nhiều người\": dán danh sách email (mỗi dòng một địa chỉ) hoặc chọn file CSV, tối đa 50 địa chỉ mỗi lần; bảng kết quả cho biết ai đã được thêm, ai được gửi lời mời.\nHộ chưa có tài khoản nhận email mời đăng ký; quyền có hiệu lực khi họ xác nhận email. Ai đã có tài khoản mà chưa xác nhận email: bấm \"Nhắc xác nhận email\"."
+          },
+          "traps": {
+            "title": "Đưa bẫy của các hộ vào tổ chức",
+            "desc": "Mỗi hộ giữ quyền với camera của mình; tổ chức được xem và theo dõi.",
+            "items": "Mỗi hộ tự thêm camera của mình (nút \"Thêm camera\"), chọn loại bẫy và ngưỡng cảnh báo.\nTrong Cài đặt, mục Tổ chức, chủ camera chọn camera rồi bấm \"Thêm vào tổ chức\"; mọi thành viên thấy bẫy đó ngay.\nGán bẫy vào vườn và lô (Vườn & lô) để so sánh theo lô và nhận gợi ý \"Việc nên làm\" cho từng lô.\nChỉ chủ camera (hoặc quản trị viên) mới xoá, chia sẻ ra ngoài hay chuyển camera sang tổ chức khác. Hộ rời tổ chức thì không còn bị nhắc."
+          },
+          "follow": {
+            "title": "Theo dõi các hộ",
+            "desc": "Ai cần được thăm vườn tuần này, và nhắc họ chỉ bằng một nút bấm.",
+            "items": "\"Tổng quan hợp tác xã\" (Vườn & lô): mỗi hộ một dòng với số ruồi/bẫy/ngày so với kỳ trước (7 hoặc 30 ngày), bẫy chạm ngưỡng, camera không gửi ảnh và lần phun gần nhất.\nHộ có bẫy chạm ngưỡng mà chưa ghi biện pháp nào trong kỳ được đưa lên đầu với nhãn \"Cần thăm vườn\".\n\"Nhắc\" gửi lời nhắc kiểm tra bẫy và ghi nhật ký tới hộ đó (thông báo, email, Telegram), mỗi hộ tối đa một lần mỗi ngày; \"Nhắc ... hộ cần thăm\" nhắc tất cả cùng lúc.\nSáng thứ Hai lúc 7:00, chủ và quản lý tổ chức nhận danh sách hộ cần thăm vườn (tắt trong Cài đặt, Thông báo)."
+          },
+          "log": {
+            "title": "Nhật ký của các hộ",
+            "desc": "Ghi nhật ký nhanh để sổ VietGAP của cả hợp tác xã luôn đầy đủ.",
+            "items": "Ghi bằng form trong Nhật ký vườn, hoặc nói với trợ lý (\"sáng nay phun Radiant cho lô xoài A, cách ly 7 ngày\") rồi bấm Xác nhận.\nỞ ngoài vườn không có sóng: phần ghi được giữ trên máy và tự gửi khi có mạng.\nSổ giấy hay file Excel cũ: \"Nhập từ file\" đọc file .xlsx hoặc .csv (có file mẫu), kiểm tra từng dòng và bỏ qua dòng đã có.\nMỗi hộ có thể bật \"Sổ VietGAP hằng tháng\" để nhận sổ PDF ngày 1 hằng tháng."
+          },
+          "report": {
+            "title": "Báo cáo cho ban quản lý",
+            "desc": "Một file cho cuộc họp: các hộ, xu hướng và biện pháp đã dùng.",
+            "items": "\"Báo cáo hợp tác xã (PDF)\" cuối thẻ Tổng quan hợp tác xã: chọn khoảng thời gian rồi tải về hoặc gửi email.\nBáo cáo gồm xếp hạng các hộ theo ruồi/bẫy/ngày so với kỳ trước, số liệu theo tháng, hiệu quả theo hoạt chất của mọi hộ và sổ ghi chép xử lý của cả hợp tác xã.\nBảng tổng quan và bảng so sánh vườn xuất được ra Excel để xử lý tiếp."
           }
         }
       },
@@ -1527,6 +1557,40 @@
         "more": "còn tiếp ở lần sau",
         "skipped": "bỏ qua {n} lượt vì lần trước chưa xong"
       }
+    },
+    "usage": {
+      "tab": "Thống kê sử dụng",
+      "title": "Thống kê sử dụng",
+      "subtitle": "Mức độ sử dụng FlyBot từ dữ liệu sẵn có trong hệ thống (không theo dõi bên ngoài, chỉ đếm số lượng).",
+      "people": "Người dùng",
+      "active7": "Hoạt động 7 ngày qua",
+      "active30": "Hoạt động 30 ngày qua",
+      "users": "Tài khoản đang dùng",
+      "newUsers30": "Tài khoản mới (30 ngày)",
+      "features": "Tính năng được dùng (30 ngày qua)",
+      "feature": {
+        "treatmentsLogged": "Ghi nhật ký (form)",
+        "treatmentsByAssistant": "Ghi nhật ký qua trợ lý",
+        "treatmentsImported": "Dòng nhật ký nhập từ file",
+        "cardChanges": "Lần thay tấm bẫy",
+        "assistantQuestions": "Câu hỏi cho trợ lý",
+        "assistantUsers": "Người dùng trợ lý",
+        "dataExports": "Lần tải toàn bộ dữ liệu",
+        "remindersSent": "Lời nhắc hợp tác xã",
+        "cooperativeReportsSent": "Báo cáo hợp tác xã đã gửi"
+      },
+      "cameras": "Camera",
+      "camerasTotal": "Tổng số camera",
+      "camerasOnline": "Đang trực tuyến",
+      "photo24h": "Có ảnh trong 24 giờ",
+      "photos30": "Ảnh đã phân tích (30 ngày)",
+      "weeks": "12 tuần gần nhất",
+      "week": "Tuần bắt đầu",
+      "activeUsers": "Người hoạt động",
+      "treatments": "Lần ghi nhật ký",
+      "photos": "Ảnh đã phân tích",
+      "noData": "Chưa có số liệu",
+      "note": "Một người được tính là hoạt động khi đăng nhập, dùng ứng dụng (phiên còn hiệu lực), ghi nhật ký hoặc thay bẫy trong khoảng thời gian đó. Nhật ký kiểm toán được giữ 365 ngày."
     }
   },
   "dashboards": {
@@ -2566,6 +2630,32 @@
       "title": "Báo cáo hợp tác xã (PDF)",
       "desc": "Cho ban quản lý: ruồi/bẫy/ngày từng hộ so với kỳ trước và xếp hạng, theo tháng, hiệu quả theo hoạt chất và sổ ghi chép xử lý của các hộ.",
       "sent": "Đang gửi báo cáo hợp tác xã tới email của bạn."
-    }
+    },
+    "former": "Đã rời tổ chức"
+  },
+  "plan": {
+    "title": "Việc nên làm",
+    "desc": "Gợi ý cho từng lô từ số ruồi, nhật ký xử lý, đợt ruồi mới (độ-ngày) và dự báo mưa.",
+    "log": "Ghi nhật ký",
+    "actions": {
+      "treat_now": "Xử lý ngay",
+      "wait_check": "Chờ hiệu quả",
+      "bait_before_wave": "Đặt bả",
+      "sanitation": "Vệ sinh vườn"
+    },
+    "reasons": {
+      "treat_now": "{count} bẫy chạm ngưỡng, 7 ngày qua chưa xử lý ({ftd} ruồi/bẫy/ngày).",
+      "wait_check": "Vừa xử lý: xem số ruồi giảm chưa sau {until} rồi mới xử lý tiếp.",
+      "bait_before_wave": "Đợt ruồi mới dự kiến khoảng {wave}: đặt bả protein vài ngày trước đó.",
+      "sanitation": "Mấy ngày tới thuận lợi cho ruồi: thu gom trái rụng, kiểm tra bẫy."
+    },
+    "rainMoved": "Lùi sang ngày không mưa lớn.",
+    "rotate": "Lần này nên đổi hoạt chất: hai lần phun gần nhất đều dùng {ingredient}.",
+    "today": "Hôm nay",
+    "more": "Xem thêm {count} lô",
+    "less": "Thu gọn",
+    "note": "Đây là gợi ý; luôn theo nhãn thuốc (liều lượng, thời gian cách ly).",
+    "done": "Đã làm",
+    "later": "Để sau"
   }
 }

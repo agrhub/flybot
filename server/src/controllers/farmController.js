@@ -9,6 +9,7 @@ const emailTemplates = require('../services/emailTemplates');
 const notificationService = require('../services/notificationService');
 const farmService = require('../services/farmService');
 const farmCompareService = require('../services/farmCompareService');
+const sprayPlanService = require('../services/sprayPlanService');
 const seasonReportService = require('../services/seasonReportService');
 const { EMAIL_REGEX, normalizeEmail, findUserByEmail, safeUrl, withAccountStatus } = require('./shareController');
 
@@ -144,6 +145,18 @@ async function compareFarms(req, res) {
         res.json({ success: true, ...(await farmCompareService.compareFarms(farms, visible, days)) });
     } catch (err) {
         sendServerError(res, err, { context: 'Compare farms' });
+    }
+}
+
+/**
+ * GET /api/farms/plan: what to do next on each plot (treat, bait before the next generation,
+ * collect fallen fruit, or keep monitoring), the most urgent first
+ */
+async function getPlan(req, res) {
+    try {
+        res.json({ success: true, ...(await sprayPlanService.planFor(req.user)) });
+    } catch (err) {
+        sendServerError(res, err, { context: 'Spray plan' });
     }
 }
 
@@ -487,6 +500,7 @@ async function claimPendingFarmShares(user) {
 }
 
 module.exports = {
+    getPlan,
     compareFarms,
     downloadSeasonReport,
     sendSeasonReport,

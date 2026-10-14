@@ -327,6 +327,9 @@ export default {
     return apiClient.post(`/integrations/webhooks/${id}/test`);
   },
   // Organizations
+  getUsageStats() {
+    return apiClient.get('/admin/usage');
+  },
   listOrgs() {
     return apiClient.get('/orgs');
   },
@@ -378,6 +381,9 @@ export default {
   },
   sendSeasonReport(body = {}) {
     return apiClient.post('/farms/season-report/send', body);
+  },
+  getSprayPlan() {
+    return apiClient.get('/farms/plan');
   },
   compareFarms(days = 30) {
     return apiClient.get('/farms/compare', { params: { days } });

@@ -16,6 +16,7 @@ router.get('/settings', adminController.getSystemSettings);
 router.put('/settings', adminController.updateSystemSettings);
 router.get('/audit', adminController.listAuditLog);
 router.get('/pipeline', adminController.getPipeline);
+router.get('/usage', adminController.getUsage);
 router.get('/training-sync', adminController.getTrainingSync);
 router.post('/training-sync/run', adminController.runTrainingSync);
 router.get('/audit/export', adminController.exportAuditLog);
