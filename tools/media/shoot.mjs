@@ -170,8 +170,11 @@ const shots = [
         const card = [...document.querySelectorAll('.el-card')].find(c => c.innerText.includes(${JSON.stringify(W('Tổng quan hợp tác xã', 'Cooperative overview'))}));
         card.scrollIntoView({ block: 'start' }); window.scrollBy(0, -80); await sleep(800);` },
     { name: 'farm-map', url: '/farms', action: `
-        const link = [...document.querySelectorAll('a, .el-card')].find(e => e.innerText && e.innerText.includes(${JSON.stringify(W('Vườn Hòa Lộc', 'Hoa Loc Orchard'))}));
-        link.click(); await sleep(5000);`, settle: 2000 },
+        // The farm's own card in the list (the comparison and cooperative cards above name it too)
+        let link = null;
+        for (let i = 0; i < 40 && !link; i++) { link = [...document.querySelectorAll('.el-card[role="button"]')].find(e => e.innerText.includes(${JSON.stringify(W('Vườn Hòa Lộc', 'Hoa Loc Orchard'))})); if (!link) await sleep(250); }
+        link.click(); await sleep(5000);
+        for (let i = 0; i < 40 && location.pathname === '/farms'; i++) await sleep(250);`, settle: 2000 },
     { name: 'map', url: '/map', settle: 6000 },
     { name: 'logbook', url: '/logbook', settle: 3000 },
     // The import dialog with a small file: two rows ready, one missing its product, one wrong

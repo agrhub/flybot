@@ -10,6 +10,8 @@
 - **Usage** (Settings, administration): people active over 7 and 30 days, accounts, the features used over the last 30 days (log entries by form, assistant and import, card changes, assistant questions, data downloads, cooperative reminders and reports), the cameras, and twelve weeks of active people, log entries and photos. Counted from what FlyBot already stores; no outside tracking, no content. GET /api/admin/usage.
 
 ### Guide and tour
+- A **Cooperatives** section in the guide: setting up the organization and inviting growers, bringing their traps in, following them up and reminding them, their field logs, and the report for the board (Vietnamese and English, with pictures).
+- The farm picture in the guide shows a farm's plots again (it had shown the farm list since the cooperative cards were added).
 - The tour videos (99 s) show the To do card, the cooperative overview, the log import and voice logging; the guide pictures show the To do card.
 
 ### Code
