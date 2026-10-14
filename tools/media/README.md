@@ -1,4 +1,4 @@
-# Guide screenshots and product tour
+# Guide screenshots, product tour and commercial
 
 Scripts that rebuild the screenshots of the user guide (`client/public/manual/vi|en/*.webp`) and the product tour videos (`client/public/media/flybot-tour-vi|en.mp4`) from a local demo. Run them again whenever the UI changes.
 
@@ -42,6 +42,26 @@ Copy the results into the app:
 
 `node frames.mjs <video.mp4> <prefix> <seconds...>` saves frames of a video, to check it.
 
+## Commercial (TVC)
+
+The 60-second commercial on the home page (`client/public/media/flybot-tvc-vi|en.mp4`) is a motion-graphics page, `tvc/tvc.html`, drawn frame by frame. It needs no demo server: the app pictures come from the guide screenshots (`client/public/manual/<lang>/`) and the logo. Open `tvc/tvc.html?lang=vi` in Chrome to watch it play in real time while editing.
+
+From the `tvc` folder:
+
+```bash
+# Stills at chosen seconds, to check the layout
+node stills.mjs stills vi 3 10 17 25
+
+# The video: 1800 frames (about 400 MB in the work folder, removed afterwards), then H.264 + AAC
+node render-tvc.mjs vi flybot-tvc-vi.mp4
+node render-tvc.mjs en flybot-tvc-en.mp4
+
+# The poster: a still in WebP
+FLYBOT_STILL_FORMAT=webp node stills.mjs poster vi 17
+```
+
+Rendering takes about ten minutes a language; `FLYBOT_TVC_KEEP=1` keeps the frames and `FLYBOT_TVC_REUSE=1` encodes them again without rendering. The MP4 needs no `remux-mp4.ps1` or `faststart-mp4.mjs`: it already has its index in front. Copy the videos and posters (`flybot-tvc-<lang>-poster.webp`) to `client/public/media/`.
+
 ## Files
 
 - `demo-server.js`: demo API with seeded data (users, farms, four traps, weeks of photos, a report, recordings). It writes the sign-in tokens to `demo-tokens.json` (not versioned). The assistant answers without Vertex: a stand-in model picks a real tool from the question (photos, week comparison, last 24 hours, reports, alerts, "đã thay" / "replaced" for a card change to confirm, a photo asked about from its window; otherwise the trap summary), with a canned look at photos and streams a short answer from its result, so the chat panel, its cards and ratings can be shown.
@@ -57,3 +77,8 @@ Copy the results into the app:
 - `prepare-deck-pptx.mjs`: run this on every PowerPoint export of a deck: `node prepare-deck-pptx.mjs "<export>.pptx" <vi|en> <https://…/video.mp4> "<deck>.pptx"`. It sets the text in Arial (the deck's web font is not embedded, and without it PowerPoint repeats words at Vietnamese line ends), tags Vietnamese text as such, moves apart text boxes the export laid over each other (two-column grids), turns WebP and SVG pictures into PNG (Google Slides and Drive's preview show neither), and links the tour picture on slide 4 to the online video (`link-video-pptx.mjs` below) instead of embedding it: the file stays about 5 MB, behaves the same in PowerPoint and Google Slides, and a new video needs no new deck.
 - `link-video-pptx.mjs`: instead of embedding, `node link-video-pptx.mjs <in.pptx> <slide> <https://…/video.mp4> <out.pptx>` makes the largest picture on that slide (and a play button on it) open the online video, so a new video on the website needs no new deck. PowerPoint does not play a linked .mp4 URL inside the slide (only YouTube, Vimeo or Stream), so it opens in the browser.
 - `frames.mjs`: frame grabber for checking a video.
+- `tvc/tvc.html`: the commercial's eight scenes on one timeline (`S`, seconds, on the music's 2.4 s bars), their text in both languages (`COPY`) and `window.renderAt(t)`, which draws any moment exactly.
+- `tvc/music.js`: the music, synthesized with Web Audio (no samples): pads, bass, drums and arpeggio following the scenes, a rise and hit on the logo.
+- `tvc/encode.html`: encodes the frames and the music with WebCodecs, frame by frame rather than in real time, so a busy machine drops nothing.
+- `tvc/mux-mp4.mjs`: writes the encoded video and sound into an MP4 with its index in front.
+- `tvc/render-tvc.mjs`, `tvc/stills.mjs`: the video and stills, as above.

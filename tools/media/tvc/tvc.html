@@ -1,0 +1,623 @@
+<!doctype html>
+<!--
+  FlyBot TVC: a 60 s motion piece drawn with HTML and CSS, driven by a virtual clock.
+  window.renderAt(t) puts every element where it belongs at second t, so render-tvc.mjs can take
+  frame after frame at an exact rate. ?lang=vi|en picks the text and the app screens.
+  Scene starts fall on the music's bars (100 BPM, 2.4 s a bar; see music.js).
+-->
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>FlyBot TVC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --mint: #3ecf8e;
+    --mint-deep: #0f8a57;
+    --ink: #071510;
+    --ink-2: #0c2018;
+    --paper: #f4fbf7;
+    --amber: #f5b83d;
+    --red: #ef5b5b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--ink); }
+  body { font-family: 'Be Vietnam Pro', 'Segoe UI', sans-serif; color: #fff; -webkit-font-smoothing: antialiased; }
+  #stage { position: absolute; inset: 0; overflow: hidden; perspective: 1800px; }
+  .layer { position: absolute; inset: 0; will-change: transform, opacity; }
+  .scene { position: absolute; inset: 0; opacity: 0; }
+
+  /* Backgrounds */
+  #bg-dark { background: radial-gradient(1200px 700px at 30% 20%, #12352a 0%, transparent 60%), radial-gradient(900px 600px at 80% 90%, #0f2c22 0%, transparent 60%), var(--ink); }
+  #bg-glow { background: radial-gradient(600px 600px at 50% 50%, rgba(62, 207, 142, 0.22), transparent 70%); mix-blend-mode: screen; }
+  #bg-light { background: radial-gradient(1400px 800px at 50% 40%, #ffffff 0%, #e6f7ee 55%, #c9eedb 100%); opacity: 0; }
+  .grain { position: absolute; inset: 0; opacity: 0.06; background-image: radial-gradient(rgba(255,255,255,0.8) 1px, transparent 1px); background-size: 3px 3px; pointer-events: none; }
+
+  /* Type */
+  .kicker { font-size: 26px; font-weight: 700; letter-spacing: 0.32em; text-transform: uppercase; color: var(--mint); }
+  .headline { font-size: 92px; font-weight: 800; line-height: 1.08; letter-spacing: -0.02em; }
+  .sub { font-size: 38px; font-weight: 500; line-height: 1.35; color: rgba(255,255,255,0.78); }
+  .line { display: block; overflow: hidden; padding-bottom: 0.08em; }
+  .word { display: inline-block; overflow: hidden; vertical-align: top; }
+  .word > span { display: inline-block; will-change: transform; }
+  .accent { color: var(--mint); }
+  .dark-text { color: var(--ink); }
+
+  /* Flies */
+  .fly { position: absolute; width: 46px; height: 46px; will-change: transform; }
+
+  /* Problem cards */
+  .card3d { position: absolute; width: 470px; height: 300px; border-radius: 28px; padding: 40px; background: linear-gradient(160deg, rgba(255,255,255,0.10), rgba(255,255,255,0.03)); border: 1px solid rgba(255,255,255,0.14); box-shadow: 0 40px 80px rgba(0,0,0,0.45); backdrop-filter: blur(8px); transform-style: preserve-3d; }
+  .card3d .icon { width: 64px; height: 64px; border-radius: 18px; display: grid; place-items: center; background: rgba(239, 91, 91, 0.16); color: var(--red); margin-bottom: 26px; }
+  .card3d h3 { font-size: 36px; font-weight: 700; margin-bottom: 14px; }
+  .card3d p { font-size: 24px; line-height: 1.45; color: rgba(255,255,255,0.72); }
+
+  /* Logo */
+  .logo-ring { position: absolute; width: 300px; height: 300px; border-radius: 50%; background: radial-gradient(circle, rgba(62,207,142,0.35), transparent 65%); }
+  .logo { position: absolute; width: 190px; height: 190px; object-fit: contain; filter: drop-shadow(0 18px 40px rgba(15, 138, 87, 0.35)); }
+  .brand { position: absolute; font-size: 150px; font-weight: 800; letter-spacing: -0.04em; color: var(--ink); }
+
+  /* Sticky card and AI boxes */
+  .sticky { position: absolute; width: 620px; height: 620px; border-radius: 22px; background-color: #f3d63c; background-image: linear-gradient(rgba(0,0,0,0.06) 2px, transparent 2px), linear-gradient(90deg, rgba(0,0,0,0.06) 2px, transparent 2px); background-size: 62px 62px; box-shadow: inset 0 0 0 14px #1d6b43, 0 50px 90px rgba(0,0,0,0.5); overflow: hidden; }
+  .sticky .fly { width: 40px; height: 40px; }
+  .box { position: absolute; border: 3px solid var(--mint); border-radius: 6px; box-shadow: 0 0 0 1px rgba(0,0,0,0.25); }
+  .box b { position: absolute; left: -3px; top: -26px; font-size: 15px; font-weight: 700; background: var(--mint); color: var(--ink); padding: 2px 7px; border-radius: 5px 5px 5px 0; white-space: nowrap; }
+  .scan { position: absolute; left: 0; right: 0; height: 120px; background: linear-gradient(180deg, transparent, rgba(62,207,142,0.55), transparent); mix-blend-mode: screen; }
+  .counter { position: absolute; font-size: 160px; font-weight: 800; letter-spacing: -0.04em; color: #fff; font-variant-numeric: tabular-nums; }
+  .counter small { display: block; font-size: 30px; font-weight: 600; letter-spacing: 0; color: rgba(255,255,255,0.7); margin-top: -10px; }
+  .badge { position: absolute; max-width: 460px; padding: 18px 28px; border-radius: 24px; background: rgba(62,207,142,0.14); border: 1px solid rgba(62,207,142,0.5); font-size: 26px; font-weight: 600; line-height: 1.35; color: #d8f7e8; }
+  .step-label { position: absolute; font-size: 28px; font-weight: 700; color: rgba(255,255,255,0.9); white-space: nowrap; }
+  .step-label i { font-style: normal; display: inline-grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--mint); color: var(--ink); margin-right: 14px; font-size: 22px; }
+
+  /* Devices */
+  .phone { position: absolute; width: 380px; height: 780px; border-radius: 56px; background: #0b0f0d; padding: 16px; box-shadow: 0 60px 120px rgba(0,0,0,0.55), inset 0 0 0 2px #2a3330; }
+  .phone .screen { position: relative; width: 100%; height: 100%; border-radius: 42px; overflow: hidden; background: linear-gradient(170deg, #1c3d30, #0b1f17); }
+  .phone .notch { position: absolute; top: 14px; left: 50%; width: 120px; height: 32px; margin-left: -60px; background: #0b0f0d; border-radius: 20px; z-index: 3; }
+  .phone .clock { position: absolute; top: 120px; width: 100%; text-align: center; font-size: 86px; font-weight: 300; color: #fff; }
+  .phone .date { position: absolute; top: 225px; width: 100%; text-align: center; font-size: 22px; color: rgba(255,255,255,0.75); }
+  .notif { position: absolute; left: 16px; right: 16px; top: 300px; padding: 18px 20px; border-radius: 22px; background: rgba(255,255,255,0.92); color: #10231b; box-shadow: 0 16px 30px rgba(0,0,0,0.35); }
+  .notif .app { display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 600; color: #4b5a54; margin-bottom: 8px; }
+  .notif .app img { width: 26px; height: 26px; border-radius: 7px; }
+  .notif h4 { font-size: 21px; font-weight: 700; margin-bottom: 4px; }
+  .notif p { font-size: 18px; line-height: 1.35; color: #34443d; }
+
+  .laptop { position: absolute; width: 1240px; transform-style: preserve-3d; }
+  .laptop .lid { position: relative; width: 1240px; height: 790px; border-radius: 26px 26px 10px 10px; background: #0b0f0d; padding: 22px 22px 30px; box-shadow: inset 0 0 0 2px #2a3330, 0 70px 140px rgba(0,0,0,0.55); }
+  .laptop .screen { position: relative; width: 100%; height: 100%; overflow: hidden; border-radius: 8px; background: #fff; }
+  .laptop .screen img { position: absolute; left: 0; top: 0; width: 1196px; height: 747.5px; transform-origin: 0 0; will-change: transform, opacity; }
+  .laptop .base { position: relative; width: 1420px; margin-left: -90px; height: 34px; border-radius: 4px 4px 28px 28px; background: linear-gradient(180deg, #d5dcd8, #9aa49f); box-shadow: 0 30px 60px rgba(0,0,0,0.45); }
+  .laptop .base::after { content: ''; position: absolute; left: 50%; top: 0; width: 220px; height: 12px; margin-left: -110px; border-radius: 0 0 14px 14px; background: #87918c; }
+  .cursor { position: absolute; width: 38px; height: 38px; z-index: 5; filter: drop-shadow(0 6px 10px rgba(0,0,0,0.35)); }
+  .ripple { position: absolute; width: 80px; height: 80px; border-radius: 50%; border: 4px solid var(--mint); z-index: 4; }
+  .callout { position: absolute; padding: 22px 30px; border-radius: 22px; background: var(--ink); color: #fff; font-size: 32px; font-weight: 700; box-shadow: 0 30px 60px rgba(0,0,0,0.45); white-space: nowrap; }
+  .callout span { display: block; font-size: 22px; font-weight: 500; color: rgba(255,255,255,0.72); margin-top: 6px; }
+
+  .panel { position: absolute; width: 1100px; height: 688px; border-radius: 22px; overflow: hidden; background: #fff; box-shadow: 0 50px 110px rgba(0,0,0,0.55); border: 2px solid rgba(255,255,255,0.12); }
+  .panel img { width: 100%; height: 100%; object-fit: cover; object-position: top left; }
+  .feature-caption { position: absolute; left: 140px; width: 520px; }
+  .feature-caption .num { font-size: 120px; font-weight: 800; color: rgba(62,207,142,0.25); line-height: 1; }
+  .feature-caption h3 { font-size: 54px; font-weight: 800; line-height: 1.1; margin: 10px 0 18px; }
+  .feature-caption p { font-size: 28px; line-height: 1.45; color: rgba(255,255,255,0.75); }
+
+  /* Cooperative network */
+  #net { position: absolute; inset: 0; }
+  .node { position: absolute; width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 50%; display: grid; place-items: center; background: rgba(255,255,255,0.08); border: 2px solid rgba(62,207,142,0.6); font-size: 20px; font-weight: 600; text-align: center; line-height: 1.2; }
+  .node.hub { width: 210px; height: 210px; margin: -105px 0 0 -105px; background: var(--mint); color: var(--ink); font-size: 30px; font-weight: 800; border: none; box-shadow: 0 0 0 18px rgba(62,207,142,0.18), 0 0 0 40px rgba(62,207,142,0.08); }
+  .node .dot { position: absolute; top: 6px; right: 10px; width: 22px; height: 22px; border-radius: 50%; }
+
+  /* Call to action */
+  .url { position: absolute; padding: 22px 46px; border-radius: 999px; background: var(--ink); color: #fff; font-size: 42px; font-weight: 700; letter-spacing: 0.01em; }
+  .small-print { position: absolute; font-size: 26px; font-weight: 500; color: rgba(7,21,16,0.65); white-space: nowrap; }
+  #fade { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="bg-dark" class="layer"></div>
+  <div id="bg-glow" class="layer"></div>
+  <div id="bg-light" class="layer"></div>
+  <div class="grain"></div>
+
+  <!-- 1. Hook -->
+  <section id="s1" class="scene">
+    <div id="s1-flies" class="layer"></div>
+    <div id="s1-text" style="position:absolute;left:160px;top:330px;width:1500px;">
+      <div class="kicker" id="s1-kicker"></div>
+      <div class="headline" id="s1-head" style="margin-top:28px;"></div>
+      <div class="sub" id="s1-sub" style="margin-top:34px;"></div>
+    </div>
+  </section>
+
+  <!-- 2. Problem -->
+  <section id="s2" class="scene">
+    <div style="position:absolute;left:160px;top:120px;width:1600px;">
+      <div class="kicker" id="s2-kicker"></div>
+      <div class="headline" id="s2-head" style="font-size:72px;margin-top:22px;"></div>
+    </div>
+    <div id="s2-cards"></div>
+  </section>
+
+  <!-- 3. Brand -->
+  <section id="s3" class="scene">
+    <div class="logo-ring" id="s3-ring" style="left:810px;top:180px;"></div>
+    <img class="logo" id="s3-logo" style="left:865px;top:235px;">
+    <div class="brand" id="s3-brand" style="left:0;width:1920px;text-align:center;top:470px;">FlyBot</div>
+    <div class="sub dark-text" id="s3-tag" style="position:absolute;left:0;width:1920px;text-align:center;top:680px;font-size:46px;font-weight:600;color:#0f2c22;"></div>
+  </section>
+
+  <!-- 4. How it works -->
+  <section id="s4" class="scene">
+    <div style="position:absolute;left:160px;top:90px;">
+      <div class="kicker" id="s4-kicker"></div>
+    </div>
+    <div id="s4-step1" class="step-label" style="left:160px;top:170px;"></div>
+    <div class="sticky" id="s4-card" style="left:160px;top:260px;"><div class="scan" id="s4-scan"></div></div>
+    <div id="s4-step2" class="step-label" style="left:860px;top:170px;"></div>
+    <div class="counter" id="s4-counter" style="left:860px;top:300px;">0<small></small></div>
+    <div class="badge" id="s4-badge" style="left:860px;top:560px;"></div>
+    <div id="s4-step3" class="step-label" style="left:1400px;top:170px;"></div>
+    <div class="phone" id="s4-phone" style="left:1400px;top:230px;">
+      <div class="screen"><div class="notch"></div><div class="clock">06:30</div><div class="date" id="s4-date"></div>
+        <div class="notif" id="s4-notif"><div class="app"><img id="s4-app-icon">FlyBot</div><h4 id="s4-notif-title"></h4><p id="s4-notif-body"></p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. App demo -->
+  <section id="s5" class="scene">
+    <div class="laptop" id="s5-laptop" style="left:340px;top:150px;">
+      <div class="lid"><div class="screen" id="s5-screen"><img id="s5-img-a"><img id="s5-img-b" style="opacity:0;"></div></div>
+      <div class="base"></div>
+    </div>
+    <svg class="cursor" id="s5-cursor" viewBox="0 0 24 24"><path d="M3 2l7.5 19 2.6-7.4L21 11z" fill="#fff" stroke="#071510" stroke-width="1.6" stroke-linejoin="round"/></svg>
+    <div class="ripple" id="s5-ripple"></div>
+    <div class="callout" id="s5-callout-a"></div>
+    <div class="callout" id="s5-callout-b"></div>
+  </section>
+
+  <!-- 6. Features -->
+  <section id="s6" class="scene">
+    <div id="s6-panels"></div>
+    <div id="s6-captions"></div>
+  </section>
+
+  <!-- 7. Cooperative -->
+  <section id="s7" class="scene">
+    <svg id="net" viewBox="0 0 1920 1080"></svg>
+    <div id="s7-nodes"></div>
+    <div style="position:absolute;left:160px;top:110px;width:900px;">
+      <div class="kicker" id="s7-kicker"></div>
+      <div class="headline" id="s7-head" style="font-size:72px;margin-top:22px;"></div>
+    </div>
+    <div class="panel" id="s7-panel" style="left:820px;top:360px;width:960px;height:600px;"><img id="s7-img"></div>
+  </section>
+
+  <!-- 8. Call to action -->
+  <section id="s8" class="scene">
+    <img class="logo" id="s8-logo" style="left:865px;top:150px;width:190px;height:190px;">
+    <div class="headline dark-text" id="s8-head" style="position:absolute;left:0;width:1920px;text-align:center;top:390px;font-size:84px;"></div>
+    <div class="url" id="s8-url" style="left:0;top:690px;">ezviz.agrhub.com</div>
+    <div class="small-print" id="s8-small" style="left:0;width:1920px;text-align:center;top:840px;"></div>
+  </section>
+
+  <div id="fade"></div>
+</div>
+
+<script>
+const LANG = new URLSearchParams(location.search).get('lang') === 'en' ? 'en' : 'vi';
+document.documentElement.lang = LANG;
+const ROOT = '../../../client/public/';
+const SCREEN = (name) => `${ROOT}manual/${LANG}/${name}.webp`;
+
+const COPY = {
+  vi: {
+    s1Kicker: 'Mỗi ngày trong vườn', s1Head: ['Ruồi vàng âm thầm', 'đẻ trứng vào trái chín.'], s1Sub: 'Thấy được thì đã muộn.',
+    s2Kicker: 'Vấn đề', s2Head: ['Kiểm bẫy thủ công', 'luôn đi sau dịch hại.'],
+    s2Cards: [['Đếm bằng tay', 'Đi từng bẫy, mất nhiều giờ công, số đếm tùy người đếm.'], ['Số liệu rời rạc', 'Ghi chép giấy, khó so sánh giữa các bẫy, các lô, các tuần.'], ['Phát hiện muộn', 'Khi thấy mật độ tăng, đợt bùng phát đã bắt đầu.']],
+    s3Tag: 'Camera chụp. AI đếm. Bạn quyết định.',
+    s4Kicker: 'Cách FlyBot làm việc', s4Steps: ['Camera chụp tấm bẫy', 'AI khoanh và đếm từng con', 'Cảnh báo về điện thoại'],
+    s4Unit: 'con ruồi vàng', s4Badge: 'Tìm thấy 92% số ruồi trên ảnh kiểm thử', s4Label: 'Ruồi vàng',
+    s4Date: 'Thứ Năm, 15 tháng 10', s4NotifTitle: 'Vượt ngưỡng dịch hại', s4NotifBody: 'Bẫy xoài A1: 18 con (ngưỡng 15). Nên kiểm tra lô xoài A sáng nay.',
+    s5CalloutA: ['Việc nên làm cho từng lô', 'Xử lý, đặt bả hay vệ sinh vườn, né ngày mưa'], s5CalloutB: ['Ruồi mới mỗi ngày', 'Theo loài, theo bẫy, kèm ngày xử lý'],
+    s6: [['Nhật ký & sổ VietGAP', 'Mỗi lần phun kèm hiệu quả đo được. Sổ PDF tự gửi ngày 1 hằng tháng.'], ['Nói là ghi', '“Sáng nay phun Radiant cho lô xoài A” — trợ lý điền sẵn, bạn bấm Xác nhận.'], ['Bản đồ điểm nóng', 'Bẫy theo lô trên bản đồ, màu theo mức nguy cơ.']],
+    s7Kicker: 'Cho hợp tác xã', s7Head: ['Mọi hộ thành viên', 'trên một màn hình.'], s7Hub: 'HTX', s7Node: 'Hộ',
+    s8Head: ['Phát hiện sâu hại sớm.', 'Quyết định có căn cứ.'], s8Small: 'Web · Điện thoại · Tiếng Việt & English'
+  },
+  en: {
+    s1Kicker: 'Every day in the orchard', s1Head: ['Fruit flies quietly', 'lay eggs in ripe fruit.'], s1Sub: 'By the time you see it, it is too late.',
+    s2Kicker: 'The problem', s2Head: ['Checking traps by hand', 'is always behind the pest.'],
+    s2Cards: [['Counting by hand', 'Trap after trap, hours of work, and the count depends on who counts.'], ['Scattered records', 'Paper notes are hard to compare across traps, plots and weeks.'], ['Found too late', 'When the numbers look high, the outbreak has already started.']],
+    s3Tag: 'The camera shoots. AI counts. You decide.',
+    s4Kicker: 'How FlyBot works', s4Steps: ['The camera photographs the card', 'AI marks and counts every fly', 'An alert on your phone'],
+    s4Unit: 'fruit flies', s4Badge: 'Finds 92% of the flies on test photos', s4Label: 'Fruit fly',
+    s4Date: 'Thursday, 15 October', s4NotifTitle: 'Pest threshold reached', s4NotifBody: 'Mango trap A1: 18 flies (threshold 15). Check mango plot A this morning.',
+    s5CalloutA: ['What to do on each plot', 'Treat, bait or clean up, on a dry day'], s5CalloutB: ['New flies every day', 'By species and trap, with treatments marked'],
+    s6: [['Field log & VietGAP record', 'Every spray with its measured effect. The PDF record goes out on the 1st.'], ['Say it, it is logged', '“Sprayed Radiant on mango plot A this morning” — the assistant fills it in, you Confirm.'], ['Hotspot map', 'Traps by plot on the map, colored by risk.']],
+    s7Kicker: 'For cooperatives', s7Head: ['Every member', 'on one screen.'], s7Hub: 'Co-op', s7Node: 'Farm',
+    s8Head: ['Spot pests early.', 'Decide with evidence.'], s8Small: 'Web · Phone · English & Tiếng Việt'
+  }
+}[LANG];
+
+// ---------- Helpers ----------
+const $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const seg = (t, a, b) => clamp((t - a) / (b - a));
+const lerp = (a, b, p) => a + (b - a) * p;
+const E = {
+  out: (p) => 1 - Math.pow(1 - p, 3),
+  outQuint: (p) => 1 - Math.pow(1 - p, 5),
+  inOut: (p) => (p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2),
+  in: (p) => p * p * p,
+  back: (p) => { const c1 = 1.5, c3 = c1 + 1; return 1 + c3 * Math.pow(p - 1, 3) + c1 * Math.pow(p - 1, 2); }
+};
+// Seeded random, so every frame (and every render) is the same
+let seed = 7;
+const rand = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
+
+function style(el, { o, x = 0, y = 0, s = 1, r = 0, rx = 0, ry = 0, z = 0, blur = 0 }) {
+  if (o !== undefined) el.style.opacity = o;
+  el.style.transform = `translate3d(${x}px, ${y}px, ${z}px) rotateX(${rx}deg) rotateY(${ry}deg) rotate(${r}deg) scale(${s})`;
+  el.style.filter = blur ? `blur(${blur}px)` : '';
+}
+
+// Words that rise out of their own line, one after another
+function kinetic(container, lines) {
+  container.innerHTML = '';
+  const words = [];
+  for (const text of lines) {
+    const line = document.createElement('span');
+    line.className = 'line';
+    for (const w of text.split(' ')) {
+      const word = document.createElement('span');
+      word.className = 'word';
+      const inner = document.createElement('span');
+      inner.textContent = w;
+      word.appendChild(inner);
+      line.appendChild(word);
+      line.appendChild(document.createTextNode(' '));
+      words.push(inner);
+    }
+    container.appendChild(line);
+  }
+  return words;
+}
+function riseWords(words, t, start, stagger = 0.07, dur = 0.7, exitAt = Infinity) {
+  words.forEach((w, i) => {
+    const p = E.outQuint(seg(t, start + i * stagger, start + i * stagger + dur));
+    const q = E.in(seg(t, exitAt, exitAt + 0.5));
+    w.style.transform = `translateY(${(1 - p) * 110 - q * 110}%)`;
+  });
+}
+
+const FLY_SVG = (fill = '#1b1206') => `<svg viewBox="0 0 40 40" class="fly-svg"><ellipse cx="13" cy="15" rx="10" ry="5" fill="rgba(220,235,255,0.55)" transform="rotate(-25 13 15)"/><ellipse cx="27" cy="15" rx="10" ry="5" fill="rgba(220,235,255,0.55)" transform="rotate(25 27 15)"/><ellipse cx="20" cy="22" rx="5.5" ry="10" fill="${fill}"/><ellipse cx="20" cy="22" rx="3.5" ry="7.5" fill="#c98a1e"/><circle cx="20" cy="11" r="4.2" fill="${fill}"/><circle cx="18.2" cy="10" r="1.4" fill="#b8321f"/><circle cx="21.8" cy="10" r="1.4" fill="#b8321f"/></svg>`;
+
+// ---------- Build the scenes ----------
+const S = { s1: [0, 7.2], s2: [7.2, 14.4], s3: [14.4, 19.2], s4: [19.2, 28.8], s5: [28.8, 38.4], s6: [38.4, 45.6], s7: [45.6, 52.8], s8: [52.8, 60] };
+const DURATION = 60;
+
+$('s1-kicker').textContent = COPY.s1Kicker;
+const s1Head = kinetic($('s1-head'), COPY.s1Head);
+const s1Sub = kinetic($('s1-sub'), [COPY.s1Sub]);
+const flies = Array.from({ length: 14 }, (_, i) => {
+  const el = document.createElement('div');
+  el.className = 'fly';
+  el.innerHTML = FLY_SVG();
+  $('s1-flies').appendChild(el);
+  return { el, x0: rand() * 2100 - 100, y0: rand() * 1000, vx: 60 + rand() * 120, amp: 20 + rand() * 50, f: 0.6 + rand(), s: 0.7 + rand() * 0.9, ph: rand() * 6 };
+});
+
+$('s2-kicker').textContent = COPY.s2Kicker;
+const s2Head = kinetic($('s2-head'), COPY.s2Head);
+const ICONS = [
+  '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11V5a2 2 0 0 1 4 0v6"/><path d="M13 9a2 2 0 0 1 4 0v4"/><path d="M5 13a2 2 0 0 1 4 0v-2"/><path d="M5 13v2a7 7 0 0 0 14 0v-2"/></svg>',
+  '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M8 14h3M8 17h6"/></svg>',
+  '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5"/><path d="M5 3 2 6M19 3l3 3"/></svg>'
+];
+const s2Cards = COPY.s2Cards.map(([h, p], i) => {
+  const el = document.createElement('div');
+  el.className = 'card3d';
+  el.style.left = `${160 + i * 545}px`;
+  el.style.top = '520px';
+  el.innerHTML = `<div class="icon">${ICONS[i]}</div><h3>${h}</h3><p>${p}</p>`;
+  $('s2-cards').appendChild(el);
+  return el;
+});
+
+$('s3-logo').src = `${ROOT}logo.png`;
+$('s8-logo').src = `${ROOT}logo.png`;
+$('s4-app-icon').src = `${ROOT}logo.png`;
+const s3Tag = kinetic($('s3-tag'), [COPY.s3Tag]);
+
+$('s4-kicker').textContent = COPY.s4Kicker;
+['s4-step1', 's4-step2', 's4-step3'].forEach((id, i) => { $(id).innerHTML = `<i>${i + 1}</i>${COPY.s4Steps[i]}`; });
+$('s4-counter').querySelector('small').textContent = COPY.s4Unit;
+$('s4-badge').textContent = COPY.s4Badge;
+$('s4-date').textContent = COPY.s4Date;
+$('s4-notif-title').textContent = COPY.s4NotifTitle;
+$('s4-notif-body').textContent = COPY.s4NotifBody;
+// Flies on the sticky card, and an AI box for each
+const CARD_FLIES = 18;
+const spots = [];
+while (spots.length < CARD_FLIES) {
+  const x = 60 + rand() * 480, y = 70 + rand() * 470;
+  if (spots.every((p) => Math.hypot(p.x - x, p.y - y) > 95)) spots.push({ x, y });
+}
+const cardFlies = spots.map(({ x, y }, i) => {
+  const r = rand() * 360;
+  const fly = document.createElement('div');
+  fly.className = 'fly';
+  fly.style.left = `${x}px`; fly.style.top = `${y}px`; fly.style.transform = `rotate(${r}deg)`;
+  fly.innerHTML = FLY_SVG();
+  $('s4-card').appendChild(fly);
+  const box = document.createElement('div');
+  box.className = 'box';
+  box.style.left = `${x - 8}px`; box.style.top = `${y - 8}px`; box.style.width = '56px'; box.style.height = '56px';
+  // Near the right edge the label opens to the left, inside the card
+  const side = x > 400 ? ' style="left:auto;right:-3px;border-radius:5px 5px 0 5px"' : '';
+  box.innerHTML = i % 3 === 0 ? `<b${side}>${COPY.s4Label} ${(0.86 + rand() * 0.12).toFixed(2)}</b>` : '';
+  box.style.opacity = 0;
+  $('s4-card').appendChild(box);
+  return { box, y };
+}).sort((a, b) => a.y - b.y);
+
+$('s5-img-a').src = SCREEN('dashboard');
+$('s5-img-b').src = SCREEN('analytics');
+$('s5-callout-a').innerHTML = `${COPY.s5CalloutA[0]}<span>${COPY.s5CalloutA[1]}</span>`;
+$('s5-callout-b').innerHTML = `${COPY.s5CalloutB[0]}<span>${COPY.s5CalloutB[1]}</span>`;
+
+const s6Panels = ['logbook', 'assistant-treatment', 'map'].map((name, i) => {
+  const el = document.createElement('div');
+  el.className = 'panel';
+  el.style.left = '700px';
+  el.style.top = '196px';
+  el.innerHTML = `<img src="${SCREEN(name)}">`;
+  $('s6-panels').appendChild(el);
+  return el;
+});
+const s6Captions = COPY.s6.map(([h, p], i) => {
+  const el = document.createElement('div');
+  el.className = 'feature-caption';
+  el.style.top = '330px';
+  el.innerHTML = `<div class="num">0${i + 1}</div><h3>${h}</h3><p>${p}</p>`;
+  $('s6-captions').appendChild(el);
+  return el;
+});
+
+$('s7-kicker').textContent = COPY.s7Kicker;
+const s7Head = kinetic($('s7-head'), COPY.s7Head);
+$('s7-img').src = SCREEN('org-overview');
+const HUB = { x: 1260, y: 590 };
+const NODES = Array.from({ length: 8 }, (_, i) => {
+  const a = (i / 8) * Math.PI * 2 - Math.PI / 2;
+  return { x: HUB.x + Math.cos(a) * 340, y: HUB.y + Math.sin(a) * 300, risk: [0, 2, 0, 1, 0, 0, 2, 0][i] };
+});
+$('net').innerHTML = NODES.map((n, i) => `<line id="ln${i}" x1="${HUB.x}" y1="${HUB.y}" x2="${n.x}" y2="${n.y}" stroke="rgba(62,207,142,0.55)" stroke-width="3" stroke-dasharray="460" stroke-dashoffset="460"/><circle id="pl${i}" r="7" fill="#3ecf8e" opacity="0"/>`).join('');
+const RISK_COLOR = ['#3ecf8e', '#f5b83d', '#ef5b5b'];
+const nodeEls = NODES.map((n, i) => {
+  const el = document.createElement('div');
+  el.className = 'node';
+  el.style.left = `${n.x}px`; el.style.top = `${n.y}px`;
+  el.innerHTML = `${COPY.s7Node} ${i + 1}<span class="dot" style="background:${RISK_COLOR[n.risk]}"></span>`;
+  $('s7-nodes').appendChild(el);
+  return el;
+});
+const hub = document.createElement('div');
+hub.className = 'node hub';
+hub.style.left = `${HUB.x}px`; hub.style.top = `${HUB.y}px`;
+hub.textContent = COPY.s7Hub;
+$('s7-nodes').appendChild(hub);
+
+const s8Head = kinetic($('s8-head'), COPY.s8Head);
+$('s8-small').textContent = COPY.s8Small;
+// The URL pill, centered
+$('s8-url').style.left = '50%';
+
+// ---------- One frame ----------
+function sceneOpacity(t, [a, b], fadeIn = 0.35, fadeOut = 0.35) {
+  return Math.min(seg(t, a, a + fadeIn), 1 - seg(t, b - fadeOut, b));
+}
+
+function renderAt(t) {
+  // Backgrounds: light for the brand and the end, dark otherwise
+  const light = Math.max(Math.min(seg(t, 14.1, 14.6), 1 - seg(t, 18.9, 19.4)), seg(t, 52.5, 53.1));
+  $('bg-light').style.opacity = light;
+  $('bg-glow').style.transform = `translate(${Math.sin(t * 0.3) * 260}px, ${Math.cos(t * 0.23) * 160}px) scale(${1.2 + Math.sin(t * 0.5) * 0.15})`;
+  $('bg-glow').style.opacity = 1 - light;
+
+  // 1. Hook
+  {
+    const [a, b] = S.s1, el = $('s1');
+    el.style.opacity = sceneOpacity(t, S.s1, 0.6, 0.6);
+    const k = E.out(seg(t, 0.2, 0.9));
+    style($('s1-kicker'), { o: k, y: (1 - k) * 20 });
+    riseWords(s1Head, t, 0.6, 0.11);
+    riseWords(s1Sub, t, 3.0, 0.12);
+    style($('s1-text'), { s: 1 + seg(t, a, b) * 0.05, x: -seg(t, a, b) * 30 });
+    flies.forEach((f) => {
+      const x = ((f.x0 + f.vx * t) % 2200) - 140;
+      const y = f.y0 + Math.sin(t * f.f + f.ph) * f.amp;
+      style(f.el, { x, y, s: f.s, r: Math.sin(t * 3 + f.ph) * 25 + 90, o: 0.85 });
+    });
+  }
+
+  // 2. Problem
+  {
+    const [a, b] = S.s2;
+    $('s2').style.opacity = sceneOpacity(t, S.s2);
+    const k = E.out(seg(t, a + 0.1, a + 0.7));
+    style($('s2-kicker'), { o: k, y: (1 - k) * 20 });
+    riseWords(s2Head, t, a + 0.3, 0.08);
+    s2Cards.forEach((c, i) => {
+      const p = E.back(seg(t, a + 1.4 + i * 0.5, a + 2.3 + i * 0.5));
+      const drift = seg(t, a + 2, b);
+      style(c, { o: clamp(p * 1.5), y: (1 - p) * 160 - drift * 18, ry: (1 - p) * -70 + (i - 1) * 6 * (1 - drift * 0.5), rx: (1 - p) * 25, z: -drift * 40 });
+    });
+    // Leaves with a push toward the light
+    style($('s2'), { s: 1 + E.in(seg(t, b - 0.6, b)) * 0.25, blur: E.in(seg(t, b - 0.6, b)) * 12 });
+  }
+
+  // 3. Brand
+  {
+    const [a, b] = S.s3;
+    $('s3').style.opacity = sceneOpacity(t, S.s3, 0.3, 0.4);
+    const p = E.back(seg(t, a + 0.2, a + 1.0));
+    style($('s3-logo'), { s: 0.4 + p * 0.6, o: clamp(p * 2), r: (1 - p) * -40 });
+    const ring = E.out(seg(t, a + 0.3, a + 1.6));
+    style($('s3-ring'), { s: 0.3 + ring * 1.4, o: (1 - ring) * 0.9 + 0.25 });
+    const bp = E.outQuint(seg(t, a + 0.7, a + 1.5));
+    style($('s3-brand'), { o: bp, y: (1 - bp) * 60, s: 0.92 + bp * 0.08 });
+    riseWords(s3Tag, t, a + 1.4, 0.09);
+  }
+
+  // 4. How it works
+  {
+    const [a, b] = S.s4;
+    $('s4').style.opacity = sceneOpacity(t, S.s4);
+    style($('s4-kicker'), { o: E.out(seg(t, a + 0.1, a + 0.6)) });
+    const lab = (id, at) => { const p = E.out(seg(t, at, at + 0.5)); style($(id), { o: p, x: (1 - p) * -30 }); };
+    lab('s4-step1', a + 0.3); lab('s4-step2', a + 2.4); lab('s4-step3', a + 5.6);
+    const cp = E.outQuint(seg(t, a + 0.4, a + 1.4));
+    style($('s4-card'), { o: cp, y: (1 - cp) * 80, ry: (1 - cp) * 30 + 8 - seg(t, a, b) * 6, rx: 4 });
+    // The camera's scan, then a box on each fly, top to bottom
+    const scan = seg(t, a + 1.4, a + 2.6);
+    $('s4-scan').style.top = `${lerp(-120, 640, scan)}px`;
+    $('s4-scan').style.opacity = scan > 0 && scan < 1 ? 1 : 0;
+    let shown = 0;
+    cardFlies.forEach((f, i) => {
+      const at = a + 2.4 + i * 0.13;
+      const p = E.back(seg(t, at, at + 0.35));
+      f.box.style.opacity = clamp(p * 2);
+      f.box.style.transform = `scale(${0.4 + p * 0.6})`;
+      if (t >= at) shown++;
+    });
+    const cnt = E.out(seg(t, a + 2.4, a + 2.4 + CARD_FLIES * 0.13 + 0.2));
+    $('s4-counter').firstChild.textContent = String(Math.round(cnt * CARD_FLIES));
+    style($('s4-counter'), { o: E.out(seg(t, a + 2.3, a + 2.8)) });
+    const bp = E.back(seg(t, a + 4.8, a + 5.4));
+    style($('s4-badge'), { o: clamp(bp * 2), s: 0.85 + bp * 0.15 });
+    const ph = E.outQuint(seg(t, a + 5.6, a + 6.6));
+    style($('s4-phone'), { o: ph, y: (1 - ph) * 200, ry: -12 + (1 - ph) * -20, rx: 4 });
+    const np = E.back(seg(t, a + 6.6, a + 7.2));
+    style($('s4-notif'), { o: clamp(np * 2), y: (1 - np) * -60, s: 0.92 + np * 0.08 });
+    style($('s4'), { s: 1 + E.in(seg(t, b - 0.5, b)) * 0.06 });
+  }
+
+  // 5. App demo: the laptop turns to face us, the cursor goes to "To do", we move in
+  {
+    const [a, b] = S.s5;
+    $('s5').style.opacity = sceneOpacity(t, S.s5);
+    const turn = E.inOut(seg(t, a, a + 1.6));
+    const zoom = E.inOut(seg(t, a + 3.6, a + 5.0)) * (1 - E.inOut(seg(t, a + 5.8, a + 6.8)));
+    style($('s5-laptop'), { ry: lerp(-38, -4, turn), rx: lerp(18, 4, turn), s: lerp(0.78, 1, turn) + zoom * 0.12, x: -zoom * 60, y: lerp(160, 0, turn) + zoom * 30, o: clamp(turn * 2) });
+    // The screen picture: the dashboard, then the analytics page
+    const swap = E.inOut(seg(t, a + 6.0, a + 6.6));
+    $('s5-img-b').style.opacity = swap;
+    $('s5-img-a').style.opacity = 1 - swap;
+    // Scale the 1440-wide shot into the 1196-wide screen; inside it, move to the "To do" card
+    const k = 1196 / 1440;
+    const inside = E.inOut(seg(t, a + 3.6, a + 5.0)) * (1 - swap);
+    $('s5-img-a').style.transform = `scale(${k * (1 + inside * 0.55)}) translate(${-inside * 230}px, ${-inside * 230}px)`;
+    const scrollB = E.inOut(seg(t, a + 6.6, a + 8.6));
+    $('s5-img-b').style.transform = `scale(${k * (1 + (1 - scrollB) * 0.2)})`;
+    // Cursor to the To do card, a click
+    const cur = E.inOut(seg(t, a + 1.8, a + 3.0));
+    const cx = lerp(1300, 760, cur), cy = lerp(900, 470, cur);
+    style($('s5-cursor'), { x: cx, y: cy, o: seg(t, a + 1.6, a + 1.9) * (1 - seg(t, a + 3.6, a + 3.9)) });
+    const rp = seg(t, a + 3.1, a + 3.7);
+    style($('s5-ripple'), { x: cx - 22, y: cy - 22, s: 0.3 + rp * 1.4, o: rp > 0 && rp < 1 ? 1 - rp : 0 });
+    const ca = E.back(seg(t, a + 4.6, a + 5.2)) * (1 - seg(t, a + 5.8, a + 6.1));
+    style($('s5-callout-a'), { x: 1180, y: 160, o: clamp(ca * 2), s: 0.9 + ca * 0.1 });
+    const cb = E.back(seg(t, a + 7.0, a + 7.6));
+    style($('s5-callout-b'), { x: 1300, y: 820, o: clamp(cb * 2), s: 0.9 + cb * 0.1 });
+  }
+
+  // 6. Features: three panels in a 3D stack, each comes to the front in turn
+  {
+    const [a, b] = S.s6;
+    $('s6').style.opacity = sceneOpacity(t, S.s6);
+    const slot = 2.4;
+    s6Panels.forEach((p, i) => {
+      // Position in the stack over time: 0 = front
+      const front = E.inOut(seg(t, a + i * slot - 0.4, a + i * slot + 0.4));
+      const gone = E.inOut(seg(t, a + (i + 1) * slot - 0.4, a + (i + 1) * slot + 0.4));
+      const depth = i - Math.min(i, (t - a) / slot);
+      const behind = Math.max(0, depth);
+      const isLast = i === s6Panels.length - 1;
+      const leave = isLast ? 0 : gone;
+      style(p, {
+        x: 60 * behind + leave * 900,
+        y: -40 * behind - leave * 60,
+        z: -220 * behind,
+        ry: -18 + leave * -25,
+        rx: 6,
+        s: 1 - leave * 0.1,
+        o: clamp(1 - behind * 0.35) * (1 - leave) * clamp(seg(t, a, a + 0.5) * 2)
+      });
+      p.style.zIndex = String(10 - i);
+      const c = s6Captions[i];
+      const ci = E.outQuint(seg(t, a + i * slot, a + i * slot + 0.7)) * (isLast ? 1 : 1 - seg(t, a + (i + 1) * slot - 0.3, a + (i + 1) * slot));
+      style(c, { o: ci, y: (1 - ci) * 40 });
+    });
+  }
+
+  // 7. Cooperative: households join the hub, then the overview
+  {
+    const [a, b] = S.s7;
+    $('s7').style.opacity = sceneOpacity(t, S.s7);
+    style($('s7-kicker'), { o: E.out(seg(t, a + 0.1, a + 0.6)) });
+    riseWords(s7Head, t, a + 0.3, 0.08);
+    const hp = E.back(seg(t, a + 0.3, a + 1.0));
+    const leave = E.inOut(seg(t, a + 3.4, a + 4.2));
+    style(hub, { s: 0.3 + hp * 0.7 - leave * 0.3, o: clamp(hp * 2) * (1 - leave), x: -leave * 200 });
+    NODES.forEach((n, i) => {
+      const at = a + 0.8 + i * 0.16;
+      const p = E.back(seg(t, at, at + 0.5));
+      style(nodeEls[i], { s: 0.2 + p * 0.8 - leave * 0.4, o: clamp(p * 2) * (1 - leave), x: -leave * 200 });
+      const ln = $(`ln${i}`);
+      ln.setAttribute('stroke-dashoffset', String(460 * (1 - E.out(seg(t, at + 0.2, at + 0.8)))));
+      ln.style.opacity = 1 - leave;
+      // A pulse running from each farm to the hub
+      const pulse = ((t - at - 0.8) / 1.2) % 1;
+      const pl = $(`pl${i}`);
+      if (t > at + 0.8 && leave < 1) {
+        pl.setAttribute('cx', String(lerp(n.x, HUB.x, pulse)));
+        pl.setAttribute('cy', String(lerp(n.y, HUB.y, pulse)));
+        pl.setAttribute('opacity', String((1 - leave) * Math.sin(pulse * Math.PI)));
+      } else pl.setAttribute('opacity', '0');
+    });
+    $('net').style.transform = `translateX(${-leave * 200}px)`;
+    const pp = E.outQuint(seg(t, a + 3.6, a + 4.8));
+    style($('s7-panel'), { o: pp, x: (1 - pp) * 500, ry: -16 + (1 - pp) * -30, rx: 5, s: 0.95 + seg(t, a + 4, b) * 0.04 });
+  }
+
+  // 8. Call to action
+  {
+    const [a] = S.s8;
+    $('s8').style.opacity = sceneOpacity(t, S.s8, 0.5, 0.01);
+    const lp = E.back(seg(t, a + 0.3, a + 1.1));
+    style($('s8-logo'), { s: 0.5 + lp * 0.5, o: clamp(lp * 2) });
+    riseWords(s8Head, t, a + 0.9, 0.09);
+    const up = E.back(seg(t, a + 2.2, a + 2.9));
+    const url = $('s8-url');
+    url.style.opacity = clamp(up * 2);
+    url.style.transform = `translateX(-50%) scale(${0.8 + up * 0.2})`;
+    style($('s8-small'), { o: E.out(seg(t, a + 2.8, a + 3.5)) });
+  }
+
+  $('fade').style.opacity = seg(t, 59.0, 60);
+}
+
+window.TVC = { duration: DURATION, fps: 30, lang: LANG };
+window.renderAt = renderAt;
+// Ready once the fonts and every picture are in
+window.ready = Promise.all([document.fonts.ready, ...[...document.images].map((img) => (img.complete ? null : new Promise((r) => { img.onload = r; img.onerror = r; })))]).then(() => { renderAt(0); return true; });
+// Opened in a browser on its own: play it in real time (render-tvc.mjs adds ?render)
+if (!new URLSearchParams(location.search).has('render')) {
+  const start = performance.now();
+  const tick = () => { const t = ((performance.now() - start) / 1000) % DURATION; renderAt(t); requestAnimationFrame(tick); };
+  window.ready.then(() => requestAnimationFrame(tick));
+}
+</script>
+</body>
+</html>
