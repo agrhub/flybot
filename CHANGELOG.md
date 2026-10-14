@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.4.0 (2026-10-14)
 
 ### Cooperatives
 - **Cooperative overview** (Farms, for organization owners and managers): one row per member with flies per trap per day against the period before (7 or 30 days), traps at their threshold, cameras without a photo for a day and the last treatment. Members with traps at the threshold and no treatment logged in the period come first, for a field visit. Exports to Excel.
@@ -14,6 +14,7 @@
 ### Speed and reliability
 - The dashboard overview runs its queries at the same time and counts photos from the daily rollup: with 20 traps and a year of photos, about 1-2 s down to 0.4-0.6 s.
 - The end-to-end test no longer hangs: a dead Chrome or a navigation left unanswered fails at once, and a cold dev server is warmed up first.
+- The guide has pictures of the cooperative overview, the log import and voice logging.
 
 ## 1.3.0 (2026-10-13)
 
