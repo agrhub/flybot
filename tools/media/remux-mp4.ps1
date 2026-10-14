@@ -1,12 +1,14 @@
 # Re-encode a video recorded in Chrome (fragmented MP4, no duration in its header) into a plain
 # MP4 that PowerPoint and Windows players accept, with Windows' own encoder (no ffmpeg needed).
-# Usage: powershell -NoProfile -File remux-mp4.ps1 <in.mp4> <out.mp4> [bitrate, default 1200000] [width height, default 1280 720]
+# Usage: powershell -NoProfile -File remux-mp4.ps1 <in.mp4> <out.mp4> [bitrate, default 1200000] [width height, default 1280 720] [-Audio]
+# -Audio keeps the sound (AAC, 48 kHz stereo), e.g. for a smaller copy of the commercial.
 param(
     [Parameter(Mandatory = $true)][string]$In,
     [Parameter(Mandatory = $true)][string]$Out,
     [int]$Bitrate = 1200000,
     [int]$Width = 1280,
-    [int]$Height = 720
+    [int]$Height = 720,
+    [switch]$Audio
 )
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Runtime.WindowsRuntime
@@ -30,10 +32,10 @@ $source = Await-Operation ([Windows.Storage.StorageFile]::GetFileFromPathAsync($
 $folder = Await-Operation ([Windows.Storage.StorageFolder]::GetFolderFromPathAsync([System.IO.Path]::GetDirectoryName($outFull))) ([Windows.Storage.StorageFolder])
 $target = Await-Operation ($folder.CreateFileAsync([System.IO.Path]::GetFileName($outFull), [Windows.Storage.CreationCollisionOption]::ReplaceExisting)) ([Windows.Storage.StorageFile])
 
-# H.264, no sound (the tour has none)
+# H.264; the tour has no sound, the commercial keeps its own
 $quality = if ($Height -ge 1080) { [Windows.Media.MediaProperties.VideoEncodingQuality]::HD1080p } else { [Windows.Media.MediaProperties.VideoEncodingQuality]::HD720p }
 $profile = [Windows.Media.MediaProperties.MediaEncodingProfile]::CreateMp4($quality)
-$profile.Audio = $null
+if ($Audio) { $profile.Audio = [Windows.Media.MediaProperties.AudioEncodingProperties]::CreateAac(48000, 2, 160000) } else { $profile.Audio = $null }
 $profile.Video.Bitrate = $Bitrate
 $profile.Video.Width = $Width
 $profile.Video.Height = $Height

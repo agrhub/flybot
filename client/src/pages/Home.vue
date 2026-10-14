@@ -19,12 +19,12 @@ import {
 
 const { t, locale } = useI18n();
 
-// The product tour in the page language; VITE_HOME_VIDEO_URL replaces it (an mp4, or a YouTube/Vimeo embed link)
+// The commercial in the page language (the screen tour is in the guide); VITE_HOME_VIDEO_URL replaces it (an mp4, or a YouTube/Vimeo embed link)
 const customVideo = import.meta.env.VITE_HOME_VIDEO_URL || '';
 const embedVideo = /youtube\.com\/embed|youtube-nocookie\.com\/embed|player\.vimeo\.com/.test(customVideo) ? customVideo : '';
 const videoLang = computed(() => (locale.value === 'en' ? 'en' : 'vi'));
-const videoSrc = computed(() => customVideo || `/media/flybot-tour-${videoLang.value}.mp4`);
-const videoPoster = computed(() => (customVideo ? undefined : `/media/flybot-tour-${videoLang.value}-poster.webp`));
+const videoSrc = computed(() => customVideo || `/media/flybot-tvc-${videoLang.value}.mp4`);
+const videoPoster = computed(() => (customVideo ? undefined : `/media/flybot-tvc-${videoLang.value}-poster.webp`));
 const { isDark } = useTheme();
 
 function handleScroll(targetId, e) {
@@ -190,7 +190,7 @@ const isAuthenticated = computed(() => {
       </div>
     </section>
 
-    <!-- Product tour video (VITE_HOME_VIDEO_URL can point to a commercial: an mp4 or a YouTube/Vimeo embed link) -->
+    <!-- The commercial (VITE_HOME_VIDEO_URL can point to another video: an mp4 or a YouTube/Vimeo embed link) -->
     <section id="video" class="py-24 px-6 scroll-mt-20">
       <div class="container mx-auto max-w-[1200px]">
         <div class="text-center mb-10 space-y-3">
