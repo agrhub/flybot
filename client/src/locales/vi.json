@@ -941,7 +941,7 @@
           "forecast": {
             "title": "Chẩn đoán AI & dự báo",
             "desc": "Khung chẩn đoán AI ở Tổng quan tổng hợp nguy cơ, xu hướng và biện pháp gợi ý.",
-            "items": "Bấm \"Chẩn đoán lại bằng AI\" ở cuối trang Tổng quan.\n\"Dự báo xu hướng 7 ngày tới\" theo dõi bẫy nhiều ruồi nhất: dự báo số ruồi mới mỗi ngày (+) rồi cộng dồn vào số trên tấm keo, màu theo ngưỡng của bẫy.\n\"Đợt ruồi trưởng thành tiếp theo\": tính theo độ-ngày từ đợt bắt nhiều nhất, kèm tiến độ và thời gian một thế hệ.\n\"Biện pháp xử lý khuyến nghị\": gợi ý theo nguyên tắc quản lý dịch hại tổng hợp. Đây là ước tính để tham khảo, hãy kiểm tra thực tế tại vườn.\n\"3 ngày tới\" trong khung độ-ngày cho biết ngày nào thời tiết thuận lợi cho ruồi vàng (25–33°C, ẩm, không mưa to). Khi có từ 2 ngày như vậy đúng lúc sắp có đợt ruồi mới, FlyBot gửi cảnh báo thời tiết cho vườn lúc 17:00 hôm trước.\n\"Việc nên làm\" trên Tổng quan: mỗi lô một gợi ý (xử lý ngay khi bẫy chạm ngưỡng mà tuần qua chưa xử lý, chờ hiệu quả sau lần vừa xử lý, đặt bả trước đợt ruồi mới, vệ sinh vườn khi thời tiết thuận lợi cho ruồi), vào ngày không mưa lớn, kèm nhắc đổi hoạt chất khi hai lần phun gần nhất dùng cùng một loại. Bản tin sáng cũng ghi việc gấp nhất."
+            "items": "Bấm \"Chẩn đoán lại bằng AI\" ở cuối trang Tổng quan.\n\"Dự báo xu hướng 7 ngày tới\" theo dõi bẫy nhiều ruồi nhất: dự báo số ruồi mới mỗi ngày (+) rồi cộng dồn vào số trên tấm keo, màu theo ngưỡng của bẫy.\n\"Đợt ruồi trưởng thành tiếp theo\": tính theo độ-ngày từ đợt bắt nhiều nhất, kèm tiến độ và thời gian một thế hệ.\n\"Biện pháp xử lý khuyến nghị\": gợi ý theo nguyên tắc quản lý dịch hại tổng hợp. Đây là ước tính để tham khảo, hãy kiểm tra thực tế tại vườn.\n\"3 ngày tới\" trong khung độ-ngày cho biết ngày nào thời tiết thuận lợi cho ruồi vàng (25–33°C, ẩm, không mưa to). Khi có từ 2 ngày như vậy đúng lúc sắp có đợt ruồi mới, FlyBot gửi cảnh báo thời tiết cho vườn lúc 17:00 hôm trước.\n\"Việc nên làm\" trên Tổng quan: mỗi lô một gợi ý (xử lý ngay khi bẫy chạm ngưỡng mà tuần qua chưa xử lý, chờ hiệu quả sau lần vừa xử lý, đặt bả trước đợt ruồi mới, vệ sinh vườn khi thời tiết thuận lợi cho ruồi), vào ngày không mưa lớn, kèm nhắc đổi hoạt chất khi hai lần phun gần nhất dùng cùng một loại. Bản tin sáng cũng ghi việc gấp nhất.\nỞ mỗi gợi ý: \"Đã làm\" mở sẵn form nhật ký (đúng lô, biện pháp, ngày hôm nay) để ghi lại; \"Để sau\" ẩn gợi ý đến hết hôm nay trên máy này."
           }
         }
       },
@@ -2590,6 +2590,8 @@
     "today": "Hôm nay",
     "more": "Xem thêm {count} lô",
     "less": "Thu gọn",
-    "note": "Đây là gợi ý; luôn theo nhãn thuốc (liều lượng, thời gian cách ly)."
+    "note": "Đây là gợi ý; luôn theo nhãn thuốc (liều lượng, thời gian cách ly).",
+    "done": "Đã làm",
+    "later": "Để sau"
   }
 }

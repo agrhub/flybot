@@ -4,6 +4,7 @@
 
 ### What to do next
 - **To do** on the dashboard: one suggestion per plot from simple rules: treat now when traps are at their threshold and nothing was done in the past week, check the effect after a recent treatment, bait a few days before the next fly generation (degree-days), sanitation when the weather favors flies. Dates skip days with heavy rain, and a reminder to change the active ingredient comes when the last two sprays used the same one. The morning brief carries the most urgent suggestion; the assistant answers "when should I spray" from it (get_spray_plan). GET /api/farms/plan.
+- On each suggestion, **Done** opens the field log form filled in (the plot's traps, the measure, the area) and **Later** hides it for the rest of the day on that device.
 
 ### Guide and tour
 - The tour videos (99 s) show the To do card, the cooperative overview, the log import and voice logging; the guide pictures show the To do card.

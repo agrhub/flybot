@@ -18,7 +18,13 @@
           <p class="plan-meta">{{ reason(item) }}</p>
           <p v-if="item.rotateFrom" class="plan-rotate">{{ t('plan.rotate', { ingredient: item.rotateFrom }) }}</p>
         </div>
-        <span v-if="item.date" class="plan-date shrink-0">{{ dayLabel(item.date) }}</span>
+        <div class="flex flex-col items-end gap-1 shrink-0">
+          <span v-if="item.date" class="plan-date">{{ dayLabel(item.date) }}</span>
+          <div class="flex items-center gap-2">
+            <el-button v-if="LOG_TYPE[item.action]" link type="primary" size="small" @click="done(item)">{{ t('plan.done') }}</el-button>
+            <el-button link size="small" @click="later(item)">{{ t('plan.later') }}</el-button>
+          </div>
+        </div>
       </li>
     </ul>
     <el-button v-if="todo.length > MAX" link type="primary" class="mt-1" @click="expanded = !expanded">
@@ -37,13 +43,42 @@ import api from '@/services/api';
 
 const MAX = 4;
 const TAG = { treat_now: 'danger', wait_check: 'info', bait_before_wave: 'warning', sanitation: 'primary' };
+// What "Done" records in the field log for each suggestion
+const LOG_TYPE = { treat_now: 'spray', bait_before_wave: 'bait', sanitation: 'sanitation' };
+const SNOOZE_KEY = 'flybot_plan_snoozed';
 const { t } = useI18n();
 const router = useRouter();
 
 const plan = ref({ today: null, items: [] });
 const expanded = ref(false);
-// Plots with nothing but monitoring to do are left out
-const todo = computed(() => plan.value.items.filter((i) => i.action !== 'monitor'));
+
+// "Later" hides a suggestion until the next day, on this device only
+const keyOf = (i) => `${i.farm}|${i.plot || ''}|${i.action}`;
+const readSnoozed = () => {
+  try {
+    return JSON.parse(localStorage.getItem(SNOOZE_KEY)) || {};
+  } catch {
+    return {};
+  }
+};
+const snoozed = ref(readSnoozed());
+const later = (item) => {
+  // Only today's entries are kept
+  const kept = Object.fromEntries(Object.entries(snoozed.value).filter(([, day]) => day === plan.value.today));
+  snoozed.value = { ...kept, [keyOf(item)]: plan.value.today };
+  try {
+    localStorage.setItem(SNOOZE_KEY, JSON.stringify(snoozed.value));
+  } catch {
+    // Without storage it stays hidden until the page is reloaded
+  }
+};
+const done = (item) => router.push({
+  path: '/logbook',
+  query: { new: '1', type: LOG_TYPE[item.action], cameras: (item.serials || []).join(','), area: item.plot || item.farm }
+});
+
+// Plots with nothing but monitoring to do, and those put off for today, are left out
+const todo = computed(() => plan.value.items.filter((i) => i.action !== 'monitor' && snoozed.value[keyOf(i)] !== plan.value.today));
 const shown = computed(() => (expanded.value ? todo.value : todo.value.slice(0, MAX)));
 
 const dayMonth = (key) => `${key.slice(8, 10)}/${key.slice(5, 7)}`;

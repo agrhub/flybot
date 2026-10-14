@@ -59,6 +59,7 @@ test('the plan: one row per plot the user sees, the most urgent first', async ()
     const plan = await planFor(me);
     assert.deepEqual(plan.items.map(i => [i.plot, i.action]), [['Mango A', 'treat_now'], ['Pomelo B', 'monitor']]);
     assert.equal(plan.items[0].rotateFrom, 'Spinetoram');
+    assert.deepEqual(plan.items[0].serials, ['A1'], 'the plot's traps, to fill the log form');
     assert.equal(plan.items[0].lastTreatment.product, 'Success');
 
     const api = await json(await request('/api/farms/plan', { as: me }));

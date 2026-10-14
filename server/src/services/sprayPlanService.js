@@ -129,6 +129,7 @@ async function planFor(user, now = new Date()) {
             farm: farm?.name || '',
             plot: plot?.name || null,
             traps: own.length,
+            serials: own,
             atThreshold,
             ftd7: catchStats.ftdOver(own, catches, dayKeys).ftd,
             lastTreatment: theirs[0] ? { at: theirs[0].at, type: theirs[0].type, product: theirs[0].product || null } : null,
