@@ -1,0 +1,446 @@
+<!doctype html>
+<!--
+  FlyBot TVC, 9:16 cut for Reels, TikTok and Zalo: 30 s at 1080x1920, the same look and music as
+  tvc.html (its 'vertical' arrangement in music.js), with the app on a phone. window.renderAt(t)
+  draws second t exactly; ?lang=vi|en picks the text and the app screens.
+  Scene starts fall on the music's bars (100 BPM, 2.4 s a bar).
+-->
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>FlyBot TVC 9:16</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root { --mint: #3ecf8e; --ink: #071510; --red: #ef5b5b; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--ink); }
+  body { font-family: 'Be Vietnam Pro', 'Segoe UI', sans-serif; color: #fff; -webkit-font-smoothing: antialiased; }
+  #stage { position: absolute; inset: 0; overflow: hidden; perspective: 1800px; }
+  .layer { position: absolute; inset: 0; will-change: transform, opacity; }
+  .scene { position: absolute; inset: 0; opacity: 0; }
+
+  #bg-dark { background: radial-gradient(900px 900px at 20% 15%, #12352a 0%, transparent 60%), radial-gradient(900px 900px at 85% 90%, #0f2c22 0%, transparent 60%), var(--ink); }
+  #bg-glow { background: radial-gradient(520px 520px at 50% 50%, rgba(62, 207, 142, 0.22), transparent 70%); mix-blend-mode: screen; }
+  #bg-light { background: radial-gradient(1000px 1300px at 50% 40%, #ffffff 0%, #e6f7ee 55%, #c9eedb 100%); opacity: 0; }
+  .grain { position: absolute; inset: 0; opacity: 0.06; background-image: radial-gradient(rgba(255,255,255,0.8) 1px, transparent 1px); background-size: 3px 3px; pointer-events: none; }
+
+  .kicker { font-size: 30px; font-weight: 700; letter-spacing: 0.3em; text-transform: uppercase; color: var(--mint); }
+  .headline { font-size: 104px; font-weight: 800; line-height: 1.08; letter-spacing: -0.02em; }
+  .sub { font-size: 46px; font-weight: 500; line-height: 1.35; color: rgba(255,255,255,0.78); }
+  .line { display: block; overflow: hidden; padding-bottom: 0.08em; }
+  .word { display: inline-block; overflow: hidden; vertical-align: top; }
+  .word > span { display: inline-block; will-change: transform; }
+  .dark-text { color: var(--ink); }
+
+  .fly { position: absolute; width: 52px; height: 52px; will-change: transform; }
+
+  .logo-ring { position: absolute; width: 360px; height: 360px; border-radius: 50%; background: radial-gradient(circle, rgba(62,207,142,0.35), transparent 65%); }
+  .logo { position: absolute; width: 230px; height: 230px; object-fit: contain; filter: drop-shadow(0 18px 40px rgba(15, 138, 87, 0.35)); }
+  .brand { position: absolute; font-size: 180px; font-weight: 800; letter-spacing: -0.04em; color: var(--ink); }
+
+  .sticky { position: absolute; width: 900px; height: 900px; border-radius: 26px; background-color: #f3d63c; background-image: linear-gradient(rgba(0,0,0,0.06) 2px, transparent 2px), linear-gradient(90deg, rgba(0,0,0,0.06) 2px, transparent 2px); background-size: 75px 75px; box-shadow: inset 0 0 0 16px #1d6b43, 0 50px 90px rgba(0,0,0,0.5); overflow: hidden; }
+  .sticky .fly { width: 50px; height: 50px; }
+  .box { position: absolute; border: 4px solid var(--mint); border-radius: 8px; box-shadow: 0 0 0 1px rgba(0,0,0,0.25); }
+  .box b { position: absolute; left: -4px; top: -32px; font-size: 19px; font-weight: 700; background: var(--mint); color: var(--ink); padding: 3px 9px; border-radius: 6px 6px 6px 0; white-space: nowrap; }
+  .scan { position: absolute; left: 0; right: 0; height: 160px; background: linear-gradient(180deg, transparent, rgba(62,207,142,0.55), transparent); mix-blend-mode: screen; }
+  .step-label { position: absolute; font-size: 38px; font-weight: 700; color: rgba(255,255,255,0.92); white-space: nowrap; }
+  .step-label i { font-style: normal; display: inline-grid; place-items: center; width: 58px; height: 58px; border-radius: 50%; background: var(--mint); color: var(--ink); margin-right: 18px; font-size: 30px; vertical-align: middle; }
+  .counter { position: absolute; font-size: 190px; font-weight: 800; letter-spacing: -0.04em; line-height: 1; color: #fff; font-variant-numeric: tabular-nums; }
+  .counter small { display: block; font-size: 38px; font-weight: 600; letter-spacing: 0; color: rgba(255,255,255,0.7); margin-top: 8px; }
+  .badge { position: absolute; width: 470px; padding: 24px 30px; border-radius: 26px; background: rgba(62,207,142,0.14); border: 1px solid rgba(62,207,142,0.5); font-size: 32px; font-weight: 600; line-height: 1.35; color: #d8f7e8; }
+  .notif { position: absolute; padding: 28px 32px; border-radius: 32px; background: rgba(255,255,255,0.94); color: #10231b; box-shadow: 0 24px 50px rgba(0,0,0,0.4); }
+  .notif .app { display: flex; align-items: center; gap: 14px; font-size: 26px; font-weight: 600; color: #4b5a54; margin-bottom: 12px; }
+  .notif .app img { width: 40px; height: 40px; border-radius: 10px; }
+  .notif .app span { margin-left: auto; font-weight: 500; }
+  .notif h4 { font-size: 36px; font-weight: 700; margin-bottom: 8px; }
+  .notif p { font-size: 30px; line-height: 1.35; color: #34443d; }
+
+  .phone { position: absolute; width: 520px; height: 1088px; border-radius: 68px; background: #0b0f0d; padding: 16px; box-shadow: 0 70px 140px rgba(0,0,0,0.6), inset 0 0 0 3px #2a3330; }
+  .phone .screen { position: relative; width: 100%; height: 100%; border-radius: 54px; overflow: hidden; background: #fff; }
+  .phone .screen img { position: absolute; left: 0; top: 0; width: 488px; height: 1056px; transform-origin: 0 0; will-change: transform, opacity; }
+  .callout { position: absolute; padding: 26px 34px; border-radius: 26px; background: var(--ink); color: #fff; font-size: 36px; font-weight: 700; box-shadow: 0 30px 60px rgba(0,0,0,0.5); border: 1px solid rgba(62,207,142,0.4); white-space: nowrap; }
+  .callout span { display: block; font-size: 26px; font-weight: 500; color: rgba(255,255,255,0.72); margin-top: 8px; }
+
+  .panel { position: absolute; width: 960px; height: 600px; border-radius: 24px; overflow: hidden; background: #fff; box-shadow: 0 50px 110px rgba(0,0,0,0.55); border: 2px solid rgba(255,255,255,0.12); }
+  .panel img { width: 100%; height: 100%; object-fit: cover; object-position: top left; }
+  .feature-caption { position: absolute; left: 90px; width: 900px; }
+  .feature-caption .num { font-size: 130px; font-weight: 800; color: rgba(62,207,142,0.25); line-height: 1; }
+  .feature-caption h3 { font-size: 68px; font-weight: 800; line-height: 1.1; margin: 12px 0 22px; }
+  .feature-caption p { font-size: 38px; line-height: 1.4; color: rgba(255,255,255,0.75); }
+
+  .url { position: absolute; padding: 26px 54px; border-radius: 999px; background: var(--ink); color: #fff; font-size: 50px; font-weight: 700; white-space: nowrap; }
+  .small-print { position: absolute; font-size: 32px; font-weight: 500; color: rgba(7,21,16,0.65); }
+  #fade { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="bg-dark" class="layer"></div>
+  <div id="bg-glow" class="layer"></div>
+  <div id="bg-light" class="layer"></div>
+  <div class="grain"></div>
+
+  <!-- 1. Hook -->
+  <section id="v1" class="scene">
+    <div id="v1-flies" class="layer"></div>
+    <div id="v1-text" style="position:absolute;left:90px;top:620px;width:900px;">
+      <div class="kicker" id="v1-kicker"></div>
+      <div class="headline" id="v1-head" style="margin-top:34px;font-size:96px;width:960px;"></div>
+      <div class="sub" id="v1-sub" style="margin-top:44px;"></div>
+    </div>
+  </section>
+
+  <!-- 2. Brand -->
+  <section id="v2" class="scene">
+    <div class="logo-ring" id="v2-ring" style="left:360px;top:500px;"></div>
+    <img class="logo" id="v2-logo" style="left:425px;top:565px;">
+    <div class="brand" id="v2-brand" style="left:0;width:1080px;text-align:center;top:860px;">FlyBot</div>
+    <div class="sub dark-text" id="v2-tag" style="position:absolute;left:90px;width:900px;text-align:center;top:1120px;font-size:56px;font-weight:600;color:#0f2c22;"></div>
+  </section>
+
+  <!-- 3. How it works -->
+  <section id="v3" class="scene">
+    <div class="kicker" id="v3-kicker" style="position:absolute;left:90px;top:150px;"></div>
+    <div id="v3-step1" class="step-label" style="left:90px;top:220px;"></div>
+    <div id="v3-step2" class="step-label" style="left:90px;top:220px;"></div>
+    <div id="v3-step3" class="step-label" style="left:90px;top:220px;"></div>
+    <div class="sticky" id="v3-card" style="left:90px;top:330px;"><div class="scan" id="v3-scan"></div></div>
+    <div class="counter" id="v3-counter" style="left:90px;top:1300px;">0<small></small></div>
+    <div class="badge" id="v3-badge" style="left:520px;top:1320px;"></div>
+    <div class="notif" id="v3-notif" style="left:90px;width:900px;top:1600px;"><div class="app"><img id="v3-app-icon">FlyBot<span id="v3-now"></span></div><h4 id="v3-notif-title"></h4><p id="v3-notif-body"></p></div>
+  </section>
+
+  <!-- 4. The app on a phone -->
+  <section id="v4" class="scene">
+    <div class="kicker" id="v4-kicker" style="position:absolute;left:90px;top:150px;"></div>
+    <div class="headline" id="v4-head" style="position:absolute;left:90px;top:210px;width:900px;font-size:76px;"></div>
+    <div class="phone" id="v4-phone" style="left:280px;top:540px;">
+      <div class="screen"><img id="v4-img-a"><img id="v4-img-b" style="opacity:0;"></div>
+    </div>
+    <div class="callout" id="v4-callout-a"></div>
+    <div class="callout" id="v4-callout-b"></div>
+  </section>
+
+  <!-- 5. Features -->
+  <section id="v5" class="scene">
+    <div class="kicker" id="v5-kicker" style="position:absolute;left:90px;top:150px;"></div>
+    <div id="v5-panels"></div>
+    <div id="v5-captions"></div>
+  </section>
+
+  <!-- 6. Call to action -->
+  <section id="v6" class="scene">
+    <img class="logo" id="v6-logo" style="left:425px;top:400px;">
+    <div class="headline dark-text" id="v6-head" style="position:absolute;left:60px;width:960px;text-align:center;top:690px;font-size:92px;"></div>
+    <div class="url" id="v6-url" style="left:540px;top:1120px;">ezviz.agrhub.com</div>
+    <div class="small-print" id="v6-small" style="left:90px;width:900px;text-align:center;top:1290px;"></div>
+  </section>
+
+  <div id="fade"></div>
+</div>
+
+<script>
+const LANG = new URLSearchParams(location.search).get('lang') === 'en' ? 'en' : 'vi';
+document.documentElement.lang = LANG;
+const ROOT = '../../../client/public/';
+const SCREEN = (name) => `${ROOT}manual/${LANG}/${name}.webp`;
+
+const COPY = {
+  vi: {
+    v1Kicker: 'Mỗi ngày trong vườn', v1Head: ['Ruồi vàng', 'âm thầm đẻ trứng', 'vào trái chín.'], v1Sub: 'Thấy được thì đã muộn.',
+    v2Tag: ['Camera chụp. AI đếm.', 'Bạn quyết định.'],
+    v3Kicker: 'Cách FlyBot làm việc', v3Steps: ['Camera chụp tấm bẫy', 'AI khoanh và đếm từng con', 'Cảnh báo về điện thoại'],
+    v3Unit: 'con ruồi vàng', v3Badge: 'Tìm thấy 92% số ruồi trên ảnh kiểm thử', v3Label: 'Ruồi vàng',
+    v3Now: 'bây giờ', v3NotifTitle: 'Vượt ngưỡng dịch hại', v3NotifBody: 'Bẫy xoài A1: 18 con (ngưỡng 15). Nên kiểm tra lô xoài A sáng nay.',
+    v4Kicker: 'Ứng dụng FlyBot', v4Head: ['Ngay trên điện thoại.'],
+    v4CalloutA: ['Việc nên làm cho từng lô', 'Xử lý, đặt bả hay vệ sinh vườn'], v4CalloutB: ['Xem từng bẫy', 'Ảnh mới nhất, trạng thái trực tuyến'],
+    v5Kicker: 'Và còn nữa',
+    v5: [['Nhật ký & sổ VietGAP', 'Mỗi lần phun kèm hiệu quả đo được.'], ['Nói là ghi', 'Trợ lý điền sẵn, bạn bấm Xác nhận.'], ['Bản đồ điểm nóng', 'Bẫy theo lô, màu theo mức nguy cơ.']],
+    v6Head: ['Phát hiện', 'sâu hại sớm.', 'Quyết định', 'có căn cứ.'], v6Small: 'Web · Điện thoại · Tiếng Việt & English'
+  },
+  en: {
+    v1Kicker: 'Every day in the orchard', v1Head: ['Fruit flies', 'quietly lay eggs', 'in ripe fruit.'], v1Sub: 'By the time you see it, it is too late.',
+    v2Tag: ['The camera shoots. AI counts.', 'You decide.'],
+    v3Kicker: 'How FlyBot works', v3Steps: ['The camera photographs the card', 'AI marks and counts every fly', 'An alert on your phone'],
+    v3Unit: 'fruit flies', v3Badge: 'Finds 92% of the flies on test photos', v3Label: 'Fruit fly',
+    v3Now: 'now', v3NotifTitle: 'Pest threshold reached', v3NotifBody: 'Mango trap A1: 18 flies (threshold 15). Check mango plot A this morning.',
+    v4Kicker: 'The FlyBot app', v4Head: ['Right on your phone.'],
+    v4CalloutA: ['What to do on each plot', 'Treat, bait or clean up'], v4CalloutB: ['Every trap at a glance', 'Latest photo, online status'],
+    v5Kicker: 'And more',
+    v5: [['Field log & VietGAP record', 'Every spray with its measured effect.'], ['Say it, it is logged', 'The assistant fills it in, you Confirm.'], ['Hotspot map', 'Traps by plot, colored by risk.']],
+    v6Head: ['Spot pests early.', 'Decide with', 'evidence.'], v6Small: 'Web · Phone · English & Tiếng Việt'
+  }
+}[LANG];
+
+// ---------- Helpers (as in tvc.html) ----------
+const $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const seg = (t, a, b) => clamp((t - a) / (b - a));
+const lerp = (a, b, p) => a + (b - a) * p;
+const E = {
+  out: (p) => 1 - Math.pow(1 - p, 3),
+  outQuint: (p) => 1 - Math.pow(1 - p, 5),
+  inOut: (p) => (p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2),
+  in: (p) => p * p * p,
+  back: (p) => { const c1 = 1.5, c3 = c1 + 1; return 1 + c3 * Math.pow(p - 1, 3) + c1 * Math.pow(p - 1, 2); }
+};
+let seed = 11;
+const rand = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
+
+function style(el, { o, x = 0, y = 0, s = 1, r = 0, rx = 0, ry = 0, z = 0, blur = 0 }) {
+  if (o !== undefined) el.style.opacity = o;
+  el.style.transform = `translate3d(${x}px, ${y}px, ${z}px) rotateX(${rx}deg) rotateY(${ry}deg) rotate(${r}deg) scale(${s})`;
+  el.style.filter = blur ? `blur(${blur}px)` : '';
+}
+function kinetic(container, lines) {
+  container.innerHTML = '';
+  const words = [];
+  for (const text of lines) {
+    const line = document.createElement('span');
+    line.className = 'line';
+    for (const w of text.split(' ')) {
+      const word = document.createElement('span');
+      word.className = 'word';
+      const inner = document.createElement('span');
+      inner.textContent = w;
+      word.appendChild(inner);
+      line.appendChild(word);
+      line.appendChild(document.createTextNode(' '));
+      words.push(inner);
+    }
+    container.appendChild(line);
+  }
+  return words;
+}
+function riseWords(words, t, start, stagger = 0.07, dur = 0.7) {
+  words.forEach((w, i) => {
+    const p = E.outQuint(seg(t, start + i * stagger, start + i * stagger + dur));
+    w.style.transform = `translateY(${(1 - p) * 110}%)`;
+  });
+}
+const FLY_SVG = (fill = '#1b1206') => `<svg viewBox="0 0 40 40"><ellipse cx="13" cy="15" rx="10" ry="5" fill="rgba(220,235,255,0.55)" transform="rotate(-25 13 15)"/><ellipse cx="27" cy="15" rx="10" ry="5" fill="rgba(220,235,255,0.55)" transform="rotate(25 27 15)"/><ellipse cx="20" cy="22" rx="5.5" ry="10" fill="${fill}"/><ellipse cx="20" cy="22" rx="3.5" ry="7.5" fill="#c98a1e"/><circle cx="20" cy="11" r="4.2" fill="${fill}"/><circle cx="18.2" cy="10" r="1.4" fill="#b8321f"/><circle cx="21.8" cy="10" r="1.4" fill="#b8321f"/></svg>`;
+function sceneOpacity(t, [a, b], fadeIn = 0.3, fadeOut = 0.3) {
+  return Math.min(seg(t, a, a + fadeIn), 1 - seg(t, b - fadeOut, b));
+}
+
+// ---------- Build the scenes ----------
+const S = { v1: [0, 4.8], v2: [4.8, 7.2], v3: [7.2, 14.4], v4: [14.4, 21.6], v5: [21.6, 26.4], v6: [26.4, 30] };
+const DURATION = 30;
+
+$('v1-kicker').textContent = COPY.v1Kicker;
+const v1Head = kinetic($('v1-head'), COPY.v1Head);
+const v1Sub = kinetic($('v1-sub'), [COPY.v1Sub]);
+const flies = Array.from({ length: 12 }, () => {
+  const el = document.createElement('div');
+  el.className = 'fly';
+  el.innerHTML = FLY_SVG();
+  $('v1-flies').appendChild(el);
+  return { el, x0: rand() * 1300 - 100, y0: rand() * 1900, vx: 70 + rand() * 120, amp: 20 + rand() * 60, f: 0.6 + rand(), s: 0.8 + rand(), ph: rand() * 6 };
+});
+
+['v2-logo', 'v6-logo', 'v3-app-icon'].forEach((id) => { $(id).src = `${ROOT}logo.png`; });
+const v2Tag = kinetic($('v2-tag'), COPY.v2Tag);
+
+$('v3-kicker').textContent = COPY.v3Kicker;
+['v3-step1', 'v3-step2', 'v3-step3'].forEach((id, i) => { $(id).innerHTML = `<i>${i + 1}</i>${COPY.v3Steps[i]}`; });
+$('v3-counter').querySelector('small').textContent = COPY.v3Unit;
+$('v3-badge').textContent = COPY.v3Badge;
+$('v3-now').textContent = COPY.v3Now;
+$('v3-notif-title').textContent = COPY.v3NotifTitle;
+$('v3-notif-body').textContent = COPY.v3NotifBody;
+const CARD_FLIES = 18;
+const spots = [];
+while (spots.length < CARD_FLIES) {
+  const x = 70 + rand() * 740, y = 90 + rand() * 720;
+  if (spots.every((p) => Math.hypot(p.x - x, p.y - y) > 140)) spots.push({ x, y });
+}
+const labels = [];
+const cardFlies = spots.map(({ x, y }, i) => {
+  const fly = document.createElement('div');
+  fly.className = 'fly';
+  fly.style.left = `${x}px`; fly.style.top = `${y}px`; fly.style.transform = `rotate(${rand() * 360}deg)`;
+  fly.innerHTML = FLY_SVG();
+  $('v3-card').appendChild(fly);
+  const box = document.createElement('div');
+  box.className = 'box';
+  box.style.left = `${x - 10}px`; box.style.top = `${y - 10}px`; box.style.width = '70px'; box.style.height = '70px';
+  // Near the right edge the label opens to the left, inside the card
+  const right = x > 600;
+  const side = right ? ' style="left:auto;right:-4px;border-radius:6px 6px 0 6px"' : '';
+  const W = 190, rect = { l: right ? x + 64 - W : x - 14, t: y - 44 };
+  const free = labels.every((o) => Math.abs(o.l - rect.l) > W + 10 || Math.abs(o.t - rect.t) > 44);
+  const score = (0.86 + rand() * 0.12).toFixed(2);
+  if (i % 3 === 0 && free) labels.push(rect);
+  box.innerHTML = i % 3 === 0 && free ? `<b${side}>${COPY.v3Label} ${score}</b>` : '';
+  box.style.opacity = 0;
+  $('v3-card').appendChild(box);
+  return { box, y };
+}).sort((a, b) => a.y - b.y);
+
+$('v4-kicker').textContent = COPY.v4Kicker;
+const v4Head = kinetic($('v4-head'), COPY.v4Head);
+$('v4-img-a').src = SCREEN('mobile-dashboard');
+$('v4-img-b').src = SCREEN('mobile-cameras');
+$('v4-callout-a').innerHTML = `${COPY.v4CalloutA[0]}<span>${COPY.v4CalloutA[1]}</span>`;
+$('v4-callout-b').innerHTML = `${COPY.v4CalloutB[0]}<span>${COPY.v4CalloutB[1]}</span>`;
+
+$('v5-kicker').textContent = COPY.v5Kicker;
+const v5Panels = ['logbook', 'assistant-treatment', 'map'].map((name) => {
+  const el = document.createElement('div');
+  el.className = 'panel';
+  el.style.left = '60px';
+  el.style.top = '440px';
+  el.innerHTML = `<img src="${SCREEN(name)}">`;
+  $('v5-panels').appendChild(el);
+  return el;
+});
+const v5Captions = COPY.v5.map(([h, p], i) => {
+  const el = document.createElement('div');
+  el.className = 'feature-caption';
+  el.style.top = '1160px';
+  el.innerHTML = `<div class="num">0${i + 1}</div><h3>${h}</h3><p>${p}</p>`;
+  $('v5-captions').appendChild(el);
+  return el;
+});
+
+const v6Head = kinetic($('v6-head'), COPY.v6Head);
+$('v6-small').textContent = COPY.v6Small;
+
+// ---------- One frame ----------
+function renderAt(t) {
+  const light = Math.max(Math.min(seg(t, 4.5, 4.9), 1 - seg(t, 7.0, 7.4)), seg(t, 26.1, 26.6));
+  $('bg-light').style.opacity = light;
+  $('bg-glow').style.transform = `translate(${Math.sin(t * 0.4) * 220}px, ${Math.cos(t * 0.3) * 420}px) scale(${1.3 + Math.sin(t * 0.6) * 0.15})`;
+  $('bg-glow').style.opacity = 1 - light;
+
+  // 1. Hook
+  {
+    const [a, b] = S.v1;
+    $('v1').style.opacity = sceneOpacity(t, S.v1, 0.4, 0.3);
+    const k = E.out(seg(t, 0.1, 0.6));
+    style($('v1-kicker'), { o: k, y: (1 - k) * 20 });
+    riseWords(v1Head, t, 0.35, 0.1);
+    riseWords(v1Sub, t, 2.2, 0.1);
+    style($('v1-text'), { s: 1 + seg(t, a, b) * 0.05 });
+    flies.forEach((f) => {
+      const x = ((f.x0 + f.vx * t) % 1300) - 110;
+      const y = f.y0 + Math.sin(t * f.f + f.ph) * f.amp;
+      style(f.el, { x, y, s: f.s, r: Math.sin(t * 3 + f.ph) * 25 + 90, o: 0.85 });
+    });
+    style($('v1'), { s: 1 + E.in(seg(t, b - 0.5, b)) * 0.2, blur: E.in(seg(t, b - 0.5, b)) * 10 });
+  }
+
+  // 2. Brand
+  {
+    const [a] = S.v2;
+    $('v2').style.opacity = sceneOpacity(t, S.v2, 0.25, 0.3);
+    const p = E.back(seg(t, a + 0.1, a + 0.8));
+    style($('v2-logo'), { s: 0.4 + p * 0.6, o: clamp(p * 2), r: (1 - p) * -40 });
+    const ring = E.out(seg(t, a + 0.2, a + 1.4));
+    style($('v2-ring'), { s: 0.3 + ring * 1.4, o: (1 - ring) * 0.9 + 0.25 });
+    const bp = E.outQuint(seg(t, a + 0.5, a + 1.2));
+    style($('v2-brand'), { o: bp, y: (1 - bp) * 60, s: 0.92 + bp * 0.08 });
+    riseWords(v2Tag, t, a + 1.0, 0.08);
+  }
+
+  // 3. How it works: the card, the AI boxes and count, the alert
+  {
+    const [a, b] = S.v3;
+    $('v3').style.opacity = sceneOpacity(t, S.v3);
+    style($('v3-kicker'), { o: E.out(seg(t, a + 0.1, a + 0.5)) });
+    // One step label at a time
+    [[a + 0.2, a + 2.0], [a + 2.0, a + 4.9], [a + 4.9, b + 1]].forEach(([from, to], i) => {
+      const p = E.out(seg(t, from, from + 0.4)) * (1 - seg(t, to - 0.2, to));
+      style($(`v3-step${i + 1}`), { o: p, x: (1 - p) * -30 });
+    });
+    const cp = E.outQuint(seg(t, a + 0.3, a + 1.2));
+    style($('v3-card'), { o: cp, y: (1 - cp) * 100, rx: (1 - cp) * 30 + 6 - seg(t, a, b) * 4 });
+    const scan = seg(t, a + 1.0, a + 2.0);
+    $('v3-scan').style.top = `${lerp(-160, 920, scan)}px`;
+    $('v3-scan').style.opacity = scan > 0 && scan < 1 ? 1 : 0;
+    cardFlies.forEach((f, i) => {
+      const at = a + 1.9 + i * 0.1;
+      const p = E.back(seg(t, at, at + 0.3));
+      f.box.style.opacity = clamp(p * 2);
+      f.box.style.transform = `scale(${0.4 + p * 0.6})`;
+    });
+    const cnt = E.out(seg(t, a + 1.9, a + 1.9 + CARD_FLIES * 0.1 + 0.2));
+    $('v3-counter').firstChild.textContent = String(Math.round(cnt * CARD_FLIES));
+    style($('v3-counter'), { o: E.out(seg(t, a + 1.8, a + 2.3)) });
+    const bp = E.back(seg(t, a + 4.0, a + 4.6));
+    style($('v3-badge'), { o: clamp(bp * 2), s: 0.85 + bp * 0.15 });
+    const np = E.back(seg(t, a + 5.1, a + 5.7));
+    style($('v3-notif'), { o: clamp(np * 2), y: (1 - np) * 120, s: 0.92 + np * 0.08 });
+    style($('v3'), { s: 1 + E.in(seg(t, b - 0.5, b)) * 0.06 });
+  }
+
+  // 4. The app: the phone turns to face us, a look at "To do", then the cameras
+  {
+    const [a, b] = S.v4;
+    $('v4').style.opacity = sceneOpacity(t, S.v4);
+    style($('v4-kicker'), { o: E.out(seg(t, a + 0.1, a + 0.5)) });
+    riseWords(v4Head, t, a + 0.2, 0.08);
+    const turn = E.inOut(seg(t, a, a + 1.3));
+    style($('v4-phone'), { ry: lerp(-40, -6, turn), rx: lerp(16, 3, turn), s: lerp(0.8, 1, turn) + seg(t, a + 1.3, b) * 0.03, y: lerp(260, 0, turn), o: clamp(turn * 2) });
+    // The screen: the overview, then the cameras page
+    const swap = E.inOut(seg(t, a + 4.0, a + 4.5));
+    $('v4-img-a').style.opacity = 1 - swap;
+    $('v4-img-b').style.opacity = swap;
+    const ca = E.back(seg(t, a + 1.8, a + 2.4)) * (1 - seg(t, a + 3.7, a + 4.0));
+    style($('v4-callout-a'), { x: 360, y: 1300, o: clamp(ca * 2), s: 0.9 + ca * 0.1 });
+    const cb = E.back(seg(t, a + 4.8, a + 5.4));
+    style($('v4-callout-b'), { x: 90, y: 1420, o: clamp(cb * 2), s: 0.9 + cb * 0.1 });
+  }
+
+  // 5. Features: each panel slides in from the right and leaves to the left
+  {
+    const [a] = S.v5;
+    $('v5').style.opacity = sceneOpacity(t, S.v5);
+    style($('v5-kicker'), { o: E.out(seg(t, a + 0.1, a + 0.5)) });
+    const slot = 1.6;
+    v5Panels.forEach((p, i) => {
+      const from = a + i * slot;
+      const inP = E.outQuint(seg(t, from - 0.1, from + 0.6));
+      const last = i === v5Panels.length - 1;
+      const outP = last ? 0 : E.in(seg(t, from + slot - 0.35, from + slot + 0.1));
+      style(p, { x: (1 - inP) * 1100 - outP * 1100, ry: (1 - inP) * -30 + outP * 30 - 8, rx: 4, o: clamp(inP * 2) * (1 - outP) });
+      const c = v5Captions[i];
+      const ci = E.outQuint(seg(t, from + 0.1, from + 0.7)) * (last ? 1 : 1 - seg(t, from + slot - 0.3, from + slot));
+      style(c, { o: ci, y: (1 - ci) * 50 });
+    });
+  }
+
+  // 6. Call to action
+  {
+    const [a] = S.v6;
+    $('v6').style.opacity = sceneOpacity(t, S.v6, 0.4, 0.01);
+    const lp = E.back(seg(t, a + 0.2, a + 0.9));
+    style($('v6-logo'), { s: 0.5 + lp * 0.5, o: clamp(lp * 2) });
+    riseWords(v6Head, t, a + 0.6, 0.08);
+    const up = E.back(seg(t, a + 1.5, a + 2.1));
+    $('v6-url').style.opacity = clamp(up * 2);
+    $('v6-url').style.transform = `translateX(-50%) scale(${0.8 + up * 0.2})`;
+    style($('v6-small'), { o: E.out(seg(t, a + 2.0, a + 2.6)) });
+  }
+
+  $('fade').style.opacity = seg(t, 29.3, 30);
+}
+
+window.TVC = { duration: DURATION, fps: 30, lang: LANG, width: 1080, height: 1920, music: 'vertical' };
+window.renderAt = renderAt;
+function placeEnd() {
+  const head = $('v6-head');
+  const below = head.offsetTop + head.offsetHeight;
+  $('v6-url').style.top = `${below + 60}px`;
+  $('v6-small').style.top = `${below + 230}px`;
+}
+window.ready = Promise.all([document.fonts.ready, ...[...document.images].map((img) => (img.complete ? null : new Promise((r) => { img.onload = r; img.onerror = r; })))]).then(() => { placeEnd(); renderAt(0); return true; });
+if (!new URLSearchParams(location.search).has('render')) {
+  const start = performance.now();
+  const tick = () => { const t = ((performance.now() - start) / 1000) % DURATION; renderAt(t); requestAnimationFrame(tick); };
+  window.ready.then(() => requestAnimationFrame(tick));
+}
+</script>
+</body>
+</html>

@@ -2,7 +2,7 @@
 <!--
   Encodes the rendered frames and the synthesized music with WebCodecs (H.264 + AAC), frame by
   frame and not in real time, so a busy machine cannot drop frames. The packets stay in the page:
-  window.encode({ frameUrl, count, fps, bitrate }) resolves to the sample tables and the codec
+  window.encode({ frameUrl, count, fps, bitrate, width, height, music }) resolves to the sample tables and the codec
   setup, window.part(track, start, end) hands the bytes over in base64 slices, and mux-mp4.mjs
   writes the MP4.
 -->
@@ -11,7 +11,6 @@
 <body style="margin:0;background:#000">
 <script src="music.js"></script>
 <script>
-const WIDTH = 1920, HEIGHT = 1080;
 const tracks = {};
 
 // Packets of one track, kept in decode order
@@ -37,11 +36,11 @@ function join(track) {
 }
 const toHex = (u8) => [...u8].map(b => b.toString(16).padStart(2, '0')).join('');
 
-async function encodeVideo({ frameUrl, count, fps, bitrate }) {
+async function encodeVideo({ frameUrl, count, fps, bitrate, width, height }) {
     const track = tracks.video = collector();
     let failure = null;
     const enc = new VideoEncoder({ output: (c, m) => keep(track, c, m), error: (e) => { failure = e; } });
-    enc.configure({ codec: 'avc1.640028', width: WIDTH, height: HEIGHT, bitrate, framerate: fps, avc: { format: 'avc' }, latencyMode: 'quality' });
+    enc.configure({ codec: 'avc1.640028', width, height, bitrate, framerate: fps, avc: { format: 'avc' }, latencyMode: 'quality' });
     const load = (i) => fetch(frameUrl(i)).then(r => r.blob()).then(b => createImageBitmap(b));
     // A few frames decoded ahead
     const ahead = [];
@@ -63,9 +62,9 @@ async function encodeVideo({ frameUrl, count, fps, bitrate }) {
     join(track);
 }
 
-async function encodeAudio(seconds) {
+async function encodeAudio(seconds, arrangement) {
     const track = tracks.audio = collector();
-    const music = await makeMusic(seconds);
+    const music = await makeMusic(seconds, arrangement);
     const rate = music.sampleRate, channels = music.numberOfChannels;
     let failure = null;
     const enc = new AudioEncoder({ output: (c, m) => keep(track, c, m), error: (e) => { failure = e; } });
@@ -91,13 +90,14 @@ async function encodeAudio(seconds) {
     return { rate, channels };
 }
 
-async function encode({ frameUrl, count, fps = 30, bitrate = 8000000 }) {
+// music: the arrangement's name in music.js
+async function encode({ frameUrl, count, fps = 30, bitrate = 8000000, width = 1920, height = 1080, music = 'landscape' }) {
     const seconds = count / fps;
-    await encodeVideo({ frameUrl, count, fps, bitrate });
-    const { rate, channels } = await encodeAudio(seconds);
+    await encodeVideo({ frameUrl, count, fps, bitrate, width, height });
+    const { rate, channels } = await encodeAudio(seconds, music);
     const describe = (t) => ({ samples: t.samples, size: t.size, description: t.description ? toHex(t.description) : null });
     return {
-        video: { ...describe(tracks.video), width: WIDTH, height: HEIGHT, fps },
+        video: { ...describe(tracks.video), width, height, fps },
         audio: { ...describe(tracks.audio), rate, channels }
     };
 }

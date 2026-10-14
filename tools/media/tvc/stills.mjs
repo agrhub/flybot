@@ -1,5 +1,5 @@
 // Stills of the TVC at chosen seconds, to check the layout: node stills.mjs <outdir> <vi|en> <seconds...>
-// FLYBOT_STILL_FORMAT=webp writes WebP (the video poster) instead of JPEG.
+// FLYBOT_STILL_FORMAT=webp writes WebP (the video poster) instead of JPEG; FLYBOT_TVC_PAGE=tvc-vertical.html the 9:16 cut.
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -11,8 +11,12 @@ const webp = process.env.FLYBOT_STILL_FORMAT === 'webp';
 fs.mkdirSync(out, { recursive: true });
 const page = await launch({ args: ['--allow-file-access-from-files'] });
 try {
+    const url = `${pathToFileURL(path.join(here, process.env.FLYBOT_TVC_PAGE || 'tvc.html')).href}?render&lang=${lang}`;
     await page.viewport(1920, 1080);
-    await page.goto(`${pathToFileURL(path.join(here, 'tvc.html')).href}?render&lang=${lang}`, 1500);
+    await page.goto(url, 500);
+    const { width, height } = await page.eval('return window.TVC;');
+    await page.viewport(width, height);
+    await page.goto(url, 1500);
     await page.eval('await window.ready; return true;');
     for (const t of times.map(Number)) {
         await page.eval(`window.renderAt(${t}); await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))); return true;`);

@@ -58,6 +58,9 @@ node render-tvc.mjs en flybot-tvc-en.mp4
 
 # The poster: a still in WebP
 FLYBOT_STILL_FORMAT=webp node stills.mjs poster vi 17
+
+# The 9:16 cut (30 s, 1080x1920) for Reels, TikTok and Zalo: the same scripts with FLYBOT_TVC_PAGE
+FLYBOT_TVC_PAGE=tvc-vertical.html node render-tvc.mjs vi flybot-tvc-vertical-vi.mp4
 ```
 
 Rendering takes about ten minutes a language; `FLYBOT_TVC_KEEP=1` keeps the frames and `FLYBOT_TVC_REUSE=1` encodes them again without rendering. The MP4 needs no `remux-mp4.ps1` or `faststart-mp4.mjs`: it already has its index in front. Copy the videos and posters (`flybot-tvc-<lang>-poster.webp`) to `client/public/media/`.
@@ -78,7 +81,8 @@ Rendering takes about ten minutes a language; `FLYBOT_TVC_KEEP=1` keeps the fram
 - `link-video-pptx.mjs`: instead of embedding, `node link-video-pptx.mjs <in.pptx> <slide> <https://…/video.mp4> <out.pptx>` makes the largest picture on that slide (and a play button on it) open the online video, so a new video on the website needs no new deck. PowerPoint does not play a linked .mp4 URL inside the slide (only YouTube, Vimeo or Stream), so it opens in the browser.
 - `frames.mjs`: frame grabber for checking a video.
 - `tvc/tvc.html`: the commercial's eight scenes on one timeline (`S`, seconds, on the music's 2.4 s bars), their text in both languages (`COPY`) and `window.renderAt(t)`, which draws any moment exactly.
-- `tvc/music.js`: the music, synthesized with Web Audio (no samples): pads, bass, drums and arpeggio following the scenes, a rise and hit on the logo.
+- `tvc/tvc-vertical.html`: the 9:16 cut, six scenes on 30 s, the app on a phone (the `mobile-*` guide screenshots). Each page tells the scripts its size and music in `window.TVC`.
+- `tvc/music.js`: the music, synthesized with Web Audio (no samples): pads, bass, drums and arpeggio following the scenes, a rise and hit on the logo. `ARRANGEMENTS` holds one plan of bars per page (`landscape`, `vertical`).
 - `tvc/encode.html`: encodes the frames and the music with WebCodecs, frame by frame rather than in real time, so a busy machine drops nothing.
 - `tvc/mux-mp4.mjs`: writes the encoded video and sound into an MP4 with its index in front.
 - `tvc/render-tvc.mjs`, `tvc/stills.mjs`: the video and stills, as above.

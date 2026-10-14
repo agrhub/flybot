@@ -608,7 +608,7 @@ function renderAt(t) {
   $('fade').style.opacity = seg(t, 59.0, 60);
 }
 
-window.TVC = { duration: DURATION, fps: 30, lang: LANG };
+window.TVC = { duration: DURATION, fps: 30, lang: LANG, width: 1920, height: 1080, music: 'landscape' };
 window.renderAt = renderAt;
 // Ready once the fonts and every picture are in
 window.ready = Promise.all([document.fonts.ready, ...[...document.images].map((img) => (img.complete ? null : new Promise((r) => { img.onload = r; img.onerror = r; })))]).then(() => { renderAt(0); return true; });
