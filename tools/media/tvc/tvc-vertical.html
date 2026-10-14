@@ -156,7 +156,7 @@ const COPY = {
     v4Kicker: 'Ứng dụng FlyBot', v4Head: ['Ngay trên điện thoại.'],
     v4CalloutA: ['Việc nên làm cho từng lô', 'Xử lý, đặt bả hay vệ sinh vườn'], v4CalloutB: ['Xem từng bẫy', 'Ảnh mới nhất, trạng thái trực tuyến'],
     v5Kicker: 'Và còn nữa',
-    v5: [['Nhật ký & sổ VietGAP', 'Mỗi lần phun kèm hiệu quả đo được.'], ['Nói là ghi', 'Trợ lý điền sẵn, bạn bấm Xác nhận.'], ['Bản đồ điểm nóng', 'Bẫy theo lô, màu theo mức nguy cơ.']],
+    v5: [['Nhật ký & sổ VietGAP', 'Mỗi lần phun kèm hiệu quả đo được.'], ['Hỏi trợ lý AI', 'Trả lời kèm ảnh, biểu đồ; ghi nhật ký giúp bạn.'], ['Bản đồ điểm nóng', 'Bẫy theo lô, màu theo mức nguy cơ.']],
     v6Head: ['Phát hiện', 'sâu hại sớm.', 'Quyết định', 'có căn cứ.'], v6Small: 'Web · Điện thoại · Tiếng Việt & English'
   },
   en: {
@@ -168,7 +168,7 @@ const COPY = {
     v4Kicker: 'The FlyBot app', v4Head: ['Right on your phone.'],
     v4CalloutA: ['What to do on each plot', 'Treat, bait or clean up'], v4CalloutB: ['Every trap at a glance', 'Latest photo, online status'],
     v5Kicker: 'And more',
-    v5: [['Field log & VietGAP record', 'Every spray with its measured effect.'], ['Say it, it is logged', 'The assistant fills it in, you Confirm.'], ['Hotspot map', 'Traps by plot, colored by risk.']],
+    v5: [['Field log & VietGAP record', 'Every spray with its measured effect.'], ['Ask the AI assistant', 'Answers with photos and charts; logs your sprays.'], ['Hotspot map', 'Traps by plot, colored by risk.']],
     v6Head: ['Spot pests early.', 'Decide with', 'evidence.'], v6Small: 'Web · Phone · English & Tiếng Việt'
   }
 }[LANG];
@@ -286,7 +286,7 @@ $('v4-callout-a').innerHTML = `${COPY.v4CalloutA[0]}<span>${COPY.v4CalloutA[1]}<
 $('v4-callout-b').innerHTML = `${COPY.v4CalloutB[0]}<span>${COPY.v4CalloutB[1]}</span>`;
 
 $('v5-kicker').textContent = COPY.v5Kicker;
-const v5Panels = ['logbook', 'assistant-treatment', 'map'].map((name) => {
+const v5Panels = ['logbook', 'assistant-chart', 'map'].map((name) => {
   const el = document.createElement('div');
   el.className = 'panel';
   el.style.left = '60px';

@@ -220,7 +220,7 @@ const COPY = {
     s4Unit: 'con ruồi vàng', s4Badge: 'Tìm thấy 92% số ruồi trên ảnh kiểm thử', s4Label: 'Ruồi vàng',
     s4Date: 'Thứ Năm, 15 tháng 10', s4NotifTitle: 'Vượt ngưỡng dịch hại', s4NotifBody: 'Bẫy xoài A1: 18 con (ngưỡng 15). Nên kiểm tra lô xoài A sáng nay.',
     s5CalloutA: ['Việc nên làm cho từng lô', 'Xử lý, đặt bả hay vệ sinh vườn, né ngày mưa'], s5CalloutB: ['Ruồi mới mỗi ngày', 'Theo loài, theo bẫy, kèm ngày xử lý'],
-    s6: [['Nhật ký & sổ VietGAP', 'Mỗi lần phun kèm hiệu quả đo được. Sổ PDF tự gửi ngày 1 hằng tháng.'], ['Nói là ghi', '“Sáng nay phun Radiant cho lô xoài A” — trợ lý điền sẵn, bạn bấm Xác nhận.'], ['Bản đồ điểm nóng', 'Bẫy theo lô trên bản đồ, màu theo mức nguy cơ.']],
+    s6: [['Nhật ký & sổ VietGAP', 'Mỗi lần phun kèm hiệu quả đo được. Sổ PDF tự gửi ngày 1 hằng tháng.'], ['Hỏi trợ lý AI', 'Hỏi bằng lời thường, trợ lý trả lời kèm ảnh và biểu đồ — và ghi nhật ký giúp bạn.'], ['Bản đồ điểm nóng', 'Bẫy theo lô trên bản đồ, màu theo mức nguy cơ.']],
     s7Kicker: 'Cho hợp tác xã', s7Head: ['Mọi hộ thành viên', 'trên một màn hình.'], s7Hub: 'HTX', s7Node: 'Hộ',
     s8Head: ['Phát hiện sâu hại sớm.', 'Quyết định có căn cứ.'], s8Small: 'Web · Điện thoại · Tiếng Việt & English'
   },
@@ -233,7 +233,7 @@ const COPY = {
     s4Unit: 'fruit flies', s4Badge: 'Finds 92% of the flies on test photos', s4Label: 'Fruit fly',
     s4Date: 'Thursday, 15 October', s4NotifTitle: 'Pest threshold reached', s4NotifBody: 'Mango trap A1: 18 flies (threshold 15). Check mango plot A this morning.',
     s5CalloutA: ['What to do on each plot', 'Treat, bait or clean up, on a dry day'], s5CalloutB: ['New flies every day', 'By species and trap, with treatments marked'],
-    s6: [['Field log & VietGAP record', 'Every spray with its measured effect. The PDF record goes out on the 1st.'], ['Say it, it is logged', '“Sprayed Radiant on mango plot A this morning” — the assistant fills it in, you Confirm.'], ['Hotspot map', 'Traps by plot on the map, colored by risk.']],
+    s6: [['Field log & VietGAP record', 'Every spray with its measured effect. The PDF record goes out on the 1st.'], ['Ask the AI assistant', 'Ask in plain words; it answers with photos and charts — and logs your sprays for you.'], ['Hotspot map', 'Traps by plot on the map, colored by risk.']],
     s7Kicker: 'For cooperatives', s7Head: ['Every member', 'on one screen.'], s7Hub: 'Co-op', s7Node: 'Farm',
     s8Head: ['Spot pests early.', 'Decide with evidence.'], s8Small: 'Web · Phone · English & Tiếng Việt'
   }
@@ -366,7 +366,7 @@ $('s5-img-b').src = SCREEN('analytics');
 $('s5-callout-a').innerHTML = `${COPY.s5CalloutA[0]}<span>${COPY.s5CalloutA[1]}</span>`;
 $('s5-callout-b').innerHTML = `${COPY.s5CalloutB[0]}<span>${COPY.s5CalloutB[1]}</span>`;
 
-const s6Panels = ['logbook', 'assistant-treatment', 'map'].map((name, i) => {
+const s6Panels = ['logbook', 'assistant-chart', 'map'].map((name, i) => {
   const el = document.createElement('div');
   el.className = 'panel';
   el.style.left = '700px';
