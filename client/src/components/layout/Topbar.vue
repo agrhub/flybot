@@ -169,7 +169,7 @@ const SEVERITY_COLOR = {
 };
 const dotColor = (n) => (n.read ? 'var(--el-color-info)' : SEVERITY_COLOR[n.severity] || 'var(--el-color-info)');
 // Where a click on each notification type leads
-const TARGET_SECTION = { pest_threshold: 'analytics', camera_offline: 'cameras', camera_online: 'cameras', ai_failure: 'analytics', camera_shared: 'cameras', card_due: 'cameras', card_change_detected: 'cameras', pest_surge: 'analytics', image_quality: 'cameras', harvest_ready: 'logbook' };
+const TARGET_SECTION = { pest_threshold: 'analytics', camera_offline: 'cameras', camera_online: 'cameras', ai_failure: 'analytics', camera_shared: 'cameras', card_due: 'cameras', card_change_detected: 'cameras', pest_surge: 'analytics', image_quality: 'cameras', harvest_ready: 'logbook', log_reminder: 'logbook', org_digest: 'farms' };
 
 const {
   items, unreadCount, hasMore, loading,

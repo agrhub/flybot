@@ -11,6 +11,7 @@ const emailTemplates = require('../services/emailTemplates');
 const notificationService = require('../services/notificationService');
 const orgService = require('../services/orgService');
 const { orgOverview } = require('../services/orgOverviewService');
+const { remindMembers } = require('../services/orgReminderService');
 const { inviteQuota } = require('../middlewares/rateLimit');
 const { avatarUrlsFor } = require('../services/avatarService');
 const { EMAIL_REGEX, normalizeEmail, findUserByEmail, safeUrl, emailsWithAccount, sendConfirmReminder } = require('./shareController');
@@ -359,7 +360,28 @@ async function getOverview(req, res) {
     }
 }
 
+/**
+ * POST /api/orgs/:id/remind { userIds }: ask members to check their traps and log their work
+ * (owners and managers). Per member: sent, already (reminded today) or skipped (no traps here).
+ */
+async function remindLog(req, res) {
+    try {
+        const ids = Array.isArray(req.body?.userIds) ? [...new Set(req.body.userIds.filter(id => typeof id === 'string'))] : [];
+        if (!ids.length) return res.status(400).json({ success: false, message: "Choose the members to remind." });
+        if (ids.length > MAX_MEMBERS) return res.status(400).json({ success: false, message: `At most ${MAX_MEMBERS} members at a time.` });
+        const org = await loadOrg(req, res, { manage: true });
+        if (!org) return;
+        const results = await remindMembers(org, req.user, ids);
+        const sent = results.filter(r => r.status === 'sent').length;
+        if (sent) recordAudit(req, { action: 'org.log_reminded', target: orgTarget(org), details: { count: sent } });
+        res.json({ success: true, results });
+    } catch (err) {
+        sendServerError(res, err, { context: 'Remind organization members' });
+    }
+}
+
 module.exports = {
+    remindLog,
     getOverview,
     addMembersBulk,
     listOrgs,

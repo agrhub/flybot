@@ -949,7 +949,7 @@
           "sharing": {
             "title": "Chia sẻ & tổ chức",
             "desc": "Làm việc nhóm bằng chia sẻ từng camera, từng vườn, hoặc bằng tổ chức.",
-            "items": "Chia sẻ camera trong Cài đặt, mục Quản lý Camera; chia sẻ vườn bằng nút \"Chia sẻ\" trên trang vườn.\nVới hợp tác xã hay doanh nghiệp: vào Cài đặt, mục Tổ chức, bấm \"Tạo tổ chức\".\nThêm thành viên theo email với vai trò Chủ sở hữu, Quản lý hoặc Thành viên. Thành viên xem mọi camera và vườn của tổ chức.\nChỉ chủ camera hoặc quản trị viên mới xoá, chia sẻ ra ngoài hay chuyển camera sang tổ chức khác.\nNgười được mời chỉ có quyền khi đã xác nhận email. Ai đã có tài khoản mà chưa xác nhận hiện \"Chưa xác nhận\": bấm \"Nhắc xác nhận\" để gửi lại email xác nhận (tối đa 3 lần mỗi ngày). Quản trị viên cũng có thể xác nhận hộ trong Cài đặt, mục Người dùng.\n\"Mời nhiều người\" trong mục Tổ chức: dán danh sách email hoặc chọn file CSV để mời cả hợp tác xã một lần (tối đa 50 địa chỉ mỗi lần), kèm kết quả từng địa chỉ.\n\"Tổng quan hợp tác xã\" (Vườn & lô, cho chủ và quản lý tổ chức): mỗi hộ một dòng với số ruồi/bẫy/ngày so với kỳ trước, bẫy chạm ngưỡng, camera không gửi ảnh và lần phun gần nhất; hộ có bẫy chạm ngưỡng mà chưa ghi biện pháp được đưa lên đầu để đi thăm vườn. Xuất được ra Excel."
+            "items": "Chia sẻ camera trong Cài đặt, mục Quản lý Camera; chia sẻ vườn bằng nút \"Chia sẻ\" trên trang vườn.\nVới hợp tác xã hay doanh nghiệp: vào Cài đặt, mục Tổ chức, bấm \"Tạo tổ chức\".\nThêm thành viên theo email với vai trò Chủ sở hữu, Quản lý hoặc Thành viên. Thành viên xem mọi camera và vườn của tổ chức.\nChỉ chủ camera hoặc quản trị viên mới xoá, chia sẻ ra ngoài hay chuyển camera sang tổ chức khác.\nNgười được mời chỉ có quyền khi đã xác nhận email. Ai đã có tài khoản mà chưa xác nhận hiện \"Chưa xác nhận\": bấm \"Nhắc xác nhận\" để gửi lại email xác nhận (tối đa 3 lần mỗi ngày). Quản trị viên cũng có thể xác nhận hộ trong Cài đặt, mục Người dùng.\n\"Mời nhiều người\" trong mục Tổ chức: dán danh sách email hoặc chọn file CSV để mời cả hợp tác xã một lần (tối đa 50 địa chỉ mỗi lần), kèm kết quả từng địa chỉ.\n\"Tổng quan hợp tác xã\" (Vườn & lô, cho chủ và quản lý tổ chức): mỗi hộ một dòng với số ruồi/bẫy/ngày so với kỳ trước, bẫy chạm ngưỡng, camera không gửi ảnh và lần phun gần nhất; hộ có bẫy chạm ngưỡng mà chưa ghi biện pháp được đưa lên đầu để đi thăm vườn. Xuất được ra Excel.\nNút \"Nhắc\" (hoặc \"Nhắc các hộ cần thăm\") gửi lời nhắc kiểm tra bẫy và ghi nhật ký tới hộ đó, qua thông báo, email và Telegram; mỗi hộ tối đa một lần mỗi ngày. Sáng thứ Hai, chủ và quản lý tổ chức nhận danh sách hộ cần thăm vườn (tắt trong Cài đặt, Thông báo)."
           },
           "log": {
             "title": "Nhật ký xử lý & VietGAP",
@@ -1280,6 +1280,14 @@
       "weather_risk": {
         "title": "Thời tiết thuận lợi cho ruồi vàng",
         "desc": "{farmName}: {days}, {minTemp}–{maxTemp}°C, ẩm đến {humidity}%; đợt ruồi mới khoảng {waveDate}."
+      },
+      "log_reminder": {
+        "title": "Nhắc ghi nhật ký",
+        "desc": "{sender} ({orgName}): {atThreshold}/{cameras} bẫy chạm ngưỡng, 7 ngày chưa ghi biện pháp."
+      },
+      "org_digest": {
+        "title": "Hộ cần thăm vườn",
+        "desc": "{orgName}: {count} hộ có bẫy chạm ngưỡng mà chưa ghi biện pháp: {names}."
       }
     }
   },
@@ -1473,7 +1481,8 @@
         "morningBriefs": "Bản tin sáng",
         "vietgapMonthly": "Sổ VietGAP hằng tháng",
         "harvestReminders": "Nhắc hết cách ly",
-        "weatherAlerts": "Cảnh báo thời tiết"
+        "weatherAlerts": "Cảnh báo thời tiết",
+        "orgDigests": "Hộ cần thăm vườn"
       },
       "jobSchedules": {
         "capture": "Mỗi 5 phút",
@@ -1489,7 +1498,8 @@
         "morningBriefs": "Hằng ngày, 6:30",
         "vietgapMonthly": "Hằng tháng, ngày 1 lúc 7:00",
         "harvestReminders": "Hằng ngày lúc 6:00",
-        "weatherAlerts": "Hằng ngày lúc 17:00"
+        "weatherAlerts": "Hằng ngày lúc 17:00",
+        "orgDigests": "Thứ Hai, 7:00"
       },
       "results": {
         "cameras": "{n} camera",
@@ -1836,7 +1846,8 @@
         "member_removed": "Gỡ thành viên",
         "member_reminded": "Nhắc thành viên xác nhận email",
         "cameras_changed": "Chuyển camera",
-        "members_added": "Mời nhiều thành viên"
+        "members_added": "Mời nhiều thành viên",
+        "log_reminded": "Nhắc ghi nhật ký"
       },
       "integration": {
         "key_created": "Tạo API key",
@@ -2180,6 +2191,10 @@
     "vietgap": {
       "title": "Sổ VietGAP hằng tháng",
       "desc": "Ngày 1 hằng tháng lúc 7:00: sổ ghi chép sử dụng thuốc BVTV của tháng trước dạng PDF, gửi qua email và Telegram nếu đã liên kết. Tháng không có lần xử lý nào thì không gửi."
+    },
+    "orgDigest": {
+      "title": "Hộ cần thăm vườn (thứ Hai)",
+      "desc": "Cho chủ và quản lý tổ chức: sáng thứ Hai lúc 7:00, danh sách hộ có bẫy chạm ngưỡng mà tuần qua chưa ghi biện pháp nào. Không có hộ nào thì không gửi."
     }
   },
   "degreeDays": {
@@ -2529,6 +2544,10 @@
     "noCameras": "Chưa có bẫy",
     "lastTreatment": "Lần phun gần nhất",
     "neverTreated": "Chưa ghi biện pháp",
-    "sheetName": "Hợp tác xã {days} ngày"
+    "sheetName": "Hợp tác xã {days} ngày",
+    "remind": "Nhắc",
+    "remindAll": "Nhắc {count} hộ cần thăm",
+    "reminded": "Đã gửi lời nhắc tới {count} hộ.",
+    "alreadyReminded": "{count} hộ đã được nhắc hôm nay."
   }
 }

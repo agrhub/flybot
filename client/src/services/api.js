@@ -330,6 +330,9 @@ export default {
   listOrgs() {
     return apiClient.get('/orgs');
   },
+  remindOrgMembers(id, userIds) {
+    return apiClient.post(`/orgs/${id}/remind`, { userIds });
+  },
   getOrgOverview(id, days) {
     return apiClient.get(`/orgs/${id}/overview`, { params: { days } });
   },

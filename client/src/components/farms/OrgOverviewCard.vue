@@ -14,6 +14,7 @@
           <el-radio-group v-model="period" size="small" @change="load">
             <el-radio-button v-for="p in PERIODS" :key="p" :value="p">{{ t('farms.compare.days', { days: p }) }}</el-radio-button>
           </el-radio-group>
+          <el-button size="small" :icon="Bell" :disabled="!toVisit.length" :loading="reminding === 'all'" @click="remind(toVisit, 'all')">{{ t('orgOverview.remindAll', { count: toVisit.length }) }}</el-button>
           <el-button size="small" :icon="Download" :disabled="!members.length" :loading="exporting" @click="exportExcel">{{ t('farms.compare.export') }}</el-button>
         </div>
       </div>
@@ -37,6 +38,7 @@
             <div class="min-w-0">
               <p class="cmp-strong truncate">{{ m.name || m.email }}</p>
               <p class="cmp-meta">{{ t('farms.compare.traps', { count: m.cameras }) }} · {{ lastTreatmentText(m) }}</p>
+              <el-button v-if="m.userId && m.cameras" link type="primary" size="small" :icon="Bell" :loading="reminding === m.userId" @click="remind([m], m.userId)">{{ t('orgOverview.remind') }}</el-button>
               <div class="flex flex-wrap gap-1 mt-1">
                 <el-tag v-if="m.needsVisit" type="danger" effect="light" round size="small">{{ t('orgOverview.visit') }}</el-tag>
                 <el-tag v-if="m.atThreshold" type="warning" effect="light" round size="small">{{ t('orgOverview.atThresholdCount', { count: m.atThreshold }) }}</el-tag>
@@ -75,8 +77,13 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column :label="t('orgOverview.lastTreatment')" width="170">
+        <el-table-column :label="t('orgOverview.lastTreatment')" width="150">
           <template #default="{ row }"><span class="cmp-meta">{{ lastTreatmentText(row) }}</span></template>
+        </el-table-column>
+        <el-table-column width="110" align="right">
+          <template #default="{ row }">
+            <el-button v-if="row.userId && row.cameras" link type="primary" size="small" :icon="Bell" :loading="reminding === row.userId" @click="remind([row], row.userId)">{{ t('orgOverview.remind') }}</el-button>
+          </template>
         </el-table-column>
       </el-table>
     </template>
@@ -87,7 +94,7 @@
 import { ref, computed, onMounted, h, defineComponent } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { ElMessage, ElTag } from 'element-plus';
-import { Download } from '@element-plus/icons-vue';
+import { Download, Bell } from '@element-plus/icons-vue';
 import api from '@/services/api';
 import { useBreakpoints } from '@/composables/useBreakpoints';
 import { requestErrorText } from '@/utils/requestError';
@@ -132,6 +139,24 @@ const load = async () => {
     ElMessage.error(requestErrorText(t, err, t('common.error')));
   } finally {
     loading.value = false;
+  }
+};
+
+// Ask members to check their traps and log their work (once a day each)
+const toVisit = computed(() => members.value.filter((m) => m.needsVisit && m.userId));
+const reminding = ref(null);
+const remind = async (list, key) => {
+  reminding.value = key;
+  try {
+    const res = await api.remindOrgMembers(orgId.value, list.map((m) => m.userId));
+    const sent = res.data.results.filter((r) => r.status === 'sent').length;
+    const already = res.data.results.filter((r) => r.status === 'already').length;
+    if (sent) ElMessage.success(t('orgOverview.reminded', { count: sent }));
+    if (already) ElMessage.info(t('orgOverview.alreadyReminded', { count: already }));
+  } catch (err) {
+    ElMessage.error(requestErrorText(t, err, t('common.error')));
+  } finally {
+    reminding.value = null;
   }
 };
 

@@ -67,6 +67,14 @@
       "weather_risk": {
         "subject": "🌦️ Weather that suits fruit flies: {farmName}",
         "body": "The forecast for {days} at {farmName}: {minTemp}–{maxTemp}°C, humidity up to {humidity}%, ideal for fruit flies to fly and lay eggs. From degree-days, the next wave of adults is due around {waveDate}. Check the traps, collect fallen fruit and get bait sprays ready before those days."
+      },
+      "log_reminder": {
+        "subject": "📝 {orgName}: check your traps and log your work",
+        "body": "{sender} ({orgName}) reminds you: {atThreshold} of your {cameras} traps are at their alert threshold and no treatment was logged in the past 7 days. Please check the field and record what you did in the Field log (spray, bait, fallen fruit collected...)."
+      },
+      "org_digest": {
+        "subject": "🧑‍🌾 {orgName}: {count} members to visit this week",
+        "body": "Last week in {orgName} (on average {ftd} flies per trap per day), {count} members had traps at their threshold and logged no treatment: {names}. See the details and send reminders under Farms, Cooperative overview."
       }
     },
     "cameraShared": {
@@ -387,7 +395,9 @@
     "send_a_list_of_email_addresses": "Send a list of email addresses.",
     "at_most_max_addresses_at_a_time": "At most {max} addresses at a time.",
     "send_the_rows_to_import": "Send the rows to import.",
-    "at_most_max_rows_at_a_time": "At most {max} rows at a time."
+    "at_most_max_rows_at_a_time": "At most {max} rows at a time.",
+    "choose_the_members_to_remind": "Choose the members to remind.",
+    "at_most_max_members_at_a_time": "At most {max} members at a time."
   },
   "reportPdf": {
     "range": "Period: {from} - {to} ({days} days)",

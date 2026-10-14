@@ -949,7 +949,7 @@
           "sharing": {
             "title": "Sharing & organizations",
             "desc": "Work as a team by sharing cameras or farms, or with an organization.",
-            "items": "Share a camera in Settings, Camera Management; share a farm with the \"Share\" button on the farm page.\nFor a cooperative or company: Settings, Organizations, \"New organization\".\nAdd members by email as Owner, Manager or Member. Members see every camera and farm of the organization.\nOnly the camera owner or an admin can delete it, share it outside or move it to another organization.\nPeople you invite get access once they confirm their email. Anyone with an account who has not confirmed it shows as \"Not confirmed\": click \"Remind to confirm\" to send the confirmation email again (up to 3 times a day). Admins can also confirm it for them in Settings, Users.\n\"Invite many\" under Organizations: paste the email addresses or pick a CSV file to invite a whole cooperative at once (up to 50 addresses each time), with the result for each address.\n\"Cooperative overview\" (Farms, for organization owners and managers): one row per member with flies per trap per day against the period before, traps at their threshold, cameras without photos and the last treatment; members with traps at the threshold and no treatment logged come first, for a field visit. It exports to Excel."
+            "items": "Share a camera in Settings, Camera Management; share a farm with the \"Share\" button on the farm page.\nFor a cooperative or company: Settings, Organizations, \"New organization\".\nAdd members by email as Owner, Manager or Member. Members see every camera and farm of the organization.\nOnly the camera owner or an admin can delete it, share it outside or move it to another organization.\nPeople you invite get access once they confirm their email. Anyone with an account who has not confirmed it shows as \"Not confirmed\": click \"Remind to confirm\" to send the confirmation email again (up to 3 times a day). Admins can also confirm it for them in Settings, Users.\n\"Invite many\" under Organizations: paste the email addresses or pick a CSV file to invite a whole cooperative at once (up to 50 addresses each time), with the result for each address.\n\"Cooperative overview\" (Farms, for organization owners and managers): one row per member with flies per trap per day against the period before, traps at their threshold, cameras without photos and the last treatment; members with traps at the threshold and no treatment logged come first, for a field visit. It exports to Excel.\n\"Remind\" (or \"Remind ... to visit\") sends the member a reminder to check the traps and log the work, in the app, by email and Telegram; at most once a day each. On Monday mornings, organization owners and managers get the list of members to visit (turn it off under Settings, Notifications)."
           },
           "log": {
             "title": "Treatment log & VietGAP",
@@ -1280,6 +1280,14 @@
       "weather_risk": {
         "title": "Weather that suits fruit flies",
         "desc": "{farmName}: {days}, {minTemp}–{maxTemp}°C, humidity up to {humidity}%; next wave around {waveDate}."
+      },
+      "log_reminder": {
+        "title": "Log your work",
+        "desc": "{sender} ({orgName}): {atThreshold}/{cameras} traps at threshold, nothing logged in 7 days."
+      },
+      "org_digest": {
+        "title": "Members to visit",
+        "desc": "{orgName}: {count} members with traps at threshold and no treatment logged: {names}."
       }
     }
   },
@@ -1473,7 +1481,8 @@
         "morningBriefs": "Morning brief",
         "vietgapMonthly": "Monthly VietGAP record",
         "harvestReminders": "Harvest reminders",
-        "weatherAlerts": "Weather warnings"
+        "weatherAlerts": "Weather warnings",
+        "orgDigests": "Members to visit"
       },
       "jobSchedules": {
         "capture": "Every 5 minutes",
@@ -1489,7 +1498,8 @@
         "morningBriefs": "Daily, 6:30",
         "vietgapMonthly": "Monthly, the 1st at 7:00",
         "harvestReminders": "Daily at 6:00",
-        "weatherAlerts": "Daily at 17:00"
+        "weatherAlerts": "Daily at 17:00",
+        "orgDigests": "Monday, 7:00"
       },
       "results": {
         "cameras": "{n} camera(s)",
@@ -1836,7 +1846,8 @@
         "member_removed": "Remove member",
         "member_reminded": "Remind member to confirm email",
         "cameras_changed": "Move cameras",
-        "members_added": "Invite many members"
+        "members_added": "Invite many members",
+        "log_reminded": "Reminded to log work"
       },
       "integration": {
         "key_created": "Create API key",
@@ -2180,6 +2191,10 @@
     "vietgap": {
       "title": "Monthly VietGAP record",
       "desc": "On the 1st of each month at 7:00: last month's pesticide use record as a PDF, by email and on Telegram if linked. Nothing is sent for a month without treatments."
+    },
+    "orgDigest": {
+      "title": "Members to visit (Mondays)",
+      "desc": "For organization owners and managers: Monday at 7:00, the members with traps at their threshold and no treatment logged in the past week. Nothing is sent when there are none."
     }
   },
   "degreeDays": {
@@ -2529,6 +2544,10 @@
     "noCameras": "No traps yet",
     "lastTreatment": "Last treatment",
     "neverTreated": "None logged",
-    "sheetName": "Cooperative {days} days"
+    "sheetName": "Cooperative {days} days",
+    "remind": "Remind",
+    "remindAll": "Remind {count} to visit",
+    "reminded": "Reminder sent to {count} members.",
+    "alreadyReminded": "{count} members were already reminded today."
   }
 }

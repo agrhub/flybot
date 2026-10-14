@@ -4,6 +4,7 @@
 
 ### Cooperatives
 - **Cooperative overview** (Farms, for organization owners and managers): one row per member with flies per trap per day against the period before (7 or 30 days), traps at their threshold, cameras without a photo for a day and the last treatment. Members with traps at the threshold and no treatment logged in the period come first, for a field visit. Exports to Excel.
+- **Reminders**: from the cooperative overview, "Remind" asks a member to check their traps and log their work (in the app, by email and Telegram; once a day each). Owners and managers get the list of members to visit on Monday mornings (Settings, Notifications to turn it off).
 
 ### Field log
 - **Import from file**: an Excel (.xlsx) or CSV file of past treatments, with a template. Columns and values in Vietnamese or English, traps by name or serial; every row is checked and previewed, rows already in the log are skipped, up to 500 rows at a time.

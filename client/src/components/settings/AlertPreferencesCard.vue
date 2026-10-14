@@ -36,6 +36,17 @@
     </div>
   </el-card>
 
+  <!-- Cooperative owners and managers: Monday list of members to visit -->
+  <el-card shadow="never" class="mb-4">
+    <div class="flex items-start justify-between gap-4">
+      <div class="min-w-0">
+        <span class="pref-label">{{ t('alertPrefs.orgDigest.title') }}</span>
+        <p class="pref-meta mt-1">{{ t('alertPrefs.orgDigest.desc') }}</p>
+      </div>
+      <el-switch :aria-label="t('alertPrefs.orgDigest.title')" :model-value="prefs.orgDigest !== false" :loading="saving === 'orgDigest'" @change="(v) => save('orgDigest', { orgDigest: v })" />
+    </div>
+  </el-card>
+
   <!-- Quiet hours -->
   <el-card shadow="never" class="mb-4">
     <div class="flex items-start justify-between gap-4">

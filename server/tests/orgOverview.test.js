@@ -1,12 +1,13 @@
 const { test, before, after, beforeEach } = require('node:test');
 const assert = require('node:assert/strict');
-const { models, startDb, stopDb, clearDb, request, createUser, createCamera, json } = require('./dbHelpers');
+const { models, sentMails, startDb, stopDb, clearDb, request, createUser, createCamera, json } = require('./dbHelpers');
 const orgService = require('../src/services/orgService');
 const { dayKeyOf, DAY_MS } = require('../src/services/dailyStats');
+const { sendOrgDigests } = require('../src/services/orgReminderService');
 
 before(startDb);
 after(stopDb);
-beforeEach(clearDb);
+beforeEach(() => { sentMails.length = 0; return clearDb(); });
 
 const dayAgo = (n) => dayKeyOf(Date.now() - n * DAY_MS);
 
@@ -94,4 +95,36 @@ test('cooperative overview: only its owners and managers', async () => {
     assert.equal((await request(`/api/orgs/${org._id}/overview`, { as: busy })).status, 403);
     assert.equal((await request(`/api/orgs/${org._id}/overview`, { as: outsider })).status, 404);
     assert.equal((await request(`/api/orgs/${org._id}/overview`)).status, 401);
+});
+
+test('reminding members: once a day each, only those with traps here', async () => {
+    const { lead, busy, calm, org } = await seed();
+    const remind = (userIds) => request(`/api/orgs/${org._id}/remind`, { method: 'POST', as: lead, body: { userIds } }).then(json);
+    const first = await remind([String(busy._id), String(lead._id)]);
+    assert.equal(first.status, 200);
+    assert.deepEqual(first.body.results.map(r => r.status), ['sent', 'skipped'], 'the lead has no traps in the organization');
+    const note = await models.Notification.findOne({ userId: busy._id, type: 'log_reminder' }).lean();
+    assert.equal(note.params.atThreshold, 1);
+    assert.equal(note.params.sender, 'Lan');
+    assert.ok(sentMails.some(m => m.to === 'ba@example.test'), 'emailed too');
+
+    const again = await remind([String(busy._id), String(calm._id)]);
+    assert.deepEqual(again.body.results.map(r => r.status), ['already', 'sent']);
+    assert.equal((await request(`/api/orgs/${org._id}/remind`, { method: 'POST', as: busy, body: { userIds: [String(calm._id)] } })).status, 403);
+    assert.equal((await remind([])).status, 400);
+    assert.ok(await models.AuditLog.exists({ action: 'org.log_reminded' }));
+});
+
+test('Monday digest: owners and managers get the members to visit, unless turned off', async () => {
+    const { lead, busy } = await seed();
+    const manager = await createUser({ role: 'manager', email: 'mgr@example.test', notificationPrefs: { orgDigest: false } });
+    await models.Organization.updateOne({}, { $push: { members: { userId: manager._id, email: manager.email, role: 'manager' } } });
+    assert.deepEqual(await sendOrgDigests(), { sent: 1 });
+    const digest = await models.Notification.findOne({ type: 'org_digest' }).lean();
+    assert.equal(String(digest.userId), String(lead._id));
+    assert.equal(digest.params.count, 1);
+    assert.equal(digest.params.names, 'Ba');
+    assert.equal(await models.Notification.countDocuments({ type: 'org_digest', userId: busy._id }), 0, 'members do not get it');
+    // Once a week
+    assert.deepEqual(await sendOrgDigests(), { sent: 0 });
 });

@@ -9,6 +9,7 @@ router.use(authenticate, requireStringFields);
 
 router.get('/', orgController.listOrgs);
 router.get('/:id/overview', analyticsLimiter, orgController.getOverview);
+router.post('/:id/remind', shareLimiter, orgController.remindLog);
 // Viewers (role "user") join organizations but do not create them
 router.post('/', requireRole('admin', 'manager'), orgController.createOrg);
 router.put('/:id', orgController.updateOrg);

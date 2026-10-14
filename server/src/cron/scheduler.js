@@ -9,6 +9,7 @@ const { sendMorningBriefs } = require('../services/morningBriefService');
 const { sendMonthlyVietGapLogs } = require('../services/vietgapService');
 const { sendHarvestReminders } = require('../services/harvestService');
 const { sendWeatherAlerts } = require('../services/weatherRiskService');
+const { sendOrgDigests } = require('../services/orgReminderService');
 const { syncPending: syncTrainingData } = require('../services/trainingSync');
 const { resyncAll: resyncEzvizPolicies } = require('../services/ezvizRamService');
 const { TIMEZONE } = require('../services/captureSchedule');
@@ -46,6 +47,7 @@ const morningBriefJob = exclusive('Morning briefs', () => sendMorningBriefs(), '
 const vietgapJob = exclusive('VietGAP records', () => sendMonthlyVietGapLogs(), 'vietgapMonthly');
 const weatherJob = exclusive('Weather warnings', () => sendWeatherAlerts(), 'weatherAlerts');
 const harvestJob = exclusive('Harvest reminders', () => sendHarvestReminders(), 'harvestReminders');
+const orgDigestJob = exclusive('Cooperative digests', () => sendOrgDigests(), 'orgDigests');
 const scheduledReportJob = exclusive('Scheduled reports', async () => ({ sent: await sendDueReports() }), 'scheduledReports');
 const pestCountJob = exclusive('Pest count backfill', async () => ({
     photos: await require('../services/migrations').backfillPestCounts({ since: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) })
@@ -107,6 +109,11 @@ function startCronJobs() {
     // Last month's pesticide-use record (VietGAP) for those who turned it on: the 1st, local time
     cron.schedule('0 7 1 * *', () => {
         vietgapJob();
+    }, { timezone: TIMEZONE });
+
+    // Members to visit, for cooperative owners and managers: Monday morning, local time
+    cron.schedule('0 7 * * 1', () => {
+        orgDigestJob();
     }, { timezone: TIMEZONE });
 
     // Weekly report: Monday morning, local time
