@@ -379,6 +379,9 @@ export default {
   sendSeasonReport(body = {}) {
     return apiClient.post('/farms/season-report/send', body);
   },
+  getSprayPlan() {
+    return apiClient.get('/farms/plan');
+  },
   compareFarms(days = 30) {
     return apiClient.get('/farms/compare', { params: { days } });
   },

@@ -941,7 +941,7 @@
           "forecast": {
             "title": "AI diagnosis & forecast",
             "desc": "The AI Copilot panel on the Overview brings risk, trend and suggested actions together.",
-            "items": "Click the AI Agent diagnosis button at the bottom of the Overview.\n\"7-day trend forecast\" follows the busiest trap: expected new flies per day (+) added to the count on its glue card, colored against its threshold.\n\"Next wave of adult flies\": a degree-day estimate from the biggest catch, with progress and generation length.\n\"Recommended actions\": suggestions following integrated pest management. These are estimates; check the field.\n\"Next 3 days\" in the degree-day panel shows which days suit fruit flies (25–33°C, humid, no heavy rain). When two or more of them come as a new wave is due, FlyBot sends the farm a weather warning at 17:00 the day before."
+            "items": "Click the AI Agent diagnosis button at the bottom of the Overview.\n\"7-day trend forecast\" follows the busiest trap: expected new flies per day (+) added to the count on its glue card, colored against its threshold.\n\"Next wave of adult flies\": a degree-day estimate from the biggest catch, with progress and generation length.\n\"Recommended actions\": suggestions following integrated pest management. These are estimates; check the field.\n\"Next 3 days\" in the degree-day panel shows which days suit fruit flies (25–33°C, humid, no heavy rain). When two or more of them come as a new wave is due, FlyBot sends the farm a weather warning at 17:00 the day before.\n\"To do\" on the dashboard: one suggestion per plot (treat now when traps are at their threshold and nothing was done in the past week, check the effect after a recent treatment, bait before the next wave of flies, sanitation when the weather favors flies), on a day without heavy rain, with a reminder to change the active ingredient when the last two sprays used the same one. The morning brief carries the most urgent one."
           }
         }
       },
@@ -2568,5 +2568,28 @@
       "sent": "Sending the cooperative report to your email."
     },
     "former": "Left the organization"
+  },
+  "plan": {
+    "title": "To do",
+    "desc": "A suggestion for each plot from the catches, the field log, the next fly generation (degree-days) and the rain forecast.",
+    "log": "Field log",
+    "actions": {
+      "treat_now": "Treat now",
+      "wait_check": "Check effect",
+      "bait_before_wave": "Bait",
+      "sanitation": "Sanitation"
+    },
+    "reasons": {
+      "treat_now": "{count} traps at threshold, nothing in the past 7 days ({ftd} flies/trap/day).",
+      "wait_check": "Just treated: see whether the catches fell after {until} before treating again.",
+      "bait_before_wave": "A new wave of flies is due around {wave}: put out protein bait a few days before.",
+      "sanitation": "The next days favor flies: collect fallen fruit and check the traps."
+    },
+    "rainMoved": "Moved to a day without heavy rain.",
+    "rotate": "Change the active ingredient this time: the last two sprays both used {ingredient}.",
+    "today": "Today",
+    "more": "Show {count} more plots",
+    "less": "Show less",
+    "note": "Suggestions only; always follow the product label (dose, pre-harvest interval)."
   }
 }

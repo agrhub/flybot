@@ -10,7 +10,7 @@ const TEXT = {
         title: 'FlyBot', tagline: 'Bẫy dính thông minh & AI đếm côn trùng',
         outro: 'Phát hiện sâu hại sớm. Quyết định có căn cứ.', by: 'FlyBot • AgrHub',
         scenes: {
-            dashboard: 'Tổng quan: ruồi vào bẫy hôm nay, ruồi/bẫy/ngày, từng bẫy so với ngưỡng',
+            dashboard: 'Tổng quan: việc nên làm cho từng lô, ruồi vào bẫy hôm nay, từng bẫy so với ngưỡng',
             'catch-chart': 'Số ruồi vào bẫy mỗi ngày, theo từng bẫy',
             'dashboard-cameras': 'Ảnh mới nhất của từng bẫy, AI khoanh từng con ruồi',
             playback: 'Xem lại video theo dòng thời gian, kèm ảnh AI từng đoạn',
@@ -30,6 +30,9 @@ const TEXT = {
             'report-schedule': 'Gửi báo cáo kèm PDF qua email và Telegram theo lịch',
             assistant: 'Trợ lý FlyBot trả lời bằng số liệu thật, kèm ảnh và biểu đồ',
             'assistant-confirm': 'Trợ lý chuẩn bị, bạn bấm Xác nhận mới được ghi',
+            'assistant-treatment': 'Nói "sáng nay phun cho lô xoài A": trợ lý điền sẵn nhật ký',
+            'org-overview': 'Hợp tác xã: từng hộ, hộ cần thăm vườn, nhắc và báo cáo PDF',
+            'log-import': 'Nhập nhật ký giấy từ file Excel, kiểm tra từng dòng',
             'app-tour': 'Hướng dẫn nhanh ngay khi mở ứng dụng lần đầu',
             mobile: 'Dùng trên điện thoại như một ứng dụng, cả khi mất sóng'
         }
@@ -38,7 +41,7 @@ const TEXT = {
         title: 'FlyBot', tagline: 'Smart sticky traps & AI insect counting',
         outro: 'Spot pests early. Decide with evidence.', by: 'FlyBot • AgrHub',
         scenes: {
-            dashboard: 'Overview: flies caught today, flies per trap per day, every trap vs its threshold',
+            dashboard: 'Overview: what to do on each plot, flies caught today, every trap vs its threshold',
             'catch-chart': 'Flies caught per day, by trap',
             'dashboard-cameras': 'The latest photo of each trap, every fly marked by the AI',
             playback: 'Recordings on a timeline, with the AI photo of each clip',
@@ -58,13 +61,16 @@ const TEXT = {
             'report-schedule': 'Reports with their PDF by email and Telegram on a schedule',
             assistant: 'The FlyBot assistant answers from your figures, with photos and charts',
             'assistant-confirm': 'The assistant prepares, your Confirm records it',
+            'assistant-treatment': 'Say "sprayed mango plot A this morning": the log entry is filled in',
+            'org-overview': 'Cooperatives: every member, who to visit, reminders and a PDF report',
+            'log-import': 'Import a paper log from an Excel file, every row checked',
             'app-tour': 'A quick tour the first time you open the app',
             mobile: 'Works on the phone like an app, even without signal'
         }
     }
 }[LANG];
 
-const ORDER = ['app-tour', 'dashboard', 'dashboard-cameras', 'catch-chart', 'playback', 'detection', 'history-export', 'analytics', 'insights', 'reports', 'report-schedule', 'assistant', 'assistant-confirm', 'diagnosis', 'notifications', 'map', 'logbook', 'alert-settings'];
+const ORDER = ['app-tour', 'dashboard', 'dashboard-cameras', 'catch-chart', 'playback', 'detection', 'history-export', 'analytics', 'insights', 'reports', 'report-schedule', 'assistant', 'assistant-confirm', 'assistant-treatment', 'diagnosis', 'notifications', 'map', 'org-overview', 'logbook', 'log-import', 'alert-settings'];
 const dataUrl = (name) => `data:image/webp;base64,${fs.readFileSync(path.join(SHOTS, `${name}.webp`)).toString('base64')}`;
 const scenes = ORDER.map(name => ({ kind: 'shot', img: dataUrl(name), caption: TEXT.scenes[name] }));
 scenes.push({ kind: 'phones', imgs: [dataUrl('mobile-dashboard'), dataUrl('mobile-cameras'), dataUrl('mobile-more')], caption: TEXT.scenes.mobile });

@@ -123,13 +123,36 @@ async function executeGetWeatherOutlook({ farm, userId, user }) {
     };
 }
 
+const getSprayPlanDeclaration = {
+    name: 'get_spray_plan',
+    description: 'What to do next on each plot, from the traps, the logged treatments, the next fly generation (degree-days) and the rain forecast: treat_now (traps at threshold, nothing in the past week; on the first day without heavy rain), wait_check (treated less than 7 days ago: check its effect after waitUntil), bait_before_wave (a generation due within 10 days: bait a few days before), sanitation (weather favors flies: collect fallen fruit), monitor. rotateFrom: the active ingredient used in the last two sprays, to change next time. For "when should I spray", "what should I do this week".',
+    parameters: { type: 'OBJECT', properties: {} }
+};
+
+async function executeGetSprayPlan({ userId, user }) {
+    if (!userId) return { error: 'Not authenticated.' };
+    const plan = await require('../../services/sprayPlanService').planFor(user);
+    if (!plan.items.length) return { note: 'No trap is in a farm yet: assign the traps to farms and plots first.' };
+    return {
+        today: plan.today,
+        plots: plan.items.map(i => ({
+            farm: i.farm, plot: i.plot, traps: i.traps, trapsAtThreshold: i.atThreshold, fliesPerTrapPerDay7: i.ftd7,
+            action: i.action, date: i.date, waitUntil: i.waitUntil, movedForRain: i.rainMoved, rotateFrom: i.rotateFrom,
+            lastTreatment: i.lastTreatment, nextWave: i.wave
+        })),
+        note: 'Suggestions from simple rules; the grower decides. Follow the product label (dose, pre-harvest interval).'
+    };
+}
+
 module.exports = {
     insightDeclarations: [
+        getSprayPlanDeclaration,
         getTreatmentEffectivenessDeclaration,
         compareFarmsDeclaration,
         getWeatherOutlookDeclaration
     ],
     insightExecutors: {
+        get_spray_plan: executeGetSprayPlan,
         get_treatment_effectiveness: executeGetTreatmentEffectiveness,
         compare_farms: executeCompareFarms,
         get_weather_outlook: executeGetWeatherOutlook

@@ -477,7 +477,14 @@
     "offline": "Cameras offline: {list}.",
     "alerts": "{count} alert(s) in the last 24 hours.",
     "button": "Open FlyBot",
-    "footer": "You get this brief because \"Morning brief\" is on. Turn it off in Settings › Notifications."
+    "footer": "You get this brief because \"Morning brief\" is on. Turn it off in Settings › Notifications.",
+    "todo": {
+      "treat_now": "To do today: treat {place} (traps at threshold, nothing in the past week).",
+      "wait_check": "To do: {place} was just treated; check the effect after {until}.",
+      "bait_before_wave": "To do today: bait {place} before the next wave of flies.",
+      "sanitation": "To do today: collect fallen fruit and check the traps at {place} (weather favors flies).",
+      "rotate": "Change the active ingredient next time (the last two sprays used {ingredient})."
+    }
   },
   "vietgap": {
     "title": "Pesticide use record {month}",
