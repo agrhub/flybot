@@ -100,13 +100,13 @@ async function planFor(user, now = new Date()) {
     for (const row of latest.values()) row.count = countPests(row.summary instanceof Map ? Object.fromEntries(row.summary) : (row.summary || {}));
     const judged = await judgedCounts(placed, latest, now);
 
-    // The fly generations and the weather, once per farm (the weather is cached)
+    // The fly generations and the weather, once per farm, all farms at once (the weather is cached)
     const models = new Map();
-    for (const farm of farms) {
+    await Promise.all(farms.map(async (farm) => {
         const own = placed.filter(c => String(c.farmId) === String(farm._id));
-        if (!own.length) continue;
+        if (!own.length) return;
         models.set(String(farm._id), await degreeDayService.forCameras(own, now).catch(() => null));
-    }
+    }));
 
     const groups = new Map();
     for (const cam of placed) {
