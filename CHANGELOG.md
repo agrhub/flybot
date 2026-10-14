@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Cooperatives
+- **Cooperative overview** (Farms, for organization owners and managers): one row per member with flies per trap per day against the period before (7 or 30 days), traps at their threshold, cameras without a photo for a day and the last treatment. Members with traps at the threshold and no treatment logged in the period come first, for a field visit. Exports to Excel.
+
+### Field log
+- **Import from file**: an Excel (.xlsx) or CSV file of past treatments, with a template. Columns and values in Vietnamese or English, traps by name or serial; every row is checked and previewed, rows already in the log are skipped, up to 500 rows at a time.
+
+### Speed and reliability
+- The dashboard overview runs its queries at the same time and counts photos from the daily rollup: with 20 traps and a year of photos, about 1-2 s down to 0.4-0.6 s.
+- The end-to-end test no longer hangs: a dead Chrome or a navigation left unanswered fails at once, and a cold dev server is warmed up first.
+
 ## 1.3.0 (2026-10-13)
 
 ### Works without signal

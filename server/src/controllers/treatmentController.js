@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const { Treatment, Camera, User } = require('../models');
 const { TREATMENT_TYPES } = require('../models/Treatment');
-const { getViewableSerials, canManageCamera } = require('../utils/ownership');
+const { getViewableSerials, canManageCamera, viewableCameras } = require('../utils/ownership');
 const { sendServerError } = require('../utils/http');
 const { recordAudit } = require('../services/auditService');
 const treatmentService = require('../services/treatmentService');
@@ -40,39 +40,42 @@ function toClient(t, visibleSerials, effect = undefined) {
  * Validate a create/update body. All cameras must be manageable by the user.
  * Returns { value } or { error }.
  */
-async function validateInput(body, user, { partial = false } = {}) {
+async function validateInput(body, user, { partial = false, manageable = null } = {}) {
     const value = {};
     if (!partial || body.type !== undefined) {
-        if (!TREATMENT_TYPES.includes(body.type)) return { error: `type must be one of ${TREATMENT_TYPES.join(', ')}.` };
+        if (!TREATMENT_TYPES.includes(body.type)) return { error: `type must be one of ${TREATMENT_TYPES.join(', ')}.`, code: 'INVALID_TYPE' };
         value.type = body.type;
     }
     if (!partial || body.at !== undefined) {
         const at = new Date(body.at);
         if (isNaN(at) || at > new Date(Date.now() + 24 * 60 * 60 * 1000) || at < new Date(Date.now() - MAX_BACKDATE_MS)) {
-            return { error: "Invalid date (up to a year back, not in the future)." };
+            return { error: "Invalid date (up to a year back, not in the future).", code: 'INVALID_DATE' };
         }
         value.at = at;
     }
     if (!partial || body.cameraSerials !== undefined) {
         const serials = body.cameraSerials;
         if (!Array.isArray(serials) || !serials.length || serials.length > MAX_CAMERAS || serials.some(s => typeof s !== 'string')) {
-            return { error: `Choose 1 to ${MAX_CAMERAS} cameras.` };
+            return { error: `Choose 1 to ${MAX_CAMERAS} cameras.`, code: 'INVALID_CAMERAS' };
         }
         const unique = [...new Set(serials)];
-        const cameras = await Camera.find({ deviceSerial: { $in: unique } }).select('deviceSerial userId sharedWith');
-        if (cameras.length !== unique.length || cameras.some(c => !canManageCamera(user, c))) {
+        // An import checks many rows against one list of the user's cameras
+        const allowed = manageable ? unique.every(serial => manageable.has(serial))
+            : await Camera.find({ deviceSerial: { $in: unique } }).select('deviceSerial userId sharedWith')
+                .then(cameras => cameras.length === unique.length && cameras.every(c => canManageCamera(user, c)));
+        if (!allowed) {
             return { error: "Some cameras were not found or you cannot manage them.", code: 'CAMERA_NOT_FOUND' };
         }
         value.cameraSerials = unique;
     }
     for (const [field, max] of Object.entries(TEXT_LIMITS)) {
         if (body[field] === undefined) continue;
-        if (typeof body[field] !== 'string' || body[field].length > max) return { error: `${field} must be at most ${max} characters.` };
+        if (typeof body[field] !== 'string' || body[field].length > max) return { error: `${field} must be at most ${max} characters.`, code: 'TEXT_TOO_LONG', field };
         value[field] = body[field].trim();
     }
     if (body.preHarvestDays !== undefined) {
         if (body.preHarvestDays !== null && (!Number.isInteger(body.preHarvestDays) || body.preHarvestDays < 0 || body.preHarvestDays > 365)) {
-            return { error: "preHarvestDays must be a whole number from 0 to 365." };
+            return { error: "preHarvestDays must be a whole number from 0 to 365.", code: 'INVALID_PHI' };
         }
         value.preHarvestDays = body.preHarvestDays;
     }
@@ -245,6 +248,72 @@ async function createTreatment(req, res) {
     }
 }
 
+const MAX_IMPORT_ROWS = 500;
+// Same day, minute, kind, product and traps: the same treatment entered twice
+const sameKey = (t) => [new Date(t.at).toISOString().slice(0, 16), t.type, (t.product || '').toLowerCase(), [...t.cameraSerials].sort().join(',')].join('|');
+
+/**
+ * POST /api/treatments/import { rows: [{ type, at, cameraSerials, product, ... }], dryRun }
+ * A paper or spreadsheet log typed in once: every row is checked like a new treatment, rows
+ * already in the log (or twice in the file) are skipped, and with dryRun nothing is saved, so
+ * the page can show what will happen. One status per row: ready / imported, duplicate, error.
+ */
+async function importTreatments(req, res) {
+    try {
+        const rows = req.body?.rows;
+        if (!Array.isArray(rows) || !rows.length) return res.status(400).json({ success: false, message: "Send the rows to import." });
+        if (rows.length > MAX_IMPORT_ROWS) return res.status(400).json({ success: false, message: `At most ${MAX_IMPORT_ROWS} rows at a time.` });
+        const dryRun = req.body.dryRun === true;
+
+        const cameras = await viewableCameras(req.user).select('deviceSerial userId sharedWith');
+        const manageable = new Set(cameras.filter(cam => canManageCamera(req.user, cam)).map(cam => cam.deviceSerial));
+        const results = [];
+        const valid = [];
+        for (const [index, row] of rows.entries()) {
+            const result = row && typeof row === 'object' ? await validateInput(row, req.user, { manageable }) : { code: 'INVALID_ROW' };
+            if (result.code || result.error) {
+                results.push({ row: index, status: 'error', code: result.code || 'INVALID_ROW', ...(result.field ? { field: result.field } : {}) });
+                continue;
+            }
+            valid.push({ index, value: result.value });
+            results.push({ row: index, status: dryRun ? 'ready' : 'imported' });
+        }
+
+        // Skip what the log already has, and repeats inside the file
+        if (valid.length) {
+            const times = valid.map(v => v.value.at.getTime());
+            const existing = await Treatment.find({
+                cameraSerials: { $in: [...new Set(valid.flatMap(v => v.value.cameraSerials))] },
+                at: { $gte: new Date(Math.min(...times) - 60000), $lte: new Date(Math.max(...times) + 60000) }
+            }).select('at type product cameraSerials').lean();
+            const seen = new Set(existing.map(sameKey));
+            const kept = [];
+            for (const v of valid) {
+                const key = sameKey(v.value);
+                if (seen.has(key)) {
+                    results[v.index] = { row: v.index, status: 'duplicate' };
+                    continue;
+                }
+                seen.add(key);
+                kept.push(v);
+            }
+            if (!dryRun && kept.length) {
+                await Treatment.insertMany(kept.map(v => ({ ...v.value, createdBy: req.user.id, createdByEmail: req.user.email })));
+                recordAudit(req, { action: 'treatment.imported', details: { count: kept.length, rows: rows.length } });
+            }
+        }
+        const count = (status) => results.filter(r => r.status === status).length;
+        res.json({
+            success: true,
+            dryRun,
+            summary: { rows: rows.length, ready: count('ready'), imported: count('imported'), duplicate: count('duplicate'), error: count('error') },
+            results
+        });
+    } catch (err) {
+        sendServerError(res, err, { context: 'Import treatments' });
+    }
+}
+
 /**
  * PUT /api/treatments/:id (partial)
  */
@@ -304,6 +373,7 @@ async function sendVietGapRecord(req, res) {
 }
 
 module.exports = {
+    importTreatments,
     listWithholding,
     getEffectiveness,
     sendVietGapRecord,

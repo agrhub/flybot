@@ -99,5 +99,6 @@ async function compareFarms(farms, visible, days = DEFAULT_PERIOD, now = new Dat
 module.exports = {
     PERIODS,
     DEFAULT_PERIOD,
+    ftdOf,
     compareFarms
 };

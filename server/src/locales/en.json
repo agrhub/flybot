@@ -385,7 +385,9 @@
     "the_period_can_be_at_most_a_year": "The period can be at most a year.",
     "clientid_must_be_8_to_64_letters_digits_or_dashes": "clientId must be 8 to 64 letters, digits or dashes.",
     "send_a_list_of_email_addresses": "Send a list of email addresses.",
-    "at_most_max_addresses_at_a_time": "At most {max} addresses at a time."
+    "at_most_max_addresses_at_a_time": "At most {max} addresses at a time.",
+    "send_the_rows_to_import": "Send the rows to import.",
+    "at_most_max_rows_at_a_time": "At most {max} rows at a time."
   },
   "reportPdf": {
     "range": "Period: {from} - {to} ({days} days)",

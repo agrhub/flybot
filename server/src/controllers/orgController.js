@@ -10,6 +10,7 @@ const mailService = require('../services/mailService');
 const emailTemplates = require('../services/emailTemplates');
 const notificationService = require('../services/notificationService');
 const orgService = require('../services/orgService');
+const { orgOverview } = require('../services/orgOverviewService');
 const { inviteQuota } = require('../middlewares/rateLimit');
 const { avatarUrlsFor } = require('../services/avatarService');
 const { EMAIL_REGEX, normalizeEmail, findUserByEmail, safeUrl, emailsWithAccount, sendConfirmReminder } = require('./shareController');
@@ -345,7 +346,21 @@ async function setCameras(req, res) {
     }
 }
 
+/**
+ * GET /api/orgs/:id/overview?days=7|30: each member's traps side by side (owners and managers)
+ */
+async function getOverview(req, res) {
+    try {
+        const org = await loadOrg(req, res, { manage: true });
+        if (!org) return;
+        res.json({ success: true, organization: { id: String(org._id), name: org.name }, overview: await orgOverview(org, Number(req.query.days)) });
+    } catch (err) {
+        sendServerError(res, err, { context: 'Organization overview' });
+    }
+}
+
 module.exports = {
+    getOverview,
     addMembersBulk,
     listOrgs,
     createOrg,

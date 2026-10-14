@@ -3,6 +3,7 @@
     <PageHeader :title="t('logbook.title')" :subtitle="t('logbook.subtitle')">
       <template #actions>
         <el-button :icon="Download" :loading="exporting" @click="exportVietGap">{{ t('logbook.export') }}</el-button>
+        <el-button v-if="canManageCameras" :icon="Upload" @click="importVisible = true">{{ t('logbook.import.open') }}</el-button>
         <el-tooltip :content="t('logbook.sendMonthlyHint')" placement="bottom">
           <el-button :icon="Message" :loading="sendingRecord" @click="sendMonthlyRecord">{{ t('logbook.sendMonthly') }}</el-button>
         </el-tooltip>
@@ -220,6 +221,9 @@
         </template>
       </div>
     </el-dialog>
+
+    <!-- A paper or spreadsheet log, typed in once -->
+    <LogImportDialog v-model="importVisible" :cameras="manageableCameras" @imported="reload" />
   </div>
 </template>
 
@@ -227,7 +231,8 @@
 import { ref, reactive, computed, onMounted, h, defineComponent } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { ElMessage, ElMessageBox, ElTag } from 'element-plus';
-import { Plus, Download, Edit, Delete, VideoCamera, Message } from '@element-plus/icons-vue';
+import { Plus, Download, Edit, Delete, VideoCamera, Message, Upload } from '@element-plus/icons-vue';
+import LogImportDialog from '@/components/logbook/LogImportDialog.vue';
 import api from '@/services/api';
 import { useAuth } from '@/composables/useAuth';
 import { useCameras } from '@/composables/useCameras';
@@ -328,6 +333,8 @@ const load = async () => {
     loading.value = false;
   }
 };
+const importVisible = ref(false);
+
 const reload = () => {
   page.value = 1;
   load();

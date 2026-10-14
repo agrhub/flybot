@@ -25,3 +25,8 @@ export const loadPdf = () => (pdf ||= Promise.all([
 // Writes .xlsx only (no parsing of untrusted files)
 let excel;
 export const loadExcelWriter = () => (excel ||= import('write-excel-file/browser').then((m) => m.default));
+
+// Reads the first sheet of an .xlsx the user picked (the field log import), in their own browser;
+// the file is at most 2 MB (utils/logImport.js) and its rows are checked again by the server
+let excelReader;
+export const loadExcelReader = () => (excelReader ||= import('read-excel-file/browser').then((m) => (file) => m.readSheet(file)));

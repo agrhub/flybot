@@ -33,6 +33,7 @@ const AUDIT_ACTIONS = [
     'treatment.created',
     'treatment.updated',
     'treatment.deleted',
+    'treatment.imported',
     'farm.created',
     'farm.deleted',
     'farm.shared',

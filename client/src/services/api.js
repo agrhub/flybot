@@ -330,6 +330,9 @@ export default {
   listOrgs() {
     return apiClient.get('/orgs');
   },
+  getOrgOverview(id, days) {
+    return apiClient.get(`/orgs/${id}/overview`, { params: { days } });
+  },
   createOrg(data) {
     return apiClient.post('/orgs', data);
   },
@@ -418,6 +421,9 @@ export default {
   },
   listTreatments(params = {}) {
     return apiClient.get('/treatments', { params });
+  },
+  importTreatments(data) {
+    return apiClient.post('/treatments/import', data);
   },
   createTreatment(data, config = {}) {
     return apiClient.post('/treatments', data, config);
