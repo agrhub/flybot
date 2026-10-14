@@ -759,11 +759,23 @@
           "cancelled": "Cancelled",
           "failed": "Could not record",
           "running": "Recording..."
-        }
+        },
+        "area": "Area:",
+        "preHarvest": "Pre-harvest:",
+        "days": "{count} days"
       }
     },
     "askAboutPhoto": "Ask the assistant about this photo",
-    "photoQuestion": "Have a look at this photo: what is on it, does the count look right, is anything wrong with the photo?"
+    "photoQuestion": "Have a look at this photo: what is on it, does the count look right, is anything wrong with the photo?",
+    "voice": {
+      "start": "Speak instead of typing",
+      "stop": "Stop listening",
+      "errors": {
+        "denied": "The browser may not use the microphone. Allow it for this site and try again.",
+        "no-speech": "Nothing was heard. Press the microphone and speak again.",
+        "failed": "Speech could not be recognized just now."
+      }
+    }
   },
   "home": {
     "tagline": "SMART STICKY TRAPS & AI INSECT COUNTING",
@@ -999,7 +1011,7 @@
           "confirm": {
             "title": "Changes you confirm",
             "desc": "The assistant prepares, you decide.",
-            "items": "Say \"I replaced the card on mango trap A1\" or \"Log an Abamectin spray in plot A this morning\".\nThe assistant shows a card with the details; nothing is recorded until you press \"Confirm\", and \"Cancel\" drops it.\nThe details are checked as in the forms (your access to the camera, the date, the product for a spray), and each card can be used once."
+            "items": "Say \"I replaced the card on mango trap A1\" or \"Log an Abamectin spray in plot A this morning\".\nThe assistant shows a card with the details; nothing is recorded until you press \"Confirm\", and \"Cancel\" drops it.\nThe details are checked as in the forms (your access to the camera, the date, the product for a spray), and each card can be used once.\nLog by voice: press the microphone in the assistant box and say, for example, \"this morning I sprayed Radiant on mango plot A, 7 days pre-harvest\"; the assistant fills a card (product, the plot's traps, pre-harvest interval) for you to Confirm. The browser turns speech into text (Chrome and Edge use their maker's servers)."
           }
         }
       },

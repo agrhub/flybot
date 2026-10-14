@@ -134,3 +134,36 @@ test('morning brief: opt-in, figures and threshold judged as alerts, email when 
     assert.equal(sentMails[0].to, owner.email);
     assert.match(sentMails[0].subject, /Bản tin sáng/);
 });
+
+test('a treatment told by plot name: its traps, the operator and the pre-harvest days on the card', async () => {
+    const owner = await createUser({ role: 'manager' });
+    const other = await createUser({ role: 'manager' });
+    const farm = await models.Farm.create({ ownerId: owner._id, name: 'Vườn Hòa Lộc' });
+    const plotA = await models.Plot.create({ farmId: farm._id, name: 'Lô xoài A' });
+    const plotB = await models.Plot.create({ farmId: farm._id, name: 'Lô bưởi B' });
+    await createCamera(owner, { deviceSerial: 'PA1', deviceName: 'Bẫy xoài A1', farmId: farm._id, plotId: plotA._id });
+    await createCamera(owner, { deviceSerial: 'PA2', deviceName: 'Bẫy xoài A2', farmId: farm._id, plotId: plotA._id });
+    await createCamera(owner, { deviceSerial: 'PB1', farmId: farm._id, plotId: plotB._id });
+    const theirFarm = await models.Farm.create({ ownerId: other._id, name: 'Lô xoài A' });
+    await createCamera(other, { deviceSerial: 'XX1', farmId: theirFarm._id });
+
+    const cards = [];
+    const result = await allExecutors.propose_treatment({
+        ...asUser(owner), addCard: (c) => cards.push(c),
+        plot: 'lo xoai a', type: 'spray', product: 'Radiant 60SC', operator: 'Tư', preHarvestDays: 7
+    });
+    assert.equal(result.proposed, true);
+    assert.deepEqual(cards[0].payload.cameraSerials.sort(), ['PA1', 'PA2'], "only the plot's traps, never someone else's farm of the same name");
+    assert.equal(cards[0].payload.operator, 'Tư');
+    assert.equal(cards[0].payload.preHarvestDays, 7);
+    assert.equal(cards[0].summary.area, 'Lô xoài A');
+    assert.equal(cards[0].summary.preHarvestDays, 7);
+
+    // A whole farm, and a name that matches nothing
+    const farmCards = [];
+    await allExecutors.propose_treatment({ ...asUser(owner), addCard: (c) => farmCards.push(c), plot: 'Vườn Hòa Lộc', type: 'sanitation' });
+    assert.deepEqual(farmCards[0].payload.cameraSerials.sort(), ['PA1', 'PA2', 'PB1']);
+    const unknown = await allExecutors.propose_treatment({ ...asUser(owner), plot: 'Lô cam C', type: 'sanitation' });
+    assert.match(unknown.error, /Lô xoài A/, 'the error lists the plots the assistant can use');
+    assert.match((await allExecutors.propose_treatment({ ...asUser(owner), type: 'sanitation' })).error, /traps or the plot/);
+});

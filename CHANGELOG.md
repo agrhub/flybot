@@ -7,6 +7,7 @@
 - **Reminders**: from the cooperative overview, "Remind" asks a member to check their traps and log their work (in the app, by email and Telegram; once a day each). Owners and managers get the list of members to visit on Monday mornings (Settings, Notifications to turn it off).
 
 ### Field log
+- **Log by voice**: a microphone in the assistant box (browsers with speech recognition). Say "this morning I sprayed Radiant on mango plot A, 7 days pre-harvest": the assistant finds the plot's traps and fills a card with the product, area and pre-harvest interval to Confirm. The words only fill the box; nothing is sent until you press Send.
 - **Import from file**: an Excel (.xlsx) or CSV file of past treatments, with a template. Columns and values in Vietnamese or English, traps by name or serial; every row is checked and previewed, rows already in the log are skipped, up to 500 rows at a time.
 
 ### Speed and reliability

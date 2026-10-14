@@ -1,11 +1,12 @@
 const { viewableCameras, findManageableCamera } = require('../../utils/ownership');
+const { Farm, Plot } = require('../../models');
 
 // How long a chat reply waits for a capture and its AI analysis
 const CAPTURE_WAIT_MS = 25000;
 
 const getCamerasStatusDeclaration = {
     name: 'get_cameras_status',
-    description: 'Get list of all surveillance cameras, serial numbers, online/offline connection status, video encryption, and alarm defence mode.',
+    description: 'Get list of all surveillance cameras, serial numbers, the farm and plot each trap is in, online/offline connection status, video encryption, and alarm defence mode.',
     parameters: {
         type: 'OBJECT',
         properties: {}
@@ -16,6 +17,12 @@ async function executeGetCamerasStatus({ userId, user }) {
     try {
         if (!userId) return { error: 'Not authenticated.' };
         const cameras = await viewableCameras(user).limit(50);
+        // Farm and plot names, so "lô xoài A" can be matched to its traps
+        const [farms, plots] = await Promise.all([
+            Farm.find({ _id: { $in: cameras.map(c => c.farmId).filter(Boolean) } }).select('name').lean(),
+            Plot.find({ _id: { $in: cameras.map(c => c.plotId).filter(Boolean) } }).select('name').lean()
+        ]);
+        const nameOf = (list, id) => (id ? list.find(x => String(x._id) === String(id))?.name || null : null);
         return {
             total: cameras.length,
             onlineCount: cameras.filter(c => c.status === 1).length,
@@ -23,6 +30,8 @@ async function executeGetCamerasStatus({ userId, user }) {
             cameras: cameras.map(c => ({
                 deviceSerial: c.deviceSerial,
                 deviceName: c.deviceName,
+                farm: nameOf(farms, c.farmId),
+                plot: nameOf(plots, c.plotId),
                 status: c.status === 1 ? 'Online' : 'Offline',
                 isEncrypt: c.isEncrypt === 1 ? 'Encrypted' : 'Unencrypted',
                 hasValidateCode: !!c.validateCode,

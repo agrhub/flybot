@@ -759,11 +759,23 @@
           "cancelled": "Đã hủy",
           "failed": "Không ghi được",
           "running": "Đang ghi..."
-        }
+        },
+        "area": "Khu vực:",
+        "preHarvest": "Cách ly:",
+        "days": "{count} ngày"
       }
     },
     "askAboutPhoto": "Hỏi trợ lý về ảnh này",
-    "photoQuestion": "Xem giúp ảnh này: có những gì, số đếm có đúng không, ảnh có vấn đề gì không?"
+    "photoQuestion": "Xem giúp ảnh này: có những gì, số đếm có đúng không, ảnh có vấn đề gì không?",
+    "voice": {
+      "start": "Nói thay vì gõ",
+      "stop": "Dừng nghe",
+      "errors": {
+        "denied": "Trình duyệt chưa được phép dùng micro. Hãy cho phép micro cho trang này rồi thử lại.",
+        "no-speech": "Không nghe thấy gì. Bấm micro rồi nói lại.",
+        "failed": "Không nhận dạng được giọng nói lúc này."
+      }
+    }
   },
   "home": {
     "tagline": "BẪY DÍNH THÔNG MINH & AI ĐẾM CÔN TRÙNG",
@@ -999,7 +1011,7 @@
           "confirm": {
             "title": "Ghi nhận cần bạn xác nhận",
             "desc": "Trợ lý chuẩn bị, bạn quyết định.",
-            "items": "Nói \"Tôi đã thay tấm keo bẫy xoài A1\" hoặc \"Ghi lần phun Abamectin ở lô A sáng nay\".\nTrợ lý hiện một thẻ với đầy đủ thông tin; chỉ khi bạn bấm \"Xác nhận\" thì mới được ghi vào hệ thống, bấm \"Hủy\" để bỏ.\nThông tin được kiểm tra như khi nhập bằng form (quyền với camera, ngày, tên thuốc khi phun); mỗi thẻ chỉ dùng được một lần."
+            "items": "Nói \"Tôi đã thay tấm keo bẫy xoài A1\" hoặc \"Ghi lần phun Abamectin ở lô A sáng nay\".\nTrợ lý hiện một thẻ với đầy đủ thông tin; chỉ khi bạn bấm \"Xác nhận\" thì mới được ghi vào hệ thống, bấm \"Hủy\" để bỏ.\nThông tin được kiểm tra như khi nhập bằng form (quyền với camera, ngày, tên thuốc khi phun); mỗi thẻ chỉ dùng được một lần.\nGhi nhật ký bằng giọng nói: bấm micro trong ô trợ lý và nói, ví dụ \"sáng nay phun Radiant cho lô xoài A, cách ly 7 ngày\"; trợ lý điền sẵn thẻ ghi nhận (thuốc, bẫy của lô, thời gian cách ly) để bấm Xác nhận. Giọng nói do trình duyệt chuyển thành chữ (Chrome và Edge dùng máy chủ của hãng)."
           }
         }
       },

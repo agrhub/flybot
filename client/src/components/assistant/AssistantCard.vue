@@ -59,6 +59,8 @@
       <div v-if="card.summary.product"><span class="card-meta">{{ t('assistant.cards.confirm.product') }}</span> {{ card.summary.product }}</div>
       <div><span class="card-meta">{{ t('assistant.cards.confirm.when') }}</span> {{ formatTime(card.summary.at) }}</div>
       <div><span class="card-meta">{{ t('assistant.cards.confirm.traps') }}</span> {{ (card.summary.traps || []).join(', ') }}</div>
+      <div v-if="card.summary.area"><span class="card-meta">{{ t('assistant.cards.confirm.area') }}</span> {{ card.summary.area }}</div>
+      <div v-if="card.summary.preHarvestDays !== null && card.summary.preHarvestDays !== undefined"><span class="card-meta">{{ t('assistant.cards.confirm.preHarvest') }}</span> {{ t('assistant.cards.confirm.days', { count: card.summary.preHarvestDays }) }}</div>
     </div>
     <div v-if="card.state === 'pending' || card.state === 'running' || !card.state" class="flex items-center gap-2 mt-2">
       <el-button size="small" type="primary" :icon="Check" :loading="busy" @click="emit('decide', 'confirm')">{{ t('assistant.cards.confirm.ok') }}</el-button>
