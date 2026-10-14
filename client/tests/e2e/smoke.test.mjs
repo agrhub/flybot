@@ -80,6 +80,15 @@ before(async () => {
     localStorage.setItem('user', ${JSON.stringify(JSON.stringify(manager.user))});
     localStorage.setItem('flybot_language', 'vi');
     localStorage.setItem('flybot_tour_done', '1'); return true;`);
+  // A cold dev server finds more dependencies to bundle as pages open, and reloads the page
+  // when it does: open every page once first, so the tests never meet that
+  for (const url of ['/dashboard', '/cameras', '/analytics', '/reports', '/farms', '/logbook', '/map', '/settings?tab=profile', '/manual', '/auth/login']) {
+    try {
+      await page.goto(BASE + url, 1000);
+      await page.eval(`for (let i = 0; i < 120 && document.body.innerText.length < 200; i++) await new Promise(r => setTimeout(r, 250)); return true;`);
+    } catch { /* a reload during the warm-up is what it is for */ }
+  }
+  await sleep(2000);
 }, { timeout: 600000 });
 
 after(async () => {

@@ -48,9 +48,27 @@ export async function launch({ keepProfile = false, args = [] } = {}) {
             for (const l of listeners) l(msg);
         }
     };
-    const send = (method, params = {}) => new Promise((resolve, reject) => {
+    // A crashed or closed Chrome never answers: fail every call at once instead of hanging the script
+    let closed = null;
+    const failAll = (reason) => {
+        closed ||= reason;
+        for (const { reject } of pending.values()) reject(new Error(reason));
+        pending.clear();
+    };
+    ws.onclose = () => failAll(`Chrome connection closed${proc.exitCode !== null ? ` (Chrome exited with ${proc.exitCode})` : ''}`);
+    proc.once('exit', (code, signal) => failAll(`Chrome exited (${signal || code})`));
+    // FLYBOT_CDP_TIMEOUT: longest wait for one call, 120 s by default (an eval may wait for the page)
+    const TIMEOUT = Number(process.env.FLYBOT_CDP_TIMEOUT) || 120000;
+    const send = (method, params = {}, ms = TIMEOUT) => new Promise((resolve, reject) => {
+        if (closed) return reject(new Error(closed));
         const n = ++id;
-        pending.set(n, { resolve, reject });
+        const timer = setTimeout(() => {
+            pending.delete(n);
+            const what = method === 'Runtime.evaluate' ? `: ${String(params.expression).replace(/\s+/g, ' ').slice(0, 120)}` : '';
+            reject(new Error(`${method} got no answer in ${ms / 1000} s${what}`));
+        }, ms);
+        const done = (fn) => (value) => { clearTimeout(timer); fn(value); };
+        pending.set(n, { resolve: done(resolve), reject: done(reject) });
         ws.send(JSON.stringify({ id: n, method, params }));
     });
     await send('Page.enable');
@@ -67,7 +85,14 @@ export async function launch({ keepProfile = false, args = [] } = {}) {
         },
         async goto(url, settle = 2500) {
             const loaded = new Promise(res => { const off = page.on(m => { if (m.method === 'Page.loadEventFired') { off(); res(); } }); });
-            await send('Page.navigate', { url });
+            // A dev server that is still bundling can leave a navigation unanswered: stop and try once more
+            try {
+                await send('Page.navigate', { url }, 30000);
+            } catch (err) {
+                if (!/no answer/.test(err.message)) throw err;
+                await send('Page.stopLoading', {}, 10000).catch(() => {});
+                await send('Page.navigate', { url }, 30000);
+            }
             await Promise.race([loaded, sleep(15000)]);
             await sleep(settle);
         },
