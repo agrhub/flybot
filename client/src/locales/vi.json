@@ -1527,6 +1527,40 @@
         "more": "còn tiếp ở lần sau",
         "skipped": "bỏ qua {n} lượt vì lần trước chưa xong"
       }
+    },
+    "usage": {
+      "tab": "Thống kê sử dụng",
+      "title": "Thống kê sử dụng",
+      "subtitle": "Mức độ sử dụng FlyBot từ dữ liệu sẵn có trong hệ thống (không theo dõi bên ngoài, chỉ đếm số lượng).",
+      "people": "Người dùng",
+      "active7": "Hoạt động 7 ngày qua",
+      "active30": "Hoạt động 30 ngày qua",
+      "users": "Tài khoản đang dùng",
+      "newUsers30": "Tài khoản mới (30 ngày)",
+      "features": "Tính năng được dùng (30 ngày qua)",
+      "feature": {
+        "treatmentsLogged": "Ghi nhật ký (form)",
+        "treatmentsByAssistant": "Ghi nhật ký qua trợ lý",
+        "treatmentsImported": "Dòng nhật ký nhập từ file",
+        "cardChanges": "Lần thay tấm bẫy",
+        "assistantQuestions": "Câu hỏi cho trợ lý",
+        "assistantUsers": "Người dùng trợ lý",
+        "dataExports": "Lần tải toàn bộ dữ liệu",
+        "remindersSent": "Lời nhắc hợp tác xã",
+        "cooperativeReportsSent": "Báo cáo hợp tác xã đã gửi"
+      },
+      "cameras": "Camera",
+      "camerasTotal": "Tổng số camera",
+      "camerasOnline": "Đang trực tuyến",
+      "photo24h": "Có ảnh trong 24 giờ",
+      "photos30": "Ảnh đã phân tích (30 ngày)",
+      "weeks": "12 tuần gần nhất",
+      "week": "Tuần bắt đầu",
+      "activeUsers": "Người hoạt động",
+      "treatments": "Lần ghi nhật ký",
+      "photos": "Ảnh đã phân tích",
+      "noData": "Chưa có số liệu",
+      "note": "Một người được tính là hoạt động khi đăng nhập, dùng ứng dụng (phiên còn hiệu lực), ghi nhật ký hoặc thay bẫy trong khoảng thời gian đó. Nhật ký kiểm toán được giữ 365 ngày."
     }
   },
   "dashboards": {

@@ -1527,6 +1527,40 @@
         "more": "more next run",
         "skipped": "{n} tick(s) skipped while still running"
       }
+    },
+    "usage": {
+      "tab": "Usage",
+      "title": "Usage",
+      "subtitle": "How FlyBot is used, from what the system already stores (no outside tracking, counts only).",
+      "people": "People",
+      "active7": "Active in the last 7 days",
+      "active30": "Active in the last 30 days",
+      "users": "Accounts in use",
+      "newUsers30": "New accounts (30 days)",
+      "features": "Features used (last 30 days)",
+      "feature": {
+        "treatmentsLogged": "Log entries (form)",
+        "treatmentsByAssistant": "Log entries via the assistant",
+        "treatmentsImported": "Log rows imported",
+        "cardChanges": "Card changes",
+        "assistantQuestions": "Questions to the assistant",
+        "assistantUsers": "Assistant users",
+        "dataExports": "Full data downloads",
+        "remindersSent": "Cooperative reminders",
+        "cooperativeReportsSent": "Cooperative reports sent"
+      },
+      "cameras": "Cameras",
+      "camerasTotal": "Cameras",
+      "camerasOnline": "Online",
+      "photo24h": "With a photo in 24 hours",
+      "photos30": "Photos analyzed (30 days)",
+      "weeks": "Last 12 weeks",
+      "week": "Week starting",
+      "activeUsers": "Active people",
+      "treatments": "Log entries",
+      "photos": "Photos analyzed",
+      "noData": "No data yet",
+      "note": "A person counts as active when they sign in, use the app (an open session), log a treatment or change a card in that period. The audit log is kept for 365 days."
     }
   },
   "dashboards": {

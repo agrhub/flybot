@@ -83,6 +83,10 @@
                 <el-icon><DataLine /></el-icon>
                 <span>{{ t('admin.pipeline.tab') }}</span>
               </el-menu-item>
+              <el-menu-item index="adminUsage">
+                <el-icon><TrendCharts /></el-icon>
+                <span>{{ t('admin.usage.tab') }}</span>
+              </el-menu-item>
               <el-menu-item index="adminAudit">
                 <el-icon><Tickets /></el-icon>
                 <span>{{ t('audit.tab') }}</span>
@@ -647,6 +651,9 @@
         <div v-else-if="activeTab === 'adminPipeline' && isAdmin" class="max-w-6xl">
           <PipelineMonitorPanel />
         </div>
+        <div v-else-if="activeTab === 'adminUsage' && isAdmin" class="max-w-6xl">
+          <UsagePanel />
+        </div>
         <div v-else-if="activeTab === 'adminAudit' && isAdmin" class="max-w-6xl">
           <AuditLogPanel />
         </div>
@@ -749,6 +756,7 @@ import AdminCamerasPanel from '@/components/admin/AdminCamerasPanel.vue';
 import SystemSettingsPanel from '@/components/admin/SystemSettingsPanel.vue';
 import AuditLogPanel from '@/components/admin/AuditLogPanel.vue';
 import PipelineMonitorPanel from '@/components/admin/PipelineMonitorPanel.vue';
+import UsagePanel from '@/components/admin/UsagePanel.vue';
 import PushNotificationsCard from '@/components/settings/PushNotificationsCard.vue';
 import AlertPreferencesCard from '@/components/settings/AlertPreferencesCard.vue';
 import {
@@ -777,8 +785,7 @@ import {
   Tools,
   Tickets,
   DataLine,
-  Upload
-} from '@element-plus/icons-vue';
+  Upload, TrendCharts } from '@element-plus/icons-vue';
 import { AVATAR_MAX_BYTES, AVATAR_TYPES, toAvatarBlob } from '@/utils/avatarImage';
 import { useNotifications } from '@/composables/useNotifications';
 
@@ -809,6 +816,7 @@ const mobileSections = computed(() => [
     { value: 'adminCameras', label: t('admin.cameras.tab') },
     { value: 'adminSystem', label: t('admin.system.tab') },
     { value: 'adminPipeline', label: t('admin.pipeline.tab') },
+    { value: 'adminUsage', label: t('admin.usage.tab') },
     { value: 'adminAudit', label: t('audit.tab') }
   ] }] : []),
   { label: t('settings.legal'), items: [{ value: 'legal', label: t('settings.termsTab') }] }

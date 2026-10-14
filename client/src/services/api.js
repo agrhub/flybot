@@ -327,6 +327,9 @@ export default {
     return apiClient.post(`/integrations/webhooks/${id}/test`);
   },
   // Organizations
+  getUsageStats() {
+    return apiClient.get('/admin/usage');
+  },
   listOrgs() {
     return apiClient.get('/orgs');
   },
