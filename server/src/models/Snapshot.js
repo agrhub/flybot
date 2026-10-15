@@ -26,8 +26,15 @@ const snapshotSchema = new mongoose.Schema({
             bbox: [Number]
         }],
         summary: { type: Map, of: Number }, // Statistics summary: { "caterpillar": 2, "fruit fly": 1 }
-        raw_description: String
+        raw_description: String,
+        // FlyBot Sentinel's own analysis (POST /api/sentinel/analysis): counts, boxes, quality,
+        // evidence. Kept beside the production result; it sets the summary only when
+        // AI_PROVIDER=sentinel.
+        sentinel: { type: mongoose.Schema.Types.Mixed, default: undefined }
     },
+    // What took the photo, when it was not the schedule or a person: 'sentinel' = an extra
+    // capture FlyBot Sentinel asked for (POST /api/sentinel/capture)
+    trigger: { type: String, enum: ['sentinel'], default: undefined },
     // Pest total of aiResults.summary, kept in step with it, so filters by count (alarm status)
     // need not add up the summary of every photo. Older photos get it in the background after start-up.
     pestCount: { type: Number, default: undefined },
@@ -59,7 +66,16 @@ const snapshotSchema = new mongoose.Schema({
         originalSummary: { type: Map, of: Number, default: undefined },
         note: { type: String, default: undefined },
         reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: undefined },
-        reviewedAt: { type: Date, default: undefined }
+        reviewedAt: { type: Date, default: undefined },
+        // FlyBot Sentinel asked a person to check this photo (POST /api/sentinel/review-request)
+        requested: {
+            type: new mongoose.Schema({
+                at: { type: Date, required: true },
+                reason: { type: String, default: '' },
+                by: { type: String, default: 'sentinel' }
+            }, { _id: false }),
+            default: undefined
+        }
     }
 });
 

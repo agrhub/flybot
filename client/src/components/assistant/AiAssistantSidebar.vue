@@ -331,16 +331,30 @@ const fromStored = (m) => ({
   cards: m.cards || [],
   suggestions: m.suggestions || [],
   feedback: m.feedback || null,
+  at: m.at,
   toolExecutions: (m.tools || []).map(tool => ({ name: tool.name, status: tool.status, result: { message: tool.message } }))
 });
+
+// Changes FlyBot Sentinel proposed live in their own conversation on the server; they are shown
+// among this one by time, and confirmed through it (msg.sessionId)
+const SENTINEL_SESSION = 'sentinel';
+const loadSentinelMessages = async () => {
+  try {
+    const res = await api.getChatHistory(SENTINEL_SESSION);
+    return (res.data?.messages || []).map(m => ({ ...fromStored(m), sessionId: SENTINEL_SESSION }));
+  } catch {
+    return [];
+  }
+};
+const byTime = (a, b) => new Date(a.at || 0) - new Date(b.at || 0);
 
 // The conversation from before a reload
 const loadHistory = async () => {
   try {
-    const res = await api.getChatHistory(sessionId.value);
+    const [res, sentinel] = await Promise.all([api.getChatHistory(sessionId.value), loadSentinelMessages()]);
     const stored = res.data?.messages || [];
-    if (stored.length) {
-      messages.value = [greeting(), ...stored.map(fromStored)];
+    if (stored.length || sentinel.length) {
+      messages.value = [greeting(), ...[...stored.map(fromStored), ...sentinel].sort(byTime)];
       const last = [...stored].reverse().find(m => m.role === 'assistant');
       if (last?.suggestions?.length) latestSuggestions.value = last.suggestions;
       scrollToBottom();
@@ -365,7 +379,7 @@ const rate = async (msg, rating) => {
   const before = msg.feedback;
   msg.feedback = next ? { rating: next } : null;
   try {
-    await api.rateChatMessage(sessionId.value, msg.id, next);
+    await api.rateChatMessage(msg.sessionId || sessionId.value, msg.id, next);
   } catch {
     msg.feedback = before;
   }
@@ -378,7 +392,7 @@ const decide = async (msg, index, decision) => {
   deciding.value = `${msg.id}:${index}`;
   const card = msg.cards[index];
   try {
-    const res = await api.confirmChatAction(sessionId.value, msg.id, index, decision);
+    const res = await api.confirmChatAction(msg.sessionId || sessionId.value, msg.id, index, decision);
     card.state = res.data.state;
     card.result = '';
   } catch (err) {

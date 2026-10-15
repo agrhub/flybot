@@ -105,7 +105,7 @@ import api from '@/services/api';
 import PageHeader from '@/components/common/PageHeader.vue';
 import { adminErrorText } from './adminErrors';
 
-const CATEGORIES = ['auth', 'user', 'camera', 'dashboard', 'farm', 'treatment', 'settings'];
+const CATEGORIES = ['auth', 'user', 'camera', 'dashboard', 'farm', 'treatment', 'settings', 'sentinel'];
 // Color by risk: red for destructive or failed, orange for access changes
 const ACTION_TAG = {
   'auth.login_failed': 'danger',

@@ -23,7 +23,7 @@ const dayStart = (value) => new Date(DAY_KEY.test(value) ? `${value}T00:00:00+07
 const dayEnd = (value) => (DAY_KEY.test(value) ? new Date(`${value}T23:59:59.999+07:00`) : new Date(new Date(value).setHours(23, 59, 59, 999)));
 
 const RISK_LEVELS = ['high', 'moderate', 'low'];
-const REVIEW_FILTERS = ['confirmed', 'corrected', 'none'];
+const REVIEW_FILTERS = ['confirmed', 'corrected', 'none', 'requested'];
 
 /**
  * Get AI detection history with pagination.
@@ -31,7 +31,7 @@ const REVIEW_FILTERS = ['confirmed', 'corrected', 'none'];
  *  - deviceSerial: one camera or "all"; deviceSerials: comma-separated cameras (takes precedence)
  *  - startDate, endDate: day range (endDate inclusive)
  *  - risk: high (alarm: at or over the camera threshold) | moderate | low
- *  - review: confirmed | corrected | none
+ *  - review: confirmed | corrected | none | requested (FlyBot Sentinel asked for a check, not reviewed yet)
  * Each result carries deviceName, pestCount, threshold and risk, so the table and exports can
  * show the alarm status of every photo.
  */
@@ -68,6 +68,7 @@ async function getAiResults(req, res) {
         const to = req.query.endDate ? dayEnd(req.query.endDate) : null;
         if (from || to) matchQuery.createdAt = { ...(from ? { $gte: from } : {}), ...(to ? { $lte: to } : {}) };
         if (review === 'none') matchQuery['review.status'] = { $exists: false };
+        else if (review === 'requested') Object.assign(matchQuery, { 'review.requested.at': { $exists: true }, 'review.status': { $exists: false } });
         else if (review) matchQuery['review.status'] = review;
 
         const describe = (doc) => {
@@ -1256,9 +1257,45 @@ const CONFIRM_ACTIONS = {
 };
 
 /**
+ * Confirm or cancel one stored confirm card of `user`: the endpoint below, and the Telegram
+ * buttons of a FlyBot Sentinel proposal (services/sentinelService.js). The card is claimed
+ * once (a double click, a second tab or Telegram cannot run it twice); a card past its
+ * `expiresAt` ends as 'expired' without running. Returns { status, body } for the HTTP answer.
+ */
+async function decideCard({ user, sessionId, messageId, cardIndex, decision, req = null, via = 'app' }) {
+    const actionReq = req || { user, ip: '', headers: { 'user-agent': `FlyBot ${via}` } };
+    const userId = user.id;
+    const card = await agent.claimCard(userId, sessionId, messageId, cardIndex, decision === 'cancel' ? 'cancelled' : 'running');
+    if (!card) return { status: 409, body: { success: false, message: "This has already been handled." } };
+
+    let state;
+    let message = '';
+    if (card.expiresAt && new Date(card.expiresAt) <= new Date()) {
+        state = 'expired';
+        message = "This proposal has expired.";
+        await agent.finishCard(userId, sessionId, messageId, cardIndex, { state, message });
+    } else if (decision === 'cancel') {
+        state = 'cancelled';
+    } else {
+        const run = CONFIRM_ACTIONS[card.action];
+        const outcome = run ? await run(actionReq, card.payload || {}).catch(err => ({ error: err.message })) : { error: "Unknown action." };
+        state = outcome.error ? 'failed' : 'done';
+        message = outcome.error || '';
+        await agent.finishCard(userId, sessionId, messageId, cardIndex, { state, message });
+    }
+    if (card.proposalId) {
+        await require('../services/sentinelService').recordDecision(card.proposalId, { state, message, via, req: actionReq })
+            .catch(err => console.error('⚠️ Sentinel proposal state not saved:', err.message));
+    }
+    if (state === 'expired') return { status: 410, body: { success: false, state, message } };
+    if (state === 'failed') return { status: 400, body: { success: false, state, message } };
+    return { status: 200, body: { success: true, state } };
+}
+
+/**
  * POST /api/ai/chat/confirm { sessionId, messageId, cardIndex, decision: 'confirm' | 'cancel' }
- * Runs (or drops) a change the assistant proposed, from the card stored with its answer: what the
- * browser sends is only which card, never what to record.
+ * Runs (or drops) a change the assistant (or FlyBot Sentinel, session "sentinel") proposed, from
+ * the card stored with its answer: what the browser sends is only which card, never what to record.
  */
 async function confirmChatAction(req, res) {
     try {
@@ -1267,17 +1304,8 @@ async function confirmChatAction(req, res) {
             || !Number.isInteger(cardIndex) || cardIndex < 0 || cardIndex > 9 || !['confirm', 'cancel'].includes(decision)) {
             return res.status(400).json({ success: false, message: "Invalid request." });
         }
-        const userId = req.user.id;
-        const card = await agent.claimCard(userId, sessionId, messageId.slice(0, 100), cardIndex, decision === 'cancel' ? 'cancelled' : 'running');
-        if (!card) return res.status(409).json({ success: false, message: "This has already been handled." });
-        if (decision === 'cancel') return res.json({ success: true, state: 'cancelled' });
-
-        const run = CONFIRM_ACTIONS[card.action];
-        const outcome = run ? await run(req, card.payload || {}).catch(err => ({ error: err.message })) : { error: "Unknown action." };
-        const state = outcome.error ? 'failed' : 'done';
-        await agent.finishCard(userId, sessionId, messageId, cardIndex, { state, message: outcome.error || '' });
-        if (outcome.error) return res.status(400).json({ success: false, state, message: outcome.error });
-        res.json({ success: true, state });
+        const { status, body } = await decideCard({ user: req.user, sessionId, messageId: messageId.slice(0, 100), cardIndex, decision, req, via: 'app' });
+        res.status(status).json(body);
     } catch (err) {
         sendServerError(res, err, { context: 'Confirm assistant action' });
     }
@@ -1309,5 +1337,6 @@ module.exports = {
     getChatHistory,
     rateChatMessage,
     confirmChatAction,
+    decideCard,
     clearChatSession
 };

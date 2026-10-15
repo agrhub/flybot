@@ -3,11 +3,23 @@
  * (OpenCV AI Competition 2026: evaluation and replay).
  *
  *   node scripts/export_sentinel_dataset.js [--days 90] [--limit 3000] [--out <dir>] [--dry-run] [--no-images]
+ *       [--exclude-camera <serial>[,<serial>...]]   (repeatable; default AC6527557; "none" keeps every camera)
  *
  * Writes, under --out (default ../flybot-sentinel/data/export):
- *   images/<deviceSerial>/<snapshotId>.jpg   the photos, read from S3
+ *   images/<deviceSerial>/<snapshotId>.jpg   the photos, read from S3 (--no-images: only the ones already on disk are used)
+ *   boxes/<snapshotId>.json                  the production detection boxes of each exported photo
  *   cameras.json, daily_stats.json, maintenance_events.json, treatments.json, farms_plots.json, summary.json
- * and <out>/../manifest.csv (columns in flybot-sentinel/data/README.md).
+ * and <out>/../manifest.csv (columns in flybot-sentinel/data/README.md, unchanged).
+ *
+ * Boxes: Snapshot.aiResults.insects[].bbox as production stores it, [xmin, ymin, xmax, ymax] in
+ * pixels of the photo ("xyxy_pixels"): Roboflow returns pixels, and Vertex's 0-1000 boxes are
+ * converted to pixels with the image size before they are saved (services/aiService.js). They are
+ * not 0-10000. summary.json "boxes" counts boxes that reach outside their photo, as a check.
+ *
+ * Left out, and only counted in summary.json: photos of excluded cameras (--exclude-camera,
+ * flybot-sentinel/data/excluded_cameras.csv), and the repeated "fly-disc" test pictures uploaded
+ * through FlyBot: an image of exactly 640x640 pixels whose content hash occurs more than once.
+ * Test pictures are found from the image files, after --limit is applied.
  *
  * Nothing is written to MongoDB or S3: the script only reads, and refuses any write command
  * (see guardReadOnly). Photos where the model found a person or another non-pest label
@@ -16,6 +28,7 @@
  */
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const mongoose = require('mongoose');
 const { NON_PEST_LABELS } = require('../src/constants/species');
 
@@ -26,6 +39,11 @@ const DEFAULT_OUT = path.resolve(__dirname, '../../../flybot-sentinel/data/expor
 const TREATMENT_WINDOW_DAYS = 7;
 const DOWNLOAD_CONCURRENCY = 6;
 const DOWNLOAD_ATTEMPTS = 3;
+// AC6527557 "Gravity01" films a building, not a trap (flybot-sentinel/data/excluded_cameras.csv)
+const DEFAULT_EXCLUDED_CAMERAS = ['AC6527557'];
+// The repeated test pictures uploaded through FlyBot until 2026-10-06 are all 640x640
+const TEST_PICTURE_SIZE = { width: 640, height: 640 };
+const BOX_FORMAT = 'xyxy_pixels';
 
 const MANIFEST_COLUMNS = [
     'snapshot_id', 'device_serial', 'provider', 'captured_at', 'image_path', 's3_key', 'farm_id', 'plot_id',
@@ -34,7 +52,8 @@ const MANIFEST_COLUMNS = [
 ];
 
 function parseArgs(argv) {
-    const opts = { days: 90, limit: 3000, out: DEFAULT_OUT, dryRun: false, images: true };
+    const opts = { days: 90, limit: 3000, out: DEFAULT_OUT, dryRun: false, images: true, excludeCameras: [...DEFAULT_EXCLUDED_CAMERAS] };
+    let excludeGiven = false;
     for (let i = 0; i < argv.length; i++) {
         const arg = argv[i];
         const value = () => {
@@ -47,10 +66,19 @@ function parseArgs(argv) {
         else if (arg === '--out') opts.out = path.resolve(value());
         else if (arg === '--dry-run') opts.dryRun = true;
         else if (arg === '--no-images') opts.images = false;
+        else if (arg === '--exclude-camera') {
+            // The first one replaces the default list; "none" keeps every camera
+            if (!excludeGiven) opts.excludeCameras = [];
+            excludeGiven = true;
+            const list = value().split(',').map(v => v.trim()).filter(Boolean);
+            if (!(list.length === 1 && list[0].toLowerCase() === 'none')) opts.excludeCameras.push(...list);
+        }
         else throw new Error(`Unknown option ${arg}`);
     }
     if (!Number.isInteger(opts.days) || opts.days < 1) throw new Error('--days must be a positive integer');
     if (!Number.isInteger(opts.limit) || opts.limit < 1) throw new Error('--limit must be a positive integer');
+    if (opts.excludeCameras.some(s => !/^[A-Za-z0-9_-]{1,64}$/.test(s))) throw new Error('--exclude-camera takes camera serial numbers');
+    opts.excludeCameras = [...new Set(opts.excludeCameras)];
     return opts;
 }
 
@@ -88,6 +116,60 @@ function aiSummaryOf(snap) {
 
 const reviewed = (snap) => snap.review?.status === 'confirmed' || snap.review?.status === 'corrected';
 const imageRelPath = (serial, id) => path.posix.join('images', serial, `${id}.jpg`);
+const boxesRelPath = (id) => path.posix.join('boxes', `${id}.json`);
+
+/** Production boxes of a snapshot as stored (pixels), highest confidence first. */
+function boxesOf(snap) {
+    return (snap?.aiResults?.insects || [])
+        .filter(i => Array.isArray(i?.bbox) && i.bbox.length === 4 && i.bbox.every(v => Number.isFinite(Number(v))))
+        .map(i => ({ label: i.name || null, confidence: Number.isFinite(i.confidence) ? i.confidence : null, bbox: i.bbox.map(Number) }))
+        .sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0));
+}
+
+/** Boxes reaching past the photo's edges (2 px tolerance for rounding); null when its size is unknown. */
+function outOfBounds(boxes, width, height) {
+    if (!width || !height) return null;
+    return boxes.filter(b => b.bbox[0] < -2 || b.bbox[1] < -2 || b.bbox[2] > width + 2 || b.bbox[3] > height + 2).length;
+}
+
+/**
+ * The repeated test pictures among the rows: exactly 640x640 and the same content (sha256) as
+ * another 640x640 picture. `images` maps snapshot_id -> { width, height, sha256 } for the rows
+ * whose image could be read. Returns { ids: Set, report }.
+ */
+function findTestPictures(rows, images) {
+    const byHash = new Map();
+    for (const row of rows) {
+        const img = images.get(row.snapshot_id);
+        if (!img || img.width !== TEST_PICTURE_SIZE.width || img.height !== TEST_PICTURE_SIZE.height) continue;
+        if (!byHash.has(img.sha256)) byHash.set(img.sha256, []);
+        byHash.get(img.sha256).push(row);
+    }
+    const ids = new Set();
+    const byCamera = {};
+    const hashes = [];
+    for (const [sha256, list] of byHash) {
+        if (list.length < 2) continue;
+        hashes.push({ sha256, count: list.length });
+        for (const row of list) {
+            ids.add(row.snapshot_id);
+            byCamera[row.device_serial] = (byCamera[row.device_serial] || 0) + 1;
+        }
+    }
+    hashes.sort((a, b) => b.count - a.count);
+    return {
+        ids,
+        report: {
+            rule: `exactly ${TEST_PICTURE_SIZE.width}x${TEST_PICTURE_SIZE.height} px and a content sha256 seen more than once`,
+            dropped: ids.size,
+            byCamera,
+            distinctPictures: hashes.length,
+            hashes,
+            imagesChecked: rows.filter(r => images.has(r.snapshot_id)).length,
+            imagesNotAvailable: rows.filter(r => !images.has(r.snapshot_id)).length
+        }
+    };
+}
 
 // Columns where a spreadsheet would run the text as a formula, or that need quoting
 function csvCell(value) {
@@ -102,22 +184,31 @@ const toCsv = (rows) => [MANIFEST_COLUMNS.join(','), ...rows.map(r => MANIFEST_C
  * Read everything the export needs and build the manifest rows and sidecars (no file I/O).
  * `rows[i].image_path` is filled in later, once the photo is on disk.
  */
-async function buildDataset({ days = 90, limit = 3000, now = new Date() } = {}) {
+async function buildDataset({ days = 90, limit = 3000, now = new Date(), excludeCameras = DEFAULT_EXCLUDED_CAMERAS, readImages = null } = {}) {
+    const excluded = new Set(excludeCameras);
     const { Snapshot, Camera, DailyStat, MaintenanceEvent, Treatment, Farm, Plot } = require('../src/models');
     const { dayKeyOf } = require('../src/services/dailyStats');
     const since = new Date(now.getTime() - days * DAY_MS);
 
     const counts = {
         snapshotsInWindow: 0, unprocessed: 0, processed: 0, excludedPrivacy: 0, excludedByLabel: {},
-        eligible: 0, eligibleConfirmed: 0, eligibleCorrected: 0
+        eligible: 0, eligibleConfirmed: 0, eligibleCorrected: 0,
+        excludedCameraSnapshots: 0, excludedTestPictures: 0
     };
+    const excludedPerCamera = {};
     const perCameraAll = new Map();
     const byCamera = new Map(); // serial -> eligible processed snapshots, oldest first
     const cursor = Snapshot.find({ createdAt: { $gte: since, $lte: now } })
-        .select('_id deviceSerial createdAt aiProcessed s3Key aiResults.insects.name aiResults.summary review.status review.originalSummary quality.issues quality.checkedAt')
+        .select('_id deviceSerial createdAt aiProcessed aiProvider s3Key aiResults.insects aiResults.summary review.status review.originalSummary quality.issues quality.checkedAt')
         .lean().cursor({ batchSize: 1000 });
     for await (const snap of cursor) {
         counts.snapshotsInWindow++;
+        // Excluded cameras: counted, nothing else (not in cameras.json or any sidecar)
+        if (excluded.has(snap.deviceSerial)) {
+            counts.excludedCameraSnapshots++;
+            excludedPerCamera[snap.deviceSerial] = (excludedPerCamera[snap.deviceSerial] || 0) + 1;
+            continue;
+        }
         const cam = perCameraAll.get(snap.deviceSerial) || { snapshots: 0, processed: 0, excludedPrivacy: 0 };
         perCameraAll.set(snap.deviceSerial, cam);
         cam.snapshots++;
@@ -232,6 +323,54 @@ async function buildDataset({ days = 90, limit = 3000, now = new Date() } = {}) 
         };
     });
 
+    // The photos, read by the caller (disk or S3): their size and hash, to drop the test pictures
+    const images = readImages ? await readImages(rows) : new Map();
+    const testPictures = findTestPictures(rows, images);
+    counts.excludedTestPictures = testPictures.ids.size;
+    if (testPictures.ids.size) {
+        const kept = rows.filter(r => !testPictures.ids.has(r.snapshot_id));
+        // A previous photo that was a test picture: the camera's nearest earlier kept photo instead
+        // (rows are in camera, then time order)
+        const lastKept = new Map();
+        for (const row of kept) {
+            if (testPictures.ids.has(row.previous_snapshot_id)) row.previous_snapshot_id = lastKept.get(row.device_serial) || '';
+            lastKept.set(row.device_serial, row.snapshot_id);
+        }
+        rows.splice(0, rows.length, ...kept);
+    }
+
+    const snapById = new Map(selected.map(s => [String(s._id), s]));
+    const boxes = new Map();
+    const boxStats = { format: BOX_FORMAT, rows: rows.length, rowsWithBoxes: 0, boxes: 0, rowsWithImageSize: 0, boxesOutOfBounds: 0, rowsWithBoxesOutOfBounds: 0, boxesByProvider: {} };
+    for (const row of rows) {
+        const snap = snapById.get(row.snapshot_id);
+        const list = boxesOf(snap);
+        const img = images.get(row.snapshot_id);
+        const outside = outOfBounds(list, img?.width, img?.height);
+        boxes.set(row.snapshot_id, {
+            snapshotId: row.snapshot_id,
+            deviceSerial: row.device_serial,
+            capturedAt: row.captured_at,
+            aiProvider: snap?.aiProvider || null,
+            boxFormat: BOX_FORMAT,
+            imageWidth: img?.width ?? null,
+            imageHeight: img?.height ?? null,
+            // Model output: a human correction changes the counts, not the boxes
+            reviewStatus: row.review_status || null,
+            boxesOutOfBounds: outside,
+            boxes: list
+        });
+        if (list.length) boxStats.rowsWithBoxes++;
+        boxStats.boxes += list.length;
+        if (img) boxStats.rowsWithImageSize++;
+        if (outside) {
+            boxStats.boxesOutOfBounds += outside;
+            boxStats.rowsWithBoxesOutOfBounds++;
+        }
+        const provider = snap?.aiProvider || 'unknown';
+        boxStats.boxesByProvider[provider] = (boxStats.boxesByProvider[provider] || 0) + list.length;
+    }
+
     const dailyStats = (await DailyStat.find({ deviceSerial: { $in: serials }, day: { $gte: dayKeyOf(since), $lte: dayKeyOf(now) } })
         .sort({ deviceSerial: 1, day: 1 }).lean())
         .map(d => ({ deviceSerial: d.deviceSerial, day: d.day, scans: d.scans, total: d.total, peak: d.peak, min: d.min, species: d.species || [] }));
@@ -309,6 +448,9 @@ async function buildDataset({ days = 90, limit = 3000, now = new Date() } = {}) 
         },
         dateRange: { first: capturedTimes[0] || null, last: capturedTimes[capturedTimes.length - 1] || null },
         perCamera,
+        excludedCameras: { list: [...excluded].sort(), snapshotsInWindow: excludedPerCamera },
+        testPictures: testPictures.report,
+        boxes: boxStats,
         definitions: {
             ai_count: 'pest count (non-pest labels excluded) of the model output: review.originalSummary when corrected, else aiResults.summary',
             human_count: 'pest count of aiResults.summary after a human review (confirmed or corrected); empty when not reviewed',
@@ -316,13 +458,17 @@ async function buildDataset({ days = 90, limit = 3000, now = new Date() } = {}) 
             card_replaced_at: 'latest card_replaced maintenance event of the camera at or before captured_at',
             treatment_ids: `treatments logged on the camera in the ${TREATMENT_WINDOW_DAYS} days up to captured_at`,
             quality_issues: 'Snapshot.quality.issues joined by ";" (empty when none or not checked)',
-            excludedPrivacy: `processed photos whose detections or counts contain a non-pest label (${NON_PEST_LABELS.join(', ')}); not exported`
+            excludedPrivacy: `processed photos whose detections or counts contain a non-pest label (${NON_PEST_LABELS.join(', ')}); not exported`,
+            excludedCameraSnapshots: 'photos in the window from the excluded cameras (--exclude-camera); not exported',
+            excludedTestPictures: `repeated test pictures among the selected photos (${testPictures.report.rule}); not exported`,
+            boxes: `boxes/<snapshot_id>.json: aiResults.insects as stored, bbox [xmin, ymin, xmax, ymax] in pixels of the photo (${BOX_FORMAT}); imageWidth/imageHeight read from the image file when it was available`
         }
     };
 
     return {
         rows,
         selected,
+        boxes,
         sidecars: { cameras, dailyStats, maintenanceEvents, treatments, farmsPlots },
         summary
     };
@@ -396,6 +542,31 @@ async function downloadImages(rows, outDir, log = console.log) {
 
 const writeJson = (file, data) => fs.writeFileSync(file, JSON.stringify(data, null, 2) + '\n');
 
+/**
+ * The rows' photos already under outDir: sets image_path, and returns
+ * snapshot_id -> { width, height, sha256, bytes } (size from the JPEG/PNG header).
+ */
+function readLocalImages(rows, outDir) {
+    const { readImageSize } = require('../src/services/aiService');
+    const images = new Map();
+    for (const row of rows) {
+        const rel = imageRelPath(row.device_serial, row.snapshot_id);
+        const file = path.join(outDir, rel);
+        if (!fs.existsSync(file)) continue;
+        const buffer = fs.readFileSync(file);
+        if (!buffer.length) continue;
+        const size = readImageSize(buffer);
+        images.set(row.snapshot_id, {
+            width: size?.width ?? null,
+            height: size?.height ?? null,
+            sha256: crypto.createHash('sha256').update(buffer).digest('hex'),
+            bytes: buffer.length
+        });
+        row.image_path = path.posix.join(path.basename(outDir), rel);
+    }
+    return images;
+}
+
 async function main() {
     const opts = parseArgs(process.argv.slice(2));
     const started = Date.now();
@@ -404,31 +575,45 @@ async function main() {
     mongoose.set('autoIndex', false);
     mongoose.set('autoCreate', false);
     await mongoose.connect(MONGO_URI, { autoIndex: false, autoCreate: false, readPreference: 'secondaryPreferred', serverSelectionTimeoutMS: 15000 });
-    console.log(`Connected (read-only). Window: last ${opts.days} days, limit ${opts.limit}.`);
+    console.log(`Connected (read-only). Window: last ${opts.days} days, limit ${opts.limit}, excluded cameras: ${opts.excludeCameras.join(', ') || 'none'}.`);
 
-    const { rows, sidecars, summary } = await buildDataset({ days: opts.days, limit: opts.limit });
+    // Photos: the missing ones downloaded first (unless --no-images or --dry-run), then all read
+    // from disk for the test-picture check and the image sizes
+    let images = { downloaded: 0, alreadyPresent: 0, failed: 0, notJpeg: 0, bytes: 0, failures: [], skipped: true };
+    const readImages = async (list) => {
+        if (opts.images && !opts.dryRun) {
+            fs.mkdirSync(opts.out, { recursive: true });
+            console.log(`Downloading the missing photos of ${list.length} to ${opts.out}...`);
+            images = { ...(await downloadImages(list, opts.out)), skipped: false };
+        }
+        const local = readLocalImages(list, opts.out);
+        images.onDisk = local.size;
+        images.notOnDisk = list.length - local.size;
+        return local;
+    };
+    const { rows, boxes, sidecars, summary } = await buildDataset({ days: opts.days, limit: opts.limit, excludeCameras: opts.excludeCameras, readImages });
     const c = summary.counts;
     const counts = {
         snapshotsInWindow: c.snapshotsInWindow, processed: c.processed, unprocessed: c.unprocessed,
-        excludedPrivacy: c.excludedPrivacy, excludedByLabel: c.excludedByLabel, eligible: c.eligible,
-        eligibleConfirmed: c.eligibleConfirmed, eligibleCorrected: c.eligibleCorrected,
+        excludedCameraSnapshots: c.excludedCameraSnapshots, excludedPrivacy: c.excludedPrivacy, excludedByLabel: c.excludedByLabel,
+        eligible: c.eligible, eligibleConfirmed: c.eligibleConfirmed, eligibleCorrected: c.eligibleCorrected,
+        excludedTestPictures: c.excludedTestPictures,
         selected: c.snapshotsTotal, selectedConfirmed: c.reviewedConfirmed, selectedCorrected: c.reviewedCorrected,
         camerasSeen: c.camerasSeen, camerasRegistered: c.camerasRegistered, dailyStatRows: c.dailyStatRows,
         maintenanceByType: c.maintenanceByType, cardReplacedEventsAllTime: c.cardReplacedEventsAllTime,
         treatments: c.treatments, farms: c.farms, plots: c.plots, plotsWithBoundary: c.plotsWithBoundary,
-        photosPerDay: summary.photosPerDay.allCameras, dateRange: summary.dateRange
+        photosPerDay: summary.photosPerDay.allCameras, dateRange: summary.dateRange,
+        imagesOnDisk: images.onDisk, imagesNotOnDisk: images.notOnDisk,
+        boxes: summary.boxes,
+        testPictures: { ...summary.testPictures, hashes: summary.testPictures.hashes.length }
     };
     console.log(JSON.stringify(counts, null, 2));
 
     if (opts.dryRun) {
         console.log('Dry run: nothing downloaded or written.');
     } else {
-        fs.mkdirSync(opts.out, { recursive: true });
-        let images = { downloaded: 0, alreadyPresent: 0, failed: 0, notJpeg: 0, bytes: 0, failures: [], skipped: true };
-        if (opts.images) {
-            console.log(`Downloading ${rows.length} photos to ${opts.out}...`);
-            images = { ...(await downloadImages(rows, opts.out)), skipped: false };
-        }
+        fs.mkdirSync(path.join(opts.out, 'boxes'), { recursive: true });
+        for (const row of rows) writeJson(path.join(opts.out, boxesRelPath(row.snapshot_id)), boxes.get(row.snapshot_id));
         const manifestFile = path.join(path.dirname(opts.out), 'manifest.csv');
         fs.writeFileSync(manifestFile, toCsv(rows));
         writeJson(path.join(opts.out, 'cameras.json'), sidecars.cameras);
@@ -439,8 +624,8 @@ async function main() {
         summary.images = images;
         summary.durationSeconds = Math.round((Date.now() - started) / 100) / 10;
         writeJson(path.join(opts.out, 'summary.json'), summary);
-        console.log(`Manifest: ${manifestFile} (${rows.length} rows)`);
-        console.log(`Images: ${images.downloaded} downloaded, ${images.alreadyPresent} already present, ${images.failed} failed, ${images.bytes} bytes`);
+        console.log(`Manifest: ${manifestFile} (${rows.length} rows); boxes: ${rows.length} files in ${path.join(opts.out, 'boxes')}`);
+        console.log(`Images: ${images.downloaded} downloaded, ${images.alreadyPresent} already present, ${images.failed} failed; ${images.onDisk} on disk, ${images.notOnDisk} not on disk`);
     }
     console.log(`Done in ${Math.round((Date.now() - started) / 100) / 10} s.`);
     await mongoose.disconnect();
@@ -457,7 +642,13 @@ if (require.main === module) {
 
 module.exports = {
     MANIFEST_COLUMNS,
+    DEFAULT_EXCLUDED_CAMERAS,
+    BOX_FORMAT,
     parseArgs,
+    boxesOf,
+    outOfBounds,
+    findTestPictures,
+    readLocalImages,
     pestCount,
     privacyLabels,
     aiSummaryOf,

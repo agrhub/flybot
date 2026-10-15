@@ -656,7 +656,8 @@
     "aiProvider": {
       "vertex": "Google Vertex AI (Gemini)",
       "roboflow": "Quy trình nhận diện Roboflow",
-      "both": "Vertex AI + Roboflow"
+      "both": "Vertex AI + Roboflow",
+      "sentinel": "FlyBot Sentinel (OpenCV 5)"
     },
     "usageSnapshots": "Ảnh của bạn",
     "usageSnapshotsValue": "{snapshots} ảnh ({analyzed} đã phân tích) từ {cameras} camera",
@@ -759,11 +760,18 @@
           "done": "Đã ghi nhận",
           "cancelled": "Đã hủy",
           "failed": "Không ghi được",
-          "running": "Đang ghi..."
+          "running": "Đang ghi...",
+          "expired": "Đã hết hạn"
         },
         "area": "Khu vực:",
         "preHarvest": "Cách ly:",
-        "days": "{count} ngày"
+        "days": "{count} ngày",
+        "sentinel": {
+          "source": "Đề xuất của FlyBot Sentinel",
+          "reason": "Lý do:",
+          "evidence": "Bằng chứng",
+          "expires": "Hết hạn {time}"
+        }
       }
     },
     "askAboutPhoto": "Hỏi trợ lý về ảnh này",
@@ -1335,6 +1343,10 @@
       "snapshot_analyzed": {
         "title": "Mỗi ảnh đã phân tích (số đếm, chất lượng, link ảnh)",
         "desc": "{deviceName}: đếm được {count} con."
+      },
+      "review_requested": {
+        "title": "Ảnh cần kiểm tra",
+        "desc": "{deviceName}: FlyBot Sentinel nhờ bạn kiểm tra một ảnh ({reason})."
       }
     }
   },
@@ -1863,7 +1875,8 @@
       "treatment": "Xử lý dịch hại",
       "farm": "Vườn",
       "org": "Tổ chức",
-      "integration": "API & webhook"
+      "integration": "API & webhook",
+      "sentinel": "FlyBot Sentinel"
     },
     "actions": {
       "auth": {
@@ -1937,6 +1950,14 @@
         "webhook_created": "Thêm webhook",
         "webhook_deleted": "Xoá webhook",
         "webhook_updated": "Sửa webhook"
+      },
+      "sentinel": {
+        "capture": "Chụp thêm ảnh",
+        "capture_interval": "Đổi tạm chu kỳ chụp",
+        "proposal_created": "Đề xuất thay đổi",
+        "proposal_decided": "Đã quyết định đề xuất",
+        "review_requested": "Nhờ kiểm tra ảnh",
+        "analysis": "Đếm ảnh"
       }
     },
     "reasons": {

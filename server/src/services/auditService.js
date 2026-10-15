@@ -54,7 +54,14 @@ const AUDIT_ACTIONS = [
     'integration.key_revoked',
     'integration.webhook_created',
     'integration.webhook_updated',
-    'integration.webhook_deleted'
+    'integration.webhook_deleted',
+    // FlyBot Sentinel internal API (actor "sentinel-agent"), and a person's decision on its proposals
+    'sentinel.capture',
+    'sentinel.capture_interval',
+    'sentinel.proposal_created',
+    'sentinel.proposal_decided',
+    'sentinel.review_requested',
+    'sentinel.analysis'
 ];
 const CATEGORIES = [...new Set(AUDIT_ACTIONS.map(a => a.split('.')[0]))];
 

@@ -33,12 +33,16 @@ async function checkAlerts(deviceSerial, snapshotId) {
 }
 
 /**
- * Capture image from camera, upload to S3, and trigger AI analysis
+ * Capture image from camera, upload to S3, and trigger AI analysis.
+ * trigger 'sentinel': an extra photo FlyBot Sentinel asked for; it is marked on the snapshot and
+ * does not move the camera's schedule (lastCaptureAt).
+ * With AI_PROVIDER=sentinel no cloud model runs here: the photo waits for
+ * POST /api/sentinel/analysis, and its alerts run then.
  */
-async function captureAndSaveSnapshot(deviceSerial) {
+async function captureAndSaveSnapshot(deviceSerial, { trigger } = {}) {
     try {
         // Record the attempt first, so an offline camera is retried on its normal cadence, not every tick
-        await Camera.updateMany({ deviceSerial }, { $set: { lastCaptureAt: new Date() } });
+        if (trigger !== 'sentinel') await Camera.updateMany({ deviceSerial }, { $set: { lastCaptureAt: new Date() } });
 
         const captureRes = await ezvizService.captureDevice(deviceSerial);
 
@@ -67,7 +71,8 @@ async function captureAndSaveSnapshot(deviceSerial) {
             const newSnapshot = new Snapshot({
                 deviceSerial: deviceSerial,
                 imageUrl: finalUrl,
-                s3Key: s3Key
+                s3Key: s3Key,
+                ...(trigger === 'sentinel' ? { trigger } : {})
             });
             let savedDoc;
             try {
@@ -97,13 +102,18 @@ async function captureAndSaveSnapshot(deviceSerial) {
                 console.warn(`⚠️ Failed to update camera thumbnail for ${deviceSerial}:`, camErr.message);
             }
 
-            // 4. Send to AI for processing
-            await aiService.analyzeSnapshot(base64Image, savedDoc._id, picUrl);
+            const awaitSentinel = aiService.isSentinelMode();
+            if (!awaitSentinel) {
+                // 4. Send to AI for processing
+                await aiService.analyzeSnapshot(base64Image, savedDoc._id, picUrl);
 
-            console.log(`📸 Snapshot saved & sent to AI: ${deviceSerial}`);
+                console.log(`📸 Snapshot saved & sent to AI: ${deviceSerial}`);
 
-            // 5. Alerts: pest threshold reached, or AI analysis failing repeatedly
-            await checkAlerts(deviceSerial, savedDoc._id);
+                // 5. Alerts: pest threshold reached, or AI analysis failing repeatedly
+                await checkAlerts(deviceSerial, savedDoc._id);
+            } else {
+                console.log(`📸 Snapshot saved, waiting for the Sentinel analysis: ${deviceSerial}`);
+            }
 
             // 6. Photo quality: dark, blurry, dirty lens or a full sticky card
             try {
@@ -114,9 +124,10 @@ async function captureAndSaveSnapshot(deviceSerial) {
                 console.error(`⚠️ Image quality check failed (${deviceSerial}):`, qualityErr.message);
             }
 
-            // 7. Webhook snapshot_analyzed, once the AI result and the quality are both stored.
+            // 7. Webhook snapshot_analyzed, once the AI result and the quality are both stored
+            // (AI_PROVIDER=sentinel: once the quality is stored, with aiSource "pending").
             // In the background, so a slow receiver does not hold up the next capture
-            snapshotEvents.emitAnalyzed(savedDoc._id, { buffer });
+            snapshotEvents.emitAnalyzed(savedDoc._id, { buffer, pending: awaitSentinel });
             return savedDoc;
         }
     } catch (error) {
@@ -204,6 +215,8 @@ const AI_RETRY = {
  * stale alert. Returns { retried, succeeded }.
  */
 async function retryFailedAnalyses(now = new Date()) {
+    // AI_PROVIDER=sentinel: no cloud model to retry; the photos wait for Sentinel
+    if (aiService.isSentinelMode()) return { retried: 0, succeeded: 0 };
     const due = await Snapshot.find({
         aiProcessed: false,
         createdAt: { $gte: new Date(now.getTime() - AI_RETRY.windowMs), $lte: new Date(now.getTime() - AI_RETRY.minAgeMs) },
@@ -237,6 +250,7 @@ async function retryFailedAnalyses(now = new Date()) {
 
 module.exports = {
     AI_RETRY,
+    checkAlerts,
     retryFailedAnalyses,
     captureAndSaveSnapshot,
     autoCaptureDueCameras,

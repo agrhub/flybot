@@ -63,6 +63,18 @@ const cameraSchema = new mongoose.Schema({
     },
     // Last automatic or manual capture attempt for this device
     lastCaptureAt: { type: Date, default: null },
+    // FlyBot Sentinel: a temporary capture interval that replaces captureIntervalMinutes until
+    // `until` (services/captureSchedule.js), and the extra captures it asked for today
+    sentinelInterval: {
+        minutes: { type: Number, enum: [15, 30, 60, 120], default: undefined },
+        until: { type: Date, default: undefined },
+        setAt: { type: Date, default: undefined },
+        reason: { type: String, default: undefined }
+    },
+    sentinelCaptures: {
+        day: { type: String, default: undefined }, // farm day, YYYY-MM-DD
+        count: { type: Number, default: undefined }
+    },
     addedAt: { type: Date, default: Date.now },
     lastSync: { type: Date, default: Date.now }
 });

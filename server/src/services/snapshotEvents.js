@@ -76,9 +76,12 @@ async function previousSnapshotId(snapshot) {
 /**
  * The event body for one analyzed snapshot (a lean document), or null when it has no AI
  * result (yet) or its camera is gone. `buffer`: the photo, to read its size (optional).
+ * `pending` (AI_PROVIDER=sentinel): sent before any AI result, with aiSource "pending",
+ * count null and no boxes, so Sentinel can analyze the photo itself.
  */
-async function buildPayload(snapshot, { buffer = null, camera = null } = {}) {
-    if (!snapshot?.aiProcessed) return null;
+async function buildPayload(snapshot, { buffer = null, camera = null, pending = false } = {}) {
+    const waiting = pending && !snapshot?.aiProcessed;
+    if (!snapshot || (!snapshot.aiProcessed && !waiting)) return null;
     camera = camera || await Camera.findOne({ deviceSerial: snapshot.deviceSerial }).lean();
     if (!camera) return null;
 
@@ -110,12 +113,13 @@ async function buildPayload(snapshot, { buffer = null, camera = null } = {}) {
             imageUrlExpiresAt: imageUrl ? new Date(now.getTime() + IMAGE_URL_TTL_S * 1000) : null,
             width: size?.width || null,
             height: size?.height || null,
-            count: Number.isFinite(snapshot.pestCount) ? snapshot.pestCount : pestCountOf(counts),
-            counts,
-            aiSource: aiSourceOf(snapshot),
-            aiProvider: snapshot.aiProvider || null,
+            count: waiting ? null : (Number.isFinite(snapshot.pestCount) ? snapshot.pestCount : pestCountOf(counts)),
+            counts: waiting ? {} : counts,
+            aiSource: waiting ? 'pending' : aiSourceOf(snapshot),
+            aiProvider: waiting ? null : (snapshot.aiProvider || null),
             boxFormat: 'xyxy_pixels',
-            ...boxesOf(snapshot.aiResults?.insects),
+            ...(waiting ? { boxes: [], boxesTotal: 0, truncated: false } : boxesOf(snapshot.aiResults?.insects)),
+            trigger: snapshot.trigger || null,
             quality: qualityOf(snapshot.quality),
             previousSnapshotId: previousId,
             cardReplacedAt: camera.cardReplacedAt || null,
@@ -130,16 +134,16 @@ async function buildPayload(snapshot, { buffer = null, camera = null } = {}) {
  * admins only). Call it after both the AI result and the quality check are stored.
  * Returns the number of webhooks called; never throws.
  */
-async function emitAnalyzed(snapshotId, { buffer = null } = {}) {
+async function emitAnalyzed(snapshotId, { buffer = null, pending = false } = {}) {
     try {
         const snapshot = await Snapshot.findById(snapshotId).lean();
-        if (!snapshot?.aiProcessed) return 0;
+        if (!snapshot || (!snapshot.aiProcessed && !pending)) return 0;
         const camera = await Camera.findOne({ deviceSerial: snapshot.deviceSerial }).lean();
         if (!camera) return 0;
         const watchers = [camera.userId, ...(camera.sharedWith || []).map(sh => sh.userId)];
         const hooks = await webhookService.subscribers(watchers, EVENT);
         if (!hooks.length) return 0;
-        const payload = await buildPayload(snapshot, { buffer, camera });
+        const payload = await buildPayload(snapshot, { buffer, camera, pending });
         if (!payload) return 0;
         return await webhookService.deliverEvent(hooks, payload);
     } catch (err) {

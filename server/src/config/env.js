@@ -137,7 +137,16 @@ const config = {
     // Roboflow
     ROBOFLOW_API_KEY: process.env.ROBOFLOW_API_KEY || "",
     ROBOFLOW_WORKFLOW_URL: process.env.ROBOFLOW_WORKFLOW_URL || "https://serverless.roboflow.com/new-workspace-z1wc7/workflows/fruit-fly-detection-and-count-1790390843624",
+    // vertex | roboflow | both | sentinel ("sentinel": no cloud model at capture; FlyBot Sentinel
+    // sets the counts through POST /api/sentinel/analysis)
     AI_PROVIDER: process.env.AI_PROVIDER || "vertex",
+
+    // FlyBot Sentinel internal API (/api/sentinel, HMAC-signed). Unset = the API answers 503.
+    SENTINEL_API_SECRET: (process.env.SENTINEL_API_SECRET || "").trim(),
+    // Extra captures Sentinel may ask for, per camera per farm day
+    SENTINEL_CAPTURE_BUDGET: /^\d+$/.test((process.env.SENTINEL_CAPTURE_BUDGET || '').trim()) ? Math.min(parseInt(process.env.SENTINEL_CAPTURE_BUDGET, 10), 96) : 4,
+    // A Sentinel proposal not confirmed within this many hours expires
+    SENTINEL_PROPOSAL_TTL_HOURS: Math.min(Math.max(parseInt(process.env.SENTINEL_PROPOSAL_TTL_HOURS || '24', 10) || 24, 1), 168),
     // Retraining data: reviewed snapshots are uploaded to this Roboflow project (dataset slug).
     // Needs a private API key (falls back to ROBOFLOW_API_KEY). Empty = off.
     ROBOFLOW_UPLOAD_PROJECT: process.env.ROBOFLOW_UPLOAD_PROJECT || "",

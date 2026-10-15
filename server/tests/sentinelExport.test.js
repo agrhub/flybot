@@ -130,7 +130,10 @@ test('limit keeps reviewed photos first, then the most recent', async () => {
 });
 
 test('options', () => {
-    assert.deepEqual({ ...parseArgs([]), out: undefined }, { days: 90, limit: 3000, out: undefined, dryRun: false, images: true });
+    assert.deepEqual({ ...parseArgs([]), out: undefined }, { days: 90, limit: 3000, out: undefined, dryRun: false, images: true, excludeCameras: ['AC6527557'] });
+    assert.deepEqual(parseArgs(['--exclude-camera', 'none']).excludeCameras, []);
+    assert.deepEqual(parseArgs(['--exclude-camera', 'X1,X2', '--exclude-camera', 'X3', '--exclude-camera', 'X1']).excludeCameras, ['X1', 'X2', 'X3']);
+    assert.throws(() => parseArgs(['--exclude-camera', 'bad serial']));
     const o = parseArgs(['--days', '30', '--limit', '10', '--dry-run', '--no-images']);
     assert.equal(o.days, 30);
     assert.equal(o.limit, 10);
@@ -138,4 +141,102 @@ test('options', () => {
     assert.equal(o.images, false);
     assert.throws(() => parseArgs(['--days', '0']));
     assert.throws(() => parseArgs(['--bogus']));
+});
+
+test('excluded cameras (default AC6527557) are left out and only counted', async () => {
+    const f = await fixtures();
+    const owner = await models.User.findOne({ email: 'owner@example.test' });
+    await createCamera(owner, { deviceSerial: 'AC6527557', deviceName: 'Gravity01' });
+    await models.Snapshot.create({ deviceSerial: 'AC6527557', createdAt: daysAgo(2), imageUrl: 'u', s3Key: 'k', aiProcessed: true, aiResults: { summary: { fruit_fly: 4 } } });
+
+    const { rows, summary, sidecars } = await buildDataset({ days: 30, limit: 100, now: NOW });
+    assert.ok(!rows.some(r => r.device_serial === 'AC6527557'));
+    assert.equal(rows.length, 4);
+    assert.equal(summary.counts.excludedCameraSnapshots, 1);
+    assert.deepEqual(summary.excludedCameras, { list: ['AC6527557'], snapshotsInWindow: { AC6527557: 1 } });
+    assert.ok(!sidecars.cameras.some(c => c.serial === 'AC6527557'));
+    assert.equal(summary.perCamera.AC6527557, undefined);
+    assert.equal(rows.find(r => r.snapshot_id === String(f.s1._id)).ai_count, 10);
+
+    const all = await buildDataset({ days: 30, limit: 100, now: NOW, excludeCameras: [] });
+    assert.equal(all.rows.filter(r => r.device_serial === 'AC6527557').length, 1);
+});
+
+test('boxes as stored (pixels) and the repeated 640x640 test pictures dropped', async () => {
+    const owner = await createUser({ role: 'manager' });
+    await createCamera(owner, { deviceSerial: 'T1' });
+    const box = (bbox, confidence) => ({ name: 'fruit_fly', confidence, bbox });
+    const make = (hoursAgo, insects = []) => ({
+        deviceSerial: 'T1', createdAt: new Date(NOW.getTime() - hoursAgo * 3600 * 1000), imageUrl: 'u', s3Key: `k${hoursAgo}`,
+        aiProcessed: true, aiProvider: 'roboflow', aiResults: { summary: { fruit_fly: insects.length }, insects }
+    });
+    const [s0, s1, s2, s3, s4] = await models.Snapshot.create([
+        make(50, [box([10, 10, 20, 20], 0.7)]),
+        make(40, [box([1, 1, 5, 5], 0.9)]),
+        make(30, [box([1, 1, 5, 5], 0.9)]),
+        make(20),
+        make(10, [box([100, 100, 120, 130], 0.6), box([1260, 700, 1300, 730], 0.95)])
+    ]);
+    const id = (s) => String(s._id);
+    const sizes = {
+        [id(s0)]: { width: 768, height: 432, sha256: 'a' },
+        [id(s1)]: { width: 640, height: 640, sha256: 'disc' },
+        [id(s2)]: { width: 640, height: 640, sha256: 'disc' },
+        // 640x640 but seen once: a real photo, kept
+        [id(s3)]: { width: 640, height: 640, sha256: 'unique' },
+        [id(s4)]: { width: 1280, height: 720, sha256: 'b' }
+    };
+    let seen = null;
+    const readImages = async (rows) => {
+        seen = rows.map(r => r.snapshot_id);
+        return new Map(Object.entries(sizes));
+    };
+    const { rows, boxes, summary } = await buildDataset({ days: 30, limit: 100, now: NOW, readImages });
+    assert.equal(seen.length, 5, 'every selected photo is checked');
+    assert.deepEqual(rows.map(r => r.snapshot_id), [id(s0), id(s3), id(s4)]);
+    assert.equal(rows[1].previous_snapshot_id, id(s0), 'a dropped previous photo is replaced by the one before it');
+    assert.equal(rows[2].previous_snapshot_id, id(s3));
+    assert.equal(summary.counts.excludedTestPictures, 2);
+    assert.equal(summary.counts.snapshotsTotal, 3);
+    assert.equal(summary.perCamera.T1.exported, 3);
+    assert.deepEqual({ dropped: summary.testPictures.dropped, distinct: summary.testPictures.distinctPictures, checked: summary.testPictures.imagesChecked },
+        { dropped: 2, distinct: 1, checked: 5 });
+    assert.deepEqual(summary.testPictures.byCamera, { T1: 2 });
+
+    const b4 = boxes.get(id(s4));
+    assert.equal(b4.boxFormat, 'xyxy_pixels');
+    assert.equal(b4.imageWidth, 1280);
+    assert.equal(b4.aiProvider, 'roboflow');
+    assert.deepEqual(b4.boxes.map(b => b.confidence), [0.95, 0.6], 'highest confidence first');
+    assert.deepEqual(b4.boxes[1].bbox, [100, 100, 120, 130]);
+    assert.equal(b4.boxesOutOfBounds, 1, 'x 1300 > 1280 + 2');
+    assert.deepEqual(boxes.get(id(s3)).boxes, []);
+    assert.equal(boxes.has(id(s1)), false);
+    assert.deepEqual({ rows: summary.boxes.rows, withBoxes: summary.boxes.rowsWithBoxes, boxes: summary.boxes.boxes, out: summary.boxes.boxesOutOfBounds },
+        { rows: 3, withBoxes: 2, boxes: 3, out: 1 });
+});
+
+test('readLocalImages: path, size and hash of the photos already on disk', () => {
+    const fs = require('fs');
+    const os = require('os');
+    const path = require('path');
+    const jpeg = require('jpeg-js');
+    const { readLocalImages, outOfBounds } = require('../scripts/export_sentinel_dataset');
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sentinel-export-'));
+    try {
+        const out = path.join(dir, 'export');
+        fs.mkdirSync(path.join(out, 'images', 'T1'), { recursive: true });
+        const img = jpeg.encode({ data: Buffer.alloc(640 * 640 * 4, 128), width: 640, height: 640 }, 50).data;
+        fs.writeFileSync(path.join(out, 'images', 'T1', 'a.jpg'), img);
+        const rows = [{ snapshot_id: 'a', device_serial: 'T1', image_path: '' }, { snapshot_id: 'b', device_serial: 'T1', image_path: '' }];
+        const images = readLocalImages(rows, out);
+        assert.equal(images.size, 1);
+        assert.deepEqual({ w: images.get('a').width, h: images.get('a').height }, { w: 640, h: 640 });
+        assert.match(images.get('a').sha256, /^[0-9a-f]{64}$/);
+        assert.equal(rows[0].image_path, 'export/images/T1/a.jpg');
+        assert.equal(rows[1].image_path, '');
+        assert.equal(outOfBounds([{ bbox: [0, 0, 10, 10] }], null, null), null);
+    } finally {
+        fs.rmSync(dir, { recursive: true, force: true });
+    }
 });

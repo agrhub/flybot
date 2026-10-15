@@ -656,7 +656,8 @@
     "aiProvider": {
       "vertex": "Google Vertex AI (Gemini)",
       "roboflow": "Roboflow detection workflow",
-      "both": "Vertex AI + Roboflow"
+      "both": "Vertex AI + Roboflow",
+      "sentinel": "FlyBot Sentinel (OpenCV 5)"
     },
     "usageSnapshots": "Your snapshots",
     "usageSnapshotsValue": "{snapshots} snapshots ({analyzed} analyzed) from {cameras} cameras",
@@ -759,11 +760,18 @@
           "done": "Recorded",
           "cancelled": "Cancelled",
           "failed": "Could not record",
-          "running": "Recording..."
+          "running": "Recording...",
+          "expired": "Expired"
         },
         "area": "Area:",
         "preHarvest": "Pre-harvest:",
-        "days": "{count} days"
+        "days": "{count} days",
+        "sentinel": {
+          "source": "Suggested by FlyBot Sentinel",
+          "reason": "Why:",
+          "evidence": "Evidence",
+          "expires": "Expires {time}"
+        }
       }
     },
     "askAboutPhoto": "Ask the assistant about this photo",
@@ -1335,6 +1343,10 @@
       "snapshot_analyzed": {
         "title": "Every analyzed photo (count, quality, photo link)",
         "desc": "{deviceName}: {count} insects counted."
+      },
+      "review_requested": {
+        "title": "Photo to check",
+        "desc": "{deviceName}: FlyBot Sentinel asks you to check a photo ({reason})."
       }
     }
   },
@@ -1863,7 +1875,8 @@
       "treatment": "Treatments",
       "farm": "Farms",
       "org": "Organization",
-      "integration": "API & webhooks"
+      "integration": "API & webhooks",
+      "sentinel": "FlyBot Sentinel"
     },
     "actions": {
       "auth": {
@@ -1937,6 +1950,14 @@
         "webhook_created": "Add webhook",
         "webhook_deleted": "Delete webhook",
         "webhook_updated": "Change webhook"
+      },
+      "sentinel": {
+        "capture": "Extra photo taken",
+        "capture_interval": "Capture interval changed for a while",
+        "proposal_created": "Change suggested",
+        "proposal_decided": "Suggestion decided",
+        "review_requested": "Photo check requested",
+        "analysis": "Photo counted"
       }
     },
     "reasons": {

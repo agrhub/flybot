@@ -159,7 +159,21 @@
     "unlinked": "Disconnected. You will no longer receive FlyBot alerts here.",
     "notLinked": "This chat is not connected to a FlyBot account.",
     "help": "Commands:\n/stop - stop receiving alerts\nTo connect, use \"Connect Telegram\" in FlyBot → Settings → Notifications.",
-    "test": "✅ Test message from FlyBot. Alerts for {email} will arrive in this chat."
+    "test": "✅ Test message from FlyBot. Alerts for {email} will arrive in this chat.",
+    "sentinel": {
+      "card_change": "🛰️ <b>FlyBot Sentinel suggests: sticky card replaced</b>\nTrap: {trap}\nWhen: {at}",
+      "treatment": "🛰️ <b>FlyBot Sentinel suggests a logbook entry: {type}{product}</b>\nTraps: {traps}\nWhen: {at}",
+      "reason": "Why: {reason}",
+      "expires": "Nothing is recorded until you press Confirm. The suggestion expires at {at}.",
+      "confirm": "✅ Confirm",
+      "reject": "✖ Reject",
+      "confirmed": "Confirmed and recorded in FlyBot.",
+      "rejected": "Rejected. Nothing was recorded.",
+      "failed": "Could not be recorded: {message}",
+      "expired": "This suggestion has expired.",
+      "handled": "This has already been handled.",
+      "notFound": "This suggestion was not found."
+    }
   },
   "push": {
     "testTitle": "FlyBot notifications are working",
@@ -397,7 +411,8 @@
     "send_the_rows_to_import": "Send the rows to import.",
     "at_most_max_rows_at_a_time": "At most {max} rows at a time.",
     "choose_the_members_to_remind": "Choose the members to remind.",
-    "at_most_max_members_at_a_time": "At most {max} members at a time."
+    "at_most_max_members_at_a_time": "At most {max} members at a time.",
+    "this_proposal_has_expired": "This proposal has expired."
   },
   "reportPdf": {
     "range": "Period: {from} - {to} ({days} days)",
@@ -590,5 +605,8 @@
       "operator": "Operator",
       "phi": "Pre-harvest days"
     }
+  },
+  "sentinel": {
+    "message": "**FlyBot Sentinel** suggests this change. Nothing is recorded until you press Confirm.\n\n{reason}"
   }
 }
