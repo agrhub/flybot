@@ -25,6 +25,8 @@ const { ACTOR } = require('../middlewares/sentinelAuth');
 const SENTINEL_SESSION = 'sentinel';
 const MAX_INTERVAL_HOURS = 72;
 const MAX_EVIDENCE = 4;
+// Longer lists are accepted and cut to MAX_EVIDENCE (pictures first)
+const MAX_EVIDENCE_IN = 20;
 const MAX_REASON = 1000;
 const SERIAL = /^[A-Za-z0-9_-]{1,64}$/;
 // Count labels are stored as Map keys: no dots, no leading $
@@ -160,15 +162,39 @@ async function setCaptureInterval(body, req, now = new Date()) {
 
 const PROPOSAL_STATE_OF_CARD = { done: 'confirmed', cancelled: 'rejected', failed: 'failed', expired: 'expired' };
 
-/** Check the evidence list: 1-4 items, each an https link or a photo of these cameras. */
+const OBJECT_ID = /^[a-f0-9]{24}$/i;
+
+/**
+ * An evidence item as the agent may send it: an object, or a bare string (an https link, a
+ * snapshot id, or another reference such as s3://bucket/key, kept as text only).
+ */
+function evidenceItem(item) {
+    if (typeof item !== 'string') return item;
+    const value = item.trim();
+    if (OBJECT_ID.test(value)) return { snapshotId: value };
+    if (/^https:\/\//i.test(value)) return { url: value };
+    return { ref: value };
+}
+
+/**
+ * Check the evidence list: 1 to MAX_EVIDENCE_IN items, each an https link, a photo of these
+ * cameras, or a text reference. When more than MAX_EVIDENCE are given, pictures are kept first.
+ */
 async function readEvidence(evidence, serials) {
-    if (!Array.isArray(evidence) || evidence.length < 1 || evidence.length > MAX_EVIDENCE) {
-        return { problem: `evidence must list 1 to ${MAX_EVIDENCE} items ({ url, caption } or { snapshotId, caption }).` };
+    if (!Array.isArray(evidence) || evidence.length < 1 || evidence.length > MAX_EVIDENCE_IN) {
+        return { problem: `evidence must list 1 to ${MAX_EVIDENCE} items ({ url, caption }, { snapshotId, caption } or a string; up to ${MAX_EVIDENCE_IN} are accepted and cut to ${MAX_EVIDENCE}, pictures first).` };
     }
+    const normalized = evidence.map(evidenceItem);
+    const isPicture = (item) => isPlainObject(item) && (item.snapshotId !== undefined || item.url !== undefined);
+    const ordered = [...normalized.filter(isPicture), ...normalized.filter(item => !isPicture(item))].slice(0, MAX_EVIDENCE);
     const items = [];
-    for (const item of evidence) {
+    for (const item of ordered) {
         if (!isPlainObject(item)) return { problem: 'Each evidence item must be an object.' };
         const caption = clip(item.caption, 200);
+        if (item.snapshotId === undefined && item.url === undefined && typeof item.ref === 'string' && item.ref.trim()) {
+            items.push({ ref: clip(item.ref.trim(), 300), caption });
+            continue;
+        }
         if (item.snapshotId !== undefined) {
             if (!mongoose.isValidObjectId(item.snapshotId)) return { problem: 'An evidence snapshotId is not valid.' };
             const snap = await Snapshot.findById(item.snapshotId).select('deviceSerial s3Key createdAt pestCount aiProcessed').lean();
@@ -227,6 +253,27 @@ async function proposalTarget({ type, deviceSerial, deviceSerials, plot }) {
 
 const TREATMENT_FIELDS = ['type', 'at', 'product', 'activeIngredient', 'dose', 'area', 'operator', 'preHarvestDays', 'note'];
 
+// The agent's own words (flybot-sentinel sentinel/agent/tools.py), when it sends no logbook type:
+// treat_now without a product cannot be a spray (a spray needs one), so it is "other"
+const AGENT_TREATMENTS = { treat_now: 'other', bait_before_wave: 'bait', sanitation: 'sanitation' };
+const CARD_KINDS = { card_full: 'Sentinel: the card looks full', card_replaced_detected: 'Sentinel: a new card was seen' };
+
+/** Logbook fields of a treatment proposal, from the contract fields or the agent's { action, date, rotateFrom }. */
+function treatmentFields(payload) {
+    const out = Object.fromEntries(TREATMENT_FIELDS.filter(k => payload[k] !== undefined).map(k => [k, payload[k]]));
+    if (out.type === undefined && typeof payload.action === 'string') {
+        out.type = payload.action === 'treat_now' && payload.product ? 'spray' : AGENT_TREATMENTS[payload.action] || 'other';
+        if (out.note === undefined) {
+            out.note = [
+                `Sentinel: ${payload.action.replace(/_/g, ' ')}`,
+                typeof payload.date === 'string' && payload.date ? `suggested date ${clip(payload.date, 30)}` : null,
+                typeof payload.rotateFrom === 'string' && payload.rotateFrom ? `rotate away from ${clip(payload.rotateFrom, 60)}` : null
+            ].filter(Boolean).join('; ');
+        }
+    }
+    return out;
+}
+
 /**
  * POST /proposals { type, deviceSerial | deviceSerials | plot, payload, evidence, reason }
  * The same confirm card the assistant makes (agent/tools/actionTools.js, with its checks), in
@@ -235,9 +282,10 @@ const TREATMENT_FIELDS = ['type', 'at', 'product', 'activeIngredient', 'dose', '
 async function createProposal(body, req, now = new Date()) {
     const type = body?.type;
     if (!['card_change', 'treatment'].includes(type)) return fail(400, 'INVALID_REQUEST', "type must be 'card_change' or 'treatment'.");
-    const reason = String(body.reason || '').trim();
-    if (!reason) return fail(422, 'INVALID_PROPOSAL', 'reason is required.');
     const payload = isPlainObject(body.payload) ? body.payload : {};
+    // The agent may put its reason in the payload
+    const reason = String(body.reason || payload.reason || '').trim();
+    if (!reason) return fail(422, 'INVALID_PROPOSAL', 'reason is required.');
 
     const target = await proposalTarget({ type, deviceSerial: body.deviceSerial, deviceSerials: body.deviceSerials, plot: body.plot });
     if (target.problem) return fail(target.status || 422, target.status === 404 ? 'CAMERA_NOT_FOUND' : 'INVALID_PROPOSAL', target.problem);
@@ -249,9 +297,9 @@ async function createProposal(body, req, now = new Date()) {
     const addCard = (card) => cards.push(card);
     const { actionExecutors } = require('../agent/tools/actionTools');
     const proposed = type === 'card_change'
-        ? await actionExecutors.propose_card_change({ deviceSerial: target.serials[0], at: payload.at, note: payload.note, userId: user.id, user, addCard })
+        ? await actionExecutors.propose_card_change({ deviceSerial: target.serials[0], at: payload.at, note: payload.note ?? CARD_KINDS[payload.kind], userId: user.id, user, addCard })
         : await actionExecutors.propose_treatment({
-            ...Object.fromEntries(TREATMENT_FIELDS.filter(k => payload[k] !== undefined).map(k => [k, payload[k]])),
+            ...treatmentFields(payload),
             cameraSerials: target.byPlotName ? undefined : target.serials,
             plot: target.plotName || undefined,
             // A plot given by id is also the treated area, unless one was given
@@ -310,7 +358,7 @@ async function createProposal(body, req, now = new Date()) {
         messageId,
         cardIndex: 0,
         reason: card.reason,
-        evidence: evidence.items.map(e => ({ url: e.url, snapshotId: e.snapshotId, caption: e.caption })),
+        evidence: evidence.items.map(e => ({ url: e.url, snapshotId: e.snapshotId, ref: e.ref, caption: e.caption })),
         expiresAt
     });
     audit(req, {
@@ -448,11 +496,23 @@ async function getProposal(id, now = new Date()) {
 
 // ---------- Review request ----------
 
-/** POST /review-request { snapshotId, reason } */
+/** https links among what the agent sent with a review request (image, evidence strings or { url }). */
+function reviewLinks(body) {
+    const given = [body.image, ...(Array.isArray(body.evidence) ? body.evidence : [])]
+        .map(item => (isPlainObject(item) ? item.url : item))
+        .filter(value => typeof value === 'string' && /^https:\/\//i.test(value) && value.length <= 2048);
+    return [...new Set(given)].slice(0, MAX_EVIDENCE);
+}
+
+/** POST /review-request { snapshotId, reason, deviceSerial?, image?, evidence? } */
 async function requestReview(body, req, now = new Date()) {
-    if (!mongoose.isValidObjectId(body?.snapshotId)) return fail(400, 'INVALID_REQUEST', 'snapshotId is required.');
+    if (!mongoose.isValidObjectId(body?.snapshotId)) {
+        // The agent also asks about AI camera photos FlyBot never stored: there is nothing to flag then
+        return fail(400, 'INVALID_REQUEST', 'snapshotId is required (a FlyBot photo id).');
+    }
     const reason = clip(String(body.reason || '').trim(), 300);
     if (!reason) return fail(422, 'INVALID_REQUEST', 'reason is required.');
+    const links = reviewLinks(body);
     const snapshot = await Snapshot.findById(body.snapshotId).select('deviceSerial review createdAt').lean();
     if (!snapshot) return fail(404, 'NOT_FOUND', 'Photo not found.');
     if (snapshot.review?.status) return ok({ snapshotId: String(snapshot._id), status: 'already_reviewed', reviewStatus: snapshot.review.status });
@@ -460,7 +520,7 @@ async function requestReview(body, req, now = new Date()) {
 
     const flagged = await Snapshot.updateOne(
         { _id: snapshot._id, 'review.requested': { $exists: false } },
-        { $set: { 'review.requested': { at: now, reason, by: 'sentinel' } } }
+        { $set: { 'review.requested': { at: now, reason, by: 'sentinel', ...(links.length ? { evidence: links } : {}) } } }
     );
     if (!flagged.modifiedCount) return ok({ snapshotId: String(snapshot._id), status: 'already_requested' });
 
@@ -497,7 +557,8 @@ const jsonSize = (value) => Buffer.byteLength(JSON.stringify(value ?? null));
 
 function readCounts(counts) {
     if (!isPlainObject(counts)) return { problem: 'counts must be an object of label: count.' };
-    const entries = Object.entries(counts);
+    // A label without a value (null) is left out
+    const entries = Object.entries(counts).filter(([, value]) => value !== null && value !== undefined);
     if (entries.length > 50) return { problem: 'counts has too many labels.' };
     for (const [label, value] of entries) {
         if (!LABEL.test(label) || !Number.isInteger(value) || value < 0 || value > 100000) return { problem: `Invalid count for "${clip(label, 60)}".` };
@@ -510,7 +571,8 @@ function readBoxes(boxes, format) {
     if (!Array.isArray(boxes) || boxes.length > MAX_BOXES) return { problem: `boxes must be a list of at most ${MAX_BOXES}.` };
     const out = [];
     for (const box of boxes) {
-        const bbox = box?.bbox;
+        // A bare [xmin, ymin, xmax, ymax] is a box without label or confidence
+        const bbox = Array.isArray(box) ? box : box?.bbox;
         if (!Array.isArray(bbox) || bbox.length !== 4 || !bbox.every(Number.isFinite)) return { problem: 'Each box needs bbox [xmin, ymin, xmax, ymax].' };
         if (bbox[2] < bbox[0] || bbox[3] < bbox[1]) return { problem: 'A box has xmax < xmin or ymax < ymin.' };
         if (format === 'xyxy_normalized' && bbox.some(v => v < -0.01 || v > 1.01)) return { problem: 'Normalized boxes must lie within 0-1.' };
@@ -554,6 +616,10 @@ async function storeAnalysis(body, req, now = new Date()) {
     if (body.evidence !== undefined && body.evidence !== null && (!Array.isArray(body.evidence) || body.evidence.length > 20 || jsonSize(body.evidence) > 16 * 1024)) {
         return fail(422, 'INVALID_ANALYSIS', 'evidence must be a list of at most 20 items (16 KB).');
     }
+    // The agent's per-source counts ({ opencv, npu, production, best, new }), stored as sent
+    if (body.estimates !== undefined && body.estimates !== null && (!isPlainObject(body.estimates) || jsonSize(body.estimates) > 2 * 1024)) {
+        return fail(422, 'INVALID_ANALYSIS', 'estimates must be an object (at most 2 KB).');
+    }
     const size = (v) => (Number.isInteger(v) && v > 0 && v <= 20000 ? v : null);
     const width = size(body.width);
     const height = size(body.height);
@@ -572,6 +638,7 @@ async function storeAnalysis(body, req, now = new Date()) {
         height,
         quality: body.quality ?? null,
         evidence: body.evidence ?? [],
+        estimates: body.estimates ?? null,
         model: body.model === undefined ? null : clip(body.model, 100),
         traceId: body.traceId === undefined ? null : clip(body.traceId, 100),
         receivedAt: now

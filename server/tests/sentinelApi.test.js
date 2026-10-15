@@ -621,3 +621,70 @@ test('AI_PROVIDER=sentinel: no cloud model at capture, the photo is announced as
     assert.equal(again.body.summaryUpdated, false);
     assert.equal((await models.Snapshot.findById(saved._id).lean()).aiResults.summary.fruit_fly, 18);
 });
+
+// ---------- What the Sentinel agent's client (flybot-sentinel sentinel/flybot/client.py) sends ----------
+
+test('agent client shapes: X-FlyBot-* headers, reason and action in the payload, string evidence, review extras, null counts, bare boxes', async () => {
+    const me = await owner();
+    await createCamera(me, { deviceSerial: 'AG1', trapKind: 'lure' });
+    await createCamera(me, { deviceSerial: 'AG2', trapKind: 'sticky' });
+    const snap = await models.Snapshot.create({ deviceSerial: 'AG1', imageUrl: 'u', s3Key: 'snapshots/AG1/a.jpg', aiProcessed: true, pestCount: 2, aiResults: { summary: { fruit_fly: 2 } } });
+
+    // The first client signed with FlyBot's webhook header names
+    const body = { deviceSerial: 'AG1', intervalMinutes: 30, untilISO: new Date(Date.now() + HOUR).toISOString() };
+    const ts = freshTs();
+    const raw = JSON.stringify(body);
+    const viaFlyBotHeaders = await json(await request('/api/sentinel/capture-interval', {
+        method: 'POST', body, headers: { 'X-FlyBot-Timestamp': String(ts), 'X-FlyBot-Signature': hmac(SECRET, ts, raw) }
+    }));
+    assert.equal(viaFlyBotHeaders.status, 200);
+    const wrong = await json(await request('/api/sentinel/capture-interval', {
+        method: 'POST', body, headers: { 'X-FlyBot-Timestamp': String(ts - 1), 'X-FlyBot-Signature': hmac('another-secret'.padEnd(40, 'x'), ts - 1, raw) }
+    }));
+    assert.equal(wrong.body.code, 'BAD_SIGNATURE');
+
+    // Treatment in the agent's words: { action, date, reason, rotateFrom }, evidence as strings,
+    // deviceSerial and deviceSerials both set
+    const treatment = await call('/api/sentinel/proposals', { body: {
+        type: 'treatment', deviceSerial: 'AG1', deviceSerials: ['AG1'],
+        payload: { action: 'bait_before_wave', date: '2026-10-20', reason: 'Lure average rose from 4 to 12 per photo.', rotateFrom: 'spinetoram' },
+        evidence: ['s3://sentinel-bucket/evidence/tr-1/crop.jpg', 'https://e.example.com/crop.jpg', String(snap._id), 'a', 'b', 'c']
+    } });
+    assert.equal(treatment.status, 201, JSON.stringify(treatment.body));
+    const proposal = await models.SentinelProposal.findById(treatment.body.proposalId).lean();
+    assert.equal(proposal.reason, 'Lure average rose from 4 to 12 per photo.');
+    assert.deepEqual(proposal.deviceSerials, ['AG1']);
+    assert.equal(proposal.evidence.length, 4, 'cut to 4, pictures first');
+    assert.equal(proposal.evidence[0].url, 'https://e.example.com/crop.jpg');
+    assert.equal(proposal.evidence[1].snapshotId, String(snap._id));
+    assert.equal(proposal.evidence[2].ref, 's3://sentinel-bucket/evidence/tr-1/crop.jpg');
+    const card = (await models.ChatSession.findOne({ userId: me._id, sessionId: 'sentinel' }).lean()).messages[0].cards[0];
+    assert.equal(card.payload.type, 'bait');
+    assert.match(card.payload.note, /bait before wave; suggested date 2026-10-20; rotate away from spinetoram/);
+    // treat_now without a product is not a spray (a spray needs one)
+    const now = await call('/api/sentinel/proposals', { body: { type: 'treatment', deviceSerials: ['AG1'], payload: { action: 'treat_now', reason: 'Surge.' }, evidence: ['s3://b/k.jpg'] } });
+    assert.equal(now.status, 201, JSON.stringify(now.body));
+    // Card change in the agent's words: { kind, reason, observation }
+    const cardChange = await call('/api/sentinel/proposals', { body: { type: 'card_change', deviceSerial: 'AG2', deviceSerials: ['AG2'], payload: { kind: 'card_full', reason: 'Card 92% covered.', observation: { count: 41 } }, evidence: ['https://e.example.com/full.jpg'] } });
+    assert.equal(cardChange.status, 201, JSON.stringify(cardChange.body));
+
+    // Review request with deviceSerial / image / evidence: the https links are kept with the flag
+    const review = await call('/api/sentinel/review-request', { body: {
+        snapshotId: String(snap._id), reason: 'NPU 3 vs OpenCV 11', deviceSerial: 'AG1', image: 'https://e.example.com/photo.jpg', evidence: ['s3://b/crop.jpg', 'https://e.example.com/crop.jpg']
+    } });
+    assert.equal(review.body.status, 'requested');
+    const flagged = await models.Snapshot.findById(snap._id).lean();
+    assert.deepEqual(flagged.review.requested.evidence, ['https://e.example.com/photo.jpg', 'https://e.example.com/crop.jpg']);
+    const noSnapshot = await call('/api/sentinel/review-request', { body: { snapshotId: null, reason: 'AI camera photo', deviceSerial: 'AG1' } });
+    assert.equal(noSnapshot.status, 400);
+
+    // Analysis: a label without a value is left out; a bare [x1, y1, x2, y2] is a box
+    const analysis = await call('/api/sentinel/analysis', { body: {
+        snapshotId: String(snap._id), counts: { fruit_fly: 4, moth: null }, boxes: [[10, 20, 30, 40]], quality: { issues: [] }, evidence: ['s3://b/crop.jpg']
+    } });
+    assert.equal(analysis.status, 200, JSON.stringify(analysis.body));
+    assert.equal(analysis.body.count, 4);
+    const stored = (await models.Snapshot.findById(snap._id).lean()).aiResults.sentinel;
+    assert.deepEqual(stored.counts, { fruit_fly: 4 });
+    assert.deepEqual(stored.boxes, [{ label: null, confidence: null, bbox: [10, 20, 30, 40] }]);
+});

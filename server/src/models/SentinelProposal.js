@@ -19,7 +19,8 @@ const sentinelProposalSchema = new mongoose.Schema({
     messageId: { type: String, required: true, unique: true },
     cardIndex: { type: Number, default: 0 },
     reason: { type: String, default: '' },
-    evidence: { type: [{ _id: false, url: String, snapshotId: String, caption: String }], default: [] },
+    // ref: a reference that is not a picture link (e.g. s3://bucket/key of Sentinel's evidence), kept as text
+    evidence: { type: [{ _id: false, url: String, snapshotId: String, ref: String, caption: String }], default: [] },
     state: { type: String, enum: PROPOSAL_STATES, default: 'pending' },
     result: { type: String, default: '' },
     decidedAt: { type: Date, default: null },

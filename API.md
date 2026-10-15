@@ -167,6 +167,7 @@ Same scheme as the webhooks FlyBot sends (see "Checking the signature" above), w
 
 - `X-Sentinel-Timestamp`: unix seconds
 - `X-Sentinel-Signature`: `sha256=` + hex HMAC-SHA256 of `timestamp + "." + raw body` (the exact bytes sent; an empty string for a `GET`). The bare hex is accepted too.
+- `X-FlyBot-Timestamp` / `X-FlyBot-Signature` (the webhook header names) are read instead when neither `X-Sentinel-*` header is sent.
 - `Content-Type: application/json` on every `POST` (else `415 JSON_REQUIRED`).
 
 A timestamp more than 5 minutes from the server clock is refused, the signature is compared in constant time, and a signed `POST` is accepted once: sign every attempt again with a new timestamp, retries included. Refusals are `401` with `code` `MISSING_SIGNATURE`, `BAD_TIMESTAMP`, `STALE_TIMESTAMP`, `BAD_SIGNATURE` or `REPLAYED`.
@@ -225,9 +226,9 @@ Proposes a sticky card change or a logbook treatment to the cameras' owner. Noth
 
 - `type`: `card_change` (one sticky-trap camera, `deviceSerial`; lure traps are refused) or `treatment`.
 - Cameras: `deviceSerial` or `deviceSerials` (all of the same owner), or `plot`: a plot id (its traps; the plot name becomes the area), or a plot name together with one `deviceSerial` of the same owner.
-- `payload`: for `card_change` `{ at?, note? }`; for `treatment` `{ type, at?, product?, activeIngredient?, dose?, area?, operator?, preHarvestDays?, note? }` (`type` one of `spray`, `bait`, `lure`, `biological`, `sanitation`, `bagging`, `other`; a spray needs `product`).
-- `evidence` (required, 1 to 4 items): `{ url, caption? }` with an `https` picture link (Telegram fetches it and the app shows it, so it must stay valid while the proposal is open), or `{ snapshotId, caption? }` for a photo of the proposal's cameras.
-- `reason` (required): why, shown to the owner.
+- `payload`: for `card_change` `{ at?, note? }`; for `treatment` `{ type, at?, product?, activeIngredient?, dose?, area?, operator?, preHarvestDays?, note? }` (`type` one of `spray`, `bait`, `lure`, `biological`, `sanitation`, `bagging`, `other`; a spray needs `product`). Without `type`, the agent's `action` is mapped: `bait_before_wave` → `bait`, `sanitation` → `sanitation`, `treat_now` → `spray` when a `product` is given, else `other`; `date` (suggested day) and `rotateFrom` go into the note. For `card_change`, `kind` (`card_full`, `card_replaced_detected`) becomes the note when there is none.
+- `evidence` (required, 1 to 4 items): `{ url, caption? }` with an `https` picture link (Telegram fetches it and the app shows it, so it must stay valid while the proposal is open), or `{ snapshotId, caption? }` for a photo of the proposal's cameras. A bare string is read as one of these (an `https` link, or a 24-character photo id) or else kept as a text reference (for example an `s3://` key; stored, not shown as a picture). Up to 20 items are accepted and cut to 4, pictures first.
+- `reason` (required; `payload.reason` is used when it is missing): why, shown to the owner.
 
 ```
 POST /api/sentinel/proposals
@@ -257,7 +258,7 @@ GET /api/sentinel/proposals/6ad055a5e7d4265cb30ede3a
 
 ### `POST /review-request`
 
-Asks the camera's owner to check a photo's count: the photo is flagged (`review.requested`) and the owner gets a `review_requested` notification in the app (at most one per camera per hour; the flag is set every time). A photo already reviewed or already flagged is left as it is. `GET /api/ai/results?review=requested` (signed in) lists the flagged photos not reviewed yet.
+Asks the camera's owner to check a photo's count: the photo is flagged (`review.requested`) and the owner gets a `review_requested` notification in the app (at most one per camera per hour; the flag is set every time). A photo already reviewed or already flagged is left as it is. `GET /api/ai/results?review=requested` (signed in) lists the flagged photos not reviewed yet. Optional `deviceSerial`, `image` and `evidence` are accepted; their `https` links (up to 4) are kept with the flag (`review.requested.evidence`).
 
 ```
 POST /api/sentinel/review-request
@@ -270,10 +271,10 @@ POST /api/sentinel/review-request
 
 ### `POST /analysis`
 
-Sentinel's own analysis of a photo, stored under `aiResults.sentinel` as `{ source, counts, count, boxFormat, boxes, width, height, quality, evidence, model, traceId, receivedAt }`. It never sends `snapshot_analyzed` again, so Sentinel is not called back about its own result.
+Sentinel's own analysis of a photo, stored under `aiResults.sentinel` as `{ source, counts, count, boxFormat, boxes, width, height, quality, evidence, estimates, model, traceId, receivedAt }`. It never sends `snapshot_analyzed` again, so Sentinel is not called back about its own result.
 
-- `counts`: label → whole number (labels without `.`). `count` is their pest total (people and other non-pests excluded, as everywhere).
-- `boxes`: up to 1000 `{ label?, confidence? (0–1), bbox: [xmin, ymin, xmax, ymax] }`; `boxFormat` `xyxy_pixels` (default) or `xyxy_normalized` (0–1; send `width` and `height` so they can be stored in pixels).
+- `counts`: label → whole number (labels without `.`; a label with `null` is left out). `count` is their pest total (people and other non-pests excluded, as everywhere), so send labels, not one number per counting method: those go in `estimates` (an object, at most 2 KB, stored as sent).
+- `boxes`: up to 1000 `{ label?, confidence? (0–1), bbox: [xmin, ymin, xmax, ymax] }` (a bare `[xmin, ymin, xmax, ymax]` is accepted too); `boxFormat` `xyxy_pixels` (default) or `xyxy_normalized` (0–1; send `width` and `height` so they can be stored in pixels).
 - `quality` (an object, at most 8 KB) and `evidence` (a list, at most 20 items, 16 KB) are stored as sent; `model` and `traceId` are optional strings.
 - With the usual `AI_PROVIDER` the photo's own count does not change (`summaryUpdated: false`). With `AI_PROVIDER=sentinel` it becomes the photo's result (count, boxes in pixels, `aiProvider: "sentinel"`), the daily statistics are updated and, the first time and for the camera's latest photo, its alerts run (threshold, card change, plot, surge). A photo a person reviewed is never changed.
 

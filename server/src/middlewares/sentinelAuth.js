@@ -10,7 +10,8 @@ const { sign } = require('../services/webhookService');
  *   X-Sentinel-Signature: sha256=<hex HMAC-SHA256(secret, `${timestamp}.${rawBody}`)>
  *
  * rawBody is the exact request body ("" for a GET). The bare hex (without "sha256=") is accepted
- * too. Requests more than MAX_SKEW_S from the server clock are refused, the comparison is
+ * too, and so are X-FlyBot-Timestamp / X-FlyBot-Signature when the X-Sentinel-* pair is absent
+ * (the first Sentinel client used FlyBot's webhook header names). Requests more than MAX_SKEW_S from the server clock are refused, the comparison is
  * constant-time, and a signature is accepted only once for a write (POST), so a captured
  * request cannot be replayed within the window.
  */
@@ -62,8 +63,10 @@ function sentinelAuth(req, res, next) {
     if (write && !req.is('application/json')) {
         return res.status(415).json({ success: false, code: 'JSON_REQUIRED', message: MESSAGES.JSON_REQUIRED });
     }
-    const timestamp = req.get('X-Sentinel-Timestamp');
-    const signature = req.get('X-Sentinel-Signature');
+    // X-FlyBot-* (the names of FlyBot's own webhook headers) are read when the X-Sentinel-* pair is absent
+    const sentinelPair = req.get('X-Sentinel-Timestamp') !== undefined || req.get('X-Sentinel-Signature') !== undefined;
+    const timestamp = sentinelPair ? req.get('X-Sentinel-Timestamp') : req.get('X-FlyBot-Timestamp');
+    const signature = sentinelPair ? req.get('X-Sentinel-Signature') : req.get('X-FlyBot-Signature');
     const rawBody = req.rawBody ? req.rawBody.toString('utf8') : '';
     const check = verifySignature(secret, timestamp, rawBody, signature);
     if (check.ok && write) {

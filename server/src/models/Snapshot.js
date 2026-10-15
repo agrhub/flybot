@@ -72,7 +72,9 @@ const snapshotSchema = new mongoose.Schema({
             type: new mongoose.Schema({
                 at: { type: Date, required: true },
                 reason: { type: String, default: '' },
-                by: { type: String, default: 'sentinel' }
+                by: { type: String, default: 'sentinel' },
+                // Links Sentinel sent with the request (its crops, the photo it looked at): https only
+                evidence: { type: [String], default: undefined }
             }, { _id: false }),
             default: undefined
         }
