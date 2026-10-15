@@ -1331,6 +1331,10 @@
       "org_digest": {
         "title": "Members to visit",
         "desc": "{orgName}: {count} members with traps at threshold and no treatment logged: {names}."
+      },
+      "snapshot_analyzed": {
+        "title": "Every analyzed photo (count, quality, photo link)",
+        "desc": "{deviceName}: {count} insects counted."
       }
     }
   },

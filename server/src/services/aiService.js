@@ -19,7 +19,8 @@ const vertexAI = new GoogleGenAI({
     location: VERTEX_LOCATION
 });
 
-function getImageDimensions(buffer) {
+/** Width and height read from a PNG or JPEG header, or null when they cannot be read. */
+function readImageSize(buffer) {
     try {
         if (buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4E && buffer[3] === 0x47) {
             return { width: buffer.readUInt32BE(16), height: buffer.readUInt32BE(20) };
@@ -38,7 +39,12 @@ function getImageDimensions(buffer) {
             }
         }
     } catch (e) {}
-    return { width: 1000, height: 1000 };
+    return null;
+}
+
+/** Image size for box conversion; 1000x1000 when the header cannot be read. */
+function getImageDimensions(buffer) {
+    return readImageSize(buffer) || { width: 1000, height: 1000 };
 }
 
 /**
@@ -295,6 +301,7 @@ async function describePhoto(imageBuffer, question, { context = '', language = '
 
 module.exports = {
     describePhoto,
+    readImageSize,
     getImageDimensions,
     analyzeInsects,
     analyzeInsectsRoboflow,

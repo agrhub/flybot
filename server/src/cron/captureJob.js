@@ -9,6 +9,7 @@ const notificationService = require('../services/notificationService');
 const maintenanceService = require('../services/maintenanceService');
 const { dueSerials } = require('../services/captureSchedule');
 const imageQuality = require('../services/imageQuality');
+const snapshotEvents = require('../services/snapshotEvents');
 
 /**
  * After a snapshot's AI analysis: pest threshold, card change, plot and surge alerts, and the
@@ -112,6 +113,10 @@ async function captureAndSaveSnapshot(deviceSerial) {
             } catch (qualityErr) {
                 console.error(`⚠️ Image quality check failed (${deviceSerial}):`, qualityErr.message);
             }
+
+            // 7. Webhook snapshot_analyzed, once the AI result and the quality are both stored.
+            // In the background, so a slow receiver does not hold up the next capture
+            snapshotEvents.emitAnalyzed(savedDoc._id, { buffer });
             return savedDoc;
         }
     } catch (error) {
@@ -220,6 +225,8 @@ async function retryFailedAnalyses(now = new Date()) {
             result.succeeded++;
             const newer = await Snapshot.exists({ deviceSerial: snap.deviceSerial, createdAt: { $gt: snap.createdAt } });
             if (!newer) await checkAlerts(snap.deviceSerial, snap._id);
+            // Its quality was measured at capture; now it has the AI result too (any photo, not only the latest)
+            snapshotEvents.emitAnalyzed(snap._id, { buffer });
         } catch (err) {
             console.error(`❌ AI retry failed (${snap.deviceSerial}, ${snap._id}):`, err.message);
         }

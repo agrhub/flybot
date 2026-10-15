@@ -1331,6 +1331,10 @@
       "org_digest": {
         "title": "Hộ cần thăm vườn",
         "desc": "{orgName}: {count} hộ có bẫy chạm ngưỡng mà chưa ghi biện pháp: {names}."
+      },
+      "snapshot_analyzed": {
+        "title": "Mỗi ảnh đã phân tích (số đếm, chất lượng, link ảnh)",
+        "desc": "{deviceName}: đếm được {count} con."
       }
     }
   },

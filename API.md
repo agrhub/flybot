@@ -33,7 +33,7 @@ Every answer is `{ "success": true, "data": ... }`. Errors are `{ "success": fal
 
 A webhook receives your alerts as they happen, as a JSON `POST` to an HTTPS address. Choose which events it gets:
 
-`pest_threshold`, `pest_surge`, `plot_threshold`, `camera_offline`, `camera_online`, `ai_failure`, `card_due`, `card_change_detected`, `image_quality`, `harvest_ready` (a pre-harvest interval ends; `params.date` is when harvest is allowed), `weather_risk` (the next days suit fruit flies and a wave of adults is due; `params.days`, `params.waveDate`)
+`pest_threshold`, `pest_surge`, `plot_threshold`, `camera_offline`, `camera_online`, `ai_failure`, `card_due`, `card_change_detected`, `image_quality`, `harvest_ready` (a pre-harvest interval ends; `params.date` is when harvest is allowed), `weather_risk` (the next days suit fruit flies and a wave of adults is due; `params.days`, `params.waveDate`), `snapshot_analyzed` (every analyzed photo, see below)
 
 The **Test** button sends a `ping` event.
 
@@ -51,6 +51,71 @@ Body:
 ```
 
 `params` depends on the event. For `pest_threshold` on a lure trap, `count` is the day's average per photo and `params.basis` is `"dailyAverage"`; on a sticky trap it is the count in the latest photo. Alerts muted for a camera are not sent; quiet hours do not apply to webhooks.
+
+### `snapshot_analyzed`
+
+Not an alert: one event for every photo of a camera you can see (yours or shared with you), sent once its AI count and its photo quality check are both stored. It is meant for systems that process each photo (for example FlyBot Sentinel). It does not appear in the app's notifications and is not emailed. Muting a camera does not stop it.
+
+- Sent once per photo: at capture, or, when the AI failed at capture, when the later automatic retry succeeds (then `quality` is the one measured at capture). Photos the AI never analyzed send nothing. A manual re-analysis does not send it again.
+- `id` is `snap_` + the snapshot id, the same on every retry of the delivery: use it to drop duplicates.
+- `imageUrl` is a presigned S3 link valid for 1 hour (`imageUrlExpiresAt`); the bucket itself is private. Download the photo within the hour, or `null` when the link could not be made.
+- `count` is the number of pests (people, vehicles and animals excluded, as in the API); `counts` is the AI's full summary per label, non-pests included.
+- `boxes` are in pixels of the photo, `[xmin, ymin, xmax, ymax]` (`boxFormat: "xyxy_pixels"`). Divide by `width` and `height` for 0–1 values. At most 200 are sent, highest confidence first: then `truncated` is `true` and `boxesTotal` tells how many there were. `width`/`height` are `null` when the photo's size could not be read.
+- `provider` is `ezviz` or `camos`; `aiSource` is `cloud` (FlyBot's AI, `aiProvider` `vertex` or `roboflow`) or `device` (counted on the AI camera itself).
+- `quality` has the measurements of the photo quality check (`brightness` 0–255, `contrast`, `sharpness`, `clipped` share of white pixels, `coverage` share of the photo under boxes or `null`) and `issues` (`dark`, `overexposed`, `blurry`, `low_contrast`, `card_full`), or is `null` when the photo could not be checked.
+- `previousSnapshotId` is the camera's previous analyzed photo (by capture time), `null` for the first one. `cardReplacedAt` is when the sticky card was last replaced (`null` if never logged).
+- No account data is included (no emails or user names).
+
+```json
+{
+  "id": "snap_6651a2f0c3b9e81d2a4f7c10",
+  "event": "snapshot_analyzed",
+  "createdAt": "2026-10-15T01:30:12.480Z",
+  "deviceSerial": "BC1001",
+  "severity": "info",
+  "params": {
+    "snapshotId": "6651a2f0c3b9e81d2a4f7c10",
+    "deviceSerial": "BC1001",
+    "deviceName": "Mango plot A",
+    "provider": "ezviz",
+    "trapKind": "sticky",
+    "farmId": "664f0b1e9a2c3d4e5f607182",
+    "plotId": "664f0b2a9a2c3d4e5f607190",
+    "latitude": 10.3521,
+    "longitude": 106.3644,
+    "capturedAt": "2026-10-15T01:30:04.112Z",
+    "imageUrl": "https://S3_ENDPOINT/BUCKET/snapshots/BC1001/BC1001_1791941404112.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Expires=3600&X-Amz-Signature=...",
+    "imageUrlExpiresAt": "2026-10-15T02:30:12.480Z",
+    "width": 1920,
+    "height": 1080,
+    "count": 18,
+    "counts": { "fruit fly": 18 },
+    "aiSource": "cloud",
+    "aiProvider": "roboflow",
+    "boxFormat": "xyxy_pixels",
+    "boxes": [
+      { "label": "fruit fly", "confidence": 0.93, "bbox": [812, 402, 841, 430] },
+      { "label": "fruit fly", "confidence": 0.88, "bbox": [1104, 655, 1131, 684] }
+    ],
+    "boxesTotal": 18,
+    "truncated": false,
+    "quality": {
+      "brightness": 142.6,
+      "contrast": 48.1,
+      "sharpness": 311.4,
+      "clipped": 0.012,
+      "coverage": 0.006,
+      "issues": [],
+      "checkedAt": "2026-10-15T01:30:11.950Z"
+    },
+    "previousSnapshotId": "66519bd8c3b9e81d2a4f7b02",
+    "cardReplacedAt": "2026-10-08T02:00:00.000Z",
+    "alertThreshold": 15
+  }
+}
+```
+
+(The example values are illustrative; `boxes` is shortened to 2 of its 18 entries.)
 
 ### Checking the signature
 
