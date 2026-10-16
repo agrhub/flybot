@@ -129,4 +129,4 @@ The script sets up the Google Cloud project, stores secrets in Secret Manager, b
 
 ## License
 
-[MIT](LICENSE) © 2026 AGRHUB
+[AGPL-3.0](LICENSE) © 2026 AGRHUB. Versions up to 1.5.0 were released under the MIT licence.
