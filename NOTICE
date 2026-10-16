@@ -1,0 +1,50 @@
+FlyBot
+Copyright (C) 2026 AGRHUB
+
+FlyBot is licensed under the GNU Affero General Public License, version 3 only
+(AGPL-3.0-only); see LICENSE. It uses the third-party components below, each
+under its own license. Their license texts are in their packages
+(node_modules/<name>/LICENSE) or at the project addresses.
+
+Server (server/)
+  AWS SDK for JavaScript v3 (@aws-sdk/*, @smithy/*, @aws-crypto/sha256-js)  Apache-2.0
+  Google Gen AI SDK (@google/genai)                                         Apache-2.0
+  Express, body-parser, cors                                                MIT
+  Mongoose (MongoDB)                                                        MIT
+  axios                                                                     MIT
+  jsonwebtoken                                                              MIT
+  bcryptjs                                                                  BSD-3-Clause
+  dotenv                                                                    BSD-2-Clause
+  MQTT.js (mqtt)                                                            MIT
+  node-cron                                                                 ISC
+  Nodemailer                                                                MIT-0
+  web-push                                                                  MPL-2.0
+  jsPDF, jspdf-autotable                                                    MIT
+  jpeg-js                                                                   BSD-3-Clause
+  fflate                                                                    MIT
+  countries-and-timezones                                                   MIT
+  @photostructure/tz-lookup                                                 CC0-1.0
+  ip3country                                                                ISC
+    This product includes IP2Location LITE data available from
+    https://lite.ip2location.com (CC BY-SA 4.0).
+
+Web app (client/)
+  Vue, vue-router, vue-i18n                                                 MIT
+  Element Plus, @element-plus/icons-vue                                     MIT
+  Chart.js                                                                  MIT
+  Leaflet                                                                   BSD-2-Clause
+  Leaflet.heat                                                              BSD-2-Clause
+  Leaflet.markercluster                                                     MIT
+  hls.js                                                                    Apache-2.0
+  Amazon Kinesis Video Streams WebRTC SDK (amazon-kinesis-video-streams-webrtc)  Apache-2.0
+  EZUIKit player (ezuikit-js)                                               ISC
+  @ezuikit/player-hls (bundles FFmpeg and hls.js components)                see its LICENSE
+  read-excel-file, write-excel-file                                         MIT
+  flag-icons                                                                MIT
+  jsPDF, jspdf-autotable                                                    MIT
+
+Data
+  posixTz.json (server/src/data/) is generated from the IANA time zone
+  database shipped with Node.js (public domain).
+  The fruit fly dataset on Roboflow Universe (camos/fruit-fly-wmcqi) is
+  CC BY 4.0; see docs/AI_MODEL.md.

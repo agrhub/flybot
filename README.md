@@ -248,4 +248,4 @@ More about email, Telegram, push notifications and daily statistics: [server/REA
 
 ## License
 
-[AGPL-3.0](LICENSE) © 2026 AGRHUB. Versions up to 1.5.0 were released under the MIT licence.
+Copyright (C) 2026 AGRHUB. FlyBot is free software under the [GNU Affero General Public License, version 3 only](LICENSE) (AGPL-3.0-only): you may use, change and share it, and if you run a changed version as a service for others, you must offer them its source code. Third-party components keep their own licenses ([NOTICE](NOTICE)).

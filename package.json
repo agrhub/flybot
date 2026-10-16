@@ -1,8 +1,8 @@
 {
   "name": "flybot",
   "version": "1.5.0",
-  "private": true,
   "license": "AGPL-3.0-only",
+  "private": true,
   "description": "FlyBot: smart insect traps with AI counting",
   "workspaces": [
     "client",
