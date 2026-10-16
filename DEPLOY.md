@@ -89,6 +89,7 @@ done
 | `flybot-smtp-pass` (optional) | `SMTP_PASS`, only needed when sending email |
 | `flybot-telegram-bot-token` (optional) | `TELEGRAM_BOT_TOKEN`, only needed for Telegram alerts |
 | `flybot-roboflow-upload-key` (optional) | `ROBOFLOW_UPLOAD_API_KEY`, only needed for retraining uploads |
+| `flybot-sentinel-api-secret` (optional) | `SENTINEL_API_SECRET`, only needed for the FlyBot Sentinel internal API (API.md) |
 
 To change a secret later, run `gcloud secrets versions add NAME --data-file=-`, then redeploy.
 

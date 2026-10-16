@@ -17,6 +17,7 @@ const farmRoutes = require('./farmRoutes');
 const orgRoutes = require('./orgRoutes');
 const integrationRoutes = require('./integrationRoutes');
 const publicApiRoutes = require('./publicApiRoutes');
+const sentinelRoutes = require('./sentinelRoutes');
 
 // S3 image stream route must be mounted before generic /api route
 router.use('/api/s3', s3Routes);
@@ -33,6 +34,8 @@ router.use('/api/farms', farmRoutes);
 router.use('/api/orgs', orgRoutes);
 router.use('/api/integrations', integrationRoutes);
 router.use('/api/v1', publicApiRoutes);
+// FlyBot Sentinel agent (HMAC-signed, not a user session)
+router.use('/api/sentinel', sentinelRoutes);
 // Public (no sign-in) read-only views
 router.use('/api/public', publicRoutes);
 router.use('/api', cameraRoutes);

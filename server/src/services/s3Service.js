@@ -4,16 +4,15 @@ const { s3Client } = require('../config/s3');
 const { S3_BUCKET } = require('../config/env');
 const { Snapshot } = require('../models');
 
-async function getSignedDownloadUrl(objectKey) {
+/** A presigned GET link to a stored file, valid `expiresIn` seconds (1 hour); null on error. */
+async function getSignedDownloadUrl(objectKey, expiresIn = 3600) {
     try {
         const command = new GetObjectCommand({
             Bucket: S3_BUCKET,
             Key: objectKey
         });
 
-        const url = await getSignedUrl(s3Client, command, {
-            expiresIn: 3600 // URL valid for 1 hour
-        });
+        const url = await getSignedUrl(s3Client, command, { expiresIn });
 
         return url;
     } catch (err) {

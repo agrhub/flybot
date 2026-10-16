@@ -20,14 +20,26 @@ function isDaytime(date) {
 }
 
 /**
+ * The interval FlyBot Sentinel set for a while (POST /api/sentinel/capture-interval), while it
+ * lasts; null when there is none or it has run out.
+ */
+function sentinelIntervalOf(cam, now = new Date()) {
+    const override = cam?.sentinelInterval;
+    if (!override?.until || !CAPTURE_INTERVALS.includes(override.minutes)) return null;
+    return new Date(override.until) > now ? override.minutes : null;
+}
+
+/**
  * Merge the settings of every user who has the same device:
  * the most frequent interval wins, and night capture is skipped only if everyone opted out.
+ * A Sentinel interval replaces the camera's own until it expires.
  * @returns Map<deviceSerial, { intervalMinutes, daytimeOnly, lastCaptureAt }>
  */
-function deviceSchedules(cameras) {
+function deviceSchedules(cameras, now = new Date()) {
     const devices = new Map();
     for (const cam of cameras) {
-        const interval = CAPTURE_INTERVALS.includes(cam.captureIntervalMinutes) ? cam.captureIntervalMinutes : DEFAULT_INTERVAL;
+        const own = CAPTURE_INTERVALS.includes(cam.captureIntervalMinutes) ? cam.captureIntervalMinutes : DEFAULT_INTERVAL;
+        const interval = sentinelIntervalOf(cam, now) ?? own;
         const current = devices.get(cam.deviceSerial);
         const last = cam.lastCaptureAt ? new Date(cam.lastCaptureAt) : null;
         if (!current) {
@@ -46,7 +58,7 @@ function deviceSchedules(cameras) {
  */
 function dueSerials(cameras, now = new Date()) {
     const due = [];
-    for (const [serial, schedule] of deviceSchedules(cameras)) {
+    for (const [serial, schedule] of deviceSchedules(cameras, now)) {
         if (schedule.daytimeOnly && !isDaytime(now)) continue;
         const elapsed = schedule.lastCaptureAt ? now - schedule.lastCaptureAt : Infinity;
         if (elapsed >= schedule.intervalMinutes * 60 * 1000 - TOLERANCE_MS) due.push(serial);
@@ -59,6 +71,7 @@ module.exports = {
     CAPTURE_INTERVALS,
     DEFAULT_INTERVAL,
     isDaytime,
+    sentinelIntervalOf,
     deviceSchedules,
     dueSerials
 };

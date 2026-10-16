@@ -33,7 +33,7 @@ async function getSystemInfo(req, res) {
             ]))
             : [];
 
-        const provider = ['vertex', 'roboflow', 'both'].includes(AI_PROVIDER) ? AI_PROVIDER : 'vertex';
+        const provider = ['vertex', 'roboflow', 'both', 'sentinel'].includes(AI_PROVIDER) ? AI_PROVIDER : 'vertex';
         res.json({
             success: true,
             info: {
@@ -44,7 +44,7 @@ async function getSystemInfo(req, res) {
                 ai: {
                     provider,
                     // Only meaningful for Vertex; Roboflow runs a hosted workflow
-                    model: provider === 'roboflow' ? null : VERTEX_MODEL
+                    model: provider === 'roboflow' || provider === 'sentinel' ? null : VERTEX_MODEL
                 },
                 // Lets the client show or hide the Telegram option
                 telegram: {

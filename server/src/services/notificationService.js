@@ -37,7 +37,9 @@ const COOLDOWN_MINUTES = {
     // A cooperative's reminder to log the work: once a day per member and organization
     log_reminder: 20 * 60,
     // The Monday list of members to visit: once a week per organization
-    org_digest: 6 * 24 * 60
+    org_digest: 6 * 24 * 60,
+    // FlyBot Sentinel asks to check a photo: at most one per camera an hour (each photo is flagged anyway)
+    review_requested: 60
 };
 
 const SEVERITY = {
@@ -58,7 +60,8 @@ const SEVERITY = {
     harvest_ready: 'info',
     weather_risk: 'warning',
     log_reminder: 'warning',
-    org_digest: 'info'
+    org_digest: 'info',
+    review_requested: 'info'
 };
 
 // "Back online" is good news: in-app only

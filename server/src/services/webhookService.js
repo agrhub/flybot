@@ -161,15 +161,45 @@ const payloadOf = (notification) => ({
     params: notification.params || {}
 });
 
+// Only active managers and admins keep integrations
+const INTEGRATION_ROLES = ['admin', 'manager'];
+
 /**
  * Send a new notification to the user's webhooks that subscribe to its type.
  */
 async function dispatch(userId, notification) {
     const hooks = await Webhook.find({ userId, active: true, events: notification.type });
     if (!hooks.length) return 0;
-    // Only active managers and admins keep integrations
-    if (!(await User.exists({ _id: userId, disabled: { $ne: true }, role: { $in: ['admin', 'manager'] } }))) return 0;
+    if (!(await User.exists({ _id: userId, disabled: { $ne: true }, role: { $in: INTEGRATION_ROLES } }))) return 0;
     await Promise.all(hooks.map(hook => deliver(hook, notification.type, payloadOf(notification))));
+    return hooks.length;
+}
+
+/**
+ * Active webhooks of these users that subscribe to `event`, kept only for users still allowed
+ * integrations. An event that is not a notification checks this first, so it builds no
+ * payload when nobody listens.
+ */
+async function subscribers(userIds, event) {
+    const ids = [...new Set(userIds.filter(Boolean).map(String))];
+    if (!ids.length) return [];
+    const hooks = await Webhook.find({ userId: { $in: ids }, active: true, events: event });
+    if (!hooks.length) return [];
+    const allowed = await User.find({
+        _id: { $in: [...new Set(hooks.map(h => String(h.userId)))] },
+        disabled: { $ne: true },
+        role: { $in: INTEGRATION_ROLES }
+    }).select('_id').lean();
+    const allowedIds = new Set(allowed.map(u => String(u._id)));
+    return hooks.filter(h => allowedIds.has(String(h.userId)));
+}
+
+/**
+ * Deliver an event that is not a notification (snapshot_analyzed) to these webhooks, with
+ * retries. `payload` has the notification shape: { id, event, createdAt, deviceSerial, severity, params }.
+ */
+async function deliverEvent(hooks, payload) {
+    await Promise.all(hooks.map(hook => deliver(hook, payload.event, payload)));
     return hooks.length;
 }
 
@@ -190,5 +220,7 @@ module.exports = {
     sign,
     send,
     dispatch,
+    subscribers,
+    deliverEvent,
     ping
 };

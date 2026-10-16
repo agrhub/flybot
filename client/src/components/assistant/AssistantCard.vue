@@ -50,6 +50,26 @@
   <!-- A change the assistant proposed: recorded only on Confirm -->
   <div v-else-if="card.type === 'confirm'" class="card-block card-block--confirm">
     <div class="card-title">{{ t(`assistant.cards.confirm.${card.action}`) }}</div>
+    <!-- Proposed by FlyBot Sentinel: why, and the pictures it relies on -->
+    <div v-if="card.source === 'sentinel'" class="confirm-lines mb-2">
+      <div class="card-meta">{{ t('assistant.cards.confirm.sentinel.source') }}</div>
+      <div v-if="card.reason"><span class="card-meta">{{ t('assistant.cards.confirm.sentinel.reason') }}</span> {{ card.reason }}</div>
+      <div v-if="card.evidence && card.evidence.length" class="photo-grid" :class="{ 'photo-grid--single': card.evidence.length === 1 }">
+        <div v-for="(item, i) in card.evidence" :key="i" class="photo-item">
+          <el-image
+            :src="item.url"
+            :preview-src-list="evidenceList"
+            :initial-index="i"
+            fit="cover"
+            preview-teleported
+            class="photo-image"
+            :alt="item.caption || t('assistant.cards.confirm.sentinel.evidence')"
+          />
+          <div v-if="item.caption" class="card-meta">{{ item.caption }}</div>
+        </div>
+      </div>
+      <div v-if="card.expiresAt && isOpen" class="card-meta">{{ t('assistant.cards.confirm.sentinel.expires', { time: formatTime(card.expiresAt) }) }}</div>
+    </div>
     <div v-if="card.action === 'card_change'" class="confirm-lines">
       <div><span class="card-meta">{{ t('assistant.cards.confirm.trap') }}</span> {{ card.summary.trap }}</div>
       <div><span class="card-meta">{{ t('assistant.cards.confirm.when') }}</span> {{ formatTime(card.summary.at) }}</div>
@@ -62,12 +82,12 @@
       <div v-if="card.summary.area"><span class="card-meta">{{ t('assistant.cards.confirm.area') }}</span> {{ card.summary.area }}</div>
       <div v-if="card.summary.preHarvestDays !== null && card.summary.preHarvestDays !== undefined"><span class="card-meta">{{ t('assistant.cards.confirm.preHarvest') }}</span> {{ t('assistant.cards.confirm.days', { count: card.summary.preHarvestDays }) }}</div>
     </div>
-    <div v-if="card.state === 'pending' || card.state === 'running' || !card.state" class="flex items-center gap-2 mt-2">
+    <div v-if="isOpen" class="flex items-center gap-2 mt-2">
       <el-button size="small" type="primary" :icon="Check" :loading="busy" @click="emit('decide', 'confirm')">{{ t('assistant.cards.confirm.ok') }}</el-button>
       <el-button size="small" :disabled="busy" @click="emit('decide', 'cancel')">{{ t('assistant.cards.confirm.cancel') }}</el-button>
     </div>
-    <el-tag v-else :type="{ done: 'success', cancelled: 'info', failed: 'danger' }[card.state]" size="small" effect="light" class="mt-2">
-      {{ t(`assistant.cards.confirm.state.${card.state}`) }}
+    <el-tag v-else :type="{ done: 'success', cancelled: 'info', failed: 'danger', expired: 'info' }[shownState]" size="small" effect="light" class="mt-2">
+      {{ t(`assistant.cards.confirm.state.${shownState}`) }}
     </el-tag>
     <div v-if="card.result" class="card-meta mt-1 is-danger">{{ card.result }}</div>
   </div>
@@ -112,6 +132,11 @@ const { t, te } = useI18n();
 const router = useRouter();
 
 const previewList = computed(() => (props.card.items || []).map(item => api.getImageUrl(item.imageKey)));
+const evidenceList = computed(() => (props.card.evidence || []).map(item => item.url));
+// A pending Sentinel proposal past its expiry shows as expired (the server refuses it too)
+const expired = computed(() => !!props.card.expiresAt && new Date(props.card.expiresAt) <= new Date());
+const shownState = computed(() => ((props.card.state === 'pending' || !props.card.state) && expired.value ? 'expired' : props.card.state));
+const isOpen = computed(() => shownState.value === 'pending' || shownState.value === 'running' || !shownState.value);
 const chartSeries = computed(() => (props.card.series || []).map(s => ({ label: s.label || t('assistant.cards.caught'), data: s.data })));
 
 // "11/10 18:05"

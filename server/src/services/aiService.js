@@ -4,14 +4,17 @@ const { Snapshot } = require('../models');
 const { pestCountOf } = require('../models/Snapshot');
 const dailyStats = require('./dailyStats');
 const { FRUIT_FLY, isFruitFly } = require('../constants/species');
+const env = require('../config/env');
 const {
     VERTEX_PROJECT_ID,
     VERTEX_LOCATION,
     VERTEX_MODEL,
     ROBOFLOW_API_KEY,
-    ROBOFLOW_WORKFLOW_URL,
-    AI_PROVIDER
-} = require('../config/env');
+    ROBOFLOW_WORKFLOW_URL
+} = env;
+
+/** AI_PROVIDER=sentinel: no cloud model at capture, FlyBot Sentinel sets the counts. */
+const isSentinelMode = () => env.AI_PROVIDER === 'sentinel';
 
 const vertexAI = new GoogleGenAI({
     vertexai: true,
@@ -19,7 +22,8 @@ const vertexAI = new GoogleGenAI({
     location: VERTEX_LOCATION
 });
 
-function getImageDimensions(buffer) {
+/** Width and height read from a PNG or JPEG header, or null when they cannot be read. */
+function readImageSize(buffer) {
     try {
         if (buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4E && buffer[3] === 0x47) {
             return { width: buffer.readUInt32BE(16), height: buffer.readUInt32BE(20) };
@@ -38,7 +42,12 @@ function getImageDimensions(buffer) {
             }
         }
     } catch (e) {}
-    return { width: 1000, height: 1000 };
+    return null;
+}
+
+/** Image size for box conversion; 1000x1000 when the header cannot be read. */
+function getImageDimensions(buffer) {
+    return readImageSize(buffer) || { width: 1000, height: 1000 };
 }
 
 /**
@@ -143,12 +152,11 @@ MANDATORY COORDINATE RULES:
                     aiProcessed: true,
                     aiProvider: 'vertex',
                     pestCount: pestCountOf(aiData.summary || {}),
-                    aiResults: {
-                        detected: aiData.detected,
-                        insects: formattedInsects,
-                        summary: aiData.summary || {},
-                        raw_description: aiData.description
-                    }
+                    // Field by field, so a Sentinel analysis stored beside it (aiResults.sentinel) stays
+                    'aiResults.detected': aiData.detected,
+                    'aiResults.insects': formattedInsects,
+                    'aiResults.summary': aiData.summary || {},
+                    'aiResults.raw_description': aiData.description
                 });
                 await dailyStats.refreshForSnapshot(vertexSnap);
                 console.log(`🤖 Vertex AI (${VERTEX_MODEL}) processed snapshot ${snapshotId}: ${aiData.detected ? 'Found ' + formattedInsects.length + ' objects' : 'No insects detected'} (image: ${imgWidth}x${imgHeight})`);
@@ -218,12 +226,10 @@ async function analyzeInsectsRoboflow(base64Image, snapshotId, imageUrl = null) 
                     aiProcessed: true,
                     aiProvider: 'roboflow',
                     pestCount: pestCountOf(summary),
-                    aiResults: {
-                        detected: count > 0,
-                        insects: formattedInsects,
-                        summary: summary,
-                        raw_description: desc
-                    }
+                    'aiResults.detected': count > 0,
+                    'aiResults.insects': formattedInsects,
+                    'aiResults.summary': summary,
+                    'aiResults.raw_description': desc
                 });
 
                 await dailyStats.refreshForSnapshot(roboflowSnap);
@@ -253,9 +259,12 @@ async function analyzeInsectsRoboflow(base64Image, snapshotId, imageUrl = null) 
  * Returns true when the snapshot now has an AI result.
  */
 async function analyzeSnapshot(base64Image, snapshotId, imageUrl = null) {
-    if (AI_PROVIDER === 'roboflow') {
+    const provider = env.AI_PROVIDER;
+    // Sentinel analyzes the photo itself (POST /api/sentinel/analysis)
+    if (provider === 'sentinel') return false;
+    if (provider === 'roboflow') {
         await analyzeInsectsRoboflow(base64Image, snapshotId, imageUrl);
-    } else if (AI_PROVIDER === 'both') {
+    } else if (provider === 'both') {
         await analyzeInsects(base64Image, snapshotId);
         await analyzeInsectsRoboflow(base64Image, snapshotId, imageUrl);
     } else {
@@ -294,7 +303,9 @@ async function describePhoto(imageBuffer, question, { context = '', language = '
 }
 
 module.exports = {
+    isSentinelMode,
     describePhoto,
+    readImageSize,
     getImageDimensions,
     analyzeInsects,
     analyzeInsectsRoboflow,

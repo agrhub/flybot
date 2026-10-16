@@ -16,3 +16,5 @@ tools/media/demo-tokens.json
 deploy/cloudrun.env.generated.yaml
 test-results.tap
 e2e-results.tap
+# contributor/agent notes stay local
+CLAUDE.md

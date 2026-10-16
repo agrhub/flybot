@@ -159,7 +159,21 @@
     "unlinked": "Đã ngắt kết nối. Bạn sẽ không nhận cảnh báo FlyBot tại đây nữa.",
     "notLinked": "Cuộc trò chuyện này chưa kết nối với tài khoản FlyBot nào.",
     "help": "Lệnh:\n/stop - ngừng nhận cảnh báo\nĐể kết nối, dùng \"Kết nối Telegram\" trong FlyBot → Cài đặt → Thông báo.",
-    "test": "✅ Tin nhắn thử từ FlyBot. Cảnh báo của {email} sẽ được gửi tới cuộc trò chuyện này."
+    "test": "✅ Tin nhắn thử từ FlyBot. Cảnh báo của {email} sẽ được gửi tới cuộc trò chuyện này.",
+    "sentinel": {
+      "card_change": "🛰️ <b>FlyBot Sentinel đề xuất: đã thay tấm bẫy dính</b>\nBẫy: {trap}\nLúc: {at}",
+      "treatment": "🛰️ <b>FlyBot Sentinel đề xuất ghi nhật ký: {type}{product}</b>\nBẫy: {traps}\nLúc: {at}",
+      "reason": "Lý do: {reason}",
+      "expires": "Chưa có gì được ghi cho đến khi bạn bấm Xác nhận. Đề xuất hết hạn lúc {at}.",
+      "confirm": "✅ Xác nhận",
+      "reject": "✖ Từ chối",
+      "confirmed": "Đã xác nhận và ghi vào FlyBot.",
+      "rejected": "Đã từ chối. Không có gì được ghi.",
+      "failed": "Không ghi được: {message}",
+      "expired": "Đề xuất này đã hết hạn.",
+      "handled": "Việc này đã được xử lý.",
+      "notFound": "Không tìm thấy đề xuất này."
+    }
   },
   "push": {
     "testTitle": "Thông báo FlyBot đang hoạt động",
@@ -397,7 +411,8 @@
     "send_the_rows_to_import": "Hãy gửi các dòng cần nhập.",
     "at_most_max_rows_at_a_time": "Mỗi lần tối đa {max} dòng.",
     "choose_the_members_to_remind": "Hãy chọn thành viên cần nhắc.",
-    "at_most_max_members_at_a_time": "Mỗi lần tối đa {max} thành viên."
+    "at_most_max_members_at_a_time": "Mỗi lần tối đa {max} thành viên.",
+    "this_proposal_has_expired": "Đề xuất này đã hết hạn."
   },
   "reportPdf": {
     "range": "Khoảng thời gian: {from} - {to} ({days} ngày)",
@@ -590,5 +605,8 @@
       "operator": "Người thực hiện",
       "phi": "Cách ly (ngày)"
     }
+  },
+  "sentinel": {
+    "message": "**FlyBot Sentinel** đề xuất thay đổi này. Chưa có gì được ghi cho đến khi bạn bấm Xác nhận.\n\n{reason}"
   }
 }

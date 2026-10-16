@@ -81,6 +81,74 @@ async function sendDocument(chatId, { content, filename, contentType = 'applicat
 }
 
 /**
+ * A message with inline buttons (a FlyBot Sentinel proposal): a photo with the HTML as its caption
+ * when `photoUrl` is given (Telegram fetches it), else a text message. A photo Telegram cannot
+ * fetch falls back to the text with the link. Returns Telegram's message object; throws on failure.
+ * buttons: [[{ text, callback_data }]]
+ */
+async function sendWithButtons(chatId, { html, photoUrl = null, buttons = [] }) {
+    const reply_markup = { inline_keyboard: buttons };
+    if (photoUrl) {
+        try {
+            const { data } = await axios.post(apiUrl('sendPhoto'), {
+                chat_id: chatId, photo: photoUrl, caption: html.slice(0, 1024), parse_mode: 'HTML', reply_markup
+            }, { timeout: 30000 });
+            return data?.result || null;
+        } catch (err) {
+            if (err.response?.data?.error_code !== 400) throw err;
+            console.warn('📨 Telegram could not use the evidence photo; sending text:', err.response?.data?.description);
+        }
+    }
+    const { data } = await axios.post(apiUrl('sendMessage'), {
+        chat_id: chatId,
+        text: photoUrl ? `${html}
+
+<a href="${escapeHtml(photoUrl)}">📷</a>` : html,
+        parse_mode: 'HTML',
+        disable_web_page_preview: !photoUrl,
+        reply_markup
+    }, { timeout: 10000 });
+    return data?.result || null;
+}
+
+/** Take the inline buttons off a message (once its proposal is decided). Never throws. */
+async function clearButtons(chatId, messageId) {
+    if (!isEnabled() || !chatId || !messageId) return;
+    await axios.post(apiUrl('editMessageReplyMarkup'), { chat_id: chatId, message_id: messageId, reply_markup: { inline_keyboard: [] } }, { timeout: 10000 })
+        .catch(err => console.warn('📨 Telegram buttons not removed:', err.response?.data?.description || err.message));
+}
+
+/** The small notice Telegram shows after a button press. Never throws. */
+async function answerCallback(callbackQueryId, text) {
+    await axios.post(apiUrl('answerCallbackQuery'), { callback_query_id: callbackQueryId, text: String(text || '').slice(0, 200) }, { timeout: 10000 })
+        .catch(err => console.warn('📨 Telegram callback answer failed:', err.response?.data?.description || err.message));
+}
+
+// "sp:c:<proposal id>" = confirm, "sp:r:<id>" = reject (callback_data is at most 64 bytes)
+const PROPOSAL_CALLBACK = /^sp:([cr]):([0-9a-f]{24})$/;
+
+/**
+ * A press on a Confirm / Reject button of a Sentinel proposal: decided as the account linked
+ * to this chat, through the same confirm flow as the app (services/sentinelService.js).
+ */
+async function handleCallback(callback) {
+    const match = PROPOSAL_CALLBACK.exec(String(callback?.data || ''));
+    const chatId = String(callback?.message?.chat?.id || callback?.from?.id || '');
+    if (!match || !chatId) return answerCallback(callback?.id, '');
+    const result = await require('./sentinelService').decideFromTelegram({
+        chatId,
+        proposalId: match[2],
+        decision: match[1] === 'c' ? 'confirm' : 'cancel'
+    });
+    await answerCallback(callback.id, result.text);
+    if (result.final && callback.message?.message_id) {
+        await clearButtons(chatId, callback.message.message_id);
+        queueMessage(chatId, escapeHtml(result.text));
+    }
+    return result;
+}
+
+/**
  * Send in the background with retries (alerts must never block the caller).
  */
 function queueMessage(chatId, html) {
@@ -129,6 +197,7 @@ function formatAlert({ language, type, params, url }) {
  * Handle one incoming update from Telegram (only private-chat commands).
  */
 async function handleUpdate(update) {
+    if (update?.callback_query) return handleCallback(update.callback_query);
     const message = update?.message;
     if (!message?.text || message.chat?.type !== 'private') return;
 
@@ -180,7 +249,7 @@ async function startPolling() {
         try {
             pollAbort = new AbortController();
             const { data } = await axios.get(apiUrl('getUpdates'), {
-                params: { offset, timeout: POLL_TIMEOUT_SECONDS, allowed_updates: JSON.stringify(['message']) },
+                params: { offset, timeout: POLL_TIMEOUT_SECONDS, allowed_updates: JSON.stringify(['message', 'callback_query']) },
                 timeout: (POLL_TIMEOUT_SECONDS + 10) * 1000,
                 signal: pollAbort.signal
             });
@@ -209,6 +278,10 @@ module.exports = {
     queueMessage,
     queueDocument,
     formatAlert,
+    sendWithButtons,
+    clearButtons,
+    answerCallback,
+    handleCallback,
     handleUpdate,
     startPolling,
     stopPolling

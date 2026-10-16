@@ -17,6 +17,7 @@ const Organization = require('./Organization');
 const ApiKey = require('./ApiKey');
 const Webhook = require('./Webhook');
 const ChatSession = require('./ChatSession');
+const SentinelProposal = require('./SentinelProposal');
 
 module.exports = {
     User,
@@ -37,5 +38,6 @@ module.exports = {
     Organization,
     ApiKey,
     Webhook,
-    ChatSession
+    ChatSession,
+    SentinelProposal
 };

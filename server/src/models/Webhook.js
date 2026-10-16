@@ -15,7 +15,9 @@ const WEBHOOK_EVENTS = [
     'card_change_detected',
     'image_quality',
     'harvest_ready',
-    'weather_risk'
+    'weather_risk',
+    // Every analyzed photo, not an alert (services/snapshotEvents.js)
+    'snapshot_analyzed'
 ];
 
 const webhookSchema = new mongoose.Schema({
