@@ -290,3 +290,65 @@ Errors: `400 INVALID_REQUEST` (`snapshotId`, a `source` other than `sentinel`, `
 ### `AI_PROVIDER=sentinel`
 
 Runs FlyBot with Sentinel as its only counter (a minimal mode for the competition setup). The capture job stores each photo and checks its quality but calls no cloud model, and the automatic AI retry is off. `snapshot_analyzed` is sent right away with `aiSource: "pending"` so Sentinel can fetch the photo, and the photo gets its count when Sentinel posts `/analysis`. Until then it shows as not analyzed; if Sentinel never answers it stays so, and no "AI failing" alert is raised for it. The assistant's photo questions still use Vertex AI.
+
+## Sentinel console proxy
+
+The FlyBot Sentinel operator console lives inside FlyBot (menu **Sentinel**). Its pages call FlyBot, and FlyBot calls the Sentinel UI API (flybot-sentinel `docs/UI_API.md`) with Sentinel's **operator token**, which stays on the server: browsers only ever hold their FlyBot session. People, not machines: sign in as usual (Bearer JWT or the session cookie, so evidence pictures work as `<img src>`). API keys are not accepted.
+
+Base URL: `https://YOUR_FLYBOT_DOMAIN/api/sentinel/ui`
+
+### Settings
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `SENTINEL_UI_URL` | (empty) | Base URL of the Sentinel UI API, ending in `/ui` (added when missing), e.g. `https://<api-id>.execute-api.ap-southeast-2.amazonaws.com/ui` or `https://<cloudfront>/ui`. Must be `https` (plain `http` only for localhost); no query string. |
+| `SENTINEL_UI_TOKEN` | (empty) | Sentinel's operator token (flybot-sentinel `data/secrets/ui-token.txt`, Secrets Manager `sentinel-<stage>-ui-token`). Production: Secret Manager `flybot-sentinel-ui-token`. Use the operator token, not the judge token: FlyBot enforces who may decide itself. |
+
+Either empty: every route below answers `503 {"code":"SENTINEL_DISABLED"}` (signed in or not), and `GET /api/auth/me` reports `sentinelEnabled: false` so the client hides the menu.
+
+### Who may use it
+
+| Account | Read (every `GET`) | Approve / reject |
+|---|---|---|
+| admin, manager | yes | yes |
+| user with `sentinelViewer` (e.g. a competition judge; set by an admin) | yes | no (`403 FORBIDDEN`) |
+| any other user | no (`403 FORBIDDEN`) | no |
+
+`GET /api/auth/me` (and the sign-in answer) carries `sentinelEnabled` (configured and allowed to read) and `sentinelCanDecide`; `GET /api/system/info` has the same as `info.sentinel: { enabled, canDecide }`. An admin sets `sentinelViewer` with `PUT /api/admin/users/{id} {"sentinelViewer": true|false}` (audited as `user.sentinel_access_changed`). The Sentinel pages show every camera Sentinel knows, not only the cameras shared with the person.
+
+### Routes
+
+Only these reach Sentinel; any other path or method answers `404 NOT_FOUND` without calling it. Query parameters not listed are dropped; a listed one with a bad value answers `400 BAD_REQUEST`.
+
+| Request | Sentinel route | Query forwarded |
+|---|---|---|
+| `GET /summary` | `GET /ui/summary` | `hours` (1-168). `role` in the answer is FlyBot's: `operator` for admins and managers, `judge` for read-only people |
+| `GET /traces` | `GET /ui/traces` | `camera`, `since`, `until`, `loop` (`per_photo`, `daily_per_plot`, `followup`), `limit` (1-100), `cursor` |
+| `GET /traces/{event_id}` | `GET /ui/traces/{event_id}` | (URL-encode the id: daily ids contain `:`) |
+| `GET /approvals` | `GET /ui/approvals` | `status` (`pending`, `approved`, `rejected`, `expired`), `limit`, `cursor` |
+| `GET /approvals/{id}` | `GET /ui/approvals/{id}` | (poll it after a decision) |
+| `GET /devices` | `GET /ui/devices` | |
+| `GET /devices/{serial}` | `GET /ui/devices/{serial}` | |
+| `GET /density` | `GET /ui/density` | `date` (`YYYY-MM-DD`) |
+| `GET /bench` | `GET /ui/bench` | `name` (a file name) |
+| `POST /approvals/{id}/decide` | `POST /ui/approvals/{id}/decide` | Body `{"decision": "approve" \| "reject"}`. Admins and managers only. `by` is always set by FlyBot to the signed-in person (`Name <email>`, or the email when that is longer than 80 characters); a `by` sent by the browser is ignored. Answer: Sentinel's `202 {"queued": true, "approval_id", "decision"}` plus `by`. Audited as `sentinel.approval_decided` |
+| `GET /evidence?key=` | `GET /ui/evidence?key=&json=1`, then the presigned URL | `key`: an object key or `s3://` ref under `frames/`, `clips/`, `evidence/`, `density/` or `bench/`. FlyBot reads the presigned URL itself and streams the file back (`Cache-Control: private, max-age=3600`, `ETag`, images and mp4/webm inline, anything else as a download, at most 25 MB). Neither the token nor the presigned URL reaches the browser |
+
+JSON answers are Sentinel's as-is (`Cache-Control: no-store`), except `role` in `/summary` and `by` in decide. Detail routes still include Sentinel's `media` map of presigned S3 URLs (valid 10 minutes, no token in them); the client may use them or `/evidence`.
+
+### Errors, limits
+
+`{ "success": false, "code": "...", "message": "..." }`, never a `401` for a Sentinel-side problem (the client would sign the person out):
+
+| Status | `code` | When |
+|---|---|---|
+| 400 | `BAD_REQUEST` | Bad query value, bad `decision`, bad evidence key; or Sentinel refused the body |
+| 403 | `FORBIDDEN` | Not allowed to read, or a read-only person deciding |
+| 404 | `NOT_FOUND` | Path not proxied; unknown trace/approval/device/object |
+| 409 | `CONFLICT` | The approval is not pending any more |
+| 502 | `SENTINEL_AUTH` / `SENTINEL_FORBIDDEN` | Sentinel refused FlyBot's token (wrong token / judge token used) |
+| 502 | `SENTINEL_UPSTREAM` / `SENTINEL_UNREACHABLE` | Sentinel answered 5xx or something unreadable / cannot be reached |
+| 503 | `SENTINEL_DISABLED` / `SENTINEL_BUSY` | Not configured / Sentinel answered 429 |
+| 504 | `SENTINEL_TIMEOUT` | No answer within 5 seconds (evidence files: headers within 5 s, the whole file within 30 s) |
+
+Sentinel's own error texts are not passed on. Limits per person: 120 reads, 300 evidence files and 20 decisions per minute (`429` with `Retry-After`).

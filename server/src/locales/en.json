@@ -412,7 +412,22 @@
     "at_most_max_rows_at_a_time": "At most {max} rows at a time.",
     "choose_the_members_to_remind": "Choose the members to remind.",
     "at_most_max_members_at_a_time": "At most {max} members at a time.",
-    "this_proposal_has_expired": "This proposal has expired."
+    "this_proposal_has_expired": "This proposal has expired.",
+    "sentinel_viewer_must_be_true_or_false": "sentinelViewer must be true or false.",
+    "sentinel_console_not_set_up": "The Sentinel console is not set up on this server.",
+    "not_found_short": "Not found.",
+    "sentinel_decision_must_be": "decision must be \"approve\" or \"reject\".",
+    "sentinel_auth_failed": "FlyBot could not sign in to Sentinel. Check SENTINEL_UI_TOKEN.",
+    "sentinel_forbidden": "Sentinel refused this action for FlyBot's token.",
+    "sentinel_refused": "Sentinel refused the request.",
+    "sentinel_approval_already_decided": "This approval was already decided.",
+    "sentinel_busy": "Sentinel is busy. Please try again shortly.",
+    "sentinel_upstream": "Sentinel is not answering correctly. Please try again later.",
+    "sentinel_timeout": "Sentinel did not answer in time.",
+    "sentinel_unreachable": "Sentinel cannot be reached.",
+    "sentinel_file_gone": "This file is no longer available.",
+    "sentinel_storage_upstream": "Sentinel storage is not answering correctly.",
+    "sentinel_file_too_large": "This file is too large to show here."
   },
   "reportPdf": {
     "range": "Period: {from} - {to} ({days} days)",

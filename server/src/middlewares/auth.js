@@ -69,7 +69,8 @@ async function authenticate(req, res, next) {
             name: user.name || user.email.split('@')[0],
             emailVerified: !!user.emailVerified,
             language: user.language,
-            role: roleOf(user)
+            role: roleOf(user),
+            sentinelViewer: !!user.sentinelViewer
         };
         req.sessionId = sessionId;
         req.authToken = token;
