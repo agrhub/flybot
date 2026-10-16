@@ -147,6 +147,12 @@ const router = createRouter({
           name: 'settings',
           component: () => import('@/pages/settings/index.vue'),
         },
+        // Claim a CamOS camera that registered itself (QR on its label -> /claim?sn=...)
+        {
+          path: 'claim',
+          name: 'claim',
+          component: () => import('@/pages/claim/index.vue'),
+        },
         // FlyBot Sentinel console (shown when the server has it on for this person)
         {
           path: 'sentinel',

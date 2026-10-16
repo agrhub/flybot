@@ -29,6 +29,40 @@ router.post('/pair', express.json({ limit: '4kb' }), rateLimit({ windowMs: 60 * 
 });
 
 /**
+ * POST /register: zero-touch self-registration of the public firmware (CONTRACTS 2a). No auth;
+ * per client IP and in total per hour; the body carries the camera's CSR (a few hundred bytes).
+ */
+router.post('/register',
+    rateLimit({ windowMs: 60 * 60 * 1000, max: env.REGISTER_MAX_PER_IP_HOUR, keyFn: () => 'register', message: 'Too many registrations from this address.' }),
+    rateLimit({ windowMs: 60 * 60 * 1000, max: env.REGISTER_MAX_PER_HOUR, includeIp: false, keyFn: () => 'register-all', message: 'Too many registrations right now.' }),
+    express.json({ limit: '8kb' }),
+    async (req, res) => {
+        try {
+            const result = await require('../services/registrationService').register(req.body);
+            if (result.body?.retryAfter) res.setHeader('Retry-After', String(result.body.retryAfter));
+            res.setHeader('Cache-Control', 'no-store');
+            json(res, result);
+        } catch (err) {
+            sendServerError(res, err, { context: 'Device register' });
+        }
+    });
+
+/**
+ * GET /time (CONTRACTS 2a.6): clock, timezone (+ POSIX TZ) and the public address FlyBot saw. No
+ * auth (it works before registration); a camera that sends its serial and token gets its farm or
+ * GPS timezone, anyone else the timezone of their IP (offline lookup) or the default.
+ */
+router.get('/time', rateLimit({ windowMs: 60 * 1000, max: 30, keyFn: () => 'time', message: 'Too many requests.' }), async (req, res) => {
+    try {
+        const camera = req.get('X-Device-Token') ? await deviceService.authenticate(req.get('X-Device-Serial'), req.get('X-Device-Token')) : null;
+        res.setHeader('Cache-Control', 'no-store');
+        res.json(await require('../services/timezoneService').deviceTime({ camera, ip: req.ip }));
+    } catch (err) {
+        sendServerError(res, err, { context: 'Device time' });
+    }
+});
+
+/**
  * POST /events: the IoT rule fallback for camera -> cloud messages ({ topic, payload }), signed
  * with the shared secret IOT_RULE_SECRET (header X-IoT-Rule-Secret). Same handling as the MQTT
  * subscriber (platforms/camos.js handleMessage).
@@ -63,8 +97,6 @@ router.use(async (req, res, next) => {
 });
 // Per camera: a photo a minute on schedule, a few more on demand
 router.use(rateLimit({ windowMs: 60 * 1000, max: 30, includeIp: false, keyFn: serialKey, message: 'Too many requests for this camera.' }));
-
-router.get('/time', (req, res) => res.json(deviceService.timeNow()));
 
 router.get('/ota', (req, res) => {
     const manifest = deviceService.otaManifest(req.camera);

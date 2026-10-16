@@ -74,6 +74,9 @@ async function historyOf(snapshot) {
  * The request body (CONTRACTS section 1). `mode` "detect" (every photo) or "deep" (a chatbot
  * question, `question` required).
  */
+/** A self-registered camera without an owner yet. */
+const isUnclaimed = (camera) => !!(camera?.selfRegistered && camera?.unclaimed);
+
 async function buildRequest(snapshot, camera, { mode = 'detect', question = null, locale = 'vi', withHistory = true } = {}) {
     const photo = await photoRef(snapshot);
     if (!photo) throw new VisionError('bad_request', 'The photo has no storage key.');
@@ -96,6 +99,12 @@ async function buildRequest(snapshot, camera, { mode = 'detect', question = null
     };
     if (withHistory) request.history = await historyOf(snapshot);
     if (mode === 'deep') request.question = String(question || '').slice(0, 1000);
+    // A self-registered camera nobody claimed yet (CONTRACTS 2a.3): the rule planner only, no LLM
+    // (additive request keys; the Lambda ignores what it does not know)
+    if (isUnclaimed(camera)) {
+        request.camera.claimed = false;
+        request.options = { planner: 'rule', llm: false };
+    }
     return request;
 }
 
@@ -269,8 +278,8 @@ async function analyzeSnapshot(snapshotId, { buffer = null, attempt = 1, locale 
         const stored = await Snapshot.findById(snapshot._id);
         await require('./dailyStats').refreshForSnapshot(stored);
         console.log(`🤖 OpenCV Lambda processed snapshot ${snapshotId}: ${update.pestCount} insect(s), trace ${update.lambda.traceId || '-'} (attempt ${attempt})`);
-        // The agent's proposals become confirm cards for the camera's owner
-        if (Array.isArray(response.proposals) && response.proposals.length) {
+        // The agent's proposals become confirm cards for the camera's owner (none without an owner)
+        if (Array.isArray(response.proposals) && response.proposals.length && !isUnclaimed(camera)) {
             await require('./sentinelService').createLambdaProposals({ snapshot: stored, camera, proposals: response.proposals, traceId: update.lambda.traceId, evidence: response.evidence })
                 .catch(err => console.error(`⚠️ Lambda proposals not stored (${snapshotId}):`, err.message));
         }
@@ -292,8 +301,10 @@ async function runRetry(snapshotId, attempt) {
     try {
         const result = await analyzeSnapshot(snapshotId, { attempt });
         if (!result.ok) return false;
-        const snap = await Snapshot.findById(snapshotId).select('deviceSerial createdAt s3Key').lean();
+        const snap = await Snapshot.findById(snapshotId).select('deviceSerial createdAt s3Key unclaimed').lean();
         if (!snap) return false;
+        // A photo of an unclaimed camera alerts nobody and is not published
+        if (snap.unclaimed) return true;
         const captureJob = require('../cron/captureJob');
         const newer = await Snapshot.exists({ deviceSerial: snap.deviceSerial, createdAt: { $gt: snap.createdAt } });
         if (!newer) await captureJob.checkAlerts(snap.deviceSerial, snap._id);
@@ -334,6 +345,8 @@ async function flushRetries() {
  * Lambda's answer; the question, answer and trace are kept on the photo (last DEEP_KEPT).
  */
 async function deepAnalyze(snapshot, camera, { question, locale = 'vi' } = {}) {
+    // CONTRACTS 2a.5: LLM deep analysis for claimed cameras only
+    if (isUnclaimed(camera)) throw new VisionError('bad_request', 'Deep analysis needs a claimed camera.');
     const request = await buildRequest(snapshot, camera, { mode: 'deep', question, locale });
     const response = await invoke(request);
     const entry = {
@@ -350,6 +363,7 @@ async function deepAnalyze(snapshot, camera, { question, locale = 'vi' } = {}) {
 }
 
 module.exports = {
+    isUnclaimed,
     CONTRACT_VERSION,
     RETRY_DELAY_MS,
     MAX_ATTEMPTS,

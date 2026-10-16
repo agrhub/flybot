@@ -336,11 +336,40 @@ What the ESP32 / AMB82 cameras call over HTTPS (flybot-aws `docs/CONTRACTS.md` s
 |---|---|
 | `POST /pair` `{serial, verifyCode, provisionToken}` | `200 {ok, deviceToken, iot: {endpoint, thingName}, kvs: {region, channelName}}`; `401` on an unknown camera, a wrong label code or an expired/used provisioning token (24 h, one use). 10 tries a minute per IP |
 | `POST /snapshot` multipart/form-data: part `image` (`image/jpeg`, at most 2 MB), part `meta` (`application/json`: `{v, serial, capturedAt, trigger: schedule|rpc|boot, battery: {mv, pct, charging, solarMv}, net: wifi|4g, rssi, location: {lat, lng, fixAt}, fw}`) | `200 {ok, snapshotId, nextWakeAt}` as soon as the photo is stored (the analysis, alerts, quality check and webhook run in the background); `413` too large, `415` not a JPEG, `400` bad meta, `401` bad token, `429` more than 12 photos a minute. The photo goes through the same pipeline as EZVIZ photos (storage, AI provider, alerts, `snapshot_analyzed`); `capturedAt` is kept when it is within a week of the server clock |
-| `GET /time` | `{now, epoch}` (NTP fallback on 4G) |
+| `GET /time` | No auth: `{now, epoch, timezone, posix, tzSource, publicIp}` (below) |
 | `GET /ota` | `{fw, url, sha256}` or `204` when there is nothing newer than the camera's `fw` |
 | `POST /events` `{topic, payload}` with `X-IoT-Rule-Secret` | The IoT-rule fallback for camera->cloud messages (`IOT_EVENTS=rule`); `401` bad secret, `503` when `IOT_RULE_SECRET` is empty |
 
 Limits: 120 calls a minute per client IP, 30 a minute per camera. A photo uploaded while FlyBot waits on `snapshot.now` answers that request (the "capture now" button, a confirmed `capture_now` card, the Sentinel `POST /capture`).
+
+### Zero-touch self-registration (public firmware, flybot-aws CONTRACTS 2a)
+
+Anyone may flash the public CamOS release; the camera joins FlyBot by itself and a person claims it on `/claim`. No secret is in the public image: FlyBot is the only party that talks to AWS IoT.
+
+**`POST /api/device/register`** (no auth) `{"v":1, "serial":"ESPF85B1B92877C", "verifyCode":"9WBYWY", "model":"AIC-FREENOVE-S3CAM", "fw":"0.3.0", "csr":"<PEM PKCS#10, ECDSA P-256, made on the device>"}`
+
+- Checks: `serial` = `ESP` + 12 hex digits (the MAC), `verifyCode` = 6 Crockford base32 characters, `csr` a PEM certificate request of at most 4 KB (a body with a private key is refused).
+- Then: AWS IoT `CreateThing` (`<serial>`, type `IOT_THING_TYPE`, attribute `flybot=self-registered`), `CreateCertificateFromCsr` (`setAsActive`), `AttachPolicy` (`IOT_POLICY_NAME`), `AttachThingPrincipal`, the KVS channel `cam-<serial>`, and the camera stored **unclaimed** with a hashed device token. A failure undoes every step.
+- `201 {"ok":true, "certificatePem", "deviceToken", "iot":{"endpoint","thingName"}, "kvs":{"region","channelName"}, "claimUrl":"https://<APP_BASE_URL>/claim?sn=<serial>", "claimed":false}`. FlyBot never makes or returns a private key; the device token is shown only in this answer.
+- Same serial + code again before the camera's first MQTT connection: the same certificate (a different CSR gets a new certificate and the old one is deleted) and a new device token (the old one stops working). After the first connection, with another code, for a serial an owner already has, or for an AWS thing FlyBot did not make: `409 {"error":"serial_taken"}`. Deleting the camera in FlyBot (its owner) removes the certificate, thing and channel, so the camera can register again.
+- Other answers: `400 bad_request | bad_serial | bad_csr`, `429` (`REGISTER_MAX_PER_IP_HOUR` per client IP, `REGISTER_MAX_PER_HOUR` in total), `502 aws_failed`, `503 capacity` (`DEMO_MAX_UNCLAIMED` cameras already wait for a claim) / `busy` (a registration of that serial is running) / `disabled` (`SELF_REGISTRATION=false`).
+
+**Unclaimed mode.** The camera may upload 1 photo an hour (`POST /snapshot` answers `nextWakeAt` an hour later, and `429 {"error":"rate_limited","nextWakeAt"}` before that). Its photos are analysed with the rule planner only (the Lambda request carries `camera.claimed: false` and `options: {"planner":"rule","llm":false}`), make no confirm cards, alerts, quality notices or webhooks, are hidden from every account (admins too) and deleted after 24 h. Cameras never claimed are removed after 7 days (certificate detached, deactivated and deleted, thing and KVS channel deleted, photos deleted) by the hourly job (`ENABLE_CRON`; pipeline monitor id `selfRegistered`).
+
+**`POST /api/cameras/claim`** (signed in) `{"serial", "verifyCode", "trapKind?": "lure"|"sticky", "farmId?", "captureIntervalMinutes?": 15|30|60|120, "deviceName?"}`
+
+- `200 {"success":true, "camera":{deviceSerial, deviceName, trapKind, farmId, captureIntervalMinutes, platform, model}, "shadowSynced", "preview":{snapshotId, imageUrl, at, count}}`: the camera is the person's (any account, whatever its role, may claim and then run its own claimed cameras), its photos are kept, the shadow gets `claimed: true` and `capture.intervalMin`, and `tz` from the farm. Claiming again by the same person: `200` with `alreadyClaimed: true`. Audited as `camera.claimed`.
+- `404 NOT_FOUND` for a wrong code, an unknown serial or a camera someone else claimed (the same answer for all three). Five failures for a serial within an hour lock it for an hour: `429 LOCKED` with `Retry-After` (also for a serial that does not exist). `403 LIMIT_REACHED {limit, plan}` past the plan's camera limit; `400 BAD_FARM`. 20 tries a minute per person.
+
+**Plan limits** (`services/entitlements.js getEntitlements(user)`, the one place every limit is read from; today from the `DEMO_*` settings): `maxCameras` self-registered cameras per account (`DEMO_MAX_CAMERAS_PER_USER`, 3), `snapshotsPerDay` per camera in any 24 h (`DEMO_MAX_SNAPSHOTS_PER_DAY`, 48; `429 daily_limit` with `nextWakeAt`), `liveMinutes` per live request (`DEMO_LIVE_MINUTES`, 5), `deepAnalysis` (the chatbot's `analyze_photo_deep`; never for an unclaimed camera). Admins and `DEMO_EXEMPT_EMAILS` are unlimited. System limit: `DEMO_MAX_UNCLAIMED` (200).
+
+### `GET /api/device/time`
+
+No auth (works before registration), 30 a minute per IP. `{"now":"2026-10-16T08:00:00.000Z", "epoch":1792137600, "timezone":"Asia/Ho_Chi_Minh", "posix":"<+07>-7", "tzSource":"farm|gps|ip|default", "publicIp":"115.72.212.239"}`.
+
+Timezone, first that answers: the camera's farm (`Farm.timezone`; for a camera without a farm, the owner's only farm with a timezone), the camera's last GPS fix (offline lookup, `@photostructure/tz-lookup`), the request's public IP (offline country database `ip3country`, IP2Location LITE data, then the country's main zone), `DEVICE_DEFAULT_TIMEZONE` (`Asia/Ho_Chi_Minh`). The camera is looked up only when it sends `X-Device-Serial` and a valid `X-Device-Token`. `publicIp` is the address Express saw (`TRUST_PROXY=1`: the one Caddy forwards), `null` for a private one. `posix` comes from `server/src/data/posixTz.json` (IANA -> POSIX TZ in the quoted numeric form newlib accepts, built from Node's tzdata by `server/scripts/build_posix_tz.js`).
+
+When a camera's zone changes (claimed into a farm, the farm's timezone edited with `PUT /api/farms/{id} {"timezone"}`, cameras moved to a farm, a GPS fix in another zone), FlyBot writes shadow desired `tz: {iana, posix}` (only farm or GPS answers; nothing when unchanged).
 
 ## `AI_PROVIDER=opencv-lambda`
 

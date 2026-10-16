@@ -465,7 +465,16 @@
     "sentinel_unreachable": "Sentinel cannot be reached.",
     "sentinel_file_gone": "This file is no longer available.",
     "sentinel_storage_upstream": "Sentinel storage is not answering correctly.",
-    "sentinel_file_too_large": "This file is too large to show here."
+    "sentinel_file_too_large": "This file is too large to show here.",
+    "timezoneInvalid": "timezone must be an IANA timezone such as Asia/Ho_Chi_Minh.",
+    "registerTooManyIp": "Too many registrations from this address.",
+    "registerTooMany": "Too many registrations right now.",
+    "claimNotFound": "No camera waiting to be claimed matches this serial and code.",
+    "claimRequired": "serial and verifyCode are required.",
+    "trapKindStickyLure": "trapKind must be sticky or lure.",
+    "claimLocked": "Too many wrong codes for this serial. Try again later.",
+    "planCameraLimit": "Your plan lets you claim {count} cameras.",
+    "farmNotYours": "Farm not found or not yours."
   },
   "reportPdf": {
     "range": "Period: {from} - {to} ({days} days)",

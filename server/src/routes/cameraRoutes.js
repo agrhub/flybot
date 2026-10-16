@@ -6,7 +6,7 @@ const maintenanceController = require('../controllers/maintenanceController');
 const { authenticate, requireRole } = require('../middlewares/auth');
 const { requireStringFields } = require('../middlewares/validate');
 // Manual captures share their quota with the AI assistant's capture tool
-const { captureLimiter, shareLimiter } = require('../middlewares/rateLimit');
+const { captureLimiter, shareLimiter, rateLimit } = require('../middlewares/rateLimit');
 
 // Apply authentication to all camera routes
 router.use(authenticate);
@@ -34,6 +34,9 @@ router.post('/user/camera/provision', cameraController.provisionCamera);
 router.get('/user/camera/maintenance', maintenanceController.listEvents);
 router.post('/user/camera/maintenance', maintenanceController.addEvent);
 router.delete('/user/camera/maintenance/:id', maintenanceController.deleteEvent);
+
+// Self-registered CamOS cameras: claim one (any signed-in account; 20 tries a minute per person)
+router.post('/cameras/claim', rateLimit({ windowMs: 60 * 1000, max: 20, keyFn: (req) => String(req.user?.id || ''), message: 'Too many attempts.' }), cameraController.claimCamera);
 
 // Platform-aware camera endpoints (EZVIZ, CamOS over IoT Core, KVS live view)
 router.get('/cameras/:serial/live', cameraController.getLive);

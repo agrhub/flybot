@@ -471,6 +471,10 @@ export default {
   getCameraStatus(deviceSerial) {
     return apiClient.get(`/cameras/${encodeURIComponent(deviceSerial)}/status`);
   },
+  // A self-registered CamOS camera (public firmware): take it over with its serial and label code
+  claimCamera(data) {
+    return apiClient.post('/cameras/claim', data);
+  },
   // CamOS cameras: a new provisioning token for the camera's portal
   provisionCamera(deviceSerial) {
     return apiClient.post('/user/camera/provision', { deviceSerial });

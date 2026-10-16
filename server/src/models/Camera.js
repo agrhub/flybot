@@ -30,6 +30,19 @@ const deviceSchema = new mongoose.Schema({
     provisionTokenHash: { type: String, default: undefined },
     provisionExpiresAt: { type: Date, default: undefined },
     pairedAt: { type: Date, default: undefined },
+    // Zero-touch self-registration (POST /api/device/register): the AWS IoT certificate FlyBot
+    // signed from the camera's CSR (public certificate only; the private key never leaves the
+    // camera), the CSR's hash for an idempotent retry, and the first MQTT connection
+    certificateArn: { type: String, default: undefined },
+    certificateId: { type: String, default: undefined },
+    certificatePem: { type: String, default: undefined },
+    csrHash: { type: String, default: undefined },
+    registeredAt: { type: Date, default: undefined },
+    firstConnectAt: { type: Date, default: undefined },
+    // Last AWS cleanup that did not finish (the hourly job tries again)
+    cleanupError: { type: String, default: undefined },
+    // Timezone sent to the camera (shadow tz) and where it came from: farm | gps | ip | default
+    tz: { type: mongoose.Schema.Types.Mixed, default: undefined },
     // AWS IoT thing (default: the serial) and the KVS signaling channel (cam-<serial>)
     thingName: { type: String, default: undefined },
     kvsChannelName: { type: String, default: undefined },
@@ -64,6 +77,11 @@ const cameraSchema = new mongoose.Schema({
     // Core + the device API, or a KVS-only camera (live view, no snapshots)
     platform: { type: String, enum: PLATFORMS, default: 'ezviz' },
     device: { type: deviceSchema, default: undefined },
+    // Registered by the public firmware itself (no owner until someone claims it on /claim).
+    // Unclaimed cameras are hidden from every account (utils/ownership.js) and removed after 7 days
+    selfRegistered: { type: Boolean, default: undefined },
+    unclaimed: { type: Boolean, default: undefined },
+    claimedAt: { type: Date, default: undefined },
     sharedWith: { type: [shareSchema], default: [] },
     validateCode: { type: String, default: '' },
     deviceName: { type: String, default: 'Camera' },
@@ -126,6 +144,7 @@ cameraSchema.index({ 'sharedWith.userId': 1 });
 cameraSchema.index({ 'sharedWith.email': 1 });
 
 cameraSchema.index({ platform: 1 });
+cameraSchema.index({ unclaimed: 1 }, { sparse: true });
 
 const Camera = mongoose.model('Camera', cameraSchema);
 

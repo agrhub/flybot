@@ -29,7 +29,9 @@ async function executeAnalyzePhotoDeep({ snapshotId, deviceSerial, question, use
     if (!userId) return { error: 'Not authenticated.' };
     const visionLambda = require('../../services/visionLambda');
     if (!visionLambda.isConfigured()) return { error: 'The vision agent is not set up on this server (VISION_LAMBDA_NAME or VISION_LAMBDA_URL).' };
-    const visible = await viewableCameras(user).select('deviceSerial deviceName trapKind platform latitude longitude').lean();
+    // Plan limits (services/entitlements.js): deep LLM analysis may be off for an account
+    if (!require('../../services/entitlements').getEntitlements(user).deepAnalysis) return { error: 'Deep analysis is not part of your plan.' };
+    const visible = await viewableCameras(user).select('deviceSerial deviceName trapKind platform latitude longitude selfRegistered unclaimed').lean();
     let snap = null;
     if (snapshotId) {
         if (!mongoose.isValidObjectId(snapshotId)) return { error: 'Photo not found.' };

@@ -33,9 +33,14 @@ Read by `server/src/config/env.js`. On the EC2 host the stack's user-data writes
 | `KVS_VIEWER_ROLE_ARN` | Role the browser assumes through FlyBot (STS, 15 min, policy limited to the one channel) to join as VIEWER. Empty: live view of CamOS cameras answers `503 LIVE_NOT_CONFIGURED` |
 | `DEVICE_API_BASE_URL` | What the cameras call (default `APP_BASE_URL`) |
 | `DEVICE_OTA_FW`, `DEVICE_OTA_URL`, `DEVICE_OTA_SHA256` | Firmware offered by `GET /api/device/ota` |
+| `SELF_REGISTRATION`, `IOT_THING_TYPE`, `IOT_POLICY_NAME`, `REGISTER_MAX_PER_IP_HOUR` (5), `REGISTER_MAX_PER_HOUR` (60) | Zero-touch self-registration of the public firmware (`POST /api/device/register`, below) |
+| `DEMO_MAX_CAMERAS_PER_USER` (3), `DEMO_MAX_SNAPSHOTS_PER_DAY` (48), `DEMO_MAX_UNCLAIMED` (200), `DEMO_LIVE_MINUTES` (5), `DEMO_EXEMPT_EMAILS` | Demo limits for self-registered cameras, read through `services/entitlements.js` (admins and the listed emails are exempt) |
+| `DEVICE_DEFAULT_TIMEZONE` | Timezone of `GET /api/device/time` when neither farm, GPS nor IP tells (`Asia/Ho_Chi_Minh`) |
 | `FLYBOT_SECRETS` | Comma-separated Secrets Manager secret names; each a JSON object (`JWT_SECRET`, `APP_KEY`, `SECRET_KEY`, `SMTP_PASS`, `TELEGRAM_BOT_TOKEN`, ...) filling in what the environment did not set. Read once at start-up with the instance role |
 | `SENTINEL_CONSOLE` | `true` shows the Sentinel menu with another `AI_PROVIDER` (it is on with `opencv-lambda`) |
 | `JWT_SECRET`, `APP_KEY`, `SECRET_KEY`, `VERTEX_*`, `GOOGLE_APPLICATION_CREDENTIALS`, `SMTP_*`, `TELEGRAM_*` | As before (`.env.example`). `APP_KEY`/`SECRET_KEY` only matter for EZVIZ cameras; Vertex/Gemini only for the chatbot |
+
+Self-registration additionally needs: `iot:CreateCertificateFromCsr`, `iot:CreateThing`, `iot:DescribeThing`, `iot:AttachPolicy`, `iot:AttachThingPrincipal`, `iot:DetachThingPrincipal`, `iot:DetachPolicy`, `iot:UpdateCertificate`, `iot:DeleteCertificate`, `iot:DeleteThing`, `kinesisvideo:DeleteSignalingChannel` (and `iam:PassRole` is not needed).
 
 Instance role permissions FlyBot uses: `lambda:InvokeFunction` on the vision Lambda; `s3:GetObject/PutObject/DeleteObject/ListBucket` on the photo bucket; `iot:GetThingShadow`, `iot:UpdateThingShadow`, `iot:Publish` (`camos/*/rpc/req`), `iot:Connect`, `iot:Subscribe`, `iot:Receive`; `kinesisvideo:CreateSignalingChannel`, `DescribeSignalingChannel`, `GetSignalingChannelEndpoint`, `GetIceServerConfig`; `sts:AssumeRole` on `KVS_VIEWER_ROLE_ARN`; `secretsmanager:GetSecretValue` on `flybot-*`.
 
@@ -53,9 +58,20 @@ Without Docker: `npm install` at the repo root, `.env` at the root with the same
 
 The SAM stack (flybot-aws `infra/deploy.sh`, agent L) creates the bucket, the Lambda, the IoT thing type/policy, the EC2 with its role and Elastic IP, and boots it with user-data that clones flybot-aws, writes `.env` and runs `docker compose up -d --build`. The owner points `flybot.agrhub.com` at the Elastic IP; Caddy obtains the certificate on first start.
 
-Checks after a deploy: `curl -s https://flybot.agrhub.com/health` → `{"status":"ok"}`; `curl -s -o /dev/null -w '%{http_code}' https://flybot.agrhub.com/api/device/time` → `401` (device API on, token required); signed in as admin, `GET /api/system/info` → `info.ai.provider: "opencv-lambda"`, `info.sentinel.enabled: true`; a "Capture now" on an EZVIZ camera ends with a count and a trace in the Sentinel console. Logs: `docker compose logs -f flybot` on the host (`📡 IoT Core subscriber started`, `🤖 OpenCV Lambda processed snapshot ...`).
+Checks after a deploy: `curl -s https://flybot.agrhub.com/health` → `{"status":"ok"}`; `curl -s https://flybot.agrhub.com/api/device/time` → the time and the timezone (device API on); signed in as admin, `GET /api/system/info` → `info.ai.provider: "opencv-lambda"`, `info.sentinel.enabled: true`; a "Capture now" on an EZVIZ camera ends with a count and a trace in the Sentinel console. Logs: `docker compose logs -f flybot` on the host (`📡 IoT Core subscriber started`, `🤖 OpenCV Lambda processed snapshot ...`).
 
 Update: `git -C /opt/flybot/flybot-aws pull --ff-only && git submodule update --init --recursive && docker compose up -d --build`.
+
+## Public firmware: flash, register, claim
+
+1. Flash the public release (GitHub Releases or the browser flasher). First boot: serial `ESP<MAC>`, a 6-character verify code kept in NVS, shown on the portal page and the label QR (`CAMOS:1;SN:...;VC:...;M:...;;`).
+2. The camera generates its key pair and CSR, calls `POST https://flybot.agrhub.com/api/device/register`, stores the certificate and device token, connects to AWS IoT Core. It is **unclaimed**: 1 photo an hour, rule planner only, photos hidden and kept 24 h.
+3. The person signs in (or registers) on FlyBot and opens `/claim` (the QR's `claimUrl`, or Cameras → **Claim a camera**), scans the label QR or types serial + code, picks lure/sticky, the farm and the schedule. The camera is theirs: shadow `claimed: true`, their interval, the farm's timezone (`tz`), and the first photo shows right away.
+4. Not claimed within 7 days: the hourly job deletes the certificate, thing, channel and photos. Deleting a claimed camera in FlyBot does the same, so the device can register again.
+5. Clock: `GET /api/device/time` (no auth) answers the time, the IANA timezone with its POSIX string for `setenv("TZ")`, where it came from (farm, GPS, IP, default) and the public IP.
+6. Limits (demo plan): 3 claimed cameras per account, 48 photos per camera per day, 200 unclaimed cameras in total, 5 minutes per live request; admins and `DEMO_EXEMPT_EMAILS` are exempt.
+
+Check on the server: `curl -s https://flybot.agrhub.com/api/device/time` → `{"timezone":"Asia/Ho_Chi_Minh",...,"tzSource":"ip"}`; `curl -s -X POST -H 'Content-Type: application/json' -d '{}' https://flybot.agrhub.com/api/device/register` → `400`.
 
 ## CamOS camera: from the box to a photo
 
@@ -82,3 +98,9 @@ Update: `git -C /opt/flybot/flybot-aws pull --ff-only && git submodule update --
 | `server/tests/opencvLambda.test.js` | the CONTRACTS request, stored results, proposals → cards → confirm, retry after an error, deep mode, Lambda.Invoke |
 | `server/tests/agentSentinelTools.test.js` | `analyze_photo_deep`, `propose_action` and every card action |
 | `server/tests/sentinelUi.test.js` | the Sentinel console from MongoDB (access, summary, traces, approvals, devices, evidence) |
+
+## Third-party data
+
+- IP to country: `ip3country` (ISC), which "includes IP2Location LITE data available from https://lite.ip2location.com" (CC BY-SA 4.0). Keep this attribution wherever FlyBot's notices are shown.
+- GPS to timezone: `@photostructure/tz-lookup` (CC0). Country to timezone: `countries-and-timezones` (MIT).
+- IANA to POSIX TZ: `server/src/data/posixTz.json`, generated from Node's own tzdata (`node server/scripts/build_posix_tz.js`; run again after a Node upgrade).

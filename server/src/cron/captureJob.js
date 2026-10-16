@@ -91,6 +91,16 @@ async function storeSnapshot(deviceSerial, buffer, { trigger, meta, capturedAt }
  */
 async function finishSnapshot(savedDoc, buffer, { picUrl = null } = {}) {
     const deviceSerial = savedDoc.deviceSerial;
+    // A photo of a self-registered camera nobody claimed yet: analyzed (rule planner), but it
+    // alerts nobody, gets no quality notice and no webhook (CONTRACTS 2a.3)
+    if (savedDoc.unclaimed === true) {
+        try {
+            await aiService.analyzeSnapshot(buffer.toString('base64'), savedDoc._id, picUrl, { buffer });
+        } catch (error) {
+            console.error(`❌ Unclaimed photo analysis failed (${deviceSerial}):`, error.message);
+        }
+        return savedDoc;
+    }
     try {
         const awaitSentinel = aiService.isSentinelMode();
         if (!awaitSentinel) {

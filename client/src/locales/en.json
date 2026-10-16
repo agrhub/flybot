@@ -1950,7 +1950,8 @@
         "deleted": "Camera deleted",
         "shared": "Camera shared",
         "unshared": "Camera access removed",
-        "transferred": "Camera ownership transferred"
+        "transferred": "Camera ownership transferred",
+        "claimed": "Camera claimed"
       },
       "dashboard": {
         "created": "Report created",
@@ -3055,6 +3056,35 @@
       "perOp": "Per step (ms)",
       "op": "Step",
       "raw": "Raw data"
+    }
+  },
+  "claim": {
+    "button": "Claim a camera",
+    "title": "Claim a camera",
+    "subtitle": "A CamOS camera you flashed joins FlyBot by itself. Scan the QR on its label or type its serial and code to make it yours.",
+    "scan": "Scan the QR code",
+    "orType": "Or type the serial and the 6-character code from the label or the setup page.",
+    "typeHint": "Type the serial and the 6-character code from the camera label or its setup page (http://192.168.4.1).",
+    "scanFailed": "The camera could not be opened. Type the serial and code instead.",
+    "serial": "Serial",
+    "code": "Verification code",
+    "farm": "Farm",
+    "noFarm": "No farm yet",
+    "interval": "Photo schedule",
+    "submit": "Claim this camera",
+    "doneTitle": "{name} is now yours",
+    "doneHint": "The camera gets your schedule the next time it wakes up.",
+    "previewAlt": "First photo from the camera",
+    "noPreview": "No photo yet: the first one arrives at the next wake.",
+    "previewCount": "{count} insects counted in this photo",
+    "openCamera": "Open my cameras",
+    "another": "Claim another",
+    "errors": {
+      "notFound": "No camera waiting to be claimed matches this serial and code. Check both on the label.",
+      "locked": "Too many wrong codes for this serial. Try again in an hour.",
+      "limit": "Your plan lets you claim {limit} cameras. Remove one or ask for an upgrade.",
+      "farm": "That farm cannot be used.",
+      "generic": "The camera could not be claimed. Try again."
     }
   }
 }

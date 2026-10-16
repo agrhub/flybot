@@ -177,6 +177,22 @@ const config = {
     DEVICE_OTA_FW: (process.env.DEVICE_OTA_FW || "").trim(),
     DEVICE_OTA_URL: (process.env.DEVICE_OTA_URL || "").trim(),
     DEVICE_OTA_SHA256: (process.env.DEVICE_OTA_SHA256 || "").trim().toLowerCase(),
+    // Zero-touch self-registration of the public firmware (flybot-aws CONTRACTS 2a): POST /api/device/register
+    // signs the camera's CSR with AWS IoT. "false" turns it off (503). Thing type and policy of the stack
+    SELF_REGISTRATION: process.env.SELF_REGISTRATION !== 'false',
+    IOT_THING_TYPE: (process.env.IOT_THING_TYPE || 'camos-camera').trim(),
+    IOT_POLICY_NAME: (process.env.IOT_POLICY_NAME || 'camos-camera').trim(),
+    // Demo limits for self-registered cameras (admins and DEMO_EXEMPT_EMAILS are exempt)
+    DEMO_MAX_CAMERAS_PER_USER: Math.min(Math.max(parseInt(process.env.DEMO_MAX_CAMERAS_PER_USER || '3', 10) || 3, 0), 1000),
+    DEMO_MAX_SNAPSHOTS_PER_DAY: Math.min(Math.max(parseInt(process.env.DEMO_MAX_SNAPSHOTS_PER_DAY || '48', 10) || 48, 1), 1440),
+    DEMO_MAX_UNCLAIMED: Math.min(Math.max(parseInt(process.env.DEMO_MAX_UNCLAIMED || '200', 10) || 200, 0), 100000),
+    DEMO_LIVE_MINUTES: Math.min(Math.max(parseInt(process.env.DEMO_LIVE_MINUTES || '5', 10) || 5, 1), 30),
+    DEMO_EXEMPT_EMAILS: (process.env.DEMO_EXEMPT_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean),
+    // Registrations per client IP per hour, and in total per hour
+    REGISTER_MAX_PER_IP_HOUR: Math.min(Math.max(parseInt(process.env.REGISTER_MAX_PER_IP_HOUR || '5', 10) || 5, 1), 1000),
+    REGISTER_MAX_PER_HOUR: Math.min(Math.max(parseInt(process.env.REGISTER_MAX_PER_HOUR || '60', 10) || 60, 1), 100000),
+    // Device clock/timezone (GET /api/device/time) when nothing better is known
+    DEVICE_DEFAULT_TIMEZONE: (process.env.DEVICE_DEFAULT_TIMEZONE || 'Asia/Ho_Chi_Minh').trim(),
     // Sentinel console (menu "Sentinel", read from MongoDB): on with AI_PROVIDER=opencv-lambda,
     // or SENTINEL_CONSOLE=true on a server that keeps old traces with another provider
     SENTINEL_CONSOLE: process.env.SENTINEL_CONSOLE === 'true',

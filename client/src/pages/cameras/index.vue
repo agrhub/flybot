@@ -12,6 +12,10 @@
             @change="setGridLayout"
           />
 
+          <!-- A CamOS camera that registered itself: anyone signed in may claim it -->
+          <el-button :icon="Connection" data-test="claim-link" @click="router.push({ name: 'claim' })">
+            {{ t('claim.button') }}
+          </el-button>
           <!-- Add Camera Button -->
           <el-button v-if="canManageCameras" type="primary" :icon="Plus" @click="openAddCameraModal">
             {{ t('cameras.addCameraBtn') }}
@@ -28,6 +32,7 @@
           <el-button v-if="canManageCameras" type="primary" :icon="Plus" @click="openAddCameraModal">
             {{ t('cameras.addCameraBtn') }}
           </el-button>
+          <el-button @click="router.push({ name: 'claim' })">{{ t('claim.button') }}</el-button>
         </el-empty>
       </el-card>
 
@@ -158,7 +163,8 @@
 <script setup>
 import { ref, computed, watch, onUnmounted, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { Plus, Back, ArrowLeft, ArrowRight, VideoCamera } from '@element-plus/icons-vue';
+import { useRouter } from 'vue-router';
+import { Plus, Back, ArrowLeft, ArrowRight, VideoCamera, Connection } from '@element-plus/icons-vue';
 import { useCameras } from '@/composables/useCameras';
 import { useAuth } from '@/composables/useAuth';
 import { useBreakpoints } from '@/composables/useBreakpoints';
@@ -169,6 +175,7 @@ import DetectionHistory from '@/components/history/DetectionHistory.vue';
 
 const { t } = useI18n();
 const { cameras, selectedCamera, selectCamera, openAddCameraModal } = useCameras();
+const router = useRouter();
 const { canManageCameras } = useAuth();
 // One camera per row on phones: the 2x2/3x3 switch does not apply
 const { isMobile } = useBreakpoints();

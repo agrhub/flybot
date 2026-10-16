@@ -332,7 +332,8 @@ async function getLive(req, res) {
             req.body = { ...(req.body || {}), deviceSerial };
             return getLiveStream(req, res);
         }
-        const session = await platforms.get(camera).liveSession(deviceSerial, { user: req.user, minutes: 5 });
+        const minutes = await require('../services/registrationService').liveMinutes(camera, req.user, 5);
+        const session = await platforms.get(camera).liveSession(deviceSerial, { user: req.user, minutes });
         res.setHeader('Cache-Control', 'no-store');
         res.json({ success: true, ...session });
     } catch (err) {
@@ -344,16 +345,36 @@ async function getLive(req, res) {
 /** POST /api/cameras/:serial/live/request { minutes }: ask a sleeping CamOS camera for live view at its next wake. */
 async function requestLive(req, res) {
     const deviceSerial = String(req.params.serial || '');
-    const minutes = Number.isInteger(req.body?.minutes) ? Math.min(Math.max(req.body.minutes, 1), 30) : 5;
+    const asked = Number.isInteger(req.body?.minutes) ? Math.min(Math.max(req.body.minutes, 1), 30) : 5;
     try {
         const camera = await findViewableCamera(req.user, deviceSerial);
         if (!camera) return res.status(404).json({ success: false, code: 'NOT_FOUND', message: "Camera not found or permission denied." });
         if (platforms.platformOf(camera) !== 'camos') return res.status(400).json({ success: false, message: "Only CamOS cameras take a live request." });
+        // Demo cameras: DEMO_LIVE_MINUTES (5) per request
+        const minutes = await require('../services/registrationService').liveMinutes(camera, req.user, asked);
         const result = await camosPlatform.requestLive(deviceSerial, { minutes });
         recordAudit(req, { action: 'camera.updated', target: cameraTarget(camera), details: { liveRequested: true, minutes } });
         res.json({ success: true, ...result });
     } catch (err) {
         sendServerError(res, err, { context: 'Live request' });
+    }
+}
+
+/**
+ * POST /api/cameras/claim { serial, verifyCode, farmId?, trapKind?, captureIntervalMinutes?, deviceName? }:
+ * take over a self-registered camera (flybot-aws CONTRACTS 2a.4). A wrong code answers 404 without
+ * saying whether the serial exists; 5 wrong codes lock the serial for an hour.
+ */
+async function claimCamera(req, res) {
+    try {
+        const result = await require('../services/registrationService').claim(req.user, req.body);
+        if (result.body?.retryAfter) res.setHeader('Retry-After', String(result.body.retryAfter));
+        if (result.status === 200 && !result.body.alreadyClaimed) {
+            recordAudit(req, { action: 'camera.claimed', target: { type: 'camera', id: result.body.camera.deviceSerial, label: result.body.camera.deviceName }, details: { trapKind: result.body.camera.trapKind, farmId: result.body.camera.farmId } });
+        }
+        res.status(result.status).json(result.body);
+    } catch (err) {
+        sendServerError(res, err, { context: 'Claim camera' });
     }
 }
 
@@ -393,6 +414,12 @@ async function deleteCamera(req, res) {
     if (!deviceSerial) return res.status(400).json({ success: false, message: "Missing deviceSerial." });
     try {
         const camera = await findOwnedCamera(req.user, deviceSerial);
+        // A self-registered camera: its certificate, thing and channel go too, so the device can
+        // register again from scratch (the owner's "reset", CONTRACTS 2a.2)
+        if (camera?.selfRegistered) {
+            const { errors } = await require('../services/registrationService').teardownAws(camera.toObject());
+            if (errors.length) console.warn(`⚠️ AWS cleanup of ${deviceSerial} incomplete: ${errors.join('; ')}`);
+        }
         const deleted = camera ? await Camera.findOneAndDelete({ _id: camera._id }) : null;
         if (!deleted) {
             return res.status(404).json({ success: false, message: "Device not found or permission denied." });
@@ -830,6 +857,7 @@ module.exports = {
     provisionCamera,
     getLive,
     requestLive,
+    claimCamera,
     getPlayback,
     getCameraStatus,
     deviceView

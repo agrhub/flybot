@@ -1950,7 +1950,8 @@
         "deleted": "Xóa camera",
         "shared": "Chia sẻ camera",
         "unshared": "Gỡ quyền xem camera",
-        "transferred": "Chuyển quyền sở hữu camera"
+        "transferred": "Chuyển quyền sở hữu camera",
+        "claimed": "Đã nhận camera"
       },
       "dashboard": {
         "created": "Tạo báo cáo",
@@ -3055,6 +3056,35 @@
       "perOp": "Theo từng bước (ms)",
       "op": "Bước",
       "raw": "Dữ liệu gốc"
+    }
+  },
+  "claim": {
+    "button": "Nhận camera",
+    "title": "Nhận camera",
+    "subtitle": "Camera CamOS bạn đã nạp firmware tự tham gia FlyBot. Quét mã QR trên nhãn hoặc nhập số sê-ri và mã để nhận camera về tài khoản của bạn.",
+    "scan": "Quét mã QR",
+    "orType": "Hoặc nhập số sê-ri và mã 6 ký tự trên nhãn hoặc trang cài đặt.",
+    "typeHint": "Nhập số sê-ri và mã 6 ký tự trên nhãn camera hoặc trang cài đặt (http://192.168.4.1).",
+    "scanFailed": "Không mở được camera điện thoại. Hãy nhập số sê-ri và mã.",
+    "serial": "Số sê-ri",
+    "code": "Mã xác minh",
+    "farm": "Vườn",
+    "noFarm": "Chưa có vườn",
+    "interval": "Lịch chụp ảnh",
+    "submit": "Nhận camera này",
+    "doneTitle": "{name} đã thuộc về bạn",
+    "doneHint": "Camera nhận lịch chụp của bạn khi thức dậy lần tới.",
+    "previewAlt": "Ảnh đầu tiên từ camera",
+    "noPreview": "Chưa có ảnh: ảnh đầu tiên sẽ đến ở lần thức tới.",
+    "previewCount": "Đếm được {count} côn trùng trong ảnh này",
+    "openCamera": "Mở danh sách camera",
+    "another": "Nhận camera khác",
+    "errors": {
+      "notFound": "Không có camera chờ nhận nào khớp với số sê-ri và mã này. Hãy kiểm tra lại trên nhãn.",
+      "locked": "Nhập sai mã quá nhiều lần cho số sê-ri này. Thử lại sau một giờ.",
+      "limit": "Gói của bạn cho nhận tối đa {limit} camera. Hãy gỡ bớt hoặc yêu cầu nâng cấp.",
+      "farm": "Không dùng được vườn này.",
+      "generic": "Không nhận được camera. Hãy thử lại."
     }
   }
 }

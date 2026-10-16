@@ -18,6 +18,7 @@ const AUDIT_ACTIONS = [
     'camera.added',
     'camera.updated',
     'camera.deleted',
+    'camera.claimed',
     'camera.shared',
     'camera.unshared',
     'camera.transferred',

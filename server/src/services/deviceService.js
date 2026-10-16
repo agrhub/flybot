@@ -159,11 +159,16 @@ async function storeDeviceSnapshot(camera, { image, meta: rawMeta, imageType }, 
     const meta = readMeta(rawMeta);
     if (meta.error) return { status: 400, body: { ok: false, error: 'bad_request', message: meta.error } };
     const m = meta.value;
+    // Self-registered cameras: 1 photo an hour while unclaimed, the demo's daily cap after
+    const registration = require('./registrationService');
+    const limited = await registration.uploadLimit(camera, now);
+    if (limited) return limited;
     // A clock far off (no NTP yet) must not file the photo in the past or the future
     const capturedAt = m.capturedAt && Math.abs(m.capturedAt.getTime() - now.getTime()) < 7 * 24 * 3600 * 1000 ? m.capturedAt : now;
 
     const captureJob = require('../cron/captureJob');
     const saved = await captureJob.storeSnapshot(camera.deviceSerial, image, { trigger: m.trigger, meta: m, capturedAt });
+    if (camera.selfRegistered && camera.unclaimed) await registration.markUnclaimedPhoto(saved, now);
     const set = strip({
         status: 1,
         lastCaptureAt: now,
@@ -179,13 +184,15 @@ async function storeDeviceSnapshot(camera, { image, meta: rawMeta, imageType }, 
     if (m.location && (camera.latitude === null || camera.latitude === undefined)) {
         await Camera.updateMany({ deviceSerial: camera.deviceSerial, latitude: null }, { $set: { latitude: m.location.lat, longitude: m.location.lng } }).catch(() => {});
     }
+    // A GPS fix in another timezone: the shadow's tz follows (no-op when it did not change)
+    if (m.location) require('./timezoneService').syncCamera(camera.deviceSerial).catch(() => {});
     // Whoever asked for this photo (platforms/camos.js snapshot) gets it now
     require('../platforms/camos').snapshotArrived(camera.deviceSerial, saved);
     // AI, alerts, quality, webhook: in the background
     captureJob.finishSnapshot(saved, image).catch(err => console.error(`❌ Device photo processing failed (${camera.deviceSerial}):`, err.message));
     return {
         status: 200,
-        body: { ok: true, snapshotId: String(saved._id), nextWakeAt: nextWakeAt(camera, now).toISOString() }
+        body: { ok: true, snapshotId: String(saved._id), nextWakeAt: (camera.selfRegistered && camera.unclaimed ? registration.unclaimedNextWake(now) : nextWakeAt(camera, now)).toISOString() }
     };
 }
 

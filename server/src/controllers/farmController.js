@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const { Farm, Plot, Camera } = require('../models');
+const timezoneService = require('../services/timezoneService');
 const { canManageCamera, getViewableSerials } = require('../utils/ownership');
 const { sendServerError } = require('../utils/http');
 const { normalizeLanguage } = require('../utils/i18n');
@@ -122,6 +123,7 @@ async function listFarms(req, res) {
                 id: String(f._id),
                 name: f.name,
                 description: f.description,
+                timezone: f.timezone || '',
                 owner: ownerOf(f),
                 canEdit: farmService.canEditFarm(req.user, f),
                 plotCount: plotCount.get(String(f._id)) || 0,
@@ -211,10 +213,12 @@ async function createFarm(req, res) {
         if ((await Farm.countDocuments({ ownerId: req.user.id })) >= MAX_FARMS_PER_OWNER) {
             return res.status(400).json({ success: false, message: `You can have at most ${MAX_FARMS_PER_OWNER} farms.` });
         }
+        const timezone = req.body.timezone === undefined ? '' : String(req.body.timezone || '');
+        if (timezone && !timezoneService.isZone(timezone)) return res.status(400).json({ success: false, message: "timezone must be an IANA timezone such as Asia/Ho_Chi_Minh." });
         const orgId = await require('../services/orgService').defaultOrgFor(req.user);
-        const farm = await Farm.create({ ownerId: req.user.id, name, description: text(req.body.description, 500), orgId });
+        const farm = await Farm.create({ ownerId: req.user.id, name, description: text(req.body.description, 500), orgId, timezone });
         recordAudit(req, { action: 'farm.created', target: farmTarget(farm) });
-        res.status(201).json({ success: true, farm: { id: String(farm._id), name: farm.name, description: farm.description } });
+        res.status(201).json({ success: true, farm: { id: String(farm._id), name: farm.name, description: farm.description, timezone: farm.timezone } });
     } catch (err) {
         sendServerError(res, err, { context: 'Create farm' });
     }
@@ -282,7 +286,16 @@ async function updateFarm(req, res) {
             farm.name = name;
         }
         if (req.body.description !== undefined) farm.description = text(req.body.description, 500);
+        let timezoneChanged = false;
+        if (req.body.timezone !== undefined) {
+            const timezone = String(req.body.timezone || '');
+            if (timezone && !timezoneService.isZone(timezone)) return res.status(400).json({ success: false, message: "timezone must be an IANA timezone such as Asia/Ho_Chi_Minh." });
+            timezoneChanged = timezone !== (farm.timezone || '');
+            farm.timezone = timezone;
+        }
         await farm.save();
+        // The farm's CamOS cameras get the new clock (shadow tz)
+        if (timezoneChanged) timezoneService.syncFarm(farm._id).catch(err => console.warn('⚠️ Farm timezone sync failed:', err.message));
         res.json({ success: true });
     } catch (err) {
         sendServerError(res, err, { context: 'Update farm' });
@@ -376,7 +389,7 @@ async function setPlotCameras(req, res) {
         }
         const unique = [...new Set(serials)];
         const filter = await farmService.assignableFilter(farm);
-        const cameras = await Camera.find({ ...filter, deviceSerial: { $in: unique } }).select('deviceSerial userId farmId sharedWith');
+        const cameras = await Camera.find({ ...filter, deviceSerial: { $in: unique } }).select('deviceSerial userId farmId sharedWith selfRegistered unclaimed platform');
         if (cameras.length !== unique.length || cameras.some(c => !canManageCamera(req.user, c))) {
             return res.status(400).json({ success: false, code: 'CAMERA_NOT_FOUND', message: "Only the farm owner's cameras can be added to its plots." });
         }
@@ -385,6 +398,8 @@ async function setPlotCameras(req, res) {
         await farmService.unassignCameras({ plotId: plot._id, deviceSerial: { $nin: unique } });
         await Camera.updateMany({ deviceSerial: { $in: unique } }, { $set: { farmId: farm._id, plotId: plot._id } });
         await farmService.syncFarmShares(farm);
+        // CamOS cameras moved to this farm take its timezone
+        for (const c of cameras.filter(c => c.platform === 'camos')) timezoneService.syncCamera(c.deviceSerial).catch(() => {});
         // Farms the cameras came from lose their shares on them
         for (const id of previousFarms) {
             const other = await Farm.findById(id);

@@ -465,7 +465,16 @@
     "sentinel_unreachable": "Không kết nối được tới Sentinel.",
     "sentinel_file_gone": "Tệp này không còn nữa.",
     "sentinel_storage_upstream": "Kho lưu trữ của Sentinel không phản hồi đúng.",
-    "sentinel_file_too_large": "Tệp này quá lớn để hiển thị ở đây."
+    "sentinel_file_too_large": "Tệp này quá lớn để hiển thị ở đây.",
+    "timezoneInvalid": "timezone phải là múi giờ IANA, ví dụ Asia/Ho_Chi_Minh.",
+    "registerTooManyIp": "Quá nhiều lượt đăng ký từ địa chỉ này.",
+    "registerTooMany": "Hiện có quá nhiều lượt đăng ký.",
+    "claimNotFound": "Không có camera chờ nhận nào khớp với số sê-ri và mã này.",
+    "claimRequired": "Cần nhập số sê-ri và mã xác minh.",
+    "trapKindStickyLure": "trapKind phải là sticky hoặc lure.",
+    "claimLocked": "Nhập sai mã quá nhiều lần cho số sê-ri này. Hãy thử lại sau.",
+    "planCameraLimit": "Gói của bạn cho nhận tối đa {count} camera.",
+    "farmNotYours": "Không tìm thấy vườn hoặc vườn không thuộc về bạn."
   },
   "reportPdf": {
     "range": "Khoảng thời gian: {from} - {to} ({days} ngày)",

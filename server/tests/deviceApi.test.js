@@ -196,7 +196,11 @@ test('time, ota and the IoT rule webhook', async () => {
     assert.equal(time.status, 200);
     assert.ok(Math.abs(time.body.epoch * 1000 - Date.now()) < 5000);
     assert.equal(new Date(time.body.now).getTime() > 0, true);
-    assert.equal((await request('/api/device/time')).status, 401);
+    // No auth needed (works before registration): the default or IP timezone
+    const anon = await json(await request('/api/device/time'));
+    assert.equal(anon.status, 200);
+    assert.equal(anon.body.timezone, 'Asia/Ho_Chi_Minh');
+    assert.equal(anon.body.tzSource, 'default');
 
     const ota = await json(await request('/api/device/ota', { headers }));
     assert.equal(ota.status, 200);

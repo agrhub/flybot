@@ -11,7 +11,8 @@ const { isAdmin, roleOf } = require('../constants/roles');
 const idOf = (user) => String(user?.id ?? user?._id ?? '');
 
 function viewFilter(user) {
-    if (isAdmin(user)) return {};
+    // Self-registered cameras nobody claimed yet are hidden from every account (admins too)
+    if (isAdmin(user)) return { unclaimed: { $ne: true } };
     const id = idOf(user);
     if (!id) return { _id: null }; // matches nothing
     return { $or: [{ userId: id }, { 'sharedWith.userId': id }] };
@@ -37,7 +38,10 @@ function findViewableCamera(user, deviceSerial) {
 
 function canManageCamera(user, camera) {
     if (!camera) return false;
+    if (camera.unclaimed) return false; // nobody's yet: only the claim flow touches it
     if (isAdmin(user)) return true;
+    // Whoever claimed a self-registered camera runs it, whatever their role (demo cameras)
+    if (camera.selfRegistered && !camera.unclaimed && camera.userId && String(camera.userId) === idOf(user)) return true;
     if (roleOf(user) !== 'manager') return false;
     const id = idOf(user);
     if (String(camera.userId) === id) return true;
@@ -52,7 +56,9 @@ function canManageCamera(user, camera) {
  */
 function isCameraOwner(user, camera) {
     if (!camera) return false;
+    if (camera.unclaimed) return false; // nobody's yet: only the claim flow touches it
     if (isAdmin(user)) return true;
+    if (camera.selfRegistered && !camera.unclaimed && camera.userId && String(camera.userId) === idOf(user)) return true;
     return roleOf(user) === 'manager' && String(camera.userId) === idOf(user);
 }
 

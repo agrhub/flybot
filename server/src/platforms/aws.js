@@ -24,6 +24,10 @@ const FACTORIES = {
         const { KinesisVideoClient } = require('@aws-sdk/client-kinesis-video');
         return new KinesisVideoClient({ region: env.AWS_REGION });
     },
+    iot: () => {
+        const { IoTClient } = require('@aws-sdk/client-iot');
+        return new IoTClient({ region: env.AWS_REGION });
+    },
     sts: () => {
         const { STSClient } = require('@aws-sdk/client-sts');
         return new STSClient({ region: env.AWS_REGION });

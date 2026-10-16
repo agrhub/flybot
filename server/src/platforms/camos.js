@@ -295,6 +295,14 @@ function deviceFieldsOf(doc) {
     });
 }
 
+/**
+ * The camera's first MQTT message or connection: a self-registered camera can no longer
+ * re-register with the same serial after this (CONTRACTS 2a.2).
+ */
+async function markConnected(deviceSerial, at = new Date()) {
+    await Camera.updateMany({ deviceSerial, platform: PLATFORM, 'device.firstConnectAt': { $exists: false } }, { $set: { 'device.firstConnectAt': at } }).catch(() => {});
+}
+
 async function setOnline(deviceSerial, online, at = new Date(), extra = {}) {
     const before = await Camera.findOne({ deviceSerial, platform: PLATFORM }).select('status deviceName').lean();
     if (!before) return false;
@@ -319,6 +327,7 @@ async function handleMessage(topicName, payload, { now = new Date() } = {}) {
     if (camos) {
         const [, deviceSerial, kind] = camos;
         if (!doc || typeof doc !== 'object') return { deviceSerial, kind, ignored: 'bad payload' };
+        await markConnected(deviceSerial, now);
         if (kind === 'rpc/res') {
             const waiter = pendingRpc.get(String(doc.id || ''));
             if (waiter) {
@@ -359,6 +368,7 @@ async function handleMessage(topicName, payload, { now = new Date() } = {}) {
         const [, what, clientId] = presence;
         const camera = await Camera.findOne({ platform: PLATFORM, $or: [{ deviceSerial: clientId }, { 'device.thingName': clientId }] }).select('deviceSerial').lean();
         if (!camera) return { clientId, kind: 'presence', ignored: 'unknown camera' };
+        if (what === 'connected') await markConnected(camera.deviceSerial, now);
         await setOnline(camera.deviceSerial, what === 'connected', now);
         return { deviceSerial: camera.deviceSerial, kind: 'presence', online: what === 'connected' };
     }

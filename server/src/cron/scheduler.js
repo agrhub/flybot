@@ -54,6 +54,7 @@ const pestCountJob = exclusive('Pest count backfill', async () => ({
 }), 'pestCount');
 const trainingSyncJob = exclusive('Training sync', () => syncTrainingData(), 'trainingSync');
 const aiRetryJob = exclusive('AI analysis retry', () => retryFailedAnalyses(), 'aiRetry');
+const selfRegisteredJob = exclusive('Unclaimed camera cleanup', () => require('../services/registrationService').cleanupSelfRegistered(), 'selfRegistered');
 const ezvizPolicyJob = exclusive('EZVIZ sub-account policies', async () => ({ changed: await resyncEzvizPolicies() }), 'ezvizPolicies');
 
 /**
@@ -129,6 +130,11 @@ function startCronJobs() {
     // Photos the AI failed on at capture: analyzed again, every 15 minutes (off the capture minute)
     cron.schedule('7,22,37,52 * * * *', () => {
         aiRetryJob();
+    });
+
+    // Self-registered cameras: unclaimed photos after 24 h, never-claimed cameras after 7 days
+    cron.schedule('41 * * * *', () => {
+        selfRegisteredJob();
     });
 
     // Removed camera access leaves the EZVIZ sub-accounts within the hour (no-op unless EZVIZ_RAM_TOKENS)

@@ -15,6 +15,10 @@ const snapshotSchema = new mongoose.Schema({
     imageUrl: { type: String, required: true },
     s3Key: { type: String, required: true },
     createdAt: { type: Date, default: Date.now },
+    // A photo of a self-registered camera nobody has claimed yet: hidden, deleted after 24 h
+    // (services/registrationService.js cleanup); cleared when the camera is claimed
+    unclaimed: { type: Boolean, default: undefined },
+    expiresAt: { type: Date, default: undefined },
     aiProcessed: { type: Boolean, default: false },
     aiProvider: { type: String, default: 'vertex' },
     aiResults: {
@@ -128,6 +132,7 @@ snapshotSchema.pre('save', function keepPestCount() {
 });
 // Retention cleanup scans by age only
 snapshotSchema.index({ createdAt: 1 });
+snapshotSchema.index({ expiresAt: 1 }, { sparse: true });
 // Sentinel console: traces by id, and the latest traces
 snapshotSchema.index({ 'lambda.traceId': 1 }, { sparse: true });
 
