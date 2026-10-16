@@ -412,7 +412,22 @@
     "at_most_max_rows_at_a_time": "Mỗi lần tối đa {max} dòng.",
     "choose_the_members_to_remind": "Hãy chọn thành viên cần nhắc.",
     "at_most_max_members_at_a_time": "Mỗi lần tối đa {max} thành viên.",
-    "this_proposal_has_expired": "Đề xuất này đã hết hạn."
+    "this_proposal_has_expired": "Đề xuất này đã hết hạn.",
+    "sentinel_viewer_must_be_true_or_false": "sentinelViewer phải là true hoặc false.",
+    "sentinel_console_not_set_up": "Máy chủ này chưa cài đặt bảng điều khiển Sentinel.",
+    "not_found_short": "Không tìm thấy.",
+    "sentinel_decision_must_be": "decision phải là \"approve\" hoặc \"reject\".",
+    "sentinel_auth_failed": "FlyBot không đăng nhập được vào Sentinel. Kiểm tra SENTINEL_UI_TOKEN.",
+    "sentinel_forbidden": "Sentinel từ chối thao tác này với token của FlyBot.",
+    "sentinel_refused": "Sentinel từ chối yêu cầu.",
+    "sentinel_approval_already_decided": "Đề xuất này đã được quyết định.",
+    "sentinel_busy": "Sentinel đang bận. Vui lòng thử lại sau ít phút.",
+    "sentinel_upstream": "Sentinel không phản hồi đúng. Vui lòng thử lại sau.",
+    "sentinel_timeout": "Sentinel không phản hồi kịp.",
+    "sentinel_unreachable": "Không kết nối được tới Sentinel.",
+    "sentinel_file_gone": "Tệp này không còn nữa.",
+    "sentinel_storage_upstream": "Kho lưu trữ của Sentinel không phản hồi đúng.",
+    "sentinel_file_too_large": "Tệp này quá lớn để hiển thị ở đây."
   },
   "reportPdf": {
     "range": "Khoảng thời gian: {from} - {to} ({days} ngày)",

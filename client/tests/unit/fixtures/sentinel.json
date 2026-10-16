@@ -1,0 +1,851 @@
+{
+  "summary": {
+    "since": "2026-10-15T01:18:10.039Z",
+    "until": "2026-10-16T01:18:10.039Z",
+    "hours": 24,
+    "photos": 17,
+    "photos_by_source": {
+      "ezviz": 12,
+      "camos": 5
+    },
+    "decisions": {
+      "no_op": 12,
+      "neighbour_check": 1,
+      "treatment_check": 1,
+      "propose_treatment": 1,
+      "propose_card_change": 1,
+      "set_isp": 1,
+      "keep": 1,
+      "capture": 2,
+      "request_human_review": 2
+    },
+    "rules": {
+      "no_op": 11,
+      "surge.detected": 1,
+      "surge.confirmed": 1,
+      "treatment.treat_now": 1,
+      "card.full": 1,
+      "kill_switch": 1,
+      "quality.isp_fix": 1,
+      "quality.fixed": 1,
+      "disagreement.closer_look": 1,
+      "disagreement.review": 1,
+      "quality.recapture": 1,
+      "battery.critical": 1
+    },
+    "outcomes": {
+      "no_op": 11,
+      "waiting_approval": 2,
+      "kill_switch_no_action": 1,
+      "quality.isp_fix": 1,
+      "disagreement.closer_look": 1,
+      "quality.recapture": 1
+    },
+    "planner_fallbacks": 1,
+    "loops": {
+      "per_photo": 17
+    },
+    "proposals_pending": 2,
+    "devices": {
+      "total": 3,
+      "online": 3
+    },
+    "kill_switch": {
+      "global": false,
+      "cameras": []
+    },
+    "last_photo_at": "2026-10-16T00:53:10Z"
+  },
+  "slim": [
+    {
+      "event_id": "01MOCKCARD00001",
+      "loop": "per_photo",
+      "camera": "AIC54F29F5167FA",
+      "plot": null,
+      "source": "camos",
+      "trap_kind": "sticky",
+      "state": "WAITING_APPROVAL",
+      "created_at": "2026-10-16T00:28:10Z",
+      "created_at_ms": 1792110490000,
+      "finished_at": "2026-10-16T00:28:14Z",
+      "outcome": "waiting_approval:card_change (card.full)",
+      "planner": "rule",
+      "fallback": false,
+      "kill_switch": false,
+      "decisions": [
+        {
+          "rule": "card.full",
+          "action": "propose_card_change"
+        }
+      ],
+      "counts": {
+        "opencv": 31,
+        "npu": 29,
+        "production": null
+      },
+      "quality": {
+        "ok": true,
+        "issues": [],
+        "score": 96
+      },
+      "image": "s3://sentinel-mock-dev/evidence/AIC54F29F5167FA/01MOCKCARD00001/cur.jpg",
+      "approval": {
+        "approval_id": "01MOCKAPR0000CARD",
+        "kind": "card_change",
+        "status": "pending"
+      }
+    },
+    {
+      "event_id": "01MOCKGLARE0001",
+      "loop": "per_photo",
+      "camera": "AIC54F29F5167FA",
+      "plot": null,
+      "source": "camos",
+      "trap_kind": "sticky",
+      "state": "ACTED",
+      "created_at": "2026-10-15T22:18:10Z",
+      "created_at_ms": 1792102690000,
+      "finished_at": "2026-10-15T22:18:14Z",
+      "outcome": "quality.isp_fix, quality.fixed",
+      "planner": "rule",
+      "fallback": false,
+      "kill_switch": false,
+      "decisions": [
+        {
+          "rule": "quality.isp_fix",
+          "action": "set_isp"
+        },
+        {
+          "rule": "quality.fixed",
+          "action": "keep"
+        }
+      ],
+      "counts": {
+        "opencv": 4,
+        "npu": 2,
+        "production": null
+      },
+      "quality": {
+        "ok": false,
+        "issues": [
+          "glare"
+        ],
+        "score": 41
+      },
+      "image": "s3://sentinel-mock-dev/evidence/AIC54F29F5167FA/01MOCKGLARE0001/glare.jpg",
+      "approval": null
+    },
+    {
+      "event_id": "01MOCK96290001",
+      "loop": "per_photo",
+      "camera": "BE4089629",
+      "plot": null,
+      "source": "ezviz",
+      "trap_kind": "lure",
+      "state": "DONE",
+      "created_at": "2026-10-16T00:53:10Z",
+      "created_at_ms": 1792111990000,
+      "finished_at": "2026-10-16T00:53:14Z",
+      "outcome": "no_op",
+      "planner": "rule",
+      "fallback": false,
+      "kill_switch": false,
+      "decisions": [
+        {
+          "rule": "no_op",
+          "action": "no_op"
+        }
+      ],
+      "counts": {
+        "opencv": 1,
+        "npu": null,
+        "production": 1
+      },
+      "quality": {
+        "ok": true,
+        "issues": [],
+        "score": 96
+      },
+      "image": "s3://sentinel-mock-dev/evidence/BE4089629/01MOCK96290001/cur.jpg",
+      "approval": null
+    },
+    {
+      "event_id": "01MOCK96290901",
+      "loop": "per_photo",
+      "camera": "BE4089629",
+      "plot": null,
+      "source": "ezviz",
+      "trap_kind": "lure",
+      "state": "DONE",
+      "created_at": "2026-10-15T23:18:10Z",
+      "created_at_ms": 1792106290000,
+      "finished_at": "2026-10-15T23:18:14Z",
+      "outcome": "kill_switch_no_action",
+      "planner": "rule",
+      "fallback": false,
+      "kill_switch": true,
+      "decisions": [
+        {
+          "rule": "kill_switch",
+          "action": "no_op"
+        }
+      ],
+      "counts": {
+        "opencv": 0,
+        "npu": null,
+        "production": 0
+      },
+      "quality": {
+        "ok": true,
+        "issues": [],
+        "score": 96
+      },
+      "image": "s3://sentinel-mock-dev/evidence/BE4089629/01MOCK96290901/cur.jpg",
+      "approval": null
+    }
+  ],
+  "full": [
+    {
+      "event_id": "01MOCKCARD00001",
+      "loop": "per_photo",
+      "camera": "AIC54F29F5167FA",
+      "plot": null,
+      "source": "camos",
+      "trap_kind": "sticky",
+      "created_at": "2026-10-16T00:28:10Z",
+      "finished_at": "2026-10-16T00:28:14Z",
+      "state": "WAITING_APPROVAL",
+      "opencv_outputs": {
+        "AIC54F29F5167FA": {
+          "event_id": "01MOCKCARD00001",
+          "camera": "AIC54F29F5167FA",
+          "source": "camos",
+          "trap_kind": "sticky",
+          "captured_at": "2026-10-16T00:28:10Z",
+          "image": "s3://sentinel-mock-dev/evidence/AIC54F29F5167FA/01MOCKCARD00001/cur.jpg",
+          "previous_image": "s3://sentinel-mock-dev/evidence/AIC54F29F5167FA/01MOCKCARD00001/prev.jpg",
+          "resolution": null,
+          "width": 768,
+          "height": 432,
+          "quality": {
+            "ok": true,
+            "issues": [],
+            "scores": {
+              "glare_ratio": 0.01,
+              "clip_high": 0,
+              "brightness": 121
+            },
+            "score": 96
+          },
+          "counts": {
+            "opencv": 31,
+            "npu": 29,
+            "production": null
+          },
+          "boxes": [],
+          "new_catch": {
+            "new_count": 3,
+            "persisted_count": 28,
+            "disappeared_count": 0,
+            "card_change_suspected": false,
+            "card_change_reasons": [],
+            "registration_ok": true,
+            "inliers": 112
+          },
+          "saturation": 0.47,
+          "card": null,
+          "snapshot_id": null,
+          "battery_percent": 84,
+          "untrusted_text": {},
+          "analyzer": "opencv5",
+          "vision_ms": 1100,
+          "evidence": [
+            "s3://sentinel-mock-dev/evidence/AIC54F29F5167FA/01MOCKCARD00001/cur_aligned.jpg",
+            "s3://sentinel-mock-dev/evidence/AIC54F29F5167FA/01MOCKCARD00001/cur_mask.jpg",
+            "s3://sentinel-mock-dev/evidence/AIC54F29F5167FA/01MOCKCARD00001/cur_card.jpg"
+          ]
+        }
+      },
+      "planner": {
+        "name": "rule",
+        "backend": null,
+        "model": null,
+        "fallback": false,
+        "fallback_reason": null,
+        "llm_turns": 0
+      },
+      "reasoning_summary": "[card.full] saturation 47 % with 31 insects: propose replacing the sticky card (logbook is written only after a human confirms)",
+      "decisions": [
+        {
+          "rule": "card.full",
+          "action": "propose_card_change",
+          "reasons": [
+            "saturation 0.47 >= 0.40"
+          ],
+          "evidence": [
+            "s3://sentinel-mock-dev/evidence/AIC54F29F5167FA/01MOCKCARD00001/cur.jpg",
+            "tool:0"
+          ]
+        }
+      ],
+      "tool_calls": [
+        {
+          "index": 0,
+          "name": "analyze_trap_photo",
+          "args": {
+            "camera": "AIC54F29F5167FA"
+          },
+          "status": "ok",
+          "blocked_reason": null,
+          "result": {
+            "observation": {
+              "event_id": "01MOCKCARD00001",
+              "camera": "AIC54F29F5167FA",
+              "source": "camos",
+              "trap_kind": "sticky",
+              "captured_at": "2026-10-16T00:28:10Z",
+              "image": "s3://sentinel-mock-dev/evidence/AIC54F29F5167FA/01MOCKCARD00001/cur.jpg",
+              "previous_image": "s3://sentinel-mock-dev/evidence/AIC54F29F5167FA/01MOCKCARD00001/prev.jpg",
+              "resolution": null,
+              "width": 768,
+              "height": 432,
+              "quality": {
+                "ok": true,
+                "issues": [],
+                "scores": {
+                  "glare_ratio": 0.01,
+                  "clip_high": 0,
+                  "brightness": 121
+                },
+                "score": 96
+              },
+              "counts": {
+                "opencv": 31,
+                "npu": 29,
+                "production": null
+              },
+              "boxes": [],
+              "new_catch": {
+                "new_count": 3,
+                "persisted_count": 28,
+                "disappeared_count": 0,
+                "card_change_suspected": false,
+                "card_change_reasons": [],
+                "registration_ok": true,
+                "inliers": 112
+              },
+              "saturation": 0.47,
+              "card": null,
+              "snapshot_id": null,
+              "battery_percent": 84,
+              "untrusted_text": {},
+              "analyzer": "opencv5",
+              "vision_ms": 1100,
+              "evidence": [
+                "s3://sentinel-mock-dev/evidence/AIC54F29F5167FA/01MOCKCARD00001/cur_aligned.jpg",
+                "s3://sentinel-mock-dev/evidence/AIC54F29F5167FA/01MOCKCARD00001/cur_mask.jpg",
+                "s3://sentinel-mock-dev/evidence/AIC54F29F5167FA/01MOCKCARD00001/cur_card.jpg"
+              ],
+              "boxes_count": 31
+            },
+            "evidence": [
+              "s3://sentinel-mock-dev/evidence/AIC54F29F5167FA/01MOCKCARD00001/cur_aligned.jpg",
+              "s3://sentinel-mock-dev/evidence/AIC54F29F5167FA/01MOCKCARD00001/cur_mask.jpg",
+              "s3://sentinel-mock-dev/evidence/AIC54F29F5167FA/01MOCKCARD00001/cur_card.jpg"
+            ]
+          },
+          "state_before": "INGESTED",
+          "state_after": "ANALYZED",
+          "started_at": "2026-10-16T00:28:10Z",
+          "ms": 1010,
+          "by": "planner"
+        },
+        {
+          "index": 1,
+          "name": "propose_card_change",
+          "args": {
+            "camera": "AIC54F29F5167FA",
+            "reason": "card full"
+          },
+          "status": "ok",
+          "blocked_reason": null,
+          "result": {
+            "ok": true,
+            "approval_id": "01MOCKAPR0000CARD",
+            "flybot_proposal_id": "prop-mock-001",
+            "evidence": [
+              "s3://sentinel-mock-dev/evidence/AIC54F29F5167FA/01MOCKCARD00001/cur.jpg"
+            ]
+          },
+          "state_before": "DECIDED",
+          "state_after": "WAITING_APPROVAL",
+          "started_at": "2026-10-16T00:28:15Z",
+          "ms": 320,
+          "by": "planner"
+        }
+      ],
+      "device_ack": [],
+      "approval": {
+        "approval_id": "01MOCKAPR0000CARD",
+        "event_id": "01MOCKCARD00001",
+        "kind": "card_change",
+        "cameras": [
+          "AIC54F29F5167FA"
+        ],
+        "payload": {
+          "action": "replace_card",
+          "reason": "card coverage 47 % (>= 40 %) and 31 insects on the card",
+          "date": "2026-10-16",
+          "coverage": 0.47
+        },
+        "evidence": [
+          "s3://sentinel-mock-dev/evidence/AIC54F29F5167FA/01MOCKCARD00001/cur.jpg",
+          "s3://sentinel-mock-dev/evidence/AIC54F29F5167FA/01MOCKCARD00001/cur_mask.jpg"
+        ],
+        "status": "pending",
+        "created_at": "2026-10-16T00:28:15Z",
+        "expires_at": "2026-10-17T00:28:10Z",
+        "decided_at": null,
+        "flybot_proposal_id": "prop-mock-001",
+        "on_timeout": "no_op",
+        "decided_by": null
+      },
+      "outcome": "waiting_approval:card_change (card.full)",
+      "followup": null,
+      "events": [],
+      "kill_switch": false,
+      "policy_version": "1"
+    },
+    {
+      "event_id": "01MOCKGLARE0001",
+      "loop": "per_photo",
+      "camera": "AIC54F29F5167FA",
+      "plot": null,
+      "source": "camos",
+      "trap_kind": "sticky",
+      "created_at": "2026-10-15T22:18:10Z",
+      "finished_at": "2026-10-15T22:18:14Z",
+      "state": "ACTED",
+      "opencv_outputs": {
+        "AIC54F29F5167FA": {
+          "event_id": "01MOCKGLARE0001",
+          "camera": "AIC54F29F5167FA",
+          "source": "camos",
+          "trap_kind": "sticky",
+          "captured_at": "2026-10-15T22:18:10Z",
+          "image": "s3://sentinel-mock-dev/evidence/AIC54F29F5167FA/01MOCKGLARE0001/glare.jpg",
+          "previous_image": null,
+          "resolution": null,
+          "width": 768,
+          "height": 432,
+          "quality": {
+            "ok": false,
+            "issues": [
+              "glare"
+            ],
+            "scores": {
+              "glare_ratio": 0.21,
+              "clip_high": 0.09,
+              "brightness": 183
+            },
+            "score": 41
+          },
+          "counts": {
+            "opencv": 4,
+            "npu": 2,
+            "production": null
+          },
+          "boxes": [],
+          "new_catch": null,
+          "saturation": 0.04,
+          "card": null,
+          "snapshot_id": null,
+          "battery_percent": 87,
+          "untrusted_text": {},
+          "analyzer": "opencv5",
+          "vision_ms": 1100,
+          "evidence": [
+            "s3://sentinel-mock-dev/evidence/AIC54F29F5167FA/01MOCKGLARE0001/glare_quality.jpg"
+          ]
+        },
+        "AIC54F29F5167FA/verify": {
+          "event_id": "01MOCKGLARE0001:verify",
+          "camera": "AIC54F29F5167FA",
+          "source": "camos",
+          "trap_kind": "sticky",
+          "captured_at": "2026-10-15T22:18:19Z",
+          "image": "s3://sentinel-mock-dev/evidence/AIC54F29F5167FA/01MOCKGLARE0001/after_fix.jpg",
+          "previous_image": null,
+          "resolution": null,
+          "width": 768,
+          "height": 432,
+          "quality": {
+            "ok": true,
+            "issues": [],
+            "scores": {
+              "glare_ratio": 0.01,
+              "clip_high": 0,
+              "brightness": 128
+            },
+            "score": 92
+          },
+          "counts": {
+            "opencv": 3,
+            "npu": 3,
+            "production": null
+          },
+          "boxes": [],
+          "new_catch": null,
+          "saturation": 0.04,
+          "card": null,
+          "snapshot_id": null,
+          "battery_percent": 87,
+          "untrusted_text": {},
+          "analyzer": "opencv5",
+          "vision_ms": 1100,
+          "evidence": [
+            "s3://sentinel-mock-dev/evidence/AIC54F29F5167FA/01MOCKGLARE0001/after_fix_quality.jpg"
+          ]
+        }
+      },
+      "planner": {
+        "name": "rule",
+        "backend": null,
+        "model": null,
+        "fallback": false,
+        "fallback_reason": null,
+        "llm_turns": 0
+      },
+      "reasoning_summary": "[quality.isp_fix] glare on AIC54F29F5167FA (glare_ratio 0.21): lower brightness, enable WDR, then verify with an automatic capture. [quality.fixed] quality score 41 -> 92, keep the change",
+      "decisions": [
+        {
+          "rule": "quality.isp_fix",
+          "action": "set_isp",
+          "reasons": [
+            "glare_ratio 0.21 >= 0.08",
+            "AI camera exposes video.image in the shadow"
+          ],
+          "evidence": [
+            "s3://sentinel-mock-dev/evidence/AIC54F29F5167FA/01MOCKGLARE0001/glare.jpg",
+            "tool:0"
+          ]
+        },
+        {
+          "rule": "quality.fixed",
+          "action": "keep",
+          "reasons": [
+            "score 41 -> 92"
+          ],
+          "evidence": [
+            "s3://sentinel-mock-dev/evidence/AIC54F29F5167FA/01MOCKGLARE0001/after_fix.jpg",
+            "tool:3"
+          ]
+        }
+      ],
+      "tool_calls": [
+        {
+          "index": 0,
+          "name": "analyze_trap_photo",
+          "args": {
+            "camera": "AIC54F29F5167FA"
+          },
+          "status": "ok",
+          "blocked_reason": null,
+          "result": {
+            "observation": {
+              "event_id": "01MOCKGLARE0001",
+              "camera": "AIC54F29F5167FA",
+              "source": "camos",
+              "trap_kind": "sticky",
+              "captured_at": "2026-10-15T22:18:10Z",
+              "image": "s3://sentinel-mock-dev/evidence/AIC54F29F5167FA/01MOCKGLARE0001/glare.jpg",
+              "previous_image": null,
+              "resolution": null,
+              "width": 768,
+              "height": 432,
+              "quality": {
+                "ok": false,
+                "issues": [
+                  "glare"
+                ],
+                "scores": {
+                  "glare_ratio": 0.21,
+                  "clip_high": 0.09,
+                  "brightness": 183
+                },
+                "score": 41
+              },
+              "counts": {
+                "opencv": 4,
+                "npu": 2,
+                "production": null
+              },
+              "boxes": [],
+              "new_catch": null,
+              "saturation": 0.04,
+              "card": null,
+              "snapshot_id": null,
+              "battery_percent": 87,
+              "untrusted_text": {},
+              "analyzer": "opencv5",
+              "vision_ms": 1100,
+              "evidence": [
+                "s3://sentinel-mock-dev/evidence/AIC54F29F5167FA/01MOCKGLARE0001/glare_quality.jpg"
+              ],
+              "boxes_count": 0
+            },
+            "evidence": [
+              "s3://sentinel-mock-dev/evidence/AIC54F29F5167FA/01MOCKGLARE0001/glare_quality.jpg"
+            ]
+          },
+          "state_before": "INGESTED",
+          "state_after": "ANALYZED",
+          "started_at": "2026-10-15T22:18:10Z",
+          "ms": 980,
+          "by": "planner"
+        },
+        {
+          "index": 1,
+          "name": "set_image",
+          "args": {
+            "camera": "AIC54F29F5167FA",
+            "brightness": 35,
+            "wdr": 1,
+            "reason": "glare"
+          },
+          "status": "ok",
+          "blocked_reason": null,
+          "result": {
+            "ok": true,
+            "camera": "AIC54F29F5167FA",
+            "before_settings": {
+              "brightness": 50,
+              "contrast": 50,
+              "wdr": 0
+            },
+            "applied_settings": {
+              "brightness": 35,
+              "wdr": 1
+            },
+            "applied": true,
+            "pending": false,
+            "error": null,
+            "reason": "glare",
+            "evidence": [
+              "ddb://sentinel-devices/AIC54F29F5167FA#reported_version=5"
+            ]
+          },
+          "state_before": "DECIDED",
+          "state_after": "ACTED",
+          "started_at": "2026-10-15T22:18:11Z",
+          "ms": 410,
+          "by": "planner"
+        },
+        {
+          "index": 2,
+          "name": "capture",
+          "args": {
+            "camera": "AIC54F29F5167FA",
+            "resolution": "main",
+            "purpose": "isp_verify"
+          },
+          "status": "ok",
+          "blocked_reason": null,
+          "result": {
+            "ok": true,
+            "camera": "AIC54F29F5167FA",
+            "purpose": "isp_verify",
+            "resolution": "main",
+            "image": "s3://sentinel-mock-dev/evidence/AIC54F29F5167FA/01MOCKGLARE0001/after_fix.jpg",
+            "pending": false,
+            "transport": "iot_rpc",
+            "request_id": "01MOCKRPC0000001",
+            "npu_count": 3,
+            "error": null,
+            "evidence": [
+              "s3://sentinel-mock-dev/evidence/AIC54F29F5167FA/01MOCKGLARE0001/after_fix.jpg"
+            ]
+          },
+          "state_before": "ACTED",
+          "state_after": "ACTED",
+          "started_at": "2026-10-15T22:18:16Z",
+          "ms": 2900,
+          "by": "guardrail"
+        },
+        {
+          "index": 3,
+          "name": "analyze_trap_photo",
+          "args": {
+            "camera": "AIC54F29F5167FA",
+            "image": "s3://sentinel-mock-dev/evidence/AIC54F29F5167FA/01MOCKGLARE0001/after_fix.jpg"
+          },
+          "status": "ok",
+          "blocked_reason": null,
+          "result": {
+            "observation": {
+              "event_id": "01MOCKGLARE0001:verify",
+              "camera": "AIC54F29F5167FA",
+              "source": "camos",
+              "trap_kind": "sticky",
+              "captured_at": "2026-10-15T22:18:19Z",
+              "image": "s3://sentinel-mock-dev/evidence/AIC54F29F5167FA/01MOCKGLARE0001/after_fix.jpg",
+              "previous_image": null,
+              "resolution": null,
+              "width": 768,
+              "height": 432,
+              "quality": {
+                "ok": true,
+                "issues": [],
+                "scores": {
+                  "glare_ratio": 0.01,
+                  "clip_high": 0,
+                  "brightness": 128
+                },
+                "score": 92
+              },
+              "counts": {
+                "opencv": 3,
+                "npu": 3,
+                "production": null
+              },
+              "boxes": [],
+              "new_catch": null,
+              "saturation": 0.04,
+              "card": null,
+              "snapshot_id": null,
+              "battery_percent": 87,
+              "untrusted_text": {},
+              "analyzer": "opencv5",
+              "vision_ms": 1100,
+              "evidence": [
+                "s3://sentinel-mock-dev/evidence/AIC54F29F5167FA/01MOCKGLARE0001/after_fix_quality.jpg"
+              ],
+              "boxes_count": 0
+            },
+            "evidence": [
+              "s3://sentinel-mock-dev/evidence/AIC54F29F5167FA/01MOCKGLARE0001/after_fix_quality.jpg"
+            ]
+          },
+          "state_before": "ACTED",
+          "state_after": "ACTED",
+          "started_at": "2026-10-15T22:18:19Z",
+          "ms": 1010,
+          "by": "guardrail"
+        }
+      ],
+      "device_ack": [
+        {
+          "ok": true,
+          "serial": "AIC54F29F5167FA",
+          "method": "set_image",
+          "transport": "iot_shadow",
+          "request_id": "01MOCKSHADOW0001",
+          "applied": true,
+          "pending": false,
+          "result": {
+            "desired": {
+              "video": {
+                "image": {
+                  "brightness": 35,
+                  "wdr": 1
+                }
+              }
+            }
+          },
+          "error": null,
+          "ms": 410,
+          "evidence": []
+        },
+        {
+          "ok": true,
+          "serial": "AIC54F29F5167FA",
+          "method": "capture",
+          "transport": "iot_rpc",
+          "request_id": "01MOCKRPC0000001",
+          "applied": null,
+          "pending": false,
+          "result": {
+            "image": {
+              "key": "frames/AIC54F29F5167FA/mock.jpg",
+              "w": 2560,
+              "h": 1440
+            },
+            "ai": {
+              "n": 3
+            },
+            "resolution": "main"
+          },
+          "error": null,
+          "ms": 2900,
+          "evidence": []
+        }
+      ],
+      "approval": null,
+      "outcome": "quality.isp_fix, quality.fixed",
+      "followup": null,
+      "events": [
+        {
+          "at": "2026-10-15T22:18:19Z",
+          "kind": "isp_verified",
+          "detail": {
+            "camera": "AIC54F29F5167FA",
+            "score_before": 41,
+            "score_after": 92
+          }
+        }
+      ],
+      "kill_switch": false,
+      "policy_version": "1"
+    }
+  ],
+  "approvals": [
+    {
+      "approval_id": "01MOCKAPR0000CARD",
+      "event_id": "01MOCKCARD00001",
+      "kind": "card_change",
+      "cameras": [
+        "AIC54F29F5167FA"
+      ],
+      "payload": {
+        "action": "replace_card",
+        "reason": "card coverage 47 % (>= 40 %) and 31 insects on the card",
+        "date": "2026-10-16",
+        "coverage": 0.47
+      },
+      "evidence": [
+        "s3://sentinel-mock-dev/evidence/AIC54F29F5167FA/01MOCKCARD00001/cur.jpg",
+        "s3://sentinel-mock-dev/evidence/AIC54F29F5167FA/01MOCKCARD00001/cur_mask.jpg"
+      ],
+      "status": "pending",
+      "created_at": "2026-10-16T00:28:15Z",
+      "expires_at": "2026-10-17T00:28:10Z",
+      "decided_at": null,
+      "flybot_proposal_id": "prop-mock-001",
+      "on_timeout": "no_op",
+      "decided_by": null,
+      "expires_at_ms": 1792196890000
+    },
+    {
+      "approval_id": "01MOCKAPR0000OLD1",
+      "event_id": "evt-old-1",
+      "kind": "treatment",
+      "cameras": [
+        "BE4089629"
+      ],
+      "payload": {
+        "action": "bait_before_wave",
+        "reason": "degree-day outlook: wave in 3 days",
+        "date": "2026-10-14"
+      },
+      "evidence": [],
+      "status": "approved",
+      "created_at": "2026-10-14T19:18:10Z",
+      "expires_at": "2026-10-15T19:18:10Z",
+      "decided_at": "2026-10-14T21:18:10Z",
+      "flybot_proposal_id": "prop-1",
+      "on_timeout": "no_op",
+      "decided_by": "Hoa (AgriHub)",
+      "expires_at_ms": 1792091890039
+    }
+  ]
+}

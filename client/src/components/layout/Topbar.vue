@@ -156,7 +156,8 @@ const currentSectionTitle = computed(() => {
     farms: t('nav.farms'),
     analytics: t('nav.analytics'),
     map: t('nav.map'),
-    settings: t('nav.settings')
+    settings: t('nav.settings'),
+    sentinel: t('nav.sentinel')
   };
   return map[props.currentSection] || t('nav.dashboard');
 });

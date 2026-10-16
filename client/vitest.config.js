@@ -6,7 +6,8 @@ import vue from '@vitejs/plugin-vue'
 // Unit and component tests (tests/unit). The end-to-end checks against the demo live in
 // tests/e2e and run with node --test.
 export default defineConfig({
-  plugins: [vue()],
+  // Absolute paths in templates (/logo.png) are public files, not modules to import
+  plugins: [vue({ template: { transformAssetUrls: { includeAbsolute: false } } })],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))

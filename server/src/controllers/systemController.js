@@ -5,6 +5,7 @@ const telegramService = require('../services/telegramService');
 const { sendServerError } = require('../utils/http');
 const { viewableCameras } = require('../utils/ownership');
 const { createTtlCache } = require('../utils/ttlCache');
+const sentinelUi = require('../services/sentinelUiService');
 
 /**
  * GET /api/system/info: real storage and AI settings, plus this user's snapshot usage
@@ -51,6 +52,8 @@ async function getSystemInfo(req, res) {
                     enabled: telegramService.isEnabled(),
                     botUsername: telegramService.isEnabled() ? TELEGRAM_BOT_USERNAME : null
                 },
+                // Sentinel console for this person (same values as /api/auth/me)
+                sentinel: (({ sentinelEnabled, sentinelCanDecide }) => ({ enabled: sentinelEnabled, canDecide: sentinelCanDecide }))(sentinelUi.accessFor(req.user)),
                 usage: {
                     cameras: serials.length,
                     snapshots: usage?.snapshots || 0,

@@ -11,8 +11,14 @@
 //               GET /__webhooks          snapshot_analyzed deliveries to https://sentinel-receiver.test/flybot/webhook
 //                                       (recorded instead of sent: raw body + X-FlyBot-* headers)
 //
-// It writes the throwaway credentials of this run (API key fbk_..., SENTINEL_API_SECRET, webhook secret, a
-// manager JWT) to $FLYBOT_DEV_OUT (default: <tmp>/flybot-sentinel-dev.json). They exist only in this process.
+// It writes the throwaway credentials of this run (API key fbk_..., SENTINEL_API_SECRET, webhook secret, JWTs
+// for the manager, the admin and a judge) to $FLYBOT_DEV_OUT (default: <tmp>/flybot-sentinel-dev.json). They
+// exist only in this process.
+//
+// Sentinel console (/api/sentinel/ui) against the real Sentinel UI API: pass SENTINEL_UI_URL and either
+// SENTINEL_UI_TOKEN or SENTINEL_UI_TOKEN_FILE (e.g. flybot-sentinel/data/secrets/ui-token.txt). The token is
+// kept in this process only (never written to $FLYBOT_DEV_OUT). The judge (judge@flybot.test, role "user",
+// sentinelViewer) sees the two lure traps and reads the console; it cannot decide.
 //
 //   node tools/sentinel/dev-server.js                       (AI_PROVIDER=roboflow stub: photos arrive analyzed)
 //   AI_PROVIDER=sentinel node tools/sentinel/dev-server.js  (photos wait for POST /api/sentinel/analysis)
@@ -26,6 +32,9 @@ const SERVER = path.resolve(__dirname, '../../server');
 const req = (p) => require(p.startsWith('node_modules/') ? require.resolve(p.slice(13), { paths: [SERVER] }) : path.join(SERVER, p));
 
 const keepProvider = process.env.AI_PROVIDER;
+const keepSentinelUiUrl = process.env.SENTINEL_UI_URL || '';
+const keepSentinelUiToken = (process.env.SENTINEL_UI_TOKEN
+    || (process.env.SENTINEL_UI_TOKEN_FILE ? fs.readFileSync(process.env.SENTINEL_UI_TOKEN_FILE, 'utf8') : '')).trim();
 for (const file of [path.join(SERVER, '.env'), path.join(SERVER, '../.env')]) {
     if (!fs.existsSync(file)) continue;
     for (const line of fs.readFileSync(file, 'utf8').split(/\r?\n/)) {
@@ -53,6 +62,8 @@ Object.assign(process.env, {
     SENTINEL_API_SECRET: SENTINEL_SECRET,
     SENTINEL_CAPTURE_BUDGET: '20',
     AI_PROVIDER: keepProvider || 'roboflow',
+    SENTINEL_UI_URL: keepSentinelUiUrl,
+    SENTINEL_UI_TOKEN: keepSentinelUiToken,
     TELEGRAM_BOT_TOKEN: '',
     // EZVIZ is stubbed below; the app only checks that these are set
     APP_KEY: 'dev',
@@ -142,8 +153,11 @@ axios.post = async (url, body, config = {}) => {
 const MIN = 60 * 1000;
 async function seed() {
     const user = (email, role) => models.User.create({ email, name: email.split('@')[0], role, password: 'x'.repeat(60), emailVerified: true, language: 'en' });
-    await user('admin@flybot.test', 'admin');
+    const admin = await user('admin@flybot.test', 'admin');
     const owner = await user('owner@flybot.test', 'manager');
+    // A competition judge: views the two orchard traps and reads the Sentinel console
+    const judge = await user('judge@flybot.test', 'user');
+    await models.User.updateOne({ _id: judge._id }, { $set: { sentinelViewer: true } });
     const farm = await models.Farm.create({ ownerId: owner._id, name: 'Orchard (dev)' });
     const plot = await models.Plot.create({ farmId: farm._id, name: 'Plot L', color: '#3ecf8e' });
     const cams = [
@@ -153,8 +167,9 @@ async function seed() {
         { deviceSerial: 'BC0001', deviceName: 'Sticky trap (dev)', trapKind: 'sticky' }
     ];
     for (const c of cams) {
+        const sharedWith = c.trapKind === 'lure' ? [{ userId: judge._id, email: judge.email, sharedBy: owner._id, sharedAt: new Date() }] : [];
         await models.Camera.create({ ...c, userId: owner._id, status: 1, farmId: farm._id, plotId: plot._id, latitude: 10.35, longitude: 106.36,
-            alertThreshold: 15, captureIntervalMinutes: 30, captureDaytimeOnly: false, sharedWith: [] });
+            alertThreshold: 15, captureIntervalMinutes: 30, captureDaytimeOnly: false, sharedWith });
     }
     // Six hours of analyzed photos every 30 minutes, stored under the production key layout
     const now = Date.now();
@@ -172,7 +187,7 @@ async function seed() {
     await models.ApiKey.create({ userId: owner._id, name: 'sentinel-poller (dev)', prefix: apiKey.slice(0, 12), hash: crypto.createHash('sha256').update(apiKey).digest('hex') });
     const webhookSecret = webhookService.newSecret();
     await models.Webhook.create({ userId: owner._id, url: RECEIVER, secret: webhookSecret, events: ['snapshot_analyzed'] });
-    return { owner, apiKey, webhookSecret };
+    return { owner, admin, judge, apiKey, webhookSecret };
 }
 
 (async () => {
@@ -182,15 +197,17 @@ async function seed() {
     const mongod = await MongoMemoryServer.create({ instance: { dbPath } });
     await mongoose.connect(mongod.getUri());
     await Promise.all(Object.values(models).map(m => m.syncIndexes()));
-    const { owner, apiKey, webhookSecret } = await seed();
+    const { owner, admin, judge, apiKey, webhookSecret } = await seed();
     const { app } = req('src/app');
     app.listen(API_PORT, '127.0.0.1', () => {
-        const token = jwt.sign({ id: String(owner._id), v: 0 }, env.JWT_SECRET, { expiresIn: '12h' });
+        const sign = (u) => jwt.sign({ id: String(u._id), v: 0 }, env.JWT_SECRET, { expiresIn: '12h' });
+        const token = sign(owner);
         fs.writeFileSync(OUT, JSON.stringify({
             apiUrl: `http://127.0.0.1:${API_PORT}`, storageEndpoint: `http://127.0.0.1:${S3_PORT}`, bucket: BUCKET,
             apiKey, sentinelSecret: SENTINEL_SECRET, webhookSecret, webhookLog: `http://127.0.0.1:${S3_PORT}/__webhooks`,
-            ownerToken: token, aiProvider: env.AI_PROVIDER
+            ownerToken: token, adminToken: sign(admin), judgeToken: sign(judge), aiProvider: env.AI_PROVIDER,
+            sentinelConsole: !!(env.SENTINEL_UI_URL && env.SENTINEL_UI_TOKEN)
         }, null, 2));
-        console.log(`FlyBot dev for Sentinel on :${API_PORT} (fake S3 :${S3_PORT}, AI_PROVIDER=${env.AI_PROVIDER}); credentials in ${OUT}`);
+        console.log(`FlyBot dev for Sentinel on :${API_PORT} (fake S3 :${S3_PORT}, AI_PROVIDER=${env.AI_PROVIDER}, Sentinel console ${env.SENTINEL_UI_URL && env.SENTINEL_UI_TOKEN ? `-> ${env.SENTINEL_UI_URL}` : 'off'}); credentials in ${OUT}`);
     });
 })().catch((err) => { console.error(err); process.exit(1); });

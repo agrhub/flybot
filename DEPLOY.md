@@ -90,6 +90,7 @@ done
 | `flybot-telegram-bot-token` (optional) | `TELEGRAM_BOT_TOKEN`, only needed for Telegram alerts |
 | `flybot-roboflow-upload-key` (optional) | `ROBOFLOW_UPLOAD_API_KEY`, only needed for retraining uploads |
 | `flybot-sentinel-api-secret` (optional) | `SENTINEL_API_SECRET`, only needed for the FlyBot Sentinel internal API (API.md) |
+| `flybot-sentinel-ui-token` (optional) | `SENTINEL_UI_TOKEN`, the Sentinel UI API operator token for the Sentinel console (API.md "Sentinel console proxy"); set `SENTINEL_UI_URL` too |
 
 To change a secret later, run `gcloud secrets versions add NAME --data-file=-`, then redeploy.
 
@@ -113,6 +114,8 @@ The deploy-specific keys `NODE_ENV`, `APP_BASE_URL`, `COOKIE_SECURE`, `TRUST_PRO
 For email (password reset, email confirmation, alert emails), fill `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER` and `MAIL_FROM`, and store `SMTP_PASS` as the `flybot-smtp-pass` secret. Then add `,SMTP_PASS=flybot-smtp-pass:latest` to `_EXTRA_SECRETS`. The deploy script does all of this from `.env`. `APP_BASE_URL` must be the public URL of the app; the deploy script sets it to the Cloud Run URL when it is empty.
 
 To send reviewed photos to Roboflow for retraining, set `ROBOFLOW_UPLOAD_PROJECT` to the project ID (the dataset slug in the project URL) and `ROBOFLOW_UPLOAD_CLASS` to its class name (default `fruit_fly`). Uploads need the workspace's **private** API key. If `ROBOFLOW_API_KEY` is a publishable key, set `ROBOFLOW_UPLOAD_API_KEY` too: the deploy script stores it as the `flybot-roboflow-upload-key` secret (by hand: add `,ROBOFLOW_UPLOAD_API_KEY=flybot-roboflow-upload-key:latest` to `_EXTRA_SECRETS`). An admin then turns it on under Settings → System.
+
+For the FlyBot Sentinel console (menu **Sentinel**, API.md "Sentinel console proxy"), set `SENTINEL_UI_URL` (the Sentinel UI API base ending in `/ui`, in `.env` or `deploy/cloudrun.env.yaml`) and `SENTINEL_UI_TOKEN` (Sentinel's operator token) in `.env`: the deploy script stores the token as the `flybot-sentinel-ui-token` secret (by hand: add `,SENTINEL_UI_TOKEN=flybot-sentinel-ui-token:latest` to `_EXTRA_SECRETS`). Without both, the menu stays hidden.
 
 ### 5. Deploy
 ```bash

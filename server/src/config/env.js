@@ -55,6 +55,30 @@ if (configuredCred) {
 }
 
 // The SMTP login, when it is an email address, doubles as sender and contact address
+// Sentinel UI API base: https (http only for a local mock), no query, always ending in /ui
+function normalizeSentinelUiUrl(raw) {
+    const value = String(raw || '').trim().replace(/\/+$/, '');
+    if (!value) return '';
+    let url;
+    try {
+        url = new URL(value);
+    } catch {
+        console.warn('⚠️ SENTINEL_UI_URL is not a URL: the Sentinel console stays off');
+        return '';
+    }
+    const local = ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname);
+    if (url.protocol !== 'https:' && !(url.protocol === 'http:' && local)) {
+        console.warn('⚠️ SENTINEL_UI_URL must be https: the Sentinel console stays off');
+        return '';
+    }
+    if (url.search || url.hash || url.username || url.password) {
+        console.warn('⚠️ SENTINEL_UI_URL must not carry a query or credentials: the Sentinel console stays off');
+        return '';
+    }
+    const base = `${url.origin}${url.pathname.replace(/\/+$/, '')}`;
+    return base.endsWith('/ui') ? base : `${base}/ui`;
+}
+
 const SMTP_USER = (process.env.SMTP_USER || "").trim();
 const SMTP_USER_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(SMTP_USER) ? SMTP_USER : "";
 
@@ -147,6 +171,11 @@ const config = {
     SENTINEL_CAPTURE_BUDGET: /^\d+$/.test((process.env.SENTINEL_CAPTURE_BUDGET || '').trim()) ? Math.min(parseInt(process.env.SENTINEL_CAPTURE_BUDGET, 10), 96) : 4,
     // A Sentinel proposal not confirmed within this many hours expires
     SENTINEL_PROPOSAL_TTL_HOURS: Math.min(Math.max(parseInt(process.env.SENTINEL_PROPOSAL_TTL_HOURS || '24', 10) || 24, 1), 168),
+    // Sentinel operator console inside FlyBot: /api/sentinel/ui/* proxies the Sentinel UI API
+    // (base URL ending in /ui) with the operator token, which never reaches browsers.
+    // Either unset = the proxy answers 503 SENTINEL_DISABLED and the client hides the menu.
+    SENTINEL_UI_URL: normalizeSentinelUiUrl(process.env.SENTINEL_UI_URL),
+    SENTINEL_UI_TOKEN: (process.env.SENTINEL_UI_TOKEN || "").trim(),
     // Retraining data: reviewed snapshots are uploaded to this Roboflow project (dataset slug).
     // Needs a private API key (falls back to ROBOFLOW_API_KEY). Empty = off.
     ROBOFLOW_UPLOAD_PROJECT: process.env.ROBOFLOW_UPLOAD_PROJECT || "",

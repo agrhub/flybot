@@ -14,6 +14,7 @@ const AUDIT_ACTIONS = [
     'user.email_verified',
     'user.deleted',
     'user.confirm_reminded',
+    'user.sentinel_access_changed',
     'camera.added',
     'camera.updated',
     'camera.deleted',
@@ -61,7 +62,8 @@ const AUDIT_ACTIONS = [
     'sentinel.proposal_created',
     'sentinel.proposal_decided',
     'sentinel.review_requested',
-    'sentinel.analysis'
+    'sentinel.analysis',
+    'sentinel.approval_decided'
 ];
 const CATEGORIES = [...new Set(AUDIT_ACTIONS.map(a => a.split('.')[0]))];
 

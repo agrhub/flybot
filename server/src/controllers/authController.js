@@ -13,6 +13,7 @@ const { normalizeLanguage, SUPPORTED_LANGUAGES } = require('../utils/i18n');
 const { queueMail } = require('../services/mailService');
 const emailTemplates = require('../services/emailTemplates');
 const avatarService = require('../services/avatarService');
+const sentinelUi = require('../services/sentinelUiService');
 const dataExportService = require('../services/dataExportService');
 const { pipeSnapshot } = require('./s3Controller');
 const {
@@ -67,7 +68,9 @@ function toPublicUser(user) {
         telegram: {
             connected: !!user.telegram?.chatId,
             username: user.telegram?.username || ''
-        }
+        },
+        // Sentinel console menu (sentinelEnabled) and its Approve/Reject buttons (sentinelCanDecide)
+        ...sentinelUi.accessFor(user)
     };
 }
 

@@ -10,6 +10,9 @@ const userSchema = new mongoose.Schema({
     role: { type: String, enum: ['admin', 'manager', 'user'], default: 'user' },
     // Disabled accounts cannot sign in; set by an admin
     disabled: { type: Boolean, default: false },
+    // Read-only access to the FlyBot Sentinel pages for a "user" account (e.g. a competition judge);
+    // admins and managers have it anyway. Set by an admin (PUT /api/admin/users/:id)
+    sentinelViewer: { type: Boolean, default: false },
     emailVerified: { type: Boolean, default: false },
     // UI/email language: 'vi' | 'en'
     language: { type: String, default: 'vi' },

@@ -82,6 +82,7 @@ import { useI18n } from 'vue-i18n';
 import { useAuth } from '@/composables/useAuth';
 import { useBreakpoints } from '@/composables/useBreakpoints';
 import { useTheme } from '@/utils/theme';
+import { useSentinel } from '@/composables/useSentinel';
 import {
   Odometer,
   VideoCamera,
@@ -93,7 +94,8 @@ import {
   Place,
   Fold,
   Expand,
-  Plus
+  Plus,
+  Cpu
 } from '@element-plus/icons-vue';
 
 const props = defineProps({
@@ -107,6 +109,8 @@ const emit = defineEmits(['navigate', 'open-add-camera']);
 
 const { t } = useI18n();
 const { canManageCameras } = useAuth();
+// FlyBot Sentinel console: only when the server has it on for this person
+const { enabled: sentinelEnabled } = useSentinel();
 const { isTablet } = useBreakpoints();
 // Desktop: remembered choice. Tablet: icons only by default (not remembered)
 const desktopCollapsed = ref(localStorage.getItem('smart_trap_sidebar_collapsed') === 'true');
@@ -146,6 +150,7 @@ const navItems = computed(() => [
   { id: 'farms', label: t('nav.farms'), icon: Place },
   { id: 'logbook', label: t('nav.logbook'), icon: Notebook },
   { id: 'map', label: t('nav.map'), icon: MapLocation },
+  ...(sentinelEnabled.value ? [{ id: 'sentinel', label: t('nav.sentinel'), icon: Cpu }] : []),
   { id: 'settings', label: t('nav.settings'), icon: Setting },
 ]);
 </script>

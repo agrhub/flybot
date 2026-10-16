@@ -4,6 +4,8 @@ const isDark = ref(localStorage.getItem('smart_trap_theme') !== 'light'); // Def
 const isAssistantOpen = ref(false);
 // A question to put to the assistant from elsewhere in the app ({ text, snapshotId? })
 const assistantQuestion = ref(null);
+// A FlyBot Sentinel proposal to scroll to in the assistant (its confirm card, by proposalId)
+const assistantFocus = ref(null);
 
 export function useTheme() {
   const initTheme = () => {
@@ -42,6 +44,12 @@ export function useTheme() {
     isAssistantOpen.value = true;
   };
 
+  // Open the assistant at a Sentinel proposal's confirm card
+  const showProposalInAssistant = (proposalId) => {
+    assistantFocus.value = { proposalId, at: Date.now() };
+    isAssistantOpen.value = true;
+  };
+
   // Watch and apply
   watch(isDark, () => {
     initTheme();
@@ -56,6 +64,8 @@ export function useTheme() {
     closeAssistant,
     openAssistant,
     askAssistant,
-    assistantQuestion
+    assistantQuestion,
+    assistantFocus,
+    showProposalInAssistant
   };
 }

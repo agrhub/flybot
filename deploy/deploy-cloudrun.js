@@ -45,7 +45,8 @@ const OPTIONAL_SECRETS = {
     'flybot-telegram-bot-token': 'TELEGRAM_BOT_TOKEN',
     'flybot-vapid-private-key': 'VAPID_PRIVATE_KEY',
     'flybot-roboflow-upload-key': 'ROBOFLOW_UPLOAD_API_KEY',
-    'flybot-sentinel-api-secret': 'SENTINEL_API_SECRET'
+    'flybot-sentinel-api-secret': 'SENTINEL_API_SECRET',
+    'flybot-sentinel-ui-token': 'SENTINEL_UI_TOKEN'
 };
 
 // Never copied from the local .env: these differ between development and Cloud Run
@@ -389,6 +390,8 @@ function checkReadiness(opts, env) {
     feature(values.AI_PROVIDER !== 'none', `AI counting (${values.AI_PROVIDER || 'roboflow'})`, 'AI_PROVIDER is "none"');
     ok(`Assistant and photo diagnosis: Vertex AI in ${values.VERTEX_PROJECT_ID} (${values.VERTEX_LOCATION || 'default region'}), through the Cloud Run service account`);
     feature(has('ROBOFLOW_UPLOAD_PROJECT') || !!values.ROBOFLOW_UPLOAD_PROJECT, 'Sending reviewed photos to Roboflow', 'set ROBOFLOW_UPLOAD_PROJECT');
+    feature(has('SENTINEL_API_SECRET'), 'FlyBot Sentinel internal API', 'set SENTINEL_API_SECRET: /api/sentinel answers 503');
+    feature(has('SENTINEL_UI_TOKEN') && !!values.SENTINEL_UI_URL, 'FlyBot Sentinel console', 'set SENTINEL_UI_URL and SENTINEL_UI_TOKEN: the Sentinel menu stays hidden');
 
     const ignored = NOT_FORWARDED.filter(k => env[k]);
     if (ignored.length) {

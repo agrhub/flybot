@@ -105,6 +105,7 @@
               v-for="(card, cIdx) in msg.cards"
               :key="cIdx"
               :card="card"
+              :data-proposal-id="card.proposalId || undefined"
               :busy="deciding === `${msg.id}:${cIdx}`"
               @open="onCardOpen"
               @decide="(decision) => decide(msg, cIdx, decision)"
@@ -253,7 +254,7 @@ const emit = defineEmits(['navigate', 'select-camera']);
 const { t, te, locale } = useI18n();
 // The page the assistant answers about, by its menu name
 const contextLabel = computed(() => (te(`nav.${props.activeContext}`) ? t(`nav.${props.activeContext}`) : ''));
-const { isAssistantOpen, closeAssistant, assistantQuestion } = useTheme();
+const { isAssistantOpen, closeAssistant, assistantQuestion, assistantFocus } = useTheme();
 // Desktop: a column next to the page; tablet: panel over it; phone: full screen
 const { isDesktop } = useBreakpoints();
 
@@ -407,6 +408,16 @@ const decide = async (msg, index, decision) => {
     deciding.value = null;
   }
 };
+
+// The Sentinel console's "Open in the assistant": reload (the card may be new), then scroll to it
+watch(assistantFocus, async (focus) => {
+  if (!focus?.proposalId) return;
+  await loadHistory();
+  await nextTick();
+  const el = chatContainer.value?.querySelector(`[data-proposal-id="${CSS.escape(String(focus.proposalId))}"]`);
+  if (el) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  assistantFocus.value = null;
+});
 
 // A question sent from elsewhere in the app (e.g. "Ask the assistant about this photo")
 watch(assistantQuestion, (question) => {

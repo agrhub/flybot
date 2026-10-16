@@ -17,6 +17,7 @@ function toAdminUser(user, cameraCount = 0) {
         name: user.name || user.email.split('@')[0],
         role: roleOf(user),
         disabled: !!user.disabled,
+        sentinelViewer: !!user.sentinelViewer,
         emailVerified: !!user.emailVerified,
         avatar: memberAvatarUrl(user),
         createdAt: user.createdAt,
@@ -75,12 +76,12 @@ async function wouldRemoveLastAdmin(target) {
 }
 
 /**
- * PUT /api/admin/users/:userId  { role?, disabled? }
+ * PUT /api/admin/users/:userId  { role?, disabled?, emailVerified?, sentinelViewer? }
  */
 async function updateUser(req, res) {
     try {
         const { userId } = req.params;
-        const { role, disabled, emailVerified } = req.body;
+        const { role, disabled, emailVerified, sentinelViewer } = req.body;
         if (!mongoose.isValidObjectId(userId)) return res.status(404).json({ success: false, message: "User not found." });
         if (role !== undefined && !ROLES.includes(role)) {
             return res.status(400).json({ success: false, message: `role must be one of ${ROLES.join(', ')}.` });
@@ -91,6 +92,9 @@ async function updateUser(req, res) {
         // Admins can confirm an address for the user (never take a confirmation back)
         if (emailVerified !== undefined && emailVerified !== true) {
             return res.status(400).json({ success: false, message: "emailVerified can only be set to true." });
+        }
+        if (sentinelViewer !== undefined && typeof sentinelViewer !== 'boolean') {
+            return res.status(400).json({ success: false, message: "sentinelViewer must be true or false." });
         }
 
         const target = await User.findById(userId);
@@ -108,7 +112,9 @@ async function updateUser(req, res) {
         const previousRole = roleOf(target);
         const wasDisabled = !!target.disabled;
         const wasVerified = !!target.emailVerified;
+        const wasSentinelViewer = !!target.sentinelViewer;
         if (emailVerified === true) target.emailVerified = true;
+        if (sentinelViewer !== undefined) target.sentinelViewer = sentinelViewer;
         if (role !== undefined) target.role = role;
         if (disabled !== undefined) {
             target.disabled = disabled;
@@ -133,6 +139,9 @@ async function updateUser(req, res) {
         }
         if (emailVerified === true && !wasVerified) {
             recordAudit(req, { action: 'user.email_verified', target: auditTarget });
+        }
+        if (sentinelViewer !== undefined && sentinelViewer !== wasSentinelViewer) {
+            recordAudit(req, { action: 'user.sentinel_access_changed', target: auditTarget, details: { sentinelViewer } });
         }
 
         const counts = await cameraCountsFor([target._id]);

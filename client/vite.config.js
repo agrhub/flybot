@@ -32,12 +32,27 @@ function offlineFileList() {
   };
 }
 
+// Dev only: VITE_SENTINEL_MOCK=1 sends /api/sentinel/ui to the Sentinel UI mock
+// (flybot-sentinel/web: npm run mock, http://localhost:8787/ui) instead of FlyBot's proxy, and turns
+// the Sentinel menu on. VITE_SENTINEL_MOCK=http://host:port picks another mock address.
+const SENTINEL_MOCK = process.env.VITE_SENTINEL_MOCK;
+const sentinelMockProxy = SENTINEL_MOCK
+  ? {
+      '/api/sentinel/ui': {
+        target: /^https?:\/\//.test(SENTINEL_MOCK) ? SENTINEL_MOCK : 'http://localhost:8787',
+        changeOrigin: true,
+        rewrite: (p) => p.replace(/^\/api\/sentinel\/ui/, '/ui'),
+      },
+    }
+  : {};
+
 export default defineConfig({
   envDir: '../',
   envPrefix: ['VITE_', 'GOOGLE_'],
   server: {
     port: 3000,
     proxy: {
+      ...sentinelMockProxy,
       '/api': {
         target: 'http://localhost:3003',
         changeOrigin: true,
