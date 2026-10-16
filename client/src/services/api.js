@@ -600,6 +600,21 @@ export default {
   },
   // SSE endpoint; authenticated by the httpOnly cookie
   notificationStreamUrl: '/api/notifications/stream',
+  // FlyBot Sentinel console: the server proxies the Sentinel UI API (503 SENTINEL_DISABLED when
+  // it is not set up). `path` is e.g. 'summary', 'traces', 'traces/<id>'.
+  sentinelGet(path, params = {}) {
+    return apiClient.get(`/sentinel/ui/${path}`, { params });
+  },
+  // The server adds who decided; viewers get 403
+  sentinelDecide(approvalId, decision) {
+    return apiClient.post(`/sentinel/ui/approvals/${encodeURIComponent(approvalId)}/decide`, { decision });
+  },
+  // Evidence picture (the httpOnly cookie authenticates the <img> request, as for /api/s3)
+  sentinelEvidenceUrl(key) {
+    if (!key) return '';
+    if (/^https?:\/\//.test(key)) return key;
+    return `/api/sentinel/ui/evidence?key=${encodeURIComponent(key)}`;
+  },
   getImageUrl(urlOrKey) {
     if (!urlOrKey) return '';
     if (urlOrKey.startsWith('http://') || urlOrKey.startsWith('https://')) {

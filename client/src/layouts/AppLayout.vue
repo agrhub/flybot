@@ -165,6 +165,7 @@ const currentSection = computed(() => {
   if (path.startsWith('/analytics')) return 'analytics';
   if (path.startsWith('/map')) return 'map';
   if (path.startsWith('/settings')) return 'settings';
+  if (path.startsWith('/sentinel')) return 'sentinel';
   return 'dashboard';
 });
 

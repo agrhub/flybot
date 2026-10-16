@@ -39,6 +39,10 @@
         <el-icon><Notebook /></el-icon>
         <span>{{ t('nav.logbook') }}</span>
       </el-menu-item>
+      <el-menu-item v-if="sentinelEnabled" index="sentinel">
+        <el-icon><Cpu /></el-icon>
+        <span>{{ t('nav.sentinel') }}</span>
+      </el-menu-item>
       <el-menu-item index="settings">
         <el-icon><Setting /></el-icon>
         <span>{{ t('nav.settings') }}</span>
@@ -68,10 +72,11 @@ import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import {
-  Odometer, VideoCamera, DataAnalysis, MapLocation, MoreFilled, Document, Notebook, Place, Setting, Plus, Reading, Sunny, Moon,
+  Odometer, VideoCamera, DataAnalysis, MapLocation, MoreFilled, Document, Notebook, Place, Setting, Plus, Reading, Sunny, Moon, Cpu,
 } from '@element-plus/icons-vue';
 import { useAuth } from '@/composables/useAuth';
 import { useTheme } from '@/utils/theme';
+import { useSentinel } from '@/composables/useSentinel';
 import LanguageSelect from '@/components/shared/LanguageSelect.vue';
 
 const props = defineProps({
@@ -82,11 +87,12 @@ const emit = defineEmits(['navigate', 'open-add-camera']);
 const { t } = useI18n();
 const router = useRouter();
 const { canManageCameras } = useAuth();
+const { enabled: sentinelEnabled } = useSentinel();
 const { isDark, toggleTheme } = useTheme();
 const moreOpen = ref(false);
 
 // Sections reached through "More" light up that tab
-const MORE_SECTIONS = ['reports', 'farms', 'logbook', 'settings'];
+const MORE_SECTIONS = ['reports', 'farms', 'logbook', 'settings', 'sentinel'];
 const isActive = (id) => (id === 'more' ? MORE_SECTIONS.includes(props.activeSection) : props.activeSection === id);
 
 const tabs = computed(() => [

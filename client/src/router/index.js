@@ -147,6 +147,19 @@ const router = createRouter({
           name: 'settings',
           component: () => import('@/pages/settings/index.vue'),
         },
+        // FlyBot Sentinel console (shown when the server has it on for this person)
+        {
+          path: 'sentinel',
+          component: () => import('@/pages/sentinel/index.vue'),
+          children: [
+            { path: '', name: 'sentinel', component: () => import('@/pages/sentinel/Overview.vue') },
+            { path: 'traces', name: 'sentinel-traces', component: () => import('@/pages/sentinel/Traces.vue') },
+            { path: 'approvals', name: 'sentinel-approvals', component: () => import('@/pages/sentinel/Approvals.vue') },
+            { path: 'density', name: 'sentinel-density', component: () => import('@/pages/sentinel/Density.vue') },
+            { path: 'devices', name: 'sentinel-devices', component: () => import('@/pages/sentinel/Devices.vue') },
+            { path: 'bench', name: 'sentinel-bench', component: () => import('@/pages/sentinel/Bench.vue') },
+          ],
+        },
       ],
     },
 
