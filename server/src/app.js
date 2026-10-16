@@ -33,9 +33,9 @@ app.use(cors({ origin: CORS_ORIGINS.length > 0 ? CORS_ORIGINS : false, credentia
 app.use(require('./middlewares/localizeMessages').localizeMessages);
 app.use(express.json({
     limit: '1mb',
-    // The Sentinel API signs the exact bytes sent (middlewares/sentinelAuth.js)
+    // The Sentinel API and the payment providers sign the exact bytes sent
     verify: (req, res, buf) => {
-        if (req.originalUrl.startsWith('/api/sentinel')) req.rawBody = buf;
+        if (req.originalUrl.startsWith('/api/sentinel') || req.originalUrl.startsWith('/api/payments/webhooks')) req.rawBody = buf;
     }
 }));
 

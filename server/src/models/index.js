@@ -28,6 +28,7 @@ const CameraLog = require('./CameraLog');
 const CameraCrash = require('./CameraCrash');
 const ExpertReview = require('./ExpertReview');
 const PowerReading = require('./PowerReading');
+const Payment = require('./Payment');
 
 module.exports = {
     User,
@@ -59,5 +60,6 @@ module.exports = {
     CameraLog,
     CameraCrash,
     ExpertReview,
-    PowerReading
+    PowerReading,
+    Payment
 };

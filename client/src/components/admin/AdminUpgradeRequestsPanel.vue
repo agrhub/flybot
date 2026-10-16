@@ -2,7 +2,7 @@
   <div class="flex flex-col gap-4">
     <PageHeader :title="t('admin.upgrades.title')" :subtitle="t('admin.upgrades.subtitle')" />
     <el-radio-group v-model="status" size="small" @change="load">
-      <el-radio-button v-for="s in ['pending', 'pending_owner', 'approved', 'rejected', '']" :key="s || 'all'" :value="s">{{ s ? t(`upgrade.status.${s}`) : t('admin.upgrades.all') }}</el-radio-button>
+      <el-radio-button v-for="s in ['pending', 'pending_owner', 'awaiting_payment', 'approved', 'rejected', '']" :key="s || 'all'" :value="s">{{ s ? t(`upgrade.status.${s}`) : t('admin.upgrades.all') }}</el-radio-button>
     </el-radio-group>
     <el-empty v-if="!loading && !rows.length" :description="t('admin.upgrades.none')" />
     <el-card v-for="r in rows" :key="r.id" shadow="never" :data-test="`upgrade-${r.id}`">
@@ -34,8 +34,12 @@
           </el-radio-group>
         </el-form-item>
         <el-form-item :label="t('admin.workspaces.addonCameras')"><el-input-number v-model="approve.addonCameras" :min="0" :max="100000" /></el-form-item>
-        <el-form-item :label="t('admin.workspaces.expiresAt')"><el-date-picker v-model="approve.expiresAt" type="date" clearable class="!w-full" /></el-form-item>
-        <el-form-item><el-checkbox v-model="approve.paid">{{ t('admin.upgrades.paid') }}</el-checkbox></el-form-item>
+        <!-- Paid online: the plan starts (and its end date is set) when the owner pays -->
+        <el-form-item v-if="current?.type === 'plan' && approve.plan !== 'free'">
+          <el-checkbox v-model="approve.payOnline" data-test="approve-pay-online">{{ t('admin.upgrades.payOnline') }}</el-checkbox>
+        </el-form-item>
+        <el-form-item v-if="!approve.payOnline" :label="t('admin.workspaces.expiresAt')"><el-date-picker v-model="approve.expiresAt" type="date" clearable class="!w-full" /></el-form-item>
+        <el-form-item v-if="!approve.payOnline"><el-checkbox v-model="approve.paid">{{ t('admin.upgrades.paid') }}</el-checkbox></el-form-item>
         <el-form-item :label="t('admin.upgrades.note')"><el-input v-model="approve.adminNote" type="textarea" :rows="2" maxlength="1000" /></el-form-item>
       </el-form>
       <template #footer>
@@ -72,7 +76,7 @@ const status = ref('pending');
 const busy = ref(false);
 const current = ref(null);
 const approveOpen = ref(false);
-const approve = reactive({ plan: 'pro', addonCameras: 0, expiresAt: null, paid: false, adminNote: '' });
+const approve = reactive({ plan: 'pro', addonCameras: 0, expiresAt: null, paid: false, payOnline: false, adminNote: '' });
 const rejectOpen = ref(false);
 const rejectNote = ref('');
 
@@ -91,7 +95,7 @@ async function load() {
 
 function openApprove(r) {
   current.value = r;
-  Object.assign(approve, { plan: r.targetPlan, addonCameras: r.extraCameras || 0, expiresAt: null, paid: false, adminNote: '' });
+  Object.assign(approve, { plan: r.targetPlan, addonCameras: r.extraCameras || 0, expiresAt: null, paid: false, payOnline: false, adminNote: '' });
   approveOpen.value = true;
 }
 function openReject(r) {

@@ -1533,6 +1533,22 @@
         "title": "Your upgrade request",
         "desc": "Your request for {plan} was {outcome}. {note}"
       },
+      "payment_received": {
+        "title": "Payment received",
+        "desc": "{workspace} is on {plan} until {date}."
+      },
+      "payment_failed": {
+        "title": "Payment failed",
+        "desc": "The renewal of {plan} failed. The plan keeps working until {date}."
+      },
+      "plan_expiring": {
+        "title": "Plan ending soon",
+        "desc": "{plan} of {workspace} ends on {date}."
+      },
+      "plan_ended": {
+        "title": "Plan ended",
+        "desc": "{plan} of {workspace} ended on {date}; it keeps working until {graceDate}."
+      },
       "firmware_available": {
         "title": "New firmware",
         "desc": "Firmware {version} is ready for {camera} (now {current})."
@@ -1753,6 +1769,7 @@
         "harvestReminders": "Harvest reminders",
         "weatherAlerts": "Weather warnings",
         "orgDigests": "Members to visit",
+        "billing": "Plan renewal reminders",
         "firmware": "Firmware updates"
       },
       "jobSchedules": {
@@ -1771,6 +1788,7 @@
         "harvestReminders": "Daily at 6:00",
         "weatherAlerts": "Daily at 17:00",
         "orgDigests": "Monday, 7:00",
+        "billing": "Daily, 8:15",
         "firmware": "Every 5 minutes"
       },
       "results": {
@@ -1835,7 +1853,14 @@
       "maxMembers": "People (0 = no limit)",
       "order": "Order",
       "visible": "Shown on the pricing page",
-      "saved": "{plan} saved."
+      "saved": "{plan} saved.",
+      "prices": "Online prices (0 = not sold online)",
+      "price": {
+        "month": "Per month",
+        "year": "Per year",
+        "addonMonth": "Extra camera per month",
+        "addonYear": "Extra camera per year"
+      }
     },
     "workspaces": {
       "tab": "Workspaces",
@@ -1871,7 +1896,28 @@
       "approveTitle": "Approve the request",
       "rejectTitle": "Turn down the request",
       "rejectHint": "Why (the requester sees this)",
-      "paid": "Paid"
+      "paid": "Paid",
+      "payOnline": "Pay online: the plan starts when the owner pays"
+    },
+    "revenue": {
+      "tab": "Revenue",
+      "title": "Revenue",
+      "subtitle": "Plans paid online (PayOS, Stripe). Amounts are per currency.",
+      "months": "{n} months",
+      "total": "Paid ({currency})",
+      "payments": "{n} payments",
+      "paying": "Paying workspaces",
+      "renewing": "{n} renew automatically",
+      "pastDue": "{n} past due",
+      "none": "No payments in this period.",
+      "review": "{n} payments are held for checking (the amount differs from the order).",
+      "byMonth": "By month",
+      "byProvider": "By payment method",
+      "byPlan": "By plan",
+      "month": "Month",
+      "count": "Payments",
+      "latest": "Latest payments",
+      "allStatuses": "All statuses"
     },
     "demo": {
       "title": "Demo cameras for visitors",
@@ -2391,7 +2437,8 @@
       "integration": "API & webhooks",
       "sentinel": "FlyBot Sentinel",
       "workspace": "Workspaces & plans",
-      "system": "System"
+      "system": "System",
+      "billing": "Payments"
     },
     "actions": {
       "auth": {
@@ -2484,6 +2531,11 @@
       },
       "system": {
         "workspaces_migrated": "Moved to workspaces and plans"
+      },
+      "billing": {
+        "checkout_started": "Checkout started",
+        "payment_received": "Payment received",
+        "renewal_cancelled": "Automatic renewal stopped"
       }
     },
     "reasons": {
@@ -3931,7 +3983,8 @@
       "pending": "Waiting",
       "approved": "Approved",
       "rejected": "Turned down",
-      "cancelled": "Withdrawn"
+      "cancelled": "Withdrawn",
+      "awaiting_payment": "Waiting for payment"
     },
     "limits": {
       "cameras": "Your plan allows {max} cameras here ({used} in use).",
@@ -3945,6 +3998,87 @@
     "errors": {
       "pending": "You already have a request waiting.",
       "generic": "The request could not be sent. Try again."
+    }
+  },
+  "billing": {
+    "pay": "Pay",
+    "renew": "Renew",
+    "payNow": "Pay now",
+    "addonPrice": "Extra camera: {price} / {interval}",
+    "graceTag": "Grace period until {date}",
+    "interval": {
+      "month": "month",
+      "year": "year",
+      "monthly": "Monthly",
+      "yearly": "Yearly"
+    },
+    "provider": {
+      "payos": "VietQR bank transfer (PayOS)",
+      "stripe": "Card (Stripe)"
+    },
+    "providerHint": {
+      "payos": "Scan the QR code with your banking app. Each period is paid separately; FlyBot reminds you before it ends.",
+      "stripe": "Visa, Mastercard... Renews automatically; you can stop it at any time."
+    },
+    "status": {
+      "pending": "Waiting for payment",
+      "paid": "Paid",
+      "failed": "Failed",
+      "canceled": "Not finished",
+      "review": "Being checked"
+    },
+    "checkout": {
+      "title": "Pay for {plan}",
+      "unavailable": "Online payment is not available. Ask for an upgrade instead.",
+      "interval": "Billing period",
+      "addonCameras": "Extra cameras",
+      "currency": "Currency",
+      "method": "Payment method",
+      "total": "Total",
+      "notForSale": "Not sold online in this currency",
+      "note": "Your data stays when a plan ends: after {days} days of grace the workspace goes back to FREE.",
+      "pay": "Go to payment",
+      "failed": "The payment could not be started. Please try again."
+    },
+    "return": {
+      "waiting": "Waiting for the payment",
+      "waitingText": "This takes a few seconds after you pay. Keep this page open.",
+      "paid": "Thank you! You are on {plan}",
+      "paidText": "Your plan runs until {date}.",
+      "notPaid": "The payment was not completed",
+      "notPaidText": "Nothing was charged. You can try again from the plans page.",
+      "review": "We are checking this payment",
+      "reviewText": "The amount received differs from the order. The FlyBot team will contact you.",
+      "slow": "Still waiting for the confirmation",
+      "slowText": "If you have paid, your plan is updated within a few minutes. You can close this page.",
+      "notFound": "Payment not found",
+      "resume": "Continue payment",
+      "toPlan": "Go to my plan"
+    },
+    "receipt": {
+      "title": "Receipt",
+      "number": "Receipt no.",
+      "workspace": "Workspace",
+      "date": "Date",
+      "plan": "Plan",
+      "period": "Period",
+      "amount": "Amount",
+      "method": "Payment method",
+      "status": "Status",
+      "until": "Valid until",
+      "view": "Receipt",
+      "providerInvoice": "Invoice from the payment service"
+    },
+    "panel": {
+      "title": "Payments",
+      "payOrRenew": "Pay or renew",
+      "pastDue": "The last renewal failed. The plan keeps working until {date}: update your card or pay again.",
+      "autoRenew": "renews automatically on {date}",
+      "manualRenew": "paid until {date}; FlyBot reminds you before it ends",
+      "stopRenewal": "Stop automatic renewal",
+      "stopConfirm": "The plan keeps working until {date}, then goes back to FREE unless you pay again. Stop the automatic renewal?",
+      "managed": "Your plan is arranged with the FlyBot team (manual invoices).",
+      "noPayments": "No payments yet."
     }
   },
   "camosDevice": {

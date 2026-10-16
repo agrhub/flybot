@@ -213,7 +213,7 @@ async function adminCreateOrganization(req, res) {
 
 async function adminListRequests(req, res) {
     try {
-        const status = ['pending_owner', 'pending', 'approved', 'rejected', 'cancelled'].includes(req.query.status) ? req.query.status : null;
+        const status = ['pending_owner', 'pending', 'awaiting_payment', 'approved', 'rejected', 'cancelled'].includes(req.query.status) ? req.query.status : null;
         res.json({ success: true, requests: await upgradeService.adminList({ status }) });
     } catch (err) {
         sendServerError(res, err, { context: 'Admin upgrade requests' });

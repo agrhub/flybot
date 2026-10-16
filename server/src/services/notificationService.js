@@ -50,7 +50,13 @@ const COOLDOWN_MINUTES = {
     // A cell too low to run on: the camera repeats low_power every 6 h at most
     battery_critical: 6 * 60,
     camera_disabled: 0,
-    camera_enabled: 0
+    camera_enabled: 0,
+    // Payments: one per payment; a failed card is retried by the provider, one notice a day
+    payment_received: 0,
+    payment_failed: 20 * 60,
+    // The daily billing job sends each reminder once
+    plan_expiring: 0,
+    plan_ended: 0
 };
 
 const SEVERITY = {
@@ -80,11 +86,15 @@ const SEVERITY = {
     firmware_failed: 'warning',
     battery_critical: 'critical',
     camera_disabled: 'warning',
-    camera_enabled: 'info'
+    camera_enabled: 'info',
+    payment_received: 'info',
+    payment_failed: 'warning',
+    plan_expiring: 'warning',
+    plan_ended: 'warning'
 };
 
 // "Back online" is good news: in-app only
-const EMAIL_TYPES = new Set(['pest_threshold', 'camera_offline', 'ai_failure', 'card_due', 'plot_threshold', 'pest_surge', 'image_quality', 'harvest_ready', 'weather_risk', 'log_reminder', 'org_digest', 'upgrade_requested', 'upgrade_decided', 'firmware_available', 'firmware_failed', 'camera_disabled', 'battery_critical']);
+const EMAIL_TYPES = new Set(['pest_threshold', 'camera_offline', 'ai_failure', 'card_due', 'plot_threshold', 'pest_surge', 'image_quality', 'harvest_ready', 'weather_risk', 'log_reminder', 'org_digest', 'upgrade_requested', 'upgrade_decided', 'firmware_available', 'firmware_failed', 'camera_disabled', 'battery_critical', 'payment_received', 'payment_failed', 'plan_expiring', 'plan_ended']);
 // Phone/browser push: the alerts, plus something new shared with you, and a finished firmware update
 const PUSH_TYPES = new Set([...EMAIL_TYPES, 'camera_shared', 'dashboard_shared', 'farm_shared', 'org_joined', 'firmware_updated']);
 

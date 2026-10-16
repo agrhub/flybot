@@ -114,6 +114,26 @@ export default {
     return apiClient.post(`/admin/upgrade-requests/${id}/reject`, data);
   },
 
+  // ---------- Online payment of plans (PayOS, Stripe) ----------
+  getBilling() {
+    return apiClient.get('/billing');
+  },
+  startCheckout(data) {
+    return apiClient.post('/billing/checkout', data);
+  },
+  getPayments() {
+    return apiClient.get('/billing/payments');
+  },
+  getPayment(id, { refresh = false } = {}) {
+    return apiClient.get(`/billing/payments/${id}`, { params: refresh ? { refresh: 1 } : {} });
+  },
+  cancelRenewal() {
+    return apiClient.post('/billing/cancel-renewal');
+  },
+  adminGetRevenue(params = {}) {
+    return apiClient.get('/admin/revenue', { params });
+  },
+
   login(email, password, language) {
     return apiClient.post('/auth/login', { email, password, language });
   },

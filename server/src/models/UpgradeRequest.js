@@ -2,13 +2,15 @@ const mongoose = require('mongoose');
 
 /**
  * A request for a bigger plan, more cameras, or a new organization (services/upgradeService.js).
- * The admin approves (setting the workspace's plan, add-ons and expiry) or rejects with a note;
- * payment is handled outside FlyBot (`paid` is the admin's checkbox).
+ * The admin approves (setting the workspace's plan, add-ons and expiry) or rejects with a note.
+ * Payment is manual (`paid` is the admin's checkbox), or online: the admin approves "pay online"
+ * and the plan starts when the owner's payment arrives (services/payments).
  *
  * status: pending_owner (APP_MODE b2b: a member asked, the organization's owner looks first)
  *         -> pending (waiting for the admin) -> approved | rejected; cancelled by the requester.
+ *         awaiting_payment: approved to be paid online; approved once paid.
  */
-const STATUSES = ['pending_owner', 'pending', 'approved', 'rejected', 'cancelled'];
+const STATUSES = ['pending_owner', 'pending', 'awaiting_payment', 'approved', 'rejected', 'cancelled'];
 const TYPES = ['plan', 'organization'];
 
 const upgradeRequestSchema = new mongoose.Schema({

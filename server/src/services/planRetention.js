@@ -13,7 +13,7 @@ async function cleanupByPlanRetention({ now = new Date(), maxPerRun = MAX_PER_RU
     const entitlements = require('./entitlements');
     const { deleteS3Object } = require('./s3Service');
     let photos = 0;
-    const workspaces = await Organization.find({}).select('_id plan members').lean();
+    const workspaces = await Organization.find({}).select('_id plan members billing').lean();
     for (const ws of workspaces) {
         if (photos >= maxPerRun) break;
         const owner = (ws.members || []).find(m => m.role === 'owner' && m.userId);

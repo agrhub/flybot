@@ -3,10 +3,22 @@ const mongoose = require('mongoose');
 /**
  * A subscription plan (FREE / PRO / ENTERPRISE), configured by the admin (Admin > Plans) and
  * read through services/planService.js. Seeded on first use with placeholder numbers the admin
- * edits. For maxCameras and maxMembers, 0 means no limit. No prices: priceNote is free text
- * (for example "Lien he"). Payment is manual (upgrade requests).
+ * edits. For maxCameras and maxMembers, 0 means no limit. priceNote is free text shown on the
+ * pricing page (for example "Lien he"); `prices` are what automatic payments charge
+ * (services/payments). Without a price the plan is arranged through an upgrade request.
  */
 const PLAN_CODES = ['free', 'pro', 'enterprise'];
+// Currencies a plan can be sold in online: VND (PayOS or Stripe), USD (Stripe)
+const PRICE_CURRENCIES = ['VND', 'USD'];
+
+// One currency's prices in its smallest unit (VND: dong, USD: cents); 0 = not sold online
+const priceSchema = new mongoose.Schema({
+    month: { type: Number, min: 0, default: 0 },
+    year: { type: Number, min: 0, default: 0 },
+    // One camera on top of maxCameras, per month / per year
+    addonMonth: { type: Number, min: 0, default: 0 },
+    addonYear: { type: Number, min: 0, default: 0 }
+}, { _id: false });
 
 const planSchema = new mongoose.Schema({
     code: { type: String, enum: PLAN_CODES, required: true, unique: true },
@@ -27,6 +39,10 @@ const planSchema = new mongoose.Schema({
         apiAndWebhooks: { type: Boolean, default: false }
     },
     priceNote: { type: String, default: '', trim: true, maxlength: 200 },
+    prices: {
+        VND: { type: priceSchema, default: () => ({}) },
+        USD: { type: priceSchema, default: () => ({}) }
+    },
     description: { type: String, default: '', trim: true, maxlength: 500 },
     // Shown on the pricing page
     visible: { type: Boolean, default: true },
@@ -38,3 +54,4 @@ const Plan = mongoose.model('Plan', planSchema);
 
 module.exports = Plan;
 module.exports.PLAN_CODES = PLAN_CODES;
+module.exports.PRICE_CURRENCIES = PRICE_CURRENCIES;

@@ -23,6 +23,15 @@
           <el-checkbox v-for="f in ['telegram', 'pdfReports', 'apiAndWebhooks']" :key="f" v-model="plan.features[f]">{{ t(`plans.features.${f}`) }}</el-checkbox>
           <el-checkbox v-model="plan.visible">{{ t('admin.plans.visible') }}</el-checkbox>
         </div>
+        <!-- Online prices (0 = not sold online in that currency) -->
+        <template v-if="plan.code !== 'free'">
+          <p class="admin-plans__prices">{{ t('admin.plans.prices') }}</p>
+          <div v-for="c in PRICE_CURRENCIES" :key="c" class="grid gap-x-4 sm:grid-cols-2 lg:grid-cols-4" :data-test="`admin-plan-${plan.code}-prices-${c}`">
+            <el-form-item v-for="f in priceFields" :key="f" :label="`${t(`admin.plans.price.${f}`)} (${c})`">
+              <el-input-number v-model="plan.priceInput[c][f]" :min="0" :precision="c === 'USD' ? 2 : 0" :step="c === 'USD' ? 1 : 10000" controls-position="right" class="!w-full" />
+            </el-form-item>
+          </div>
+        </template>
       </el-form>
     </el-card>
   </div>
@@ -36,6 +45,7 @@ import PageHeader from '@/components/common/PageHeader.vue';
 import api from '@/services/api';
 import { useAuth } from '@/composables/useAuth';
 import { requestErrorText } from '@/utils/requestError';
+import { fromMinor, toMinor, PRICE_CURRENCIES } from '@/utils/money';
 
 /** Admin > Plans: what FREE / PRO / ENTERPRISE allow (support accounts read only). */
 const { t } = useI18n();
@@ -54,11 +64,16 @@ const numberFields = computed(() => [
   { key: 'order', label: t('admin.plans.order'), min: 0, max: 100 }
 ]);
 
+// Online prices: the form shows whole units (199000 VND, 9.00 USD); the server keeps the smallest unit
+const priceFields = ['month', 'year', 'addonMonth', 'addonYear'];
+const toInput = (prices = {}) => Object.fromEntries(PRICE_CURRENCIES.map(c => [c, Object.fromEntries(priceFields.map(f => [f, fromMinor(prices[c]?.[f], c)]))]));
+const fromInput = (input) => Object.fromEntries(PRICE_CURRENCIES.map(c => [c, Object.fromEntries(priceFields.map(f => [f, toMinor(input[c][f], c)]))]));
+
 async function load() {
   loading.value = true;
   try {
     const res = await api.adminGetPlans();
-    plans.value = (res.data?.plans || []).map(p => ({ ...p, features: { ...p.features } }));
+    plans.value = (res.data?.plans || []).map(p => ({ ...p, features: { ...p.features }, priceInput: toInput(p.prices) }));
   } finally {
     loading.value = false;
   }
@@ -67,7 +82,10 @@ async function load() {
 async function save(plan) {
   saving.value = plan.code;
   try {
-    const { code, ...body } = plan;
+    const { code, priceInput, ...body } = plan;
+    // Whole units in the form, the smallest unit on the server (FREE has no price)
+    if (code === 'free') delete body.prices;
+    else body.prices = fromInput(priceInput);
     await api.adminUpdatePlan(code, body);
     ElNotification({ title: t('common.success'), message: t('admin.plans.saved', { plan: plan.name }), type: 'success' });
   } catch (err) {
@@ -79,3 +97,11 @@ async function save(plan) {
 
 onMounted(load);
 </script>
+
+<style scoped>
+.admin-plans__prices {
+  margin: 16px 0 4px;
+  font-size: 13px;
+  font-weight: 600;
+}
+</style>

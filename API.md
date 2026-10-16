@@ -6,6 +6,7 @@
 | Other systems (read-only data, alerts) | `/api/v1`, webhooks | API key `fbk_...` | [Integrations: API keys and webhooks](#integrations-api-keys-and-webhooks) |
 | CamOS cameras | `/api/device` | Device token (after pairing or self-registration) | [Camera device API](#camera-device-api) |
 | The vision Lambda and an external vision agent | Lambda request, `/api/sentinel` | AWS IAM, HMAC signature | [Vision and agent](#vision-and-agent) |
+| Payment providers (PayOS, Stripe) | `/api/payments/webhooks` | The provider's signature | [Payments](#payments) |
 | Administrators | `/api/admin` | Session of an `admin` (`support`: read only) | [Administration](#administration) |
 
 Answers are JSON. Errors are `{ "success": false, "code": "...", "message": "..." }` (the device API uses `{ "ok": false, "error": "...", "message": "..." }`). Messages for people come back in the language the client asks for (`X-Language: vi` or `en`). Limits answer `429` with `Retry-After`. Replace `YOUR_FLYBOT_DOMAIN` with your address.
@@ -42,13 +43,14 @@ Configured by the administrator (**Settings → Plans**), seeded on first start 
 | `maxMembers` (owner included) | 1 | 5 | 0 |
 | `features.telegram` / `pdfReports` / `apiAndWebhooks` | yes / no / no | yes / yes / yes | yes / yes / yes |
 | `priceNote` (free text, no prices invented; empty = the app says "Free" / "Contact us" in the reader's language), `description`, `visible`, `order` | empty | empty | empty |
+| `prices.{VND,USD}.{month, year, addonMonth, addonYear}`: what online payment charges, in the smallest unit (VND: dong, USD: cents); `0` = not sold online ([Payments](#payments)) | 0 | 0 | 0 |
 
-A paid plan past `expiresAt` falls back to FREE (data kept, adding blocked). Admins and `DEMO_EXEMPT_EMAILS` have no limits. A limit answers `403 {"code": "UPGRADE_REQUIRED", "limit": "cameras" | "members" | "deepAnalysis" | "apiAndWebhooks" | ..., "used", "max", "plan", "message"}`; the web client turns it into the upgrade dialog. API keys and webhooks need `apiAndWebhooks` on a workspace the person owns or manages (webhooks stop firing when the plan loses it).
+A paid plan past `expiresAt` falls back to FREE (data kept, adding blocked); a plan paid online first gets the grace period (`PAYMENTS_GRACE_DAYS`). Admins and `DEMO_EXEMPT_EMAILS` have no limits. A limit answers `403 {"code": "UPGRADE_REQUIRED", "limit": "cameras" | "members" | "deepAnalysis" | "apiAndWebhooks" | ..., "used", "max", "plan", "message"}`; the web client turns it into the upgrade dialog. API keys and webhooks need `apiAndWebhooks` on a workspace the person owns or manages (webhooks stop firing when the plan loses it).
 
 | Request | Answer |
 |---|---|
 | `GET /api/plans` (no sign-in) | `{appMode, pricing, plans: [...]}` (the visible plans; empty in b2b) |
-| `GET /api/me/entitlements` | `{appMode, workspace, entitlements: {plan, planName, exempt, expired, expiresAt, addonCameras, maxCameras, snapshotsPerDay, retentionDays, deepAnalysisPerMonth, liveMinutes, maxMembers, features}, usage: {cameras, members, deepAnalyses, month}}` for the current workspace |
+| `GET /api/me/entitlements` | `{appMode, workspace, entitlements: {plan, planName, exempt, expired, grace, graceUntil, expiresAt, addonCameras, maxCameras, snapshotsPerDay, retentionDays, deepAnalysisPerMonth, liveMinutes, maxMembers, features}, usage: {cameras, members, deepAnalyses, month}}` for the current workspace |
 | `GET /api/workspaces` | `{appMode, workspaces: [{id, name, kind, role, plan}], current}` |
 | `PUT /api/workspaces/current {workspaceId}` | Saves the choice (`404` for a workspace the person is not in) |
 | `PUT /api/workspaces/{id}/settings {allowMemberPersonalWorkspaces}` | An organization's owner: `false` hides its members' personal workspaces (their data stays) |
@@ -58,6 +60,32 @@ A paid plan past `expiresAt` falls back to FREE (data kept, adding blocked). Adm
 | `POST /api/upgrade-requests/{id}/forward {forward: true \| false, note?}` | b2b organization owner: on to the admin, or turned down |
 
 `GET /api/auth/me` (and sign-in) also carry `appMode`, `workspace`, `workspaceCount`, `plan: {code, name, expired, expiresAt}` and `capabilities: {addCameras, buildDashboards, createFarms, claimCameras, integrations, pdfReports, telegram, pricing, upgradeRequests, requestOrganization}`; the client uses these instead of the role. `POST /api/orgs` is for administrators; `GET /api/orgs` lists organizations (not personal workspaces) with `kind`, `plan` and `settings`.
+
+### Payments
+
+The owner of a workspace pays for PRO or ENTERPRISE online: **PayOS** (VietQR bank transfer, VND) or **Stripe** (cards, recurring, USD or VND). Off unless `PAYMENTS_ENABLED=true`; `APP_MODE=b2b` keeps manual invoicing (no checkout, webhooks acknowledged but not applied). The price always comes from the plan (`Plan.prices`, **Settings → Plans**), never from the browser: `amount = month|year + extra cameras × addonMonth|addonYear`.
+
+| | PayOS | Stripe |
+|---|---|---|
+| Checkout | A payment link (`POST /v2/payment-requests`, signed with the checksum key) with its VietQR code; `PAYOS_LINK_TTL_MINUTES` | A subscription Checkout Session (plan line + extra-camera line, prices inline); FlyBot ids in the subscription metadata |
+| Renewal | None at PayOS: each period is a new payment that extends the plan from `max(now, expiresAt)`; reminders 7 days and 1 day before the end and when it ended | Automatic (`invoice.paid` sets `expiresAt` to the invoice period end); the owner can stop it (`cancel_at_period_end`) |
+| Webhook signature | `signature` = HMAC-SHA256(checksum key, the `data` keys sorted, `key=value` joined by `&`) | `Stripe-Signature: t=..,v1=..` = HMAC-SHA256(`whsec`, `t.<raw body>`), refused outside `STRIPE_WEBHOOK_TOLERANCE` (300 s) |
+| Events used | the paid notification (`data.code = "00"`) | `checkout.session.completed` (links the subscription), `checkout.session.expired`, `invoice.paid`, `invoice.payment_failed`, `customer.subscription.deleted` |
+
+**A plan's life:** a payment arrives → `Organization.plan = {code, addonCameras, expiresAt}` and `Organization.billing = {provider, autoRenew, pastDue: false, ...}`, the owner is notified (`payment_received`), a receipt `FB-<year>-<id>` is kept. A failed Stripe renewal → `billing.pastDue`, `billing.graceUntil = expiresAt + PAYMENTS_GRACE_DAYS` (notice `payment_failed`); Stripe retries on its own. Past `expiresAt` a plan paid online keeps working until the grace ends (`entitlements.grace`), then the workspace is on FREE: nothing is deleted, adding beyond FREE is blocked until it pays again. Plans the administrator assigned by hand have no grace period.
+
+**Safety:** each webhook event is applied once (event ids on the Payment; a paid Payment is never paid twice). Less money than ordered, or another currency, puts the Payment in `review` and leaves the plan alone. A verified webhook always gets `200` (also unknown orders, such as the PayOS sample sent when its webhook URL is confirmed); a bad signature `400`; a processing error `500` so the provider retries. A pending PayOS payment whose webhook is late is checked with PayOS's signed status API (return page, daily job). Live Stripe keys (`sk_live_`, `rk_live_`) are refused unless `PAYMENTS_ALLOW_LIVE=true`.
+
+| Request | Answer |
+|---|---|
+| `POST /api/payments/webhooks/payos`, `POST /api/payments/webhooks/stripe` (no sign-in; the provider's signature) | `200 {result: applied \| duplicate \| review \| grace \| linked \| canceled \| ended \| ignored \| unknown_payment \| disabled}`, `400` bad signature |
+| `GET /api/billing` | `{enabled, providers: [{name, recurring, currencies}], currencies, graceDays, isOwner, plan: {code, addonCameras, expiresAt}, managed, billing: {provider, autoRenew, pastDue, graceUntil, nextRetryAt} \| null}` for the current workspace. `managed`: a paid plan without an end date assigned by the administrator (no online payment) |
+| `POST /api/billing/checkout {planCode: pro \| enterprise, interval: month \| year, addonCameras?, provider: payos \| stripe, currency?, upgradeRequestId?}` | The workspace owner. `201 {checkout: {paymentId, provider, checkoutUrl, qrCode, expiresAt, planCode, interval, addonCameras, amount, currency}}`: send the browser to `checkoutUrl`; it comes back to `/billing/return?payment=<id>`. With `upgradeRequestId` (status `awaiting_payment`) the plan and extra cameras are the ones the administrator granted. `403 PAYMENTS_OFF \| FORBIDDEN`, `400 NOT_FOR_SALE \| BAD_REQUEST`, `409 MANAGED_PLAN \| ALREADY_SUBSCRIBED \| DOWNGRADE` (a running bigger plan), `502 PROVIDER_ERROR`. 20 an hour |
+| `GET /api/billing/payments` | The workspace owner: its payments (receipts), newest first |
+| `GET /api/billing/payments/{id}?refresh=1` | The payer or the owner: `{payment}`; `refresh=1` asks PayOS about a pending payment |
+| `POST /api/billing/cancel-renewal` | The owner stops a Stripe subscription at the period end. `409 NOT_RENEWING` |
+
+A payment (`Payment`): `{workspaceId, userId, provider, status: pending \| paid \| failed \| canceled \| review, source: pricing \| upgrade_request \| renewal, planCode, interval, addonCameras, amount, addonAmount, currency, orderCode, checkoutRef, reference, subscriptionRef, paidAt, periodStart, periodEnd, receiptNumber, receiptUrl}`. Audited: `billing.checkout_started`, `billing.payment_received`, `billing.renewal_cancelled`. The daily billing job (08:15 farm time) sends the renewal reminders (`plan_expiring`, `plan_ended`) and closes checkouts left unpaid for a day. Settings and test keys: [docs/flybot-aws-runbook.md](docs/flybot-aws-runbook.md#payments).
 
 ### Cameras on every platform
 
@@ -516,8 +544,9 @@ Every route below needs an administrator's session; `support` accounts may read 
 | `POST /api/admin/workspaces {name, ownerEmail, plan?}` | A new organization (b2b / hybrid); an owner without an account yet joins on verification |
 | `PUT /api/admin/workspaces/{id}/plan {plan, addonCameras?, expiresAt?, note?, billingNote?}` | Assign a plan (audited `workspace.plan_changed`) |
 | `GET /api/admin/upgrade-requests?status=` | All requests |
-| `POST /api/admin/upgrade-requests/{id}/approve {plan?, addonCameras?, expiresAt?, paid?, adminNote?}` | Sets the workspace's plan (an organization request makes the organization with the requester as owner); the requester is notified. Payment is manual (`paid` is the admin's checkbox) |
+| `POST /api/admin/upgrade-requests/{id}/approve {plan?, addonCameras?, expiresAt?, paid?, payOnline?, adminNote?}` | Sets the workspace's plan (an organization request makes the organization with the requester as owner); the requester is notified. Payment is manual (`paid` is the admin's checkbox), or with `payOnline: true` (a paid plan for a workspace, payments on, the plan has an online price) the request becomes `awaiting_payment` and the plan starts when the owner pays it ([Payments](#payments)) |
 | `POST /api/admin/upgrade-requests/{id}/reject {adminNote}` | Turned down with a note the requester sees |
+| `GET /api/admin/revenue?months=12&status=` | Plans paid online: amounts per currency (`totals`), `byMonth`, `byProvider`, `byPlan`, paying / renewing / past-due workspaces, payments held for `review`, the latest 100 payments |
 
 #### Demo access for visitors
 

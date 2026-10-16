@@ -118,6 +118,10 @@
                 <el-icon><Promotion /></el-icon>
                 <span>{{ t('admin.upgrades.tab') }}</span>
               </el-menu-item>
+              <el-menu-item index="adminRevenue">
+                <el-icon><Money /></el-icon>
+                <span>{{ t('admin.revenue.tab') }}</span>
+              </el-menu-item>
             </el-menu>
           </div>
 
@@ -672,6 +676,7 @@
         <!-- 7. Legal / terms -->
         <div v-else-if="activeTab === 'plan'" class="max-w-3xl">
           <UsageCard />
+          <BillingPanel class="mt-4" />
         </div>
         <div v-else-if="activeTab === 'adminPlans' && (isAdmin || isSupport)" class="max-w-6xl">
           <AdminPlansPanel />
@@ -681,6 +686,9 @@
         </div>
         <div v-else-if="activeTab === 'adminUpgrades' && (isAdmin || isSupport)" class="max-w-5xl">
           <AdminUpgradeRequestsPanel />
+        </div>
+        <div v-else-if="activeTab === 'adminRevenue' && (isAdmin || isSupport)" class="max-w-6xl">
+          <AdminRevenuePanel />
         </div>
         <div v-else-if="activeTab === 'adminUsers' && isAdmin" class="max-w-6xl">
           <AdminUsersPanel />
@@ -812,6 +820,8 @@ import UsagePanel from '@/components/admin/UsagePanel.vue';
 import AdminPlansPanel from '@/components/admin/AdminPlansPanel.vue';
 import AdminWorkspacesPanel from '@/components/admin/AdminWorkspacesPanel.vue';
 import AdminUpgradeRequestsPanel from '@/components/admin/AdminUpgradeRequestsPanel.vue';
+import AdminRevenuePanel from '@/components/admin/AdminRevenuePanel.vue';
+import BillingPanel from '@/components/plans/BillingPanel.vue';
 import UsageCard from '@/components/plans/UsageCard.vue';
 import PushNotificationsCard from '@/components/settings/PushNotificationsCard.vue';
 import AlertPreferencesCard from '@/components/settings/AlertPreferencesCard.vue';
@@ -832,6 +842,7 @@ import {
   Monitor,
   SwitchButton,
   Promotion,
+  Money,
   ChatDotRound,
   Share,
   UserFilled,
@@ -879,12 +890,14 @@ const mobileSections = computed(() => [
     { value: 'adminAudit', label: t('audit.tab') },
     { value: 'adminPlans', label: t('admin.plans.tab') },
     { value: 'adminWorkspaces', label: t('admin.workspaces.tab') },
-    { value: 'adminUpgrades', label: t('admin.upgrades.tab') }
+    { value: 'adminUpgrades', label: t('admin.upgrades.tab') },
+    { value: 'adminRevenue', label: t('admin.revenue.tab') }
   ] }] : []),
   ...(!isAdmin.value && isSupport.value ? [{ label: t('admin.group'), items: [
     { value: 'adminPlans', label: t('admin.plans.tab') },
     { value: 'adminWorkspaces', label: t('admin.workspaces.tab') },
-    { value: 'adminUpgrades', label: t('admin.upgrades.tab') }
+    { value: 'adminUpgrades', label: t('admin.upgrades.tab') },
+    { value: 'adminRevenue', label: t('admin.revenue.tab') }
   ] }] : []),
   { label: t('settings.legal'), items: [{ value: 'legal', label: t('settings.termsTab') }] }
 ]);

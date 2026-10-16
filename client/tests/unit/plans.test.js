@@ -23,6 +23,7 @@ vi.mock('@/services/api', () => ({
     getWorkspaces: vi.fn(async () => ({ data: { workspaces: [{ id: 'w1', name: 'Lan', kind: 'personal', plan: 'free' }, { id: 'w2', name: 'HTX', kind: 'organization', plan: 'enterprise' }] } })),
     setCurrentWorkspace: vi.fn(async () => ({ data: { success: true } })),
     getMe: vi.fn(async () => ({ data: {} })),
+    getBilling: vi.fn(async () => ({ data: { enabled: false, providers: [], currencies: [] } })),
   },
 }));
 

@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const NOTIFICATION_TYPES = ['pest_threshold', 'camera_offline', 'camera_online', 'ai_failure', 'camera_shared', 'dashboard_shared', 'card_due', 'card_change_detected', 'plot_threshold', 'farm_shared', 'pest_surge', 'weekly_report', 'image_quality', 'org_joined', 'harvest_ready', 'weather_risk', 'log_reminder', 'org_digest', 'review_requested', 'upgrade_requested', 'upgrade_decided', 'firmware_available', 'firmware_updated', 'firmware_failed', 'battery_critical', 'camera_disabled', 'camera_enabled'];
+const NOTIFICATION_TYPES = ['pest_threshold', 'camera_offline', 'camera_online', 'ai_failure', 'camera_shared', 'dashboard_shared', 'card_due', 'card_change_detected', 'plot_threshold', 'farm_shared', 'pest_surge', 'weekly_report', 'image_quality', 'org_joined', 'harvest_ready', 'weather_risk', 'log_reminder', 'org_digest', 'review_requested', 'upgrade_requested', 'upgrade_decided', 'firmware_available', 'firmware_updated', 'firmware_failed', 'battery_critical', 'camera_disabled', 'camera_enabled', 'payment_received', 'payment_failed', 'plan_expiring', 'plan_ended'];
 const RETENTION_DAYS = 90;
 
 /**

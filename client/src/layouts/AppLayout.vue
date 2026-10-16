@@ -125,6 +125,7 @@
 
     <!-- Plan limit reached / "Ask for an upgrade" (composables/useUpgrade.js) -->
     <UpgradeDialog />
+    <CheckoutDialog />
 
     <!-- Guided tour: first visit, or "Quick tour" in the profile menu -->
     <AppTour />
@@ -151,6 +152,7 @@ import Topbar from '@/components/layout/Topbar.vue';
 import AiAssistantSidebar from '@/components/assistant/AiAssistantSidebar.vue';
 import AddCameraModal from '@/components/modals/AddCameraModal.vue';
 import UpgradeDialog from '@/components/plans/UpgradeDialog.vue';
+import CheckoutDialog from '@/components/plans/CheckoutDialog.vue';
 import AppTour from '@/components/layout/AppTour.vue';
 import { useAppTour } from '@/composables/useAppTour';
 import { useSimulatedBanner } from '@/composables/useSimulatedBanner';

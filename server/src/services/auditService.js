@@ -93,6 +93,10 @@ const AUDIT_ACTIONS = [
     'workspace.plan_changed',
     'workspace.settings_changed',
     'workspace.upgrade_requested',
+    // Online payment of plans (services/payments)
+    'billing.checkout_started',
+    'billing.payment_received',
+    'billing.renewal_cancelled',
     'system.workspaces_migrated'
 ];
 const CATEGORIES = [...new Set(AUDIT_ACTIONS.map(a => a.split('.')[0]))];

@@ -32,6 +32,7 @@ flybot-aws writes the settings into the instance's environment. The ones that ma
 | `KVS_VIEWER_ROLE_ARN` | the stack's viewer role | Without it, CamOS live view answers "not set up" |
 | `FLYBOT_SECRETS` | `flybot-<stage>-app` | A Secrets Manager secret holding `JWT_SECRET`, `APP_KEY`, `SECRET_KEY`, `SMTP_PASS`, `TELEGRAM_BOT_TOKEN`... as JSON |
 | `APP_MODE` | `hybrid` | Personal workspaces with open sign-up, organizations alongside |
+| `PAYMENTS_ENABLED` | `false` until the providers are set up | Online payment of plans ([Payments](#payments)); the provider keys go in the `FLYBOT_SECRETS` secret |
 | `TRUST_PROXY`, `COOKIE_SECURE` | `1`, `true` | Behind Caddy over HTTPS |
 
 Every setting is listed in the [README](../README.md#configuration).
@@ -68,6 +69,20 @@ Every CamOS photo goes through the same steps as an EZVIZ photo: storage, counti
 ### Clock and time zone
 
 Cameras ask `GET /api/device/time` for the time, their time zone and its POSIX form. FlyBot takes the time zone from the camera's farm, else its last GPS position, else the country of its network address, else `DEVICE_DEFAULT_TIMEZONE`. When it changes (the camera is claimed into a farm, the farm's time zone is edited, the camera moves), FlyBot updates the camera's shadow.
+
+## Payments
+
+Workspace owners can pay for PRO or ENTERPRISE online ([API reference](../API.md#payments)): **PayOS** (VietQR bank transfer, VND) and **Stripe** (cards, renews automatically). Use test keys everywhere except production, and keep every key out of git: `PAYOS_CLIENT_ID`, `PAYOS_API_KEY`, `PAYOS_CHECKSUM_KEY`, `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` go in the `FLYBOT_SECRETS` secret. `APP_BASE_URL` must be the public address, because the providers send the buyer back to `<APP_BASE_URL>/billing/return`.
+
+1. **Prices.** **Settings → Plans**: give each paid plan its price per month and per year, and per extra camera, in VND and/or USD. A plan without a price is not sold online and stays "Contact us".
+2. **PayOS.** In my.payos.vn, create a payment channel linked to the bank account and copy its Client ID, API key and checksum key. Set its webhook to `https://<your domain>/api/payments/webhooks/payos` and confirm it. PayOS sends a sample payload, which FlyBot acknowledges. PayOS has no separate sandbox, so test on a dedicated channel with a small price.
+3. **Stripe.** In test mode, copy the `sk_test_...` key. Add a webhook endpoint `https://<your domain>/api/payments/webhooks/stripe` for `checkout.session.completed`, `checkout.session.expired`, `invoice.paid`, `invoice.payment_failed` and `customer.subscription.deleted`, and copy its `whsec_...` secret. Pay with card `4242 4242 4242 4242`. Card `4000 0000 0000 0341` is accepted at checkout but fails later charges, which shows a failed renewal. On your computer, `stripe listen --forward-to localhost:3000/api/payments/webhooks/stripe` prints the `whsec_` to use.
+4. **Turn it on.** Set `PAYMENTS_ENABLED=true` and restart. The pricing page shows the prices and a **Pay** button for workspace owners. **Settings → Plan and usage** shows the receipts and how the plan renews. **Settings → Revenue** shows what was paid, per currency, month, payment method and plan.
+5. **Upgrade requests.** An administrator can approve a request with **Pay online**. The owner then sees **Pay now** next to the request, and the plan starts when the payment arrives.
+
+A Stripe subscription renews by itself. With PayOS the owner pays each period, and FlyBot reminds them 7 days and 1 day before the end, and when the plan has ended (daily at 08:15). A failed or missing renewal keeps the plan for `PAYMENTS_GRACE_DAYS` (7). After that the workspace is on FREE, and its data is kept. A payment of the wrong amount waits in **Settings → Revenue** as "Being checked": settle it with the customer, then assign the plan by hand in **Settings → Workspaces**. With `APP_MODE=b2b` invoices stay manual and online payment is off.
+
+To go live, put the live PayOS channel and the live Stripe keys and webhook secret in the secret, set `PAYMENTS_ALLOW_LIVE=true` on the production instance only, and restart. Without it, FlyBot refuses a live Stripe key.
 
 ## Working on it from your computer
 

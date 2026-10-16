@@ -46,12 +46,14 @@ router.delete('/firmware/:id', fleet.deleteFirmware);
 router.post('/firmware/:id/rollout', fleet.rolloutFirmware);
 // Plans, workspaces and upgrade requests
 const workspaceController = require('../controllers/workspaceController');
+const billingController = require('../controllers/billingController');
 router.get('/plans', workspaceController.adminListPlans);
 router.put('/plans/:code', workspaceController.adminUpdatePlan);
 router.get('/workspaces', workspaceController.adminListWorkspaces);
 router.post('/workspaces', workspaceController.adminCreateOrganization);
 router.put('/workspaces/:id/plan', workspaceController.adminAssignPlan);
 router.get('/upgrade-requests', workspaceController.adminListRequests);
+router.get('/revenue', billingController.adminRevenue);
 router.post('/upgrade-requests/:id/approve', workspaceController.adminApprove);
 router.post('/upgrade-requests/:id/reject', workspaceController.adminReject);
 

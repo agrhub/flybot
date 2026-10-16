@@ -88,6 +88,22 @@
         "approved": "chấp thuận",
         "rejected": "từ chối"
       },
+      "payment_received": {
+        "subject": "✅ Đã nhận thanh toán gói {plan}",
+        "body": "Cảm ơn bạn. {workspace} dùng gói {plan} đến ngày {date}. Biên lai nằm trong Cài đặt, Gói & mức dùng."
+      },
+      "payment_failed": {
+        "subject": "⚠️ Thanh toán gói {plan} không thành công",
+        "body": "Không thu được tiền gia hạn gói {plan} cho {workspace}. Gói vẫn dùng được đến ngày {date}: hãy cập nhật thẻ hoặc thanh toán lại trước ngày đó. Sau đó không gian làm việc trở về gói FREE; dữ liệu không bị xóa."
+      },
+      "plan_expiring": {
+        "subject": "⏰ Gói {plan} hết hạn ngày {date}",
+        "body": "Gói {plan} của {workspace} hết hạn ngày {date}. Hãy gia hạn ở trang Các gói để giữ các mức dùng của gói."
+      },
+      "plan_ended": {
+        "subject": "⏰ Gói {plan} đã hết hạn",
+        "body": "Gói {plan} của {workspace} đã hết hạn ngày {date}. Gói vẫn dùng được đến ngày {graceDate}: hãy gia hạn ở trang Các gói trước ngày đó. Sau đó không gian làm việc trở về gói FREE; dữ liệu không bị xóa."
+      },
       "firmware_available": {
         "subject": "⬆️ Có firmware mới {version} cho {camera}",
         "body": "Firmware {version} đã sẵn sàng cho camera {camera} ({deviceSerial}), camera đang chạy bản {current}. Mở phần cài đặt camera trong FlyBot để xem thay đổi và cài đặt, hoặc bật tự động cập nhật."
@@ -546,6 +562,32 @@
     "orgSettingOnly": "Chỉ tổ chức mới có cài đặt này.",
     "orgsOffB2c": "Chế độ này không dùng tổ chức (APP_MODE=b2c).",
     "allowPersonalBool": "allowMemberPersonalWorkspaces phải là true hoặc false.",
+    "pricesObject": "prices phải là một đối tượng.",
+    "pricesCurrency": "prices: tiền tệ phải là VND hoặc USD.",
+    "pricesCurrencyObject": "prices.{currency} phải là một đối tượng.",
+    "pricesRange": "prices.{currency}.{field} phải là số nguyên từ 0 đến {max}.",
+    "freeHasNoPrice": "Gói FREE không có giá.",
+    "webhookRawBody": "Cần nội dung gốc của yêu cầu.",
+    "unknownPaymentProvider": "Không rõ cổng thanh toán.",
+    "invalidSignature": "Chữ ký không hợp lệ.",
+    "paymentsOff": "Chưa có thanh toán trực tuyến. Hãy gửi yêu cầu nâng cấp.",
+    "ownerPaysOnly": "Chỉ chủ không gian làm việc mới thanh toán được gói của nó.",
+    "ownerPaymentsOnly": "Chỉ chủ không gian làm việc mới xem được các khoản thanh toán.",
+    "intervalMonthYear": "interval phải là month hoặc year.",
+    "paymentMethodUnavailable": "Không dùng được cách thanh toán này.",
+    "paymentMethodCurrency": "Cách thanh toán này không nhận loại tiền này.",
+    "planCodePaid": "planCode phải là pro hoặc enterprise.",
+    "addonCamerasRange1000": "addonCameras phải là số nguyên từ 0 đến 1000.",
+    "managedPlan": "Gói của bạn do FlyBot quản lý. Hãy gửi yêu cầu nâng cấp.",
+    "alreadySubscribed": "Không gian làm việc này đã tự động gia hạn.",
+    "noDowngradeWhileRunning": "Gói hiện tại vẫn còn hạn. Hãy chọn lại gói đó hoặc chờ hết hạn.",
+    "notForSale": "Gói này không bán trực tuyến. Hãy gửi yêu cầu nâng cấp.",
+    "paymentsNotConfigured": "Thanh toán trực tuyến chưa được thiết lập.",
+    "paymentProviderError": "Cổng thanh toán không phản hồi. Hãy thử lại.",
+    "paymentNotFound": "Không tìm thấy khoản thanh toán.",
+    "notRenewing": "Không gian làm việc này không tự động gia hạn.",
+    "payOnlinePaidPlanOnly": "Chỉ gói trả phí của một không gian làm việc mới thanh toán trực tuyến được.",
+    "noOnlinePrice": "Gói này chưa có giá trực tuyến. Hãy đặt giá trong Quản trị, Các gói.",
     "demo_live_closed": "Camera trình diễn này chưa mở xem trực tiếp cho khách.",
     "demo_playback_closed": "Camera trình diễn này chưa mở xem lại video cho khách.",
     "simulated_no_live": "Camera mô phỏng không có hình trực tiếp.",

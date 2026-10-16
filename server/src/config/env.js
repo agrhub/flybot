@@ -195,6 +195,23 @@ const config = {
     // Delete photos older than the workspace plan's retentionDays (hourly). Off by default: the
     // admin's global retention (Settings) applies until the owner turns this on
     PLAN_RETENTION: process.env.PLAN_RETENTION === 'true',
+    // Automatic payments for plans (services/payments, API.md "Payments"): PayOS (VietQR, VND) and
+    // Stripe (cards, recurring). Off unless PAYMENTS_ENABLED=true; never in APP_MODE=b2b (manual
+    // invoicing). Only test / sandbox keys outside production: a live Stripe key is refused
+    // unless PAYMENTS_ALLOW_LIVE=true
+    PAYMENTS_ENABLED: process.env.PAYMENTS_ENABLED === 'true',
+    PAYMENTS_ALLOW_LIVE: process.env.PAYMENTS_ALLOW_LIVE === 'true',
+    // Days a paid plan keeps working after its end date when the renewal is late or failed
+    PAYMENTS_GRACE_DAYS: Math.min(Math.max(parseInt(process.env.PAYMENTS_GRACE_DAYS || '7', 10) || 0, 0), 60),
+    PAYOS_CLIENT_ID: (process.env.PAYOS_CLIENT_ID || '').trim(),
+    PAYOS_API_KEY: (process.env.PAYOS_API_KEY || '').trim(),
+    PAYOS_CHECKSUM_KEY: (process.env.PAYOS_CHECKSUM_KEY || '').trim(),
+    PAYOS_API_URL: (process.env.PAYOS_API_URL || 'https://api-merchant.payos.vn').trim().replace(/\/+$/, ''),
+    PAYOS_LINK_TTL_MINUTES: Math.min(Math.max(parseInt(process.env.PAYOS_LINK_TTL_MINUTES || '60', 10) || 60, 5), 1440),
+    STRIPE_SECRET_KEY: (process.env.STRIPE_SECRET_KEY || '').trim(),
+    STRIPE_WEBHOOK_SECRET: (process.env.STRIPE_WEBHOOK_SECRET || '').trim(),
+    STRIPE_API_URL: (process.env.STRIPE_API_URL || 'https://api.stripe.com').trim().replace(/\/+$/, ''),
+    STRIPE_WEBHOOK_TOLERANCE: Math.min(Math.max(parseInt(process.env.STRIPE_WEBHOOK_TOLERANCE || '300', 10) || 300, 30), 3600),
     // Zero-touch self-registration of the public firmware (flybot-aws CONTRACTS 2a): POST /api/device/register
     // signs the camera's CSR with AWS IoT. "false" turns it off (503). Thing type and policy of the stack
     SELF_REGISTRATION: process.env.SELF_REGISTRATION !== 'false',

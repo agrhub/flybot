@@ -159,6 +159,12 @@ const router = createRouter({
           name: 'pricing',
           component: () => import('@/pages/pricing/index.vue'),
         },
+        // Back from PayOS / Stripe after paying for a plan
+        {
+          path: 'billing/return',
+          name: 'billing-return',
+          component: () => import('@/pages/billing/Return.vue'),
+        },
         // Claim a CamOS camera that registered itself (QR on its label -> /claim?sn=...)
         {
           path: 'claim',

@@ -78,7 +78,7 @@ Each workspace is on a plan the administrator configures:
 | Members | 1 | 5 | no limit |
 | PDF reports, API and webhooks | no | yes | yes |
 
-These are starting values; the administrator changes them under **Settings → Plans**. When a limit is reached, FlyBot offers **Ask for an upgrade**; the administrator approves the request and arranges payment directly (FlyBot takes no payments).
+These are starting values; the administrator changes them under **Settings → Plans**. When a limit is reached, FlyBot offers **Ask for an upgrade**; the administrator approves the request and arranges payment directly. With online payment turned on, the owner can also pay for a plan from the pricing page, by VietQR bank transfer (PayOS) or by card (Stripe, renewing automatically). Receipts are under **Settings → Plan and usage**. A plan that is not renewed keeps working for a grace period, then the workspace goes back to FREE without losing data ([API.md](API.md#payments), [AWS guide](docs/flybot-aws-runbook.md#payments)).
 
 `APP_MODE` sets how people join: `hybrid` (default: open sign-up with a personal workspace, organizations alongside), `b2c` (personal workspaces only) or `b2b` (organizations only, sign-up by invitation).
 
@@ -179,6 +179,18 @@ All settings are environment variables, read from `.env` at the repository root 
 | `DEMO_VIEW_SIMULATED` | `false` | `true` also shows the simulated demo farm (`server/scripts/demo_sim.js`, DEPLOY.md) to those visitors |
 | `DEMO_SIM_ENABLED` | `false` | `true` adds the simulated demo farm's photos of each day (every 30 minutes) |
 | `DEMO_SIM_UNTIL` | | Last day of the daily simulation (`YYYY-MM-DD`); empty: no end |
+
+**Online payment of plans**
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `PAYMENTS_ENABLED` | `false` | `true` turns on the online payment of plans (never in `APP_MODE=b2b`); prices are set under Settings → Plans |
+| `PAYMENTS_GRACE_DAYS` | `7` | Days a plan paid online keeps working after its end date, before FREE |
+| `PAYMENTS_ALLOW_LIVE` | `false` | `true` on the production server only: allows a live Stripe key |
+| `PAYOS_CLIENT_ID`, `PAYOS_API_KEY`, `PAYOS_CHECKSUM_KEY` | | A PayOS payment channel (VietQR, VND); secrets |
+| `PAYOS_API_URL`, `PAYOS_LINK_TTL_MINUTES` | `https://api-merchant.payos.vn`, `60` | PayOS address, and how long a payment link stays open |
+| `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | | Stripe (cards, renewing): `sk_test_...` outside production, and the webhook endpoint's `whsec_...`; secrets |
+| `STRIPE_API_URL`, `STRIPE_WEBHOOK_TOLERANCE` | `https://api.stripe.com`, `300` | Stripe address, and seconds a signed webhook is accepted |
 
 **Photos (S3)**
 

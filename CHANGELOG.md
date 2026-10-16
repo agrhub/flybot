@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+### Paying for a plan online
+- Workspace owners can pay for **PRO or ENTERPRISE** from the **Plans** page, monthly or yearly, with extra cameras: by **VietQR bank transfer (PayOS)** or **by card (Stripe)**, which renews automatically and can be stopped at any time.
+- **Settings → Plan and usage** shows the receipts and how the plan renews. FlyBot reminds you before a plan paid by transfer ends.
+- A plan that is not renewed, or whose card fails, keeps working for a grace period (7 days), then the workspace goes back to FREE. Nothing is deleted.
+- An upgrade request can be approved to be **paid online**: the owner sees **Pay now**, and the plan starts when the payment arrives.
+
+### For administrators
+- **Settings → Plans**: prices per month, per year and per extra camera, in VND and USD. A plan without a price stays "Contact us".
+- **Settings → Revenue**: what was paid, by month, payment method and plan, and payments waiting for a check.
+- Off until `PAYMENTS_ENABLED=true`. With `APP_MODE=b2b`, invoices stay manual.
+
 ## 1.6.0 (2026-10-17)
 
 ### FlyBot on AWS

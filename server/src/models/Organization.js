@@ -33,6 +33,24 @@ const workspacePlanSchema = new mongoose.Schema({
     note: { type: String, default: '', trim: true, maxlength: 500 }
 }, { _id: false });
 
+// Automatic payments (services/payments): how the plan is paid and renewed. Empty for plans the
+// admin assigned by hand.
+const billingSchema = new mongoose.Schema({
+    // payos | stripe once paid online; then a late renewal gets the grace period
+    provider: { type: String, default: null },
+    // Stripe renews on its own; PayOS is paid again each period (reminders)
+    autoRenew: { type: Boolean, default: false },
+    // A renewal failed: the plan still works until graceUntil, then falls back to FREE
+    pastDue: { type: Boolean, default: false },
+    graceUntil: { type: Date, default: null },
+    nextRetryAt: { type: Date, default: null },
+    subscriptionRef: { type: String, default: null },
+    customerRef: { type: String, default: null },
+    lastPaymentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Payment', default: null },
+    // Reminders already sent ("<expiresAt ISO>|7d"), so the daily job sends each once
+    notices: { type: [String], default: undefined }
+}, { _id: false });
+
 const organizationSchema = new mongoose.Schema({
     // Simulated demo data (scripts/demo_sim.js): labeled wherever it is shown, never mixed with real data
     simulated: { type: Boolean, default: undefined },
@@ -41,6 +59,7 @@ const organizationSchema = new mongoose.Schema({
     kind: { type: String, enum: ['personal', 'organization'], default: 'organization' },
     members: { type: [memberSchema], default: [] },
     plan: { type: workspacePlanSchema, default: () => ({}) },
+    billing: { type: billingSchema, default: undefined },
     settings: {
         // An organization's owner may hide the members' personal workspaces (they keep their data)
         allowMemberPersonalWorkspaces: { type: Boolean, default: true }

@@ -48,6 +48,16 @@ async function workspaceDoc(workspace) {
 }
 
 /**
+ * When the grace period of a lapsed plan ends: the date a failed renewal set, else (plans paid
+ * online) the end date + PAYMENTS_GRACE_DAYS; null for plans the admin assigned by hand.
+ */
+function graceEndOf(ws) {
+    if (ws?.billing?.graceUntil) return new Date(ws.billing.graceUntil);
+    if (!ws?.billing?.provider || !ws?.plan?.expiresAt) return null;
+    return new Date(new Date(ws.plan.expiresAt).getTime() + env.PAYMENTS_GRACE_DAYS * 24 * 3600 * 1000);
+}
+
+/**
  * Entitlements of `user` in `workspace` (a document, view or id; default: user.workspace, the
  * current one). Without a workspace (b2b account outside every organization) the FREE plan
  * applies with no cameras.
@@ -57,7 +67,11 @@ async function getEntitlements(user, workspace = user?.workspace, now = new Date
     if (operatorAccount(user)) return unlimited(ws ? String(ws._id) : null);
     const planService = require('./planService');
     const assigned = ws?.plan?.code || 'free';
-    const expired = assigned !== 'free' && !!ws?.plan?.expiresAt && new Date(ws.plan.expiresAt) <= now;
+    const lapsed = assigned !== 'free' && !!ws?.plan?.expiresAt && new Date(ws.plan.expiresAt) <= now;
+    // A plan paid online keeps working for the grace period after its end date (late or failed renewal)
+    const graceUntil = lapsed ? graceEndOf(ws) : null;
+    const grace = !!graceUntil && now < graceUntil;
+    const expired = lapsed && !grace;
     const code = expired ? 'free' : assigned;
     const plan = await planService.getPlan(code);
     const addon = expired ? 0 : Math.max(0, Number(ws?.plan?.addonCameras) || 0);
@@ -69,6 +83,8 @@ async function getEntitlements(user, workspace = user?.workspace, now = new Date
         workspaceId: ws ? String(ws._id) : null,
         exempt: false,
         expired,
+        grace,
+        graceUntil: grace ? graceUntil : null,
         expiresAt: ws?.plan?.expiresAt || null,
         addonCameras: addon,
         maxCameras: maxCameras === null ? null : maxCameras + addon,

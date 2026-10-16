@@ -6,6 +6,7 @@
           <span class="usage-card__title truncate">{{ workspace?.name || t('workspace.none') }}</span>
           <el-tag v-if="ent" :type="ent.exempt ? 'success' : 'primary'" effect="dark" round size="small" data-test="usage-plan">{{ ent.exempt ? t('plans.unlimited') : ent.planName }}</el-tag>
           <el-tag v-if="ent?.expired" type="danger" effect="plain" round size="small">{{ t('plans.expired') }}</el-tag>
+          <el-tag v-if="ent?.grace" type="warning" effect="plain" round size="small" data-test="usage-grace">{{ t('billing.graceTag', { date: new Date(ent.graceUntil).toLocaleDateString() }) }}</el-tag>
         </div>
         <div class="flex gap-2">
           <el-button v-if="showPricing" link type="primary" @click="router.push({ name: 'pricing' })">{{ t('plans.seePlans') }}</el-button>
@@ -35,7 +36,9 @@
           <span class="text-sm">{{ r.type === 'organization' ? (r.organization?.name || t('upgrade.organization')) : r.targetPlan.toUpperCase() }} · {{ new Date(r.createdAt).toLocaleDateString() }}</span>
           <span class="flex items-center gap-2">
             <el-tag size="small" round :type="statusType(r.status)">{{ t(`upgrade.status.${r.status}`) }}</el-tag>
-            <el-button v-if="['pending', 'pending_owner'].includes(r.status) && r.requestedBy?.id === user?.id" link size="small" @click="cancel(r)">{{ t('upgrade.cancel') }}</el-button>
+            <!-- Approved to be paid online: the owner pays and the plan starts -->
+            <el-button v-if="r.status === 'awaiting_payment' && isOwnerOf(r)" type="primary" size="small" :data-test="`usage-pay-${r.id}`" @click="payRequest(r)">{{ t('billing.payNow') }}</el-button>
+            <el-button v-if="['pending', 'pending_owner', 'awaiting_payment'].includes(r.status) && r.requestedBy?.id === user?.id" link size="small" @click="cancel(r)">{{ t('upgrade.cancel') }}</el-button>
             <template v-if="r.status === 'pending_owner' && r.requestedBy?.id !== user?.id">
               <el-button link type="primary" size="small" @click="forward(r, true)">{{ t('upgrade.forward') }}</el-button>
               <el-button link type="danger" size="small" @click="forward(r, false)">{{ t('upgrade.decline') }}</el-button>
@@ -55,6 +58,7 @@ import { useI18n } from 'vue-i18n';
 import api from '@/services/api';
 import { useAuth } from '@/composables/useAuth';
 import { openUpgradeDialog, useUpgrade } from '@/composables/useUpgrade';
+import { openCheckout } from '@/composables/useCheckout';
 
 /** The current workspace's plan and usage ("2/3 cameras", "deep analysis 5/20 this month"). */
 const { t } = useI18n();
@@ -101,6 +105,12 @@ async function load() {
   } finally {
     loading.value = false;
   }
+}
+
+// The request is for the workspace shown here, and this person owns it
+const isOwnerOf = (r) => workspace.value?.role === 'owner' && r.workspace?.id === workspace.value?.id;
+function payRequest(r) {
+  openCheckout({ upgradeRequestId: r.id, planCode: r.granted?.plan || r.targetPlan, addonCameras: r.granted?.addonCameras ?? r.extraCameras ?? 0 });
 }
 
 async function cancel(r) {

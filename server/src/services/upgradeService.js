@@ -167,7 +167,7 @@ async function ownerDecide(user, id, { forward, note }) {
 /** DELETE-like: the requester withdraws a waiting request. */
 async function cancel(user, id) {
     if (!mongoose.isValidObjectId(id)) return fail(404, 'NOT_FOUND', 'Request not found.');
-    const request = await UpgradeRequest.findOneAndUpdate({ _id: id, requestedBy: idOf(user), status: { $in: ['pending_owner', 'pending'] } }, { $set: { status: 'cancelled' } }, { new: true }).lean();
+    const request = await UpgradeRequest.findOneAndUpdate({ _id: id, requestedBy: idOf(user), status: { $in: ['pending_owner', 'pending', 'awaiting_payment'] } }, { $set: { status: 'cancelled' } }, { new: true }).lean();
     if (!request) return fail(404, 'NOT_FOUND', 'Request not found.');
     return { status: 200, body: { success: true, request: view(request) } };
 }
@@ -221,6 +221,22 @@ async function approve(admin, id, body, req = null) {
     if (addonCameras === null) return fail(400, 'BAD_REQUEST', 'addonCameras must be a whole number from 0 to 100000.');
     const expiresAt = parseExpiry(b.expiresAt);
     if (expiresAt === undefined) return fail(400, 'BAD_REQUEST', 'expiresAt must be a date.');
+
+    // Pay online: the plan starts when the owner's payment arrives (services/billingService.js)
+    if (b.payOnline === true) {
+        if (request.type !== 'plan' || plan === 'free') return fail(400, 'BAD_REQUEST', 'Only a paid plan for a workspace can be paid online.');
+        if (!require('./payments/config').paymentsEnabled()) return fail(400, 'PAYMENTS_OFF', 'Online payment is not available. Ask for an upgrade instead.');
+        const prices = (await require('./planService').getPlan(plan)).prices;
+        if (!Object.values(prices).some(p => p.month || p.year)) return fail(400, 'NOT_FOR_SALE', 'This plan has no online price. Set one in Admin, Plans.');
+        request.status = 'awaiting_payment';
+        request.adminNote = text(b.adminNote, 1000);
+        request.decidedBy = idOf(admin);
+        request.decidedAt = new Date();
+        request.granted = { plan, addonCameras, workspaceId: request.workspaceId };
+        await request.save();
+        await notifyRequester(request, true);
+        return { status: 200, body: { success: true, request: view(request.toObject(), { admin: true }) } };
+    }
 
     let workspaceId = request.workspaceId;
     if (request.type === 'organization') {

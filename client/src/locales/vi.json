@@ -1533,6 +1533,22 @@
         "title": "Yêu cầu nâng cấp của bạn",
         "desc": "Yêu cầu gói {plan} của bạn đã được {outcome}. {note}"
       },
+      "payment_received": {
+        "title": "Đã nhận thanh toán",
+        "desc": "{workspace} dùng gói {plan} đến ngày {date}."
+      },
+      "payment_failed": {
+        "title": "Thanh toán không thành công",
+        "desc": "Gia hạn gói {plan} không thành công. Gói vẫn dùng được đến ngày {date}."
+      },
+      "plan_expiring": {
+        "title": "Gói sắp hết hạn",
+        "desc": "Gói {plan} của {workspace} hết hạn ngày {date}."
+      },
+      "plan_ended": {
+        "title": "Gói đã hết hạn",
+        "desc": "Gói {plan} của {workspace} đã hết hạn ngày {date}; vẫn dùng được đến ngày {graceDate}."
+      },
       "firmware_available": {
         "title": "Có firmware mới",
         "desc": "Firmware {version} đã sẵn sàng cho {camera} (đang chạy {current})."
@@ -1753,6 +1769,7 @@
         "harvestReminders": "Nhắc hết cách ly",
         "weatherAlerts": "Cảnh báo thời tiết",
         "orgDigests": "Hộ cần thăm vườn",
+        "billing": "Nhắc gia hạn gói",
         "firmware": "Cập nhật firmware"
       },
       "jobSchedules": {
@@ -1771,6 +1788,7 @@
         "harvestReminders": "Hằng ngày lúc 6:00",
         "weatherAlerts": "Hằng ngày lúc 17:00",
         "orgDigests": "Thứ Hai, 7:00",
+        "billing": "Hằng ngày, 8:15",
         "firmware": "5 phút một lần"
       },
       "results": {
@@ -1835,7 +1853,14 @@
       "maxMembers": "Người dùng (0 = không giới hạn)",
       "order": "Thứ tự",
       "visible": "Hiện trên trang các gói",
-      "saved": "Đã lưu {plan}."
+      "saved": "Đã lưu {plan}.",
+      "prices": "Giá trực tuyến (0 = không bán trực tuyến)",
+      "price": {
+        "month": "Mỗi tháng",
+        "year": "Mỗi năm",
+        "addonMonth": "Thêm camera mỗi tháng",
+        "addonYear": "Thêm camera mỗi năm"
+      }
     },
     "workspaces": {
       "tab": "Không gian làm việc",
@@ -1871,7 +1896,28 @@
       "approveTitle": "Duyệt yêu cầu",
       "rejectTitle": "Từ chối yêu cầu",
       "rejectHint": "Lý do (người gửi sẽ thấy)",
-      "paid": "Đã thanh toán"
+      "paid": "Đã thanh toán",
+      "payOnline": "Thanh toán trực tuyến: gói bắt đầu khi chủ không gian làm việc thanh toán"
+    },
+    "revenue": {
+      "tab": "Doanh thu",
+      "title": "Doanh thu",
+      "subtitle": "Các gói thanh toán trực tuyến (PayOS, Stripe). Số tiền tính riêng theo từng loại tiền.",
+      "months": "{n} tháng",
+      "total": "Đã thu ({currency})",
+      "payments": "{n} khoản thanh toán",
+      "paying": "Không gian làm việc trả phí",
+      "renewing": "{n} tự động gia hạn",
+      "pastDue": "{n} quá hạn thanh toán",
+      "none": "Không có khoản thanh toán nào trong thời gian này.",
+      "review": "{n} khoản thanh toán đang chờ kiểm tra (số tiền khác đơn hàng).",
+      "byMonth": "Theo tháng",
+      "byProvider": "Theo cách thanh toán",
+      "byPlan": "Theo gói",
+      "month": "Tháng",
+      "count": "Số khoản",
+      "latest": "Thanh toán gần đây",
+      "allStatuses": "Mọi trạng thái"
     },
     "demo": {
       "title": "Camera trình diễn cho khách",
@@ -2391,7 +2437,8 @@
       "integration": "API & webhook",
       "sentinel": "FlyBot Sentinel",
       "workspace": "Không gian & gói",
-      "system": "Hệ thống"
+      "system": "Hệ thống",
+      "billing": "Thanh toán"
     },
     "actions": {
       "auth": {
@@ -2484,6 +2531,11 @@
       },
       "system": {
         "workspaces_migrated": "Đã chuyển sang không gian và gói"
+      },
+      "billing": {
+        "checkout_started": "Bắt đầu thanh toán",
+        "payment_received": "Đã nhận thanh toán",
+        "renewal_cancelled": "Dừng tự động gia hạn"
       }
     },
     "reasons": {
@@ -3931,7 +3983,8 @@
       "pending": "Đang chờ",
       "approved": "Đã duyệt",
       "rejected": "Bị từ chối",
-      "cancelled": "Đã rút lại"
+      "cancelled": "Đã rút lại",
+      "awaiting_payment": "Chờ thanh toán"
     },
     "limits": {
       "cameras": "Gói của bạn cho {max} camera ở đây (đang dùng {used}).",
@@ -3945,6 +3998,87 @@
     "errors": {
       "pending": "Bạn đã có một yêu cầu đang chờ.",
       "generic": "Không gửi được yêu cầu. Hãy thử lại."
+    }
+  },
+  "billing": {
+    "pay": "Thanh toán",
+    "renew": "Gia hạn",
+    "payNow": "Thanh toán ngay",
+    "addonPrice": "Thêm camera: {price} / {interval}",
+    "graceTag": "Thời gian ân hạn đến {date}",
+    "interval": {
+      "month": "tháng",
+      "year": "năm",
+      "monthly": "Theo tháng",
+      "yearly": "Theo năm"
+    },
+    "provider": {
+      "payos": "Chuyển khoản VietQR (PayOS)",
+      "stripe": "Thẻ (Stripe)"
+    },
+    "providerHint": {
+      "payos": "Quét mã QR bằng ứng dụng ngân hàng. Mỗi kỳ thanh toán riêng; FlyBot nhắc bạn trước khi hết hạn.",
+      "stripe": "Visa, Mastercard... Tự động gia hạn; bạn có thể dừng bất cứ lúc nào."
+    },
+    "status": {
+      "pending": "Chờ thanh toán",
+      "paid": "Đã thanh toán",
+      "failed": "Không thành công",
+      "canceled": "Chưa hoàn tất",
+      "review": "Đang kiểm tra"
+    },
+    "checkout": {
+      "title": "Thanh toán gói {plan}",
+      "unavailable": "Chưa có thanh toán trực tuyến. Hãy gửi yêu cầu nâng cấp.",
+      "interval": "Kỳ thanh toán",
+      "addonCameras": "Thêm camera",
+      "currency": "Loại tiền",
+      "method": "Cách thanh toán",
+      "total": "Tổng cộng",
+      "notForSale": "Không bán trực tuyến bằng loại tiền này",
+      "note": "Dữ liệu được giữ khi gói hết hạn: sau {days} ngày ân hạn, không gian làm việc trở về gói FREE.",
+      "pay": "Đến trang thanh toán",
+      "failed": "Không bắt đầu được thanh toán. Hãy thử lại."
+    },
+    "return": {
+      "waiting": "Đang chờ thanh toán",
+      "waitingText": "Sau khi bạn thanh toán sẽ mất vài giây. Hãy giữ trang này mở.",
+      "paid": "Cảm ơn bạn! Bạn đang dùng gói {plan}",
+      "paidText": "Gói của bạn có hạn đến {date}.",
+      "notPaid": "Thanh toán chưa hoàn tất",
+      "notPaidText": "Chưa có khoản nào bị trừ. Bạn có thể thử lại từ trang Các gói.",
+      "review": "Chúng tôi đang kiểm tra khoản thanh toán này",
+      "reviewText": "Số tiền nhận được khác với đơn hàng. Đội FlyBot sẽ liên hệ với bạn.",
+      "slow": "Vẫn đang chờ xác nhận",
+      "slowText": "Nếu bạn đã thanh toán, gói sẽ được cập nhật trong vài phút. Bạn có thể đóng trang này.",
+      "notFound": "Không tìm thấy khoản thanh toán",
+      "resume": "Tiếp tục thanh toán",
+      "toPlan": "Xem gói của tôi"
+    },
+    "receipt": {
+      "title": "Biên lai",
+      "number": "Số biên lai",
+      "workspace": "Không gian làm việc",
+      "date": "Ngày",
+      "plan": "Gói",
+      "period": "Thời hạn",
+      "amount": "Số tiền",
+      "method": "Cách thanh toán",
+      "status": "Trạng thái",
+      "until": "Có hạn đến",
+      "view": "Biên lai",
+      "providerInvoice": "Hóa đơn từ cổng thanh toán"
+    },
+    "panel": {
+      "title": "Thanh toán",
+      "payOrRenew": "Thanh toán hoặc gia hạn",
+      "pastDue": "Lần gia hạn gần nhất không thành công. Gói vẫn dùng được đến {date}: hãy cập nhật thẻ hoặc thanh toán lại.",
+      "autoRenew": "tự động gia hạn ngày {date}",
+      "manualRenew": "đã thanh toán đến {date}; FlyBot sẽ nhắc trước khi hết hạn",
+      "stopRenewal": "Dừng tự động gia hạn",
+      "stopConfirm": "Gói vẫn dùng được đến {date}, sau đó trở về gói FREE nếu bạn không thanh toán lại. Dừng tự động gia hạn?",
+      "managed": "Gói của bạn được thỏa thuận với đội FlyBot (hóa đơn thủ công).",
+      "noPayments": "Chưa có khoản thanh toán nào."
     }
   },
   "camosDevice": {

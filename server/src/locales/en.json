@@ -88,6 +88,22 @@
         "approved": "approved",
         "rejected": "turned down"
       },
+      "payment_received": {
+        "subject": "✅ Payment received: {plan}",
+        "body": "Thank you. {workspace} is on {plan} until {date}. Your receipts are in Settings, Plan and usage."
+      },
+      "payment_failed": {
+        "subject": "⚠️ The payment for {plan} did not go through",
+        "body": "The renewal of {plan} for {workspace} could not be charged. The plan keeps working until {date}: please update your card or pay again before then. After that the workspace goes back to FREE; nothing is deleted."
+      },
+      "plan_expiring": {
+        "subject": "⏰ {plan} ends on {date}",
+        "body": "The {plan} plan of {workspace} ends on {date}. Renew it under Plans to keep its limits."
+      },
+      "plan_ended": {
+        "subject": "⏰ {plan} has ended",
+        "body": "The {plan} plan of {workspace} ended on {date}. It keeps working until {graceDate}: renew it under Plans before then. After that the workspace goes back to FREE; nothing is deleted."
+      },
       "firmware_available": {
         "subject": "⬆️ New firmware {version} for {camera}",
         "body": "Firmware {version} is ready for camera {camera} ({deviceSerial}), which runs {current}. Open the camera's settings in FlyBot to read what changed and install it, or turn on automatic updates."
@@ -546,6 +562,32 @@
     "orgSettingOnly": "Only organizations have this setting.",
     "orgsOffB2c": "Organizations are off in this mode (APP_MODE=b2c).",
     "allowPersonalBool": "allowMemberPersonalWorkspaces must be true or false.",
+    "pricesObject": "prices must be an object.",
+    "pricesCurrency": "prices: currency must be VND or USD.",
+    "pricesCurrencyObject": "prices.{currency} must be an object.",
+    "pricesRange": "prices.{currency}.{field} must be a whole number from 0 to {max}.",
+    "freeHasNoPrice": "FREE has no price.",
+    "webhookRawBody": "Raw body required.",
+    "unknownPaymentProvider": "Unknown payment provider.",
+    "invalidSignature": "Invalid signature.",
+    "paymentsOff": "Online payment is not available. Ask for an upgrade instead.",
+    "ownerPaysOnly": "Only the workspace owner can pay for its plan.",
+    "ownerPaymentsOnly": "Only the workspace owner can see its payments.",
+    "intervalMonthYear": "interval must be month or year.",
+    "paymentMethodUnavailable": "This payment method is not available.",
+    "paymentMethodCurrency": "This payment method does not take this currency.",
+    "planCodePaid": "planCode must be pro or enterprise.",
+    "addonCamerasRange1000": "addonCameras must be a whole number from 0 to 1000.",
+    "managedPlan": "Your plan is managed by FlyBot. Ask for an upgrade instead.",
+    "alreadySubscribed": "This workspace already renews automatically.",
+    "noDowngradeWhileRunning": "Your current plan is still running. Choose it again or wait until it ends.",
+    "notForSale": "This plan is not sold online. Ask for an upgrade instead.",
+    "paymentsNotConfigured": "Online payment is not set up yet.",
+    "paymentProviderError": "The payment service did not answer. Please try again.",
+    "paymentNotFound": "Payment not found.",
+    "notRenewing": "This workspace does not renew automatically.",
+    "payOnlinePaidPlanOnly": "Only a paid plan for a workspace can be paid online.",
+    "noOnlinePrice": "This plan has no online price. Set one in Admin, Plans.",
     "demo_live_closed": "Live view of this demo camera is not open to visitors.",
     "demo_playback_closed": "Recorded video of this demo camera is not open to visitors.",
     "simulated_no_live": "A simulated camera has no live view.",

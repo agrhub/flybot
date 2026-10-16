@@ -65,6 +65,7 @@ const demoSimJob = exclusive('Demo simulation', async () => {
 const firmwareJob = exclusive('Firmware updates', () => require('../services/firmwareService').sweep(), 'firmware');
 // Reports guests made in sessions that have ended (services/guestAccess.js)
 const guestReportJob = exclusive('Guest report cleanup', async () => ({ removed: await require('../services/guestAccess').cleanupGuestReports() }));
+const billingJob = exclusive('Billing reminders', () => require('../services/billingService').runDaily(), 'billing');
 const ezvizPolicyJob = exclusive('EZVIZ sub-account policies', async () => ({ changed: await resyncEzvizPolicies() }), 'ezvizPolicies');
 
 /**
@@ -161,6 +162,10 @@ function startCronJobs() {
     cron.schedule('3,8,13,18,23,28,33,38,43,48,53,58 * * * *', () => {
         firmwareJob();
     });
+    // Plans paid online: renewal reminders (7 days, 1 day, ended) and unfinished checkouts
+    cron.schedule('15 8 * * *', () => {
+        billingJob();
+    }, { timezone: TIMEZONE });
 
     // Removed camera access leaves the EZVIZ sub-accounts within the hour (no-op unless EZVIZ_RAM_TOKENS)
     cron.schedule('17 * * * *', () => {

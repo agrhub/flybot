@@ -1,6 +1,6 @@
 const env = require('../config/env');
 const { Plan } = require('../models');
-const { PLAN_CODES } = require('../models/Plan');
+const { PLAN_CODES, PRICE_CURRENCIES } = require('../models/Plan');
 
 /**
  * Plans (FREE / PRO / ENTERPRISE) as the admin configured them (Admin > Plans). The first read
@@ -39,6 +39,10 @@ const LIMITS = {
     liveMinutesPerRequest: [1, 60], maxMembers: [0, 100000], order: [0, 100]
 };
 
+// Online prices per currency (smallest unit); a plan without a price is not sold online
+const PRICE_FIELDS = ['month', 'year', 'addonMonth', 'addonYear'];
+const MAX_PRICE = 10_000_000_000;
+
 let cache = null;
 let cachedAt = 0;
 const TTL_MS = 60 * 1000;
@@ -58,6 +62,7 @@ const view = (doc) => ({
         apiAndWebhooks: !!doc.features?.apiAndWebhooks
     },
     priceNote: doc.priceNote || '',
+    prices: Object.fromEntries(PRICE_CURRENCIES.map(c => [c, Object.fromEntries(PRICE_FIELDS.map(f => [f, Number(doc.prices?.[c]?.[f]) || 0]))])),
     description: doc.description || '',
     visible: doc.visible !== false,
     order: doc.order ?? 0
@@ -130,11 +135,41 @@ async function updatePlan(code, body, user) {
             set[`features.${f}`] = b.features[f];
         }
     }
+    if (b.prices !== undefined) {
+        if (!b.prices || typeof b.prices !== 'object') return { error: 'prices must be an object.' };
+        for (const currency of Object.keys(b.prices)) {
+            if (!PRICE_CURRENCIES.includes(currency)) return { error: 'prices: currency must be VND or USD.' };
+            const p = b.prices[currency];
+            if (!p || typeof p !== 'object') return { error: `prices.${currency} must be an object.` };
+            for (const f of PRICE_FIELDS) {
+                if (p[f] === undefined) continue;
+                if (!Number.isInteger(p[f]) || p[f] < 0 || p[f] > MAX_PRICE) return { error: `prices.${currency}.${f} must be a whole number from 0 to ${MAX_PRICE}.` };
+                if (code === 'free' && p[f] !== 0) return { error: 'FREE has no price.' };
+                set[`prices.${currency}.${f}`] = p[f];
+            }
+        }
+    }
     await ensureSeeded();
     set.updatedBy = user?.id || user?._id || null;
     await Plan.updateOne({ code }, { $set: set });
     clearCache();
     return { plan: (await getPlans({ fresh: true }))[code] };
+}
+
+/**
+ * What a plan costs online for one period: { amount, baseAmount, addonAmount } in the currency's
+ * smallest unit, or null when the plan is not sold online in that currency / interval (or an
+ * add-on camera has no price).
+ */
+async function quote(code, { currency, interval, addonCameras = 0 }) {
+    if (code === 'free' || !PLAN_CODES.includes(code) || !PRICE_CURRENCIES.includes(currency)) return null;
+    const plan = await getPlan(code);
+    const prices = plan.prices[currency];
+    const baseAmount = interval === 'year' ? prices.year : interval === 'month' ? prices.month : 0;
+    if (!baseAmount) return null;
+    const addonAmount = addonCameras > 0 ? (interval === 'year' ? prices.addonYear : prices.addonMonth) : 0;
+    if (addonCameras > 0 && !addonAmount) return null;
+    return { amount: baseAmount + addonAmount * addonCameras, baseAmount, addonAmount };
 }
 
 function clearCache() {
@@ -149,5 +184,6 @@ module.exports = {
     getPlan,
     listPlans,
     updatePlan,
+    quote,
     clearCache
 };
