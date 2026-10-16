@@ -313,6 +313,10 @@ async function decide({ user, id, decision, req }) {
     const cameras = await visibleCameras(user);
     if (!p || !p.deviceSerials.some(s => cameras.has(s))) throw new SentinelUpstreamError(404, 'NOT_FOUND', 'Not found.');
     if (p.state !== 'pending') throw new SentinelUpstreamError(409, 'CONFLICT', 'This approval was already decided.');
+    // Deciding runs the camera's action: the person must be able to manage one of its cameras
+    const { canManageCamera } = require('../utils/ownership');
+    const own = await Camera.find({ deviceSerial: { $in: p.deviceSerials } }).select('userId sharedWith unclaimed selfRegistered').lean();
+    if (!own.some(c => canManageCamera(user, c))) throw new SentinelUpstreamError(403, 'FORBIDDEN', 'You cannot decide for this camera.');
     const owner = await User.findById(p.userId);
     if (!owner) throw new SentinelUpstreamError(409, 'CONFLICT', 'The proposal owner is gone.');
     const { decideCard } = require('../controllers/aiController');

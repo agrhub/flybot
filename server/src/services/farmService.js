@@ -1,5 +1,5 @@
 const { Farm, Plot, Camera, User } = require('../models');
-const { isAdmin, roleOf, canAddCameras } = require('../constants/roles');
+const { isAdmin, roleOf } = require('../constants/roles');
 const notificationService = require('./notificationService');
 const { latestProcessedByCamera } = require('./snapshotQueries');
 const dailyStats = require('./dailyStats');
@@ -22,7 +22,9 @@ function farmViewFilter(user) {
     const id = idOf(user);
     if (!id) return { _id: null };
     const orgIds = [...(user.orgRoles?.keys() || [])];
-    return { $or: [{ ownerId: id }, { 'sharedWith.userId': id }, ...(orgIds.length ? [{ orgId: { $in: orgIds } }] : [])] };
+    const base = { $or: [{ ownerId: id }, { 'sharedWith.userId': id }, ...(orgIds.length ? [{ orgId: { $in: orgIds } }] : [])] };
+    const scope = require('./workspaceService').scopeFilter(user, { ownerField: 'ownerId' });
+    return scope ? { $and: [base, scope] } : base;
 }
 
 function canViewFarm(user, farm) {
@@ -36,13 +38,14 @@ function canViewFarm(user, farm) {
 function canShareFarm(user, farm) {
     if (!farm) return false;
     if (isAdmin(user)) return true;
-    return canAddCameras(user) && ownerIdOf(farm) === idOf(user);
+    return ownerIdOf(farm) === idOf(user);
 }
 
 function canEditFarm(user, farm) {
     if (!farm) return false;
     if (isAdmin(user)) return true;
-    return canAddCameras(user) && (ownerIdOf(farm) === idOf(user) || ['owner', 'manager'].includes(orgRoleIn(user, farm)));
+    // Its owner, and the owners and managers of its workspace
+    return ownerIdOf(farm) === idOf(user) || ['owner', 'manager'].includes(orgRoleIn(user, farm));
 }
 
 /**

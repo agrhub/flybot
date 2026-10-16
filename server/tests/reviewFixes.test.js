@@ -31,8 +31,8 @@ test('an organization manager runs the camera but cannot take it or give it away
     assert.equal(update.status, 200);
 
     // Taking it: moving it into the manager's own organization, sharing it out, deleting it
-    const own = await json(await request('/api/orgs', { method: 'POST', as: manager, body: { name: 'Mine' } }));
-    assert.equal((await request(`/api/orgs/${own.body.organization.id}/cameras`, { method: 'PUT', as: manager, body: { add: ['OWNED1'] } })).status, 403);
+    const own = await orgService.createOrg(manager, 'Mine');
+    assert.equal((await request(`/api/orgs/${own._id}/cameras`, { method: 'PUT', as: manager, body: { add: ['OWNED1'] } })).status, 403);
     assert.equal((await request('/api/user/camera/share', { method: 'POST', as: manager, body: { deviceSerial: 'OWNED1', email: 'x@example.test' } })).status, 404);
     assert.equal((await request('/api/user/delete-camera', { method: 'DELETE', as: manager, body: { deviceSerial: 'OWNED1' } })).status, 404);
     assert.ok(await models.Camera.exists({ deviceSerial: 'OWNED1', orgId: org._id }));

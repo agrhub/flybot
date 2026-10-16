@@ -147,6 +147,12 @@ const router = createRouter({
           name: 'settings',
           component: () => import('@/pages/settings/index.vue'),
         },
+        // Plans for the current workspace (APP_MODE b2c / hybrid)
+        {
+          path: 'pricing',
+          name: 'pricing',
+          component: () => import('@/pages/pricing/index.vue'),
+        },
         // Claim a CamOS camera that registered itself (QR on its label -> /claim?sn=...)
         {
           path: 'claim',

@@ -75,6 +75,18 @@
       "org_digest": {
         "subject": "🧑‍🌾 {orgName}: {count} members to visit this week",
         "body": "Last week in {orgName} (on average {ftd} flies per trap per day), {count} members had traps at their threshold and logged no treatment: {names}. See the details and send reminders under Farms, Cooperative overview."
+      },
+      "upgrade_requested": {
+        "subject": "⭐ Upgrade request: {plan} from {email}",
+        "body": "{email} asks for {plan} ({workspace}). Review it under Admin, Upgrade requests."
+      },
+      "upgrade_decided": {
+        "subject": "⭐ Your upgrade request: {outcome}",
+        "body": "Your request for {plan} was {outcome}. {note}"
+      },
+      "upgrade_outcome": {
+        "approved": "approved",
+        "rejected": "turned down"
       }
     },
     "cameraShared": {
@@ -474,7 +486,27 @@
     "trapKindStickyLure": "trapKind must be sticky or lure.",
     "claimLocked": "Too many wrong codes for this serial. Try again later.",
     "planCameraLimit": "Your plan lets you claim {count} cameras.",
-    "farmNotYours": "Farm not found or not yours."
+    "farmNotYours": "Farm not found or not yours.",
+    "accountDisabledTransfer": "This account is disabled.",
+    "inviteOnly": "Sign-up is by invitation only.",
+    "notInPlan": "This is not part of your plan. Ask for an upgrade.",
+    "noCameraWorkspace": "You cannot add cameras in this workspace.",
+    "noWorkspaceAction": "You cannot do this in this workspace.",
+    "planDeepLimit": "Your plan allows {count} deep analyses a month.",
+    "planCameraLimitWs": "Your plan allows {count} cameras in this workspace.",
+    "planMemberLimit": "Your plan allows {count} people in this workspace.",
+    "unknownPlan": "Unknown plan.",
+    "planFeaturesObject": "features must be an object.",
+    "planFeatureBool": "features.{name} must be true or false.",
+    "planNameEmpty": "name must not be empty.",
+    "planVisibleBool": "visible must be true or false.",
+    "workspaceNotFound": "Workspace not found.",
+    "addonCamerasRange": "addonCameras must be a whole number from 0 to 100000.",
+    "expiresAtDate": "expiresAt must be a date.",
+    "planCodeInvalid": "plan must be free, pro or enterprise.",
+    "orgSettingOnly": "Only organizations have this setting.",
+    "orgsOffB2c": "Organizations are off in this mode (APP_MODE=b2c).",
+    "allowPersonalBool": "allowMemberPersonalWorkspaces must be true or false."
   },
   "reportPdf": {
     "range": "Period: {from} - {to} ({days} days)",

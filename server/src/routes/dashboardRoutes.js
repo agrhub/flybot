@@ -3,13 +3,14 @@ const router = express.Router();
 const dashboardController = require('../controllers/dashboardController');
 const { authenticate, requireRole } = require('../middlewares/auth');
 const { requireStringFields } = require('../middlewares/validate');
+const { requireWorkspaceRole } = require('../services/entitlements');
 const { shareLimiter, reportSendLimiter } = require('../middlewares/rateLimit');
 
 router.use(authenticate, requireStringFields);
 
 router.get('/', dashboardController.listDashboards);
 // Viewers (role "user") only see dashboards shared with them
-router.post('/', requireRole('admin', 'manager'), dashboardController.createDashboard);
+router.post('/', requireWorkspaceRole, dashboardController.createDashboard);
 router.get('/:id', dashboardController.getDashboard);
 router.put('/:id', dashboardController.updateDashboard);
 router.delete('/:id', dashboardController.deleteDashboard);

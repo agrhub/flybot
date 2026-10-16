@@ -34,8 +34,8 @@ async function authenticateApiKey(req, res, next) {
         if (!key) return res.status(401).json({ success: false, message: 'Missing API key (Authorization: Bearer fbk_... or X-API-Key).' });
         const apiKey = await ApiKey.findOne({ hash: hashKey(key), revokedAt: null });
         const user = apiKey ? await User.findById(apiKey.userId).select('email role disabled') : null;
-        // A key stops working when its account is disabled or no longer a manager/admin
-        if (!apiKey || !user || user.disabled || !['admin', 'manager'].includes(roleOf(user))) {
+        // A key stops working when its account is disabled (keys are made only on plans with apiAndWebhooks)
+        if (!apiKey || !user || user.disabled) {
             return res.status(401).json({ success: false, message: 'Invalid or revoked API key.' });
         }
         if (!apiKey.lastUsedAt || Date.now() - apiKey.lastUsedAt.getTime() > LAST_USED_THROTTLE_MS) {

@@ -1395,13 +1395,22 @@
       "review_requested": {
         "title": "Photo to check",
         "desc": "{deviceName}: FlyBot Sentinel asks you to check a photo ({reason})."
+      },
+      "upgrade_requested": {
+        "title": "Upgrade request",
+        "desc": "{email} asks for {plan} ({workspace})."
+      },
+      "upgrade_decided": {
+        "title": "Your upgrade request",
+        "desc": "Your request for {plan} was {outcome}. {note}"
       }
     }
   },
   "roles": {
     "admin": "Admin",
-    "manager": "Manager",
-    "user": "Viewer"
+    "manager": "Manager (retired)",
+    "user": "User",
+    "support": "Support (read-only)"
   },
   "share": {
     "button": "Share",
@@ -1656,6 +1665,57 @@
       "photos": "Photos analyzed",
       "noData": "No data yet",
       "note": "A person counts as active when they sign in, use the app (an open session), log a treatment or change a card in that period. The audit log is kept for 365 days."
+    },
+    "plans": {
+      "tab": "Plans",
+      "title": "Plans",
+      "subtitle": "What FREE, PRO and ENTERPRISE allow. Changes apply to every workspace on the plan.",
+      "placeholderNote": "The first values are placeholders: set the numbers and the price note for your offer.",
+      "name": "Name",
+      "priceNote": "Price note (shown as is)",
+      "description": "Description",
+      "maxCameras": "Cameras (0 = no limit)",
+      "deepPerMonth": "Deep analyses a month",
+      "maxMembers": "People (0 = no limit)",
+      "order": "Order",
+      "visible": "Shown on the pricing page",
+      "saved": "{plan} saved."
+    },
+    "workspaces": {
+      "tab": "Workspaces",
+      "title": "Workspaces",
+      "subtitle": "Personal workspaces and organizations, with their plan, add-on cameras and expiry.",
+      "search": "Name or email",
+      "kind": "Kind",
+      "plan": "Plan",
+      "name": "Name",
+      "usage": "Use",
+      "usageText": "{cameras} cam. · {members} people",
+      "assign": "Change plan",
+      "assignTitle": "Plan of {name}",
+      "addonCameras": "Add-on cameras",
+      "expiresAt": "Paid until (empty = no end)",
+      "note": "Note",
+      "billingNote": "Billing note (contract, invoice)",
+      "createOrg": "New organization",
+      "ownerEmail": "Owner email"
+    },
+    "upgrades": {
+      "tab": "Upgrade requests",
+      "title": "Upgrade requests",
+      "subtitle": "Approve to set the plan (payment is arranged outside FlyBot), or turn down with a note.",
+      "all": "All",
+      "none": "No requests.",
+      "cameras": "cameras",
+      "orgLine": "{cameras} cameras · {members} people · {phone}",
+      "reason": "Limit reached: {reason}",
+      "note": "Note",
+      "approve": "Approve",
+      "reject": "Turn down",
+      "approveTitle": "Approve the request",
+      "rejectTitle": "Turn down the request",
+      "rejectHint": "Why (the requester sees this)",
+      "paid": "Paid"
     }
   },
   "dashboards": {
@@ -1924,7 +1984,9 @@
       "farm": "Farms",
       "org": "Organization",
       "integration": "API & webhooks",
-      "sentinel": "FlyBot Sentinel"
+      "sentinel": "FlyBot Sentinel",
+      "workspace": "Workspaces & plans",
+      "system": "System"
     },
     "actions": {
       "auth": {
@@ -2007,6 +2069,15 @@
         "proposal_decided": "Suggestion decided",
         "review_requested": "Photo check requested",
         "analysis": "Photo counted"
+      },
+      "workspace": {
+        "created": "Organization created",
+        "plan_changed": "Plan changed",
+        "settings_changed": "Workspace settings changed",
+        "upgrade_requested": "Upgrade requested"
+      },
+      "system": {
+        "workspaces_migrated": "Moved to workspaces and plans"
       }
     },
     "reasons": {
@@ -2433,7 +2504,9 @@
         "limit": "Over today's invitation limit"
       }
     },
-    "role": "Role"
+    "role": "Role",
+    "request": "Ask for an organization",
+    "allowPersonal": "Members also keep their personal workspace"
   },
   "integrations": {
     "tab": "API & Webhooks",
@@ -3084,7 +3157,105 @@
       "locked": "Too many wrong codes for this serial. Try again in an hour.",
       "limit": "Your plan lets you claim {limit} cameras. Remove one or ask for an upgrade.",
       "farm": "That farm cannot be used.",
-      "generic": "The camera could not be claimed. Try again."
+      "generic": "The camera could not be claimed. Try again.",
+      "noWorkspace": "You cannot add cameras in this workspace. Switch to your personal workspace or ask the owner."
+    }
+  },
+  "workspace": {
+    "switch": "Switch workspace",
+    "none": "No workspace",
+    "personal": "Personal",
+    "organization": "Organization"
+  },
+  "plans": {
+    "tab": "Plan & usage",
+    "title": "Plans",
+    "subtitle": "What each plan includes. Ask for an upgrade and the FlyBot team sets it up with you.",
+    "b2bHint": "Plans are arranged with your organization. Ask its owner.",
+    "current": "Your plan",
+    "contact": "Contact us",
+    "seePlans": "See plans",
+    "unlimited": "Unlimited",
+    "expired": "Expired",
+    "expiresAt": "Paid plan until {date}.",
+    "noLimit": "No limit",
+    "usedOf": "{used} / {max}",
+    "usedUnlimited": "{used} (no limit)",
+    "perCameraDay": "{n} per camera a day",
+    "minutes": "{n} min",
+    "days": "{n} days",
+    "fields": {
+      "cameras": "Cameras",
+      "deepThisMonth": "Deep analysis this month",
+      "members": "People",
+      "snapshotsPerDay": "Photos per camera a day",
+      "liveMinutes": "Live view per request (minutes)",
+      "retentionDays": "Photos kept (days)"
+    },
+    "features": {
+      "telegram": "Telegram alerts",
+      "pdfReports": "PDF reports",
+      "apiAndWebhooks": "API & webhooks"
+    },
+    "list": {
+      "cameras": "Up to {n} cameras",
+      "camerasUnlimited": "Cameras: no limit",
+      "snapshots": "{n} photos per camera a day",
+      "retention": "Photos kept {n} days",
+      "deep": "{n} deep analyses a month",
+      "deepNone": "No deep analysis",
+      "live": "Live view {n} min per request",
+      "members": "Up to {n} people",
+      "membersUnlimited": "People: no limit"
+    },
+    "orgCard": {
+      "title": "Organization / Business",
+      "desc": "For cooperatives and farm businesses: shared workspace, members with roles, a contract and invoice.",
+      "ask": "Contact us"
+    },
+    "free": "Free"
+  },
+  "upgrade": {
+    "title": "Ask for an upgrade",
+    "orgTitle": "Organization for your business",
+    "ask": "Ask for an upgrade",
+    "plan": "Plan",
+    "extraCameras": "Extra cameras",
+    "message": "Message",
+    "messageHint": "How many cameras, which farm, how to reach you...",
+    "orgName": "Organization name",
+    "orgCameras": "Cameras",
+    "orgMembers": "People",
+    "phone": "Phone",
+    "organization": "Organization",
+    "send": "Send request",
+    "paymentNote": "Payment is arranged with the FlyBot team; nothing is charged here.",
+    "sentTitle": "Request sent",
+    "sentAdmin": "The FlyBot team will get back to you.",
+    "sentOwner": "Your organization's owner looks at it first.",
+    "myRequests": "Your requests",
+    "cancel": "Withdraw",
+    "forward": "Send to FlyBot",
+    "decline": "Decline",
+    "status": {
+      "pending_owner": "With the owner",
+      "pending": "Waiting",
+      "approved": "Approved",
+      "rejected": "Turned down",
+      "cancelled": "Withdrawn"
+    },
+    "limits": {
+      "cameras": "Your plan allows {max} cameras here ({used} in use).",
+      "members": "Your plan allows {max} people here ({used} now).",
+      "deepAnalysis": "You used {used} of {max} deep analyses this month.",
+      "apiAndWebhooks": "API keys and webhooks are not part of your plan.",
+      "pdfReports": "PDF reports are not part of your plan.",
+      "telegram": "Telegram alerts are not part of your plan.",
+      "generic": "Your plan's limit is reached."
+    },
+    "errors": {
+      "pending": "You already have a request waiting.",
+      "generic": "The request could not be sent. Try again."
     }
   }
 }

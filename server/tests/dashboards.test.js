@@ -42,9 +42,15 @@ const row = (serial, n, peak, total, species = 'fruit_fly') => ({
     species: [{ name: species, peak, total: total ?? peak * 4 }]
 });
 
-test('only admins and managers build dashboards', async () => {
+test('reports are built by whoever runs the current workspace (owner or manager), not by its members', async () => {
     const viewer = await createUser({ role: 'user' });
-    assert.equal((await create(viewer, { name: 'Mine' })).status, 403);
+    // Their own personal workspace: they own it
+    assert.equal((await create(viewer, { name: 'Mine' })).status, 201);
+    // An organization where they are only a member, chosen as the current workspace
+    const owner = await createUser({ role: 'user', email: 'orgowner@example.test' });
+    const org = await models.Organization.create({ name: 'Co', kind: 'organization', members: [{ userId: owner._id, email: owner.email, role: 'owner' }, { userId: viewer._id, email: viewer.email, role: 'member' }] });
+    const res = await request('/api/dashboards', { method: 'POST', as: viewer, body: { name: 'Theirs' }, headers: { 'X-Workspace-Id': String(org._id) } });
+    assert.equal(res.status, 403);
 });
 
 test('build a report and read widget data over its time range', async () => {

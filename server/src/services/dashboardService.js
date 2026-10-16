@@ -1,5 +1,5 @@
 const { Camera, User } = require('../models');
-const { isAdmin, roleOf, canBuildDashboards } = require('../constants/roles');
+const { isAdmin, roleOf } = require('../constants/roles');
 const { viewFilter } = require('../utils/ownership');
 const { thresholdOf, riskLevel } = require('../constants/risk');
 const { latestProcessedByCamera } = require('./snapshotQueries');
@@ -29,7 +29,10 @@ function dashboardViewFilter(user) {
     const id = idOf(user);
     if (!id) return { _id: null };
     const notExpired = { $or: [{ expiresAt: null }, { expiresAt: { $gt: new Date() } }] };
-    return { $or: [{ ownerId: id }, { $and: [{ 'sharedWith.userId': id }, notExpired] }] };
+    const base = { $or: [{ ownerId: id }, { $and: [{ 'sharedWith.userId': id }, notExpired] }] };
+    // More than one workspace: the current one's dashboards (and, in the personal one, those shared with the person)
+    const scope = require('./workspaceService').scopeFilter(user, { ownerField: 'ownerId' });
+    return scope ? { $and: [base, scope] } : base;
 }
 
 function canViewDashboard(user, dashboard) {
@@ -43,7 +46,7 @@ function canViewDashboard(user, dashboard) {
 function canEditDashboard(user, dashboard) {
     if (!dashboard) return false;
     if (isAdmin(user)) return true;
-    return canBuildDashboards(user) && ownerIdOf(dashboard) === idOf(user);
+    return ownerIdOf(dashboard) === idOf(user);
 }
 
 function accessOf(user, dashboard) {

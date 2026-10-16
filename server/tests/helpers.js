@@ -75,6 +75,7 @@ function resetStore() {
     store.notifications = [];
     store.sessions = [];
     store.dailyStats = [];
+    store.orgs = [];
     sentMails.length = 0;
 }
 resetStore();
@@ -140,7 +141,8 @@ const cameraMatches = (c, filter = {}) =>
     (filter['sharedWith.userId'] === undefined || (c.sharedWith || []).some(sh => sameId(sh.userId, filter['sharedWith.userId']))) &&
     (filter.deviceSerial === undefined || (typeof filter.deviceSerial === 'object'
         ? (filter.deviceSerial.$in || []).includes(c.deviceSerial)
-        : c.deviceSerial === filter.deviceSerial));
+        : c.deviceSerial === filter.deviceSerial)) &&
+    (filter.orgId === undefined || (filter.orgId === null ? !c.orgId : sameId(c.orgId, filter.orgId)));
 const camerasMatching = (filter = {}) => store.cameras.filter(c => cameraMatches(c, filter));
 models.Camera.exists = async (filter) => (camerasMatching(filter).length ? { _id: 1 } : null);
 models.Camera.findOne = (filter) => query(() => camerasMatching(filter)[0] || null);
@@ -148,6 +150,35 @@ models.Camera.find = (filter) => query(() => camerasMatching(filter));
 models.Camera.updateMany = async (filter, update) => {
     camerasMatching(filter).forEach(c => Object.assign(c, update.$set || {}));
 };
+
+models.Camera.countDocuments = async (filter) => camerasMatching(filter).length;
+
+// Workspaces (Organization): personal workspaces made on sign-in live here
+const orgMatches = (o, filter = {}) => {
+    if (filter._id !== undefined && !sameId(o._id, filter._id)) return false;
+    if (filter.kind !== undefined) {
+        const kind = o.kind || 'organization';
+        if (typeof filter.kind === 'object' ? (filter.kind.$ne !== undefined && kind === filter.kind.$ne) : kind !== filter.kind) return false;
+    }
+    if (filter['members.userId'] !== undefined && !(o.members || []).some(m => sameId(m.userId, filter['members.userId']))) return false;
+    const em = filter.members?.$elemMatch;
+    if (em && !(o.members || []).some(m => (em.userId === undefined || sameId(m.userId, em.userId)) && (em.role === undefined || m.role === em.role) && (em.email === undefined || m.email === em.email))) return false;
+    return true;
+};
+models.Organization.find = (filter) => query(() => store.orgs.filter(o => orgMatches(o, filter)));
+models.Organization.findOne = (filter) => query(() => store.orgs.find(o => orgMatches(o, filter)) || null);
+models.Organization.findById = (id) => query(() => store.orgs.find(o => sameId(o._id, id)) || null);
+models.Organization.exists = async (filter) => (store.orgs.some(o => orgMatches(o, filter)) ? { _id: 1 } : null);
+models.Organization.create = async (data) => {
+    const doc = makeDoc({ _id: newId(), createdAt: new Date(), plan: { code: 'free', addonCameras: 0, expiresAt: null }, settings: { allowMemberPersonalWorkspaces: true }, ...data });
+    store.orgs.push(doc);
+    return doc;
+};
+// Plans: none stored, so the seed values apply; usage counters start at zero
+models.Plan.find = () => query(() => []);
+models.Plan.updateOne = async () => ({ modifiedCount: 0 });
+models.UsageCounter.findOne = () => query(() => null);
+models.UsageCounter.updateOne = async () => ({ modifiedCount: 0 });
 
 // Snapshot
 models.Snapshot.find = () => query(() => []);

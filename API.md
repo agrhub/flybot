@@ -291,6 +291,64 @@ Errors: `400 INVALID_REQUEST` (`snapshotId`, a `source` other than `sentinel`, `
 
 Runs FlyBot with Sentinel as its only counter (the first competition build;  below replaces it). The capture job stores each photo and checks its quality but calls no cloud model, and the automatic AI retry is off. `snapshot_analyzed` is sent right away with `aiSource: "pending"` so Sentinel can fetch the photo, and the photo gets its count when Sentinel posts `/analysis`. Until then it shows as not analyzed; if Sentinel never answers it stays so, and no "AI failing" alert is raised for it. The assistant's photo questions still use Vertex AI.
 
+## Workspaces and plans
+
+Three separate things decide what a person may do:
+
+| Concept | Where | Values |
+|---|---|---|
+| System role | `User.role` | `admin` (the platform operator: every workspace, plans, settings), `support` (reads the admin pages: every `GET /api/admin/*`), `user`. `manager` is retired: the `workspaces-v1` migration moves it to `user`, a stored legacy value reads as `user`, and `PUT /api/admin/users/{id}` no longer accepts it |
+| Workspace and role in it | `Organization` (`kind: personal \| organization`, `members[].role: owner \| manager \| member`) | Every account has a personal workspace (APP_MODE `b2c` / `hybrid`, made at sign-up or on first use); organizations are made by the admin. Cameras, farms and dashboards belong to one (`Camera.orgId`, `Farm.orgId`, `Dashboard.orgId`) |
+| Plan | `Organization.plan: {code: free \| pro \| enterprise, addonCameras, expiresAt, assignedBy, assignedAt, note}` + the `Plan` collection | What the workspace may use (`services/entitlements.js`) |
+
+**The current workspace** is the `X-Workspace-Id` header (the web client sends it), else the account's saved choice (`PUT /api/workspaces/current`), else the personal one, else the first. For someone in more than one workspace it scopes the camera, farm and dashboard lists (personal: its own items plus things shared with the person directly; organization: that organization's items) and every limit; with one workspace the lists are exactly as before. Owners and managers of the current workspace add cameras, farms and dashboards there; members view. The owner of a camera always manages it; organization owners and managers manage the organization's cameras.
+
+**APP_MODE** (`.env`): `hybrid` (default, flybot.agrhub.com): open sign-up makes a personal workspace on FREE, organizations exist alongside, pricing page with an "Organization / Business: contact us" card. `b2c`: personal workspaces only (organizations stay out of the switcher). `b2b`: organizations only, sign-up only for an email an organization invited (`ALLOW_SIGNUP=true` opens it), no personal workspaces, no pricing page, a member's upgrade request goes to the organization's owner first.
+
+### Plans
+
+Configured by the admin (`Admin > Plans`), seeded on first start with placeholder numbers (FREE from the `DEMO_*` settings). `0` means no limit for `maxCameras` and `maxMembers`.
+
+| Field | FREE (seed) | PRO (seed) | ENTERPRISE (seed) |
+|---|---|---|---|
+| `maxCameras` per workspace (+ the workspace's `addonCameras`) | 3 | 10 | 100 |
+| `snapshotsPerDay` per camera (CamOS uploads and the scheduled capture) | 48 | 96 | 288 |
+| `retentionDays` (enforced only with `PLAN_RETENTION=true`) | 30 | 180 | 730 |
+| `deepAnalysisPerMonth` (the chatbot's `analyze_photo_deep`, per workspace, calendar month UTC) | 20 | 300 | 5000 |
+| `liveMinutesPerRequest` (CamOS live view) | 5 | 15 | 30 |
+| `maxMembers` (owner included) | 1 | 5 | 0 |
+| `features.telegram` / `pdfReports` / `apiAndWebhooks` | yes / no / no | yes / yes / yes | yes / yes / yes |
+| `priceNote` (free text, no prices invented; empty = the app says "Free" / "Contact us" in the reader's language), `description`, `visible`, `order` | empty | empty | empty |
+
+A paid plan past `expiresAt` falls back to FREE (data kept, adding blocked). Admins and `DEMO_EXEMPT_EMAILS` have no limits. A limit answers `403 {"code": "UPGRADE_REQUIRED", "limit": "cameras" | "members" | "deepAnalysis" | "apiAndWebhooks" | ..., "used", "max", "plan", "message"}`; the web client turns it into the upgrade dialog. API keys and webhooks need `apiAndWebhooks` on a workspace the person owns or manages (webhooks stop firing when the plan loses it).
+
+### Routes (session sign-in unless noted)
+
+| Request | Answer |
+|---|---|
+| `GET /api/plans` (no sign-in) | `{appMode, pricing, plans: [...]}` (the visible plans; empty in b2b) |
+| `GET /api/me/entitlements` | `{appMode, workspace, entitlements: {plan, planName, exempt, expired, expiresAt, addonCameras, maxCameras, snapshotsPerDay, retentionDays, deepAnalysisPerMonth, liveMinutes, maxMembers, features}, usage: {cameras, members, deepAnalyses, month}}` for the current workspace |
+| `GET /api/workspaces` | `{appMode, workspaces: [{id, name, kind, role, plan}], current}` |
+| `PUT /api/workspaces/current {workspaceId}` | Saves the choice (`404` for a workspace the person is not in) |
+| `PUT /api/workspaces/{id}/settings {allowMemberPersonalWorkspaces}` | An organization's owner: `false` hides its members' personal workspaces (their data stays) |
+| `POST /api/upgrade-requests {type?: plan \| organization, targetPlan?, extraCameras?, message?, reason?, organization?: {name, cameras, members, phone}}` | `201 {request}`: `pending` (to the admin; admins are notified in-app, by email and Telegram as their settings say) or, b2b member, `pending_owner`. `type: organization` only in hybrid. `409 ALREADY_PENDING`. 10 an hour |
+| `GET /api/upgrade-requests` | The person's own, plus (b2b owner) the ones waiting for them |
+| `POST /api/upgrade-requests/{id}/cancel` | The requester withdraws a waiting one |
+| `POST /api/upgrade-requests/{id}/forward {forward: true \| false, note?}` | b2b organization owner: on to the admin, or turned down |
+| `GET /api/admin/plans`, `PUT /api/admin/plans/{code}` | Read (admin, support) / edit (admin) a plan |
+| `GET /api/admin/workspaces?q=&kind=&plan=` | Every workspace with owner, members, cameras, plan, billing note |
+| `POST /api/admin/workspaces {name, ownerEmail, plan?}` | A new organization (b2b / hybrid); an owner without an account yet joins on verification |
+| `PUT /api/admin/workspaces/{id}/plan {plan, addonCameras?, expiresAt?, note?, billingNote?}` | Assign a plan (audited `workspace.plan_changed`) |
+| `GET /api/admin/upgrade-requests?status=` | All requests |
+| `POST /api/admin/upgrade-requests/{id}/approve {plan?, addonCameras?, expiresAt?, paid?, adminNote?}` | Sets the workspace's plan (an organization request makes the organization with the requester as owner); the requester is notified. Payment is manual (`paid` is the admin's checkbox) |
+| `POST /api/admin/upgrade-requests/{id}/reject {adminNote}` | Turned down with a note the requester sees |
+
+`GET /api/auth/me` (and sign-in) also carry `appMode`, `workspace`, `workspaceCount`, `plan: {code, name, expired, expiresAt}` and `capabilities: {addCameras, buildDashboards, createFarms, claimCameras, integrations, pdfReports, telegram, pricing, upgradeRequests, requestOrganization}`; the client uses these instead of the role. `POST /api/orgs` is admin-only now; `GET /api/orgs` lists organizations (not personal workspaces) with `kind`, `plan` and `settings`.
+
+### Migration `workspaces-v1`
+
+Runs once at start-up after `organizations-v1`, logs a dry run first, never deletes anything, and is recorded in the audit log (`system.workspaces_migrated`): existing organizations become `kind: organization` on ENTERPRISE (note `grandfathered`); every account gets a personal workspace (b2c / hybrid) on FREE, a former manager on PRO (ENTERPRISE with more than 10 cameras, `grandfathered`); managers become `user`; cameras, farms and dashboards outside any workspace move into their owner's personal one; shares stay shares and organizations keep their members and roles.
+
 ## Camera platforms (EZVIZ, CamOS on AWS IoT Core, Kinesis Video Streams)
 
 Each camera has a `platform` (`Camera.platform`, default `ezviz`): how FlyBot reaches it (`server/src/platforms/`). Every adapter answers the same calls — list, snapshot, live session, playback, capture schedule, status — and the rest of FlyBot does not care which one it talks to.
@@ -358,10 +416,10 @@ Anyone may flash the public CamOS release; the camera joins FlyBot by itself and
 
 **`POST /api/cameras/claim`** (signed in) `{"serial", "verifyCode", "trapKind?": "lure"|"sticky", "farmId?", "captureIntervalMinutes?": 15|30|60|120, "deviceName?"}`
 
-- `200 {"success":true, "camera":{deviceSerial, deviceName, trapKind, farmId, captureIntervalMinutes, platform, model}, "shadowSynced", "preview":{snapshotId, imageUrl, at, count}}`: the camera is the person's (any account, whatever its role, may claim and then run its own claimed cameras), its photos are kept, the shadow gets `claimed: true` and `capture.intervalMin`, and `tz` from the farm. Claiming again by the same person: `200` with `alreadyClaimed: true`. Audited as `camera.claimed`.
-- `404 NOT_FOUND` for a wrong code, an unknown serial or a camera someone else claimed (the same answer for all three). Five failures for a serial within an hour lock it for an hour: `429 LOCKED` with `Retry-After` (also for a serial that does not exist). `403 LIMIT_REACHED {limit, plan}` past the plan's camera limit; `400 BAD_FARM`. 20 tries a minute per person.
+- `200 {"success":true, "camera":{deviceSerial, deviceName, trapKind, farmId, captureIntervalMinutes, platform, model}, "shadowSynced", "preview":{snapshotId, imageUrl, at, count}}`: the camera goes into the person's current workspace (they own and run it), its photos are kept, the shadow gets `claimed: true` and `capture.intervalMin`, and `tz` from the farm. Claiming again by the same person: `200` with `alreadyClaimed: true`. Audited as `camera.claimed`.
+- `404 NOT_FOUND` for a wrong code, an unknown serial or a camera someone else claimed (the same answer for all three). Five failures for a serial within an hour lock it for an hour: `429 LOCKED` with `Retry-After` (also for a serial that does not exist). `403 UPGRADE_REQUIRED {limit: "cameras", used, max, plan}` past the current workspace plan's camera limit, `403 NO_WORKSPACE` when the person does not run the current workspace; `400 BAD_FARM`. 20 tries a minute per person.
 
-**Plan limits** (`services/entitlements.js getEntitlements(user)`, the one place every limit is read from; today from the `DEMO_*` settings): `maxCameras` self-registered cameras per account (`DEMO_MAX_CAMERAS_PER_USER`, 3), `snapshotsPerDay` per camera in any 24 h (`DEMO_MAX_SNAPSHOTS_PER_DAY`, 48; `429 daily_limit` with `nextWakeAt`), `liveMinutes` per live request (`DEMO_LIVE_MINUTES`, 5), `deepAnalysis` (the chatbot's `analyze_photo_deep`; never for an unclaimed camera). Admins and `DEMO_EXEMPT_EMAILS` are unlimited. System limit: `DEMO_MAX_UNCLAIMED` (200).
+**Limits** come from the workspace plan (`services/entitlements.js`, "Workspaces and plans" above): a claimed camera counts toward the claimer's current workspace `maxCameras` (`403 UPGRADE_REQUIRED`), uploads are capped at `snapshotsPerDay` per camera in any 24 h (`429 daily_limit` with `nextWakeAt`), live view at `liveMinutesPerRequest`, and LLM deep analysis is never run for an unclaimed camera. Admins and `DEMO_EXEMPT_EMAILS` are unlimited. System limit: `DEMO_MAX_UNCLAIMED` (200).
 
 ### `GET /api/device/time`
 

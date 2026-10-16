@@ -162,7 +162,8 @@ async function submit() {
     const limit = err.response?.data?.limit;
     error.value = code === 'NOT_FOUND' ? t('claim.errors.notFound')
       : code === 'LOCKED' ? t('claim.errors.locked')
-      : code === 'LIMIT_REACHED' ? t('claim.errors.limit', { limit: limit ?? 3 })
+      : code === 'LIMIT_REACHED' || code === 'UPGRADE_REQUIRED' ? t('claim.errors.limit', { limit: err.response?.data?.max ?? limit ?? 3 })
+      : code === 'NO_WORKSPACE' ? t('claim.errors.noWorkspace')
       : code === 'BAD_FARM' ? t('claim.errors.farm')
       : t('claim.errors.generic');
   } finally {

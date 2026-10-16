@@ -97,14 +97,25 @@ function tokenFor(user) {
 }
 
 let userCounter = 0;
-async function createUser({ role = 'user', email, ...rest } = {}) {
-    return models.User.create({
+async function createUser({ role = 'user', email, plan, ...rest } = {}) {
+    const user = await models.User.create({
         email: email || `user${++userCounter}@example.test`,
         password: await bcrypt.hash('secret123', 4),
         role,
         emailVerified: true,
         ...rest
     });
+    // Former managers keep their tools: a personal workspace on PRO, as the migration gives them
+    const code = plan || (role === 'manager' ? 'pro' : null);
+    if (code) {
+        await models.Organization.create({
+            name: user.name || user.email.split('@')[0],
+            kind: 'personal',
+            members: [{ userId: user._id, email: user.email, role: 'owner', addedBy: user._id }],
+            plan: { code, note: 'grandfathered' }
+        });
+    }
+    return user;
 }
 
 async function createCamera(owner, { deviceSerial, ...rest } = {}) {

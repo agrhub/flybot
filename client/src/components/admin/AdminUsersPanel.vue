@@ -62,6 +62,7 @@
               @change="(value) => changeRole(row, value)"
             >
               <el-option v-for="r in ROLES" :key="r" :label="t(`roles.${r}`)" :value="r" />
+              <el-option v-if="row.role === 'manager'" value="manager" :label="t('roles.manager')" disabled />
             </el-select>
           </template>
         </el-table-column>
@@ -127,7 +128,8 @@ import PageHeader from '@/components/common/PageHeader.vue';
 import { adminErrorText } from './adminErrors';
 import UserAvatar from '@/components/common/UserAvatar.vue';
 
-const ROLES = ['admin', 'manager', 'user'];
+// System roles; "manager" is retired (workspace roles say who runs cameras) and shows as legacy
+const ROLES = ['admin', 'support', 'user'];
 
 const { t, locale } = useI18n();
 const { user: authUser } = useAuth();

@@ -3,7 +3,8 @@ const router = express.Router();
 const cameraController = require('../controllers/cameraController');
 const shareController = require('../controllers/shareController');
 const maintenanceController = require('../controllers/maintenanceController');
-const { authenticate, requireRole } = require('../middlewares/auth');
+const { authenticate } = require('../middlewares/auth');
+const { requireCameraSlot } = require('../services/entitlements');
 const { requireStringFields } = require('../middlewares/validate');
 // Manual captures share their quota with the AI assistant's capture tool
 const { captureLimiter, shareLimiter, rateLimit } = require('../middlewares/rateLimit');
@@ -14,8 +15,9 @@ router.use(requireStringFields);
 
 // User camera management
 router.get('/user/cameras', cameraController.getUserCameras);
-// Viewers (role "user") cannot register cameras; edit/delete/share check ownership per camera
-router.post('/user/add-camera', requireRole('admin', 'manager'), cameraController.addCamera);
+// Owner or manager of the current workspace, within its plan's camera limit (403 UPGRADE_REQUIRED);
+// edit/delete/share check ownership per camera
+router.post('/user/add-camera', requireCameraSlot, cameraController.addCamera);
 router.put('/user/camera', cameraController.updateCamera);
 router.post('/user/update-camera', cameraController.updateCamera);
 router.put('/user/camera/location', cameraController.updateCameraLocation);

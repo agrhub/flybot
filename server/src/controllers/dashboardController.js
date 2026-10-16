@@ -289,7 +289,7 @@ async function createDashboard(req, res) {
         const result = await validateInput(req.body || {}, { editor: req.user, owner });
         if (result.error) return sendValidationError(res, result);
 
-        const dashboard = new Dashboard({ ...result.value, ownerId: req.user.id });
+        const dashboard = new Dashboard({ ...result.value, ownerId: req.user.id, orgId: req.user.workspace?.id || null });
         if (dashboard.visibility === 'public') dashboard.publicToken = newPublicToken();
         await dashboard.save();
         recordAudit(req, { action: 'dashboard.created', target: dashboardTarget(dashboard), details: { visibility: dashboard.visibility } });

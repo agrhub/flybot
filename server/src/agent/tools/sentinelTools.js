@@ -29,9 +29,7 @@ async function executeAnalyzePhotoDeep({ snapshotId, deviceSerial, question, use
     if (!userId) return { error: 'Not authenticated.' };
     const visionLambda = require('../../services/visionLambda');
     if (!visionLambda.isConfigured()) return { error: 'The vision agent is not set up on this server (VISION_LAMBDA_NAME or VISION_LAMBDA_URL).' };
-    // Plan limits (services/entitlements.js): deep LLM analysis may be off for an account
-    if (!require('../../services/entitlements').getEntitlements(user).deepAnalysis) return { error: 'Deep analysis is not part of your plan.' };
-    const visible = await viewableCameras(user).select('deviceSerial deviceName trapKind platform latitude longitude selfRegistered unclaimed').lean();
+    const visible = await viewableCameras(user).select('deviceSerial deviceName trapKind platform latitude longitude selfRegistered unclaimed userId orgId').lean();
     let snap = null;
     if (snapshotId) {
         if (!mongoose.isValidObjectId(snapshotId)) return { error: 'Photo not found.' };
@@ -46,6 +44,10 @@ async function executeAnalyzePhotoDeep({ snapshotId, deviceSerial, question, use
     if (!snap) return { error: 'Photo not found.' };
     const camera = visible.find(c => c.deviceSerial === snap.deviceSerial);
     if (!camera) return { error: 'Photo not found.' };
+    // Plan limit (services/entitlements.js): LLM deep analyses per workspace per month
+    const entitlements = require('../../services/entitlements');
+    const blocked = await entitlements.checkDeepAnalysis(user, camera);
+    if (blocked) return { error: blocked.body.message, code: 'UPGRADE_REQUIRED', limit: 'deepAnalysis', used: blocked.body.used, max: blocked.body.max };
     if (!photoQuota.take(String(userId))) return { error: 'Photos were looked at many times in the last hour. Please try again later.' };
 
     let response;
@@ -55,6 +57,7 @@ async function executeAnalyzePhotoDeep({ snapshotId, deviceSerial, question, use
         console.error('[Agent Tool] analyze_photo_deep failed:', err.code || '', err.message);
         return { error: err.code === 'timeout' ? 'The vision agent did not answer in time.' : 'The vision agent could not analyze this photo just now.' };
     }
+    await entitlements.recordDeepAnalysis(camera);
     const counts = response.counts || {};
     addCard({
         type: 'photos',

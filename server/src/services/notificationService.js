@@ -39,7 +39,10 @@ const COOLDOWN_MINUTES = {
     // The Monday list of members to visit: once a week per organization
     org_digest: 6 * 24 * 60,
     // FlyBot Sentinel asks to check a photo: at most one per camera an hour (each photo is flagged anyway)
-    review_requested: 60
+    review_requested: 60,
+    // Every request and every answer is its own event
+    upgrade_requested: 0,
+    upgrade_decided: 0
 };
 
 const SEVERITY = {
@@ -61,11 +64,13 @@ const SEVERITY = {
     weather_risk: 'warning',
     log_reminder: 'warning',
     org_digest: 'info',
-    review_requested: 'info'
+    review_requested: 'info',
+    upgrade_requested: 'info',
+    upgrade_decided: 'info'
 };
 
 // "Back online" is good news: in-app only
-const EMAIL_TYPES = new Set(['pest_threshold', 'camera_offline', 'ai_failure', 'card_due', 'plot_threshold', 'pest_surge', 'image_quality', 'harvest_ready', 'weather_risk', 'log_reminder', 'org_digest']);
+const EMAIL_TYPES = new Set(['pest_threshold', 'camera_offline', 'ai_failure', 'card_due', 'plot_threshold', 'pest_surge', 'image_quality', 'harvest_ready', 'weather_risk', 'log_reminder', 'org_digest', 'upgrade_requested', 'upgrade_decided']);
 // Phone/browser push: the alerts, plus something new shared with you
 const PUSH_TYPES = new Set([...EMAIL_TYPES, 'camera_shared', 'dashboard_shared', 'farm_shared', 'org_joined']);
 

@@ -1395,13 +1395,22 @@
       "review_requested": {
         "title": "Ảnh cần kiểm tra",
         "desc": "{deviceName}: FlyBot Sentinel nhờ bạn kiểm tra một ảnh ({reason})."
+      },
+      "upgrade_requested": {
+        "title": "Yêu cầu nâng cấp",
+        "desc": "{email} yêu cầu gói {plan} ({workspace})."
+      },
+      "upgrade_decided": {
+        "title": "Yêu cầu nâng cấp của bạn",
+        "desc": "Yêu cầu gói {plan} của bạn đã được {outcome}. {note}"
       }
     }
   },
   "roles": {
-    "admin": "Quản trị viên",
-    "manager": "Quản lý",
-    "user": "Người xem"
+    "admin": "Quản trị",
+    "manager": "Quản lý (đã bỏ)",
+    "user": "Người dùng",
+    "support": "Hỗ trợ (chỉ xem)"
   },
   "share": {
     "button": "Chia sẻ",
@@ -1656,6 +1665,57 @@
       "photos": "Ảnh đã phân tích",
       "noData": "Chưa có số liệu",
       "note": "Một người được tính là hoạt động khi đăng nhập, dùng ứng dụng (phiên còn hiệu lực), ghi nhật ký hoặc thay bẫy trong khoảng thời gian đó. Nhật ký kiểm toán được giữ 365 ngày."
+    },
+    "plans": {
+      "tab": "Các gói",
+      "title": "Các gói",
+      "subtitle": "FREE, PRO và ENTERPRISE cho phép gì. Thay đổi áp dụng cho mọi không gian dùng gói đó.",
+      "placeholderNote": "Các giá trị ban đầu chỉ là tạm: hãy đặt con số và ghi chú giá theo đề nghị của bạn.",
+      "name": "Tên",
+      "priceNote": "Ghi chú giá (hiển thị nguyên văn)",
+      "description": "Mô tả",
+      "maxCameras": "Camera (0 = không giới hạn)",
+      "deepPerMonth": "Phân tích sâu mỗi tháng",
+      "maxMembers": "Người dùng (0 = không giới hạn)",
+      "order": "Thứ tự",
+      "visible": "Hiện trên trang các gói",
+      "saved": "Đã lưu {plan}."
+    },
+    "workspaces": {
+      "tab": "Không gian làm việc",
+      "title": "Không gian làm việc",
+      "subtitle": "Không gian cá nhân và tổ chức, cùng gói, camera bổ sung và hạn dùng.",
+      "search": "Tên hoặc email",
+      "kind": "Loại",
+      "plan": "Gói",
+      "name": "Tên",
+      "usage": "Mức dùng",
+      "usageText": "{cameras} cam. · {members} người",
+      "assign": "Đổi gói",
+      "assignTitle": "Gói của {name}",
+      "addonCameras": "Camera bổ sung",
+      "expiresAt": "Trả phí đến (để trống = không hết hạn)",
+      "note": "Ghi chú",
+      "billingNote": "Ghi chú thanh toán (hợp đồng, hóa đơn)",
+      "createOrg": "Tổ chức mới",
+      "ownerEmail": "Email chủ tổ chức"
+    },
+    "upgrades": {
+      "tab": "Yêu cầu nâng cấp",
+      "title": "Yêu cầu nâng cấp",
+      "subtitle": "Duyệt để đặt gói (thanh toán ngoài FlyBot), hoặc từ chối kèm ghi chú.",
+      "all": "Tất cả",
+      "none": "Không có yêu cầu.",
+      "cameras": "camera",
+      "orgLine": "{cameras} camera · {members} người · {phone}",
+      "reason": "Chạm giới hạn: {reason}",
+      "note": "Ghi chú",
+      "approve": "Duyệt",
+      "reject": "Từ chối",
+      "approveTitle": "Duyệt yêu cầu",
+      "rejectTitle": "Từ chối yêu cầu",
+      "rejectHint": "Lý do (người gửi sẽ thấy)",
+      "paid": "Đã thanh toán"
     }
   },
   "dashboards": {
@@ -1924,7 +1984,9 @@
       "farm": "Vườn",
       "org": "Tổ chức",
       "integration": "API & webhook",
-      "sentinel": "FlyBot Sentinel"
+      "sentinel": "FlyBot Sentinel",
+      "workspace": "Không gian & gói",
+      "system": "Hệ thống"
     },
     "actions": {
       "auth": {
@@ -2007,6 +2069,15 @@
         "proposal_decided": "Đã quyết định đề xuất",
         "review_requested": "Nhờ kiểm tra ảnh",
         "analysis": "Đếm ảnh"
+      },
+      "workspace": {
+        "created": "Đã tạo tổ chức",
+        "plan_changed": "Đã đổi gói",
+        "settings_changed": "Đã đổi cài đặt không gian",
+        "upgrade_requested": "Yêu cầu nâng cấp"
+      },
+      "system": {
+        "workspaces_migrated": "Đã chuyển sang không gian và gói"
       }
     },
     "reasons": {
@@ -2433,7 +2504,9 @@
         "limit": "Vượt giới hạn mời trong ngày"
       }
     },
-    "role": "Vai trò"
+    "role": "Vai trò",
+    "request": "Yêu cầu tạo tổ chức",
+    "allowPersonal": "Thành viên vẫn giữ không gian cá nhân"
   },
   "integrations": {
     "tab": "API & Webhook",
@@ -3084,7 +3157,105 @@
       "locked": "Nhập sai mã quá nhiều lần cho số sê-ri này. Thử lại sau một giờ.",
       "limit": "Gói của bạn cho nhận tối đa {limit} camera. Hãy gỡ bớt hoặc yêu cầu nâng cấp.",
       "farm": "Không dùng được vườn này.",
-      "generic": "Không nhận được camera. Hãy thử lại."
+      "generic": "Không nhận được camera. Hãy thử lại.",
+      "noWorkspace": "Bạn không thêm được camera trong không gian này. Hãy chuyển sang không gian cá nhân hoặc hỏi chủ."
+    }
+  },
+  "workspace": {
+    "switch": "Đổi không gian làm việc",
+    "none": "Chưa có không gian làm việc",
+    "personal": "Cá nhân",
+    "organization": "Tổ chức"
+  },
+  "plans": {
+    "tab": "Gói & mức dùng",
+    "title": "Các gói",
+    "subtitle": "Mỗi gói có gì. Gửi yêu cầu nâng cấp, đội FlyBot sẽ liên hệ để thiết lập cho bạn.",
+    "b2bHint": "Gói do tổ chức của bạn sắp xếp. Hãy hỏi chủ tổ chức.",
+    "current": "Gói của bạn",
+    "contact": "Liên hệ",
+    "seePlans": "Xem các gói",
+    "unlimited": "Không giới hạn",
+    "expired": "Đã hết hạn",
+    "expiresAt": "Gói trả phí đến {date}.",
+    "noLimit": "Không giới hạn",
+    "usedOf": "{used} / {max}",
+    "usedUnlimited": "{used} (không giới hạn)",
+    "perCameraDay": "{n} ảnh mỗi camera một ngày",
+    "minutes": "{n} phút",
+    "days": "{n} ngày",
+    "fields": {
+      "cameras": "Camera",
+      "deepThisMonth": "Phân tích sâu tháng này",
+      "members": "Người dùng",
+      "snapshotsPerDay": "Ảnh mỗi camera một ngày",
+      "liveMinutes": "Xem trực tiếp mỗi lần (phút)",
+      "retentionDays": "Lưu ảnh (ngày)"
+    },
+    "features": {
+      "telegram": "Cảnh báo Telegram",
+      "pdfReports": "Báo cáo PDF",
+      "apiAndWebhooks": "API & webhook"
+    },
+    "list": {
+      "cameras": "Tối đa {n} camera",
+      "camerasUnlimited": "Camera: không giới hạn",
+      "snapshots": "{n} ảnh mỗi camera một ngày",
+      "retention": "Lưu ảnh {n} ngày",
+      "deep": "{n} lượt phân tích sâu mỗi tháng",
+      "deepNone": "Không có phân tích sâu",
+      "live": "Xem trực tiếp {n} phút mỗi lần",
+      "members": "Tối đa {n} người",
+      "membersUnlimited": "Người dùng: không giới hạn"
+    },
+    "orgCard": {
+      "title": "Tổ chức / Doanh nghiệp",
+      "desc": "Cho hợp tác xã và doanh nghiệp nông nghiệp: không gian chung, thành viên có vai trò, hợp đồng và hóa đơn.",
+      "ask": "Liên hệ"
+    },
+    "free": "Miễn phí"
+  },
+  "upgrade": {
+    "title": "Yêu cầu nâng cấp",
+    "orgTitle": "Tổ chức cho doanh nghiệp của bạn",
+    "ask": "Yêu cầu nâng cấp",
+    "plan": "Gói",
+    "extraCameras": "Thêm camera",
+    "message": "Lời nhắn",
+    "messageHint": "Bao nhiêu camera, vườn nào, cách liên hệ...",
+    "orgName": "Tên tổ chức",
+    "orgCameras": "Số camera",
+    "orgMembers": "Số người",
+    "phone": "Số điện thoại",
+    "organization": "Tổ chức",
+    "send": "Gửi yêu cầu",
+    "paymentNote": "Việc thanh toán được thỏa thuận với đội FlyBot; ở đây không thu tiền.",
+    "sentTitle": "Đã gửi yêu cầu",
+    "sentAdmin": "Đội FlyBot sẽ liên hệ với bạn.",
+    "sentOwner": "Chủ tổ chức của bạn sẽ xem trước.",
+    "myRequests": "Yêu cầu của bạn",
+    "cancel": "Rút lại",
+    "forward": "Gửi cho FlyBot",
+    "decline": "Từ chối",
+    "status": {
+      "pending_owner": "Chờ chủ tổ chức",
+      "pending": "Đang chờ",
+      "approved": "Đã duyệt",
+      "rejected": "Bị từ chối",
+      "cancelled": "Đã rút lại"
+    },
+    "limits": {
+      "cameras": "Gói của bạn cho {max} camera ở đây (đang dùng {used}).",
+      "members": "Gói của bạn cho {max} người ở đây (hiện có {used}).",
+      "deepAnalysis": "Bạn đã dùng {used} trên {max} lượt phân tích sâu tháng này.",
+      "apiAndWebhooks": "API và webhook không có trong gói của bạn.",
+      "pdfReports": "Báo cáo PDF không có trong gói của bạn.",
+      "telegram": "Cảnh báo Telegram không có trong gói của bạn.",
+      "generic": "Đã chạm giới hạn của gói."
+    },
+    "errors": {
+      "pending": "Bạn đã có một yêu cầu đang chờ.",
+      "generic": "Không gửi được yêu cầu. Hãy thử lại."
     }
   }
 }

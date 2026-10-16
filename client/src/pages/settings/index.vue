@@ -31,6 +31,10 @@
                 <el-icon><Monitor /></el-icon>
                 <span>{{ t('settings.sessionsTab') }}</span>
               </el-menu-item>
+              <el-menu-item index="plan">
+                <el-icon><Medal /></el-icon>
+                <span>{{ t('plans.tab') }}</span>
+              </el-menu-item>
             </el-menu>
           </div>
 
@@ -64,7 +68,7 @@
             </el-menu>
           </div>
 
-          <div v-if="isAdmin" class="settings-group">
+          <div v-if="isAdmin || isSupport" class="settings-group">
             <p class="settings-group__title">{{ t('admin.group') }}</p>
             <el-menu :default-active="activeTab" class="settings-menu" :aria-label="t('admin.group')" @select="(key) => (activeTab = key)">
               <el-menu-item index="adminUsers">
@@ -90,6 +94,18 @@
               <el-menu-item index="adminAudit">
                 <el-icon><Tickets /></el-icon>
                 <span>{{ t('audit.tab') }}</span>
+              </el-menu-item>
+              <el-menu-item index="adminPlans">
+                <el-icon><Medal /></el-icon>
+                <span>{{ t('admin.plans.tab') }}</span>
+              </el-menu-item>
+              <el-menu-item index="adminWorkspaces">
+                <el-icon><OfficeBuilding /></el-icon>
+                <span>{{ t('admin.workspaces.tab') }}</span>
+              </el-menu-item>
+              <el-menu-item index="adminUpgrades">
+                <el-icon><Promotion /></el-icon>
+                <span>{{ t('admin.upgrades.tab') }}</span>
               </el-menu-item>
             </el-menu>
           </div>
@@ -639,6 +655,18 @@
         </div>
 
         <!-- 7. Legal / terms -->
+        <div v-else-if="activeTab === 'plan'" class="max-w-3xl">
+          <UsageCard />
+        </div>
+        <div v-else-if="activeTab === 'adminPlans' && (isAdmin || isSupport)" class="max-w-6xl">
+          <AdminPlansPanel />
+        </div>
+        <div v-else-if="activeTab === 'adminWorkspaces' && (isAdmin || isSupport)" class="max-w-6xl">
+          <AdminWorkspacesPanel />
+        </div>
+        <div v-else-if="activeTab === 'adminUpgrades' && (isAdmin || isSupport)" class="max-w-5xl">
+          <AdminUpgradeRequestsPanel />
+        </div>
         <div v-else-if="activeTab === 'adminUsers' && isAdmin" class="max-w-6xl">
           <AdminUsersPanel />
         </div>
@@ -757,6 +785,10 @@ import SystemSettingsPanel from '@/components/admin/SystemSettingsPanel.vue';
 import AuditLogPanel from '@/components/admin/AuditLogPanel.vue';
 import PipelineMonitorPanel from '@/components/admin/PipelineMonitorPanel.vue';
 import UsagePanel from '@/components/admin/UsagePanel.vue';
+import AdminPlansPanel from '@/components/admin/AdminPlansPanel.vue';
+import AdminWorkspacesPanel from '@/components/admin/AdminWorkspacesPanel.vue';
+import AdminUpgradeRequestsPanel from '@/components/admin/AdminUpgradeRequestsPanel.vue';
+import UsageCard from '@/components/plans/UsageCard.vue';
 import PushNotificationsCard from '@/components/settings/PushNotificationsCard.vue';
 import AlertPreferencesCard from '@/components/settings/AlertPreferencesCard.vue';
 import {
@@ -785,7 +817,7 @@ import {
   Tools,
   Tickets,
   DataLine,
-  Upload, TrendCharts } from '@element-plus/icons-vue';
+  Upload, TrendCharts, Medal } from '@element-plus/icons-vue';
 import { AVATAR_MAX_BYTES, AVATAR_TYPES, toAvatarBlob } from '@/utils/avatarImage';
 import { useNotifications } from '@/composables/useNotifications';
 
@@ -793,7 +825,7 @@ const route = useRoute();
 const { t } = useI18n();
 const { isDark, toggleTheme } = useTheme();
 const { cameras, loadCameras, openAddCameraModal, selectCameraAndGoToLive } = useCameras();
-const { user: authUser, setAuth, refreshUser, logout, isAdmin, canManageCameras } = useAuth();
+const { user: authUser, setAuth, refreshUser, logout, isAdmin, isSupport, canManageCameras } = useAuth();
 const manageableCameras = computed(() => cameras.value.filter(c => c.canManage !== false));
 const { isMobile } = useBreakpoints();
 // Same sections as the side menu, for the phone dropdown
@@ -801,7 +833,8 @@ const mobileSections = computed(() => [
   { label: t('settings.account'), items: [
     { value: 'profile', label: t('settings.profileTab') },
     { value: 'password', label: t('settings.passwordTab') },
-    { value: 'sessions', label: t('settings.sessionsTab') }
+    { value: 'sessions', label: t('settings.sessionsTab') },
+    { value: 'plan', label: t('plans.tab') }
   ] },
   { label: t('settings.system'), items: [
     { value: 'cameras', label: t('settings.camerasTab') },
@@ -817,7 +850,15 @@ const mobileSections = computed(() => [
     { value: 'adminSystem', label: t('admin.system.tab') },
     { value: 'adminPipeline', label: t('admin.pipeline.tab') },
     { value: 'adminUsage', label: t('admin.usage.tab') },
-    { value: 'adminAudit', label: t('audit.tab') }
+    { value: 'adminAudit', label: t('audit.tab') },
+    { value: 'adminPlans', label: t('admin.plans.tab') },
+    { value: 'adminWorkspaces', label: t('admin.workspaces.tab') },
+    { value: 'adminUpgrades', label: t('admin.upgrades.tab') }
+  ] }] : []),
+  ...(!isAdmin.value && isSupport.value ? [{ label: t('admin.group'), items: [
+    { value: 'adminPlans', label: t('admin.plans.tab') },
+    { value: 'adminWorkspaces', label: t('admin.workspaces.tab') },
+    { value: 'adminUpgrades', label: t('admin.upgrades.tab') }
   ] }] : []),
   { label: t('settings.legal'), items: [{ value: 'legal', label: t('settings.termsTab') }] }
 ]);

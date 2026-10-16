@@ -1,5 +1,5 @@
 const { Organization, Camera, Farm, User } = require('../models');
-const { isAdmin, canAddCameras } = require('../constants/roles');
+const { isAdmin } = require('../constants/roles');
 
 /**
  * Organizations (models/Organization.js).
@@ -62,11 +62,15 @@ async function syncOrgShares(org) {
     return cameras.length;
 }
 
-/** The organization new cameras and farms of this user go into: the first one they own. */
+/**
+ * The workspace new cameras, farms and dashboards of this user go into: the current one when
+ * they own or manage it (req.user.workspace), else the first one they own.
+ */
 async function defaultOrgFor(user) {
     const id = idOf(user);
     if (!id) return null;
-    const org = await Organization.findOne({ members: { $elemMatch: { userId: id, role: 'owner' } } }).sort({ createdAt: 1 }).select('_id').lean();
+    if (user.workspace && MANAGING_ROLES.includes(user.workspace.role)) return user.workspace.id;
+    const org = await Organization.findOne({ kind: { $ne: 'personal' }, members: { $elemMatch: { userId: id, role: 'owner' } } }).sort({ createdAt: 1 }).select('_id').lean();
     return org?._id || null;
 }
 
@@ -120,7 +124,7 @@ async function migrateToOrganizations() {
     let created = 0;
     for (const userId of owners) {
         const user = await User.findById(userId).select('email name role');
-        if (!user || !canAddCameras(user)) continue;
+        if (!user || !['admin', 'manager'].includes(user.role)) continue;
         let orgId = await defaultOrgFor(user);
         if (!orgId) {
             const org = await createOrg(user, user.name || user.email.split('@')[0]);

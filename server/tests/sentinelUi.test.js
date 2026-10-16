@@ -68,15 +68,20 @@ test('off unless AI_PROVIDER=opencv-lambda or SENTINEL_CONSOLE: 503 everywhere, 
     assert.deepEqual(info.body.info.sentinel, { enabled: true, canDecide: true });
 });
 
-test('sign-in required; a "user" account without sentinelViewer gets 403', async () => {
+test('sign-in required; a member who does not run the current workspace (and is no sentinelViewer) gets 403', async () => {
     assert.equal((await get('/summary')).status, 401);
     const plain = await createUser({ role: 'user' });
-    const { status, body } = await json(await get('/summary', plain));
+    const lead = await createUser({ role: 'user', email: 'lead@example.test' });
+    const org = await models.Organization.create({ name: 'Co', kind: 'organization', members: [{ userId: lead._id, email: lead.email, role: 'owner' }, { userId: plain._id, email: plain.email, role: 'member' }] });
+    const asMember = { 'X-Workspace-Id': String(org._id) };
+    const { status, body } = await json(await request('/api/sentinel/ui/summary', { as: plain, headers: asMember }));
     assert.equal(status, 403);
     assert.equal(body.code, 'FORBIDDEN');
-    assert.equal((await get('/evidence?key=snapshots/CAM1/a.jpg', plain)).status, 403);
-    const me = await json(await request('/api/auth/me', { as: plain }));
+    assert.equal((await request('/api/sentinel/ui/evidence?key=snapshots/CAM1/a.jpg', { as: plain, headers: asMember })).status, 403);
+    const me = await json(await request('/api/auth/me', { as: plain, headers: asMember }));
     assert.equal(me.body.user.sentinelEnabled, false);
+    // In their own personal workspace they run things: their cameras' console
+    assert.equal((await get('/summary', plain)).status, 200);
 });
 
 // ---------- Pages ----------

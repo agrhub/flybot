@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const { User, Camera, Session, Notification, AuthToken, Dashboard, AuditLog, PushSubscription, Farm, Plot, Organization, ApiKey, Webhook } = require('../models');
-const { ROLES, roleOf } = require('../constants/roles');
+const { ROLES, ASSIGNABLE_ROLES, roleOf } = require('../constants/roles');
 const { sendServerError } = require('../utils/http');
 const { recordAudit, AUDIT_ACTIONS, CATEGORIES } = require('../services/auditService');
 const trainingSync = require('../services/trainingSync');
@@ -83,8 +83,9 @@ async function updateUser(req, res) {
         const { userId } = req.params;
         const { role, disabled, emailVerified, sentinelViewer } = req.body;
         if (!mongoose.isValidObjectId(userId)) return res.status(404).json({ success: false, message: "User not found." });
-        if (role !== undefined && !ROLES.includes(role)) {
-            return res.status(400).json({ success: false, message: `role must be one of ${ROLES.join(', ')}.` });
+        // "manager" is retired: workspace roles say who runs cameras now
+        if (role !== undefined && !ASSIGNABLE_ROLES.includes(role)) {
+            return res.status(400).json({ success: false, message: `role must be one of ${ASSIGNABLE_ROLES.join(', ')}.` });
         }
         if (disabled !== undefined && typeof disabled !== 'boolean') {
             return res.status(400).json({ success: false, message: "disabled must be true or false." });
@@ -290,8 +291,8 @@ async function transferCamera(req, res) {
         if (!camera) return res.status(404).json({ success: false, message: "Camera not found." });
         const newOwner = email ? await User.findOne({ email }).collation({ locale: 'en', strength: 2 }) : null;
         if (!newOwner) return res.status(404).json({ success: false, code: 'USER_NOT_FOUND', message: "No account with this email." });
-        if (!['admin', 'manager'].includes(roleOf(newOwner))) {
-            return res.status(400).json({ success: false, code: 'NOT_MANAGER', message: "The new owner must be a manager or an admin." });
+        if (newOwner.disabled) {
+            return res.status(400).json({ success: false, code: 'DISABLED', message: "This account is disabled." });
         }
         if (String(camera.userId) === String(newOwner._id)) {
             return res.status(400).json({ success: false, message: "This account already owns the camera." });

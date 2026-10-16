@@ -97,6 +97,9 @@
     <!-- Global Add Camera Modal Dialog -->
     <AddCameraModal />
 
+    <!-- Plan limit reached / "Ask for an upgrade" (composables/useUpgrade.js) -->
+    <UpgradeDialog />
+
     <!-- Guided tour: first visit, or "Quick tour" in the profile menu -->
     <AppTour />
   </div>
@@ -121,6 +124,7 @@ import MobileTabBar from '@/components/layout/MobileTabBar.vue';
 import Topbar from '@/components/layout/Topbar.vue';
 import AiAssistantSidebar from '@/components/assistant/AiAssistantSidebar.vue';
 import AddCameraModal from '@/components/modals/AddCameraModal.vue';
+import UpgradeDialog from '@/components/plans/UpgradeDialog.vue';
 import AppTour from '@/components/layout/AppTour.vue';
 import { useAppTour } from '@/composables/useAppTour';
 

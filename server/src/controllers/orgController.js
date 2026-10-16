@@ -37,6 +37,9 @@ async function toClientOrg(org, user) {
     return {
         id: String(org._id),
         name: org.name,
+        kind: org.kind || 'organization',
+        plan: org.plan?.code || 'free',
+        settings: { allowMemberPersonalWorkspaces: org.settings?.allowMemberPersonalWorkspaces !== false },
         myRole: orgService.roleIn(org, user),
         canManage: orgService.canManageOrg(user, org),
         members: org.members.map(m => ({
@@ -68,11 +71,12 @@ async function loadOrg(req, res, { manage = false } = {}) {
 }
 
 /**
- * GET /api/orgs: organizations I belong to (admin: all)
+ * GET /api/orgs: organizations I belong to (admin: all). Personal workspaces are not listed here
+ * (Settings > Plan & usage, GET /api/workspaces).
  */
 async function listOrgs(req, res) {
     try {
-        const filter = isAdmin(req.user) ? {} : { 'members.userId': req.user.id };
+        const filter = { kind: { $ne: 'personal' }, ...(isAdmin(req.user) ? {} : { 'members.userId': req.user.id }) };
         const orgs = await Organization.find(filter).sort({ name: 1 });
         res.json({ success: true, organizations: await Promise.all(orgs.map(o => toClientOrg(o, req.user))) });
     } catch (err) {
@@ -161,6 +165,9 @@ async function addMember(req, res) {
         if (org.members.some(m => m.email === email)) {
             return res.status(409).json({ success: false, code: 'ALREADY_MEMBER', message: "This email is already a member." });
         }
+        // The workspace plan's people limit (403 UPGRADE_REQUIRED)
+        const memberLimit = await require('../services/entitlements').checkMemberLimit(req.user, org, 1);
+        if (memberLimit) return res.status(memberLimit.status).json(memberLimit.body);
         if (org.members.length >= MAX_MEMBERS) {
             return res.status(400).json({ success: false, message: `An organization can have at most ${MAX_MEMBERS} members.` });
         }
@@ -210,6 +217,9 @@ async function addMembersBulk(req, res) {
         if (role === 'owner' && !orgService.isOrgOwner(req.user, org)) {
             return res.status(403).json({ success: false, code: 'FORBIDDEN', message: "Only owners can add owners." });
         }
+        const newcomers = emails.filter(e => !org.members.some(m => m.email === e)).length;
+        const memberLimit = await require('../services/entitlements').checkMemberLimit(req.user, org, newcomers);
+        if (memberLimit) return res.status(memberLimit.status).json(memberLimit.body);
 
         const results = [];
         const added = [];

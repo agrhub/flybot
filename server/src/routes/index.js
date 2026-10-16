@@ -20,6 +20,7 @@ const publicApiRoutes = require('./publicApiRoutes');
 const sentinelRoutes = require('./sentinelRoutes');
 const sentinelUiRoutes = require('./sentinelUiRoutes');
 const deviceRoutes = require('./deviceRoutes');
+const workspaceRoutes = require('./workspaceRoutes');
 
 // S3 image stream route must be mounted before generic /api route
 router.use('/api/s3', s3Routes);
@@ -45,6 +46,9 @@ router.use('/api/sentinel/ui', sentinelUiRoutes);
 router.use('/api/sentinel', sentinelRoutes);
 // Public (no sign-in) read-only views
 router.use('/api/public', publicRoutes);
+// Workspaces, plans (public list), entitlements, upgrade requests: before the camera routes,
+// whose sign-in covers every other /api path
+router.use('/api', workspaceRoutes);
 router.use('/api', cameraRoutes);
 
 module.exports = router;

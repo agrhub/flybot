@@ -18,6 +18,9 @@ const ApiKey = require('./ApiKey');
 const Webhook = require('./Webhook');
 const ChatSession = require('./ChatSession');
 const SentinelProposal = require('./SentinelProposal');
+const Plan = require('./Plan');
+const UpgradeRequest = require('./UpgradeRequest');
+const UsageCounter = require('./UsageCounter');
 
 module.exports = {
     User,
@@ -39,5 +42,8 @@ module.exports = {
     ApiKey,
     Webhook,
     ChatSession,
-    SentinelProposal
+    SentinelProposal,
+    Plan,
+    UpgradeRequest,
+    UsageCounter
 };

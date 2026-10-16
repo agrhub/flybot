@@ -34,7 +34,8 @@ Read by `server/src/config/env.js`. On the EC2 host the stack's user-data writes
 | `DEVICE_API_BASE_URL` | What the cameras call (default `APP_BASE_URL`) |
 | `DEVICE_OTA_FW`, `DEVICE_OTA_URL`, `DEVICE_OTA_SHA256` | Firmware offered by `GET /api/device/ota` |
 | `SELF_REGISTRATION`, `IOT_THING_TYPE`, `IOT_POLICY_NAME`, `REGISTER_MAX_PER_IP_HOUR` (5), `REGISTER_MAX_PER_HOUR` (60) | Zero-touch self-registration of the public firmware (`POST /api/device/register`, below) |
-| `DEMO_MAX_CAMERAS_PER_USER` (3), `DEMO_MAX_SNAPSHOTS_PER_DAY` (48), `DEMO_MAX_UNCLAIMED` (200), `DEMO_LIVE_MINUTES` (5), `DEMO_EXEMPT_EMAILS` | Demo limits for self-registered cameras, read through `services/entitlements.js` (admins and the listed emails are exempt) |
+| `APP_MODE` (`hybrid`), `ALLOW_SIGNUP`, `PLAN_RETENTION` | Workspaces and plans (API.md): `hybrid` = personal workspaces with open sign-up plus organizations made by the admin; `b2c` personal only; `b2b` organizations only, sign-up by invitation |
+| `DEMO_MAX_CAMERAS_PER_USER` (3), `DEMO_MAX_SNAPSHOTS_PER_DAY` (48), `DEMO_LIVE_MINUTES` (5), `DEMO_MAX_UNCLAIMED` (200), `DEMO_EXEMPT_EMAILS` | The FREE plan's first values (then Admin > Plans), the cap on unclaimed cameras, and accounts without limits (admins too) |
 | `DEVICE_DEFAULT_TIMEZONE` | Timezone of `GET /api/device/time` when neither farm, GPS nor IP tells (`Asia/Ho_Chi_Minh`) |
 | `FLYBOT_SECRETS` | Comma-separated Secrets Manager secret names; each a JSON object (`JWT_SECRET`, `APP_KEY`, `SECRET_KEY`, `SMTP_PASS`, `TELEGRAM_BOT_TOKEN`, ...) filling in what the environment did not set. Read once at start-up with the instance role |
 | `SENTINEL_CONSOLE` | `true` shows the Sentinel menu with another `AI_PROVIDER` (it is on with `opencv-lambda`) |
@@ -69,7 +70,7 @@ Update: `git -C /opt/flybot/flybot-aws pull --ff-only && git submodule update --
 3. The person signs in (or registers) on FlyBot and opens `/claim` (the QR's `claimUrl`, or Cameras → **Claim a camera**), scans the label QR or types serial + code, picks lure/sticky, the farm and the schedule. The camera is theirs: shadow `claimed: true`, their interval, the farm's timezone (`tz`), and the first photo shows right away.
 4. Not claimed within 7 days: the hourly job deletes the certificate, thing, channel and photos. Deleting a claimed camera in FlyBot does the same, so the device can register again.
 5. Clock: `GET /api/device/time` (no auth) answers the time, the IANA timezone with its POSIX string for `setenv("TZ")`, where it came from (farm, GPS, IP, default) and the public IP.
-6. Limits (demo plan): 3 claimed cameras per account, 48 photos per camera per day, 200 unclaimed cameras in total, 5 minutes per live request; admins and `DEMO_EXEMPT_EMAILS` are exempt.
+6. Limits (the workspace plan, FREE by default): 3 cameras per workspace, 48 photos per camera per day, 5 minutes per live request, 20 deep analyses a month; 200 unclaimed cameras in total. Admins and `DEMO_EXEMPT_EMAILS` are exempt. Past a limit the app offers "Ask for an upgrade".
 
 Check on the server: `curl -s https://flybot.agrhub.com/api/device/time` → `{"timezone":"Asia/Ho_Chi_Minh",...,"tzSource":"ip"}`; `curl -s -X POST -H 'Content-Type: application/json' -d '{}' https://flybot.agrhub.com/api/device/register` → `400`.
 
@@ -80,11 +81,20 @@ Check on the server: `curl -s https://flybot.agrhub.com/api/device/time` → `{"
 3. The camera calls `POST /api/device/pair` once and receives its device token (stored hashed); then it uploads photos on its schedule (`POST /api/device/snapshot`, shadow `capture.intervalMin`), reports state/telemetry over MQTT, and sleeps. FlyBot shows "sleeping, next wake HH:MM"; "Request live at next wake" writes `live.requested` into its shadow.
 4. Every uploaded photo goes through the same pipeline as an EZVIZ photo: storage, the Lambda, alerts, the `snapshot_analyzed` webhook, the Sentinel trace.
 
+## Workspaces, plans and upgrades (APP_MODE=hybrid)
+
+- Sign-up makes a personal workspace on FREE (3 cameras). The first account is the admin.
+- Settings > Plan & usage shows "2/3 cameras", "deep analysis 5/20 this month" and the person's requests; /pricing shows the plans and the "Organization / Business: contact us" card.
+- A limit (403 `UPGRADE_REQUIRED`) opens "Ask for an upgrade"; the admins get a notification (in-app, email, Telegram as set). Settings > Admin > Upgrade requests: approve (plan, add-on cameras, paid until, paid, note) or turn down with a note. Payment is arranged outside FlyBot.
+- Settings > Admin > Plans: the numbers of FREE / PRO / ENTERPRISE (the seed values are placeholders: set them before inviting people) and the price note. Admin > Workspaces: every workspace's plan, add-ons and expiry; "New organization" for a business (owner email, plan).
+- An account in more than one workspace (its personal one and organizations) switches in the top bar; the current workspace scopes cameras, farms, reports and limits. An organization's owner can hide members' personal workspaces (Settings > Organizations).
+- System roles: admin, support (reads the admin pages), user. The global "manager" role is gone: the `workspaces-v1` migration (once, at start-up, logged and audited) gave each former manager a personal workspace on PRO (ENTERPRISE with more than 10 cameras), kept existing organizations on ENTERPRISE, and moved cameras, farms and reports outside any workspace into their owner's personal one.
+
 ## How a judge logs in
 
 1. Open `https://flybot.agrhub.com/auth/login` → **Register** with an email (public sign-up is on). New accounts have the role **user** (read-only). Confirm the email, or an admin confirms it: Admin → Users → the account (`PUT /api/admin/users/{id} {"emailVerified": true}`).
 2. The owner of the orchard cameras shares them with the judge: Cameras → the trap → Share → the judge's email (`POST /api/user/camera/share`).
-3. An admin turns on the Sentinel pages for the account: `PUT /api/admin/users/{id} {"sentinelViewer": true}` (or in mongosh `db.users.updateOne({email: "judge@..."}, {$set: {sentinelViewer: true}})`). The judge reloads: the **Sentinel** menu shows Overview, Traces, Approvals (read-only), Devices for the shared cameras; the camera pages show the photos, counts and the chatbot (`analyze_photo_deep` works for shared cameras; actions need manage rights the judge does not have).
+3. An admin turns on the read-only Sentinel pages for the account (a `sentinelViewer` account never decides approvals, whatever it owns): `PUT /api/admin/users/{id} {"sentinelViewer": true}` (or in mongosh `db.users.updateOne({email: "judge@..."}, {$set: {sentinelViewer: true}})`). The judge reloads: the **Sentinel** menu shows Overview, Traces, Approvals (read-only), Devices for the shared cameras; the camera pages show the photos, counts and the chatbot (`analyze_photo_deep` works for shared cameras; actions need manage rights the judge does not have).
 4. After judging: `{"sentinelViewer": false}`, remove the shares, or disable the account.
 
 ## Tests
@@ -97,6 +107,8 @@ Check on the server: `curl -s https://flybot.agrhub.com/api/device/time` → `{"
 | `server/tests/deviceApi.test.js` | pair (hashed tokens), snapshot upload (limits, meta, pipeline), time, ota, the IoT-rule webhook |
 | `server/tests/opencvLambda.test.js` | the CONTRACTS request, stored results, proposals → cards → confirm, retry after an error, deep mode, Lambda.Invoke |
 | `server/tests/agentSentinelTools.test.js` | `analyze_photo_deep`, `propose_action` and every card action |
+| `server/tests/selfRegistration.test.js` | register (CSR mock, idempotency, 409, rate limit), unclaimed mode, claim (success, wrong code, lockout), cleanup, limits, device time and timezone |
+| `server/tests/workspaces.test.js` | APP_MODE sign-up (b2c, b2b, hybrid), plan limits, add-ons, expiry, admin plan edits, switcher scoping, organization setting, upgrade requests (plan, organization, b2b owner first), the workspaces-v1 migration |
 | `server/tests/sentinelUi.test.js` | the Sentinel console from MongoDB (access, summary, traces, approvals, devices, evidence) |
 
 ## Third-party data

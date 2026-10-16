@@ -30,11 +30,18 @@ export function useAuth() {
   const userName = computed(() => user.value?.name || user.value?.email?.split('@')[0] || i18n.global.t('common.defaultUserName'));
   const userEmail = computed(() => user.value?.email || '');
   const userInitial = computed(() => (userName.value.charAt(0) || 'A').toUpperCase());
-  // admin: everything; manager: own cameras + dashboards; user: view what is shared with them
+  // System role: admin (operator), support (reads the admin pages), user. What a person may do
+  // with cameras comes from the current workspace and its plan (user.capabilities from the server)
   const role = computed(() => user.value?.role || 'user');
   const isAdmin = computed(() => role.value === 'admin');
-  const canManageCameras = computed(() => ['admin', 'manager'].includes(role.value));
-  const canBuildDashboards = computed(() => ['admin', 'manager'].includes(role.value));
+  const isSupport = computed(() => role.value === 'support');
+  const capabilities = computed(() => user.value?.capabilities || {});
+  const legacyWorker = computed(() => ['admin', 'manager'].includes(role.value));
+  const canManageCameras = computed(() => capabilities.value.addCameras ?? legacyWorker.value);
+  const canBuildDashboards = computed(() => capabilities.value.buildDashboards ?? legacyWorker.value);
+  const appMode = computed(() => user.value?.appMode || 'hybrid');
+  const currentWorkspace = computed(() => user.value?.workspace || null);
+  const currentPlan = computed(() => user.value?.plan || null);
 
   const setAuth = (userData, userToken = null) => {
     user.value = userData;
@@ -78,6 +85,11 @@ export function useAuth() {
 
   return {
     user,
+    isSupport,
+    capabilities,
+    appMode,
+    currentWorkspace,
+    currentPlan,
     token,
     isAuthenticated,
     userName,

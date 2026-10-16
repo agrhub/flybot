@@ -207,7 +207,12 @@ async function autoCaptureDueCameras() {
         // upload them to the device API: only EZVIZ cameras are polled here
         const cameras = await Camera.find({ $or: [{ platform: 'ezviz' }, { platform: { $exists: false } }] })
             .select('deviceSerial captureIntervalMinutes captureDaytimeOnly lastCaptureAt sentinelInterval');
-        const due = dueSerials(cameras, new Date());
+        let due = dueSerials(cameras, new Date());
+        // Each workspace plan allows so many photos per camera a day (services/entitlements.js)
+        if (due.length) {
+            const over = await require('../services/entitlements').overDailyLimit(due).catch(() => new Set());
+            if (over.size) due = due.filter(serial => !over.has(serial));
+        }
         if (due.length === 0) return { cameras: 0, saved: 0 };
         console.log(`🚀 Capturing ${due.length} due camera(s), ${CAPTURE_CONCURRENCY} at a time...`);
         // Several cameras in parallel (each one waits on EZVIZ, S3 and the AI), with

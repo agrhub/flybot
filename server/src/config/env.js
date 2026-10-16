@@ -177,6 +177,15 @@ const config = {
     DEVICE_OTA_FW: (process.env.DEVICE_OTA_FW || "").trim(),
     DEVICE_OTA_URL: (process.env.DEVICE_OTA_URL || "").trim(),
     DEVICE_OTA_SHA256: (process.env.DEVICE_OTA_SHA256 || "").trim().toLowerCase(),
+    // How accounts and workspaces work (services/workspaceService.js):
+    //   b2c    personal workspaces only, open sign-up, pricing page and upgrade requests
+    //   b2b    organizations only (made by the admin), sign-up by invitation (ALLOW_SIGNUP=true opens it)
+    //   hybrid both: open sign-up makes a personal workspace, organizations exist alongside (default)
+    APP_MODE: ['b2c', 'b2b', 'hybrid'].includes((process.env.APP_MODE || '').trim()) ? process.env.APP_MODE.trim() : 'hybrid',
+    ALLOW_SIGNUP: process.env.ALLOW_SIGNUP === 'true',
+    // Delete photos older than the workspace plan's retentionDays (hourly). Off by default: the
+    // admin's global retention (Settings) applies until the owner turns this on
+    PLAN_RETENTION: process.env.PLAN_RETENTION === 'true',
     // Zero-touch self-registration of the public firmware (flybot-aws CONTRACTS 2a): POST /api/device/register
     // signs the camera's CSR with AWS IoT. "false" turns it off (503). Thing type and policy of the stack
     SELF_REGISTRATION: process.env.SELF_REGISTRATION !== 'false',

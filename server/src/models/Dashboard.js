@@ -51,6 +51,8 @@ const dashboardShareSchema = new mongoose.Schema({
 
 const dashboardSchema = new mongoose.Schema({
     ownerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+    // The workspace it belongs to (null = made before workspaces: the owner's personal one)
+    orgId: { type: mongoose.Schema.Types.ObjectId, ref: 'Organization', default: null, index: true },
     name: { type: String, required: true, trim: true },
     description: { type: String, default: '' },
     // Cameras the dashboard reads from

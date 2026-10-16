@@ -26,15 +26,16 @@ test('admin lists every camera with its owner, searchable by owner email', async
     assert.equal((await request('/api/admin/cameras', { as: alice })).status, 403);
 });
 
-test('transferring a camera: new owner must be a manager; old owner can keep view access', async () => {
+test('transferring a camera: any active account may own it; old owner can keep view access', async () => {
     const admin = await createUser({ role: 'admin' });
     const alice = await createUser({ role: 'manager', email: 'alice@farm.test' });
     const bob = await createUser({ role: 'manager', email: 'bob@farm.test' });
     const viewer = await createUser({ role: 'user', email: 'viewer@farm.test' });
     await createCamera(alice, { deviceSerial: 'A1' });
 
-    const toViewer = await json(await request('/api/admin/cameras/A1/owner', { method: 'PUT', as: admin, body: { email: 'viewer@farm.test' } }));
-    assert.equal(toViewer.body.code, 'NOT_MANAGER');
+    await models.User.updateOne({ _id: viewer._id }, { $set: { disabled: true } });
+    const toDisabled = await json(await request('/api/admin/cameras/A1/owner', { method: 'PUT', as: admin, body: { email: 'viewer@farm.test' } }));
+    assert.equal(toDisabled.body.code, 'DISABLED');
     const unknown = await json(await request('/api/admin/cameras/A1/owner', { method: 'PUT', as: admin, body: { email: 'nobody@farm.test' } }));
     assert.equal(unknown.body.code, 'USER_NOT_FOUND');
 

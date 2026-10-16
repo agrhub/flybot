@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const adminController = require('../controllers/adminController');
-const { authenticate, requireRole } = require('../middlewares/auth');
+const { authenticate, requireAdminOrSupportRead } = require('../middlewares/auth');
 const { requireStringFields } = require('../middlewares/validate');
 
-// Everything here is admin-only
-router.use(authenticate, requireRole('admin'), requireStringFields);
+// Admins; "support" accounts may read (GET) everything here
+router.use(authenticate, requireAdminOrSupportRead, requireStringFields);
 
 router.get('/users', adminController.listUsers);
 router.put('/users/:userId', adminController.updateUser);
@@ -20,5 +20,15 @@ router.get('/usage', adminController.getUsage);
 router.get('/training-sync', adminController.getTrainingSync);
 router.post('/training-sync/run', adminController.runTrainingSync);
 router.get('/audit/export', adminController.exportAuditLog);
+// Plans, workspaces and upgrade requests
+const workspaceController = require('../controllers/workspaceController');
+router.get('/plans', workspaceController.adminListPlans);
+router.put('/plans/:code', workspaceController.adminUpdatePlan);
+router.get('/workspaces', workspaceController.adminListWorkspaces);
+router.post('/workspaces', workspaceController.adminCreateOrganization);
+router.put('/workspaces/:id/plan', workspaceController.adminAssignPlan);
+router.get('/upgrade-requests', workspaceController.adminListRequests);
+router.post('/upgrade-requests/:id/approve', workspaceController.adminApprove);
+router.post('/upgrade-requests/:id/reject', workspaceController.adminReject);
 
 module.exports = router;

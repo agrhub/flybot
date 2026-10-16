@@ -26,9 +26,11 @@ test('a device can be registered only once', async () => {
     assert.equal((await models.Camera.findOne({ deviceSerial: 'DEV1' })).validateCode, 'NEWCODE');
 });
 
-test('viewers (role user) cannot add cameras', async () => {
+test('a member of an organization cannot add cameras there (owner/manager only)', async () => {
     const viewer = await createUser({ role: 'user' });
-    const res = await request('/api/user/add-camera', { method: 'POST', as: viewer, body: { deviceSerial: 'DEV9', validateCode: 'ABCDEF' } });
+    const owner = await createUser({ role: 'user', email: 'orgowner@example.test' });
+    const org = await models.Organization.create({ name: 'Co', kind: 'organization', members: [{ userId: owner._id, email: owner.email, role: 'owner' }, { userId: viewer._id, email: viewer.email, role: 'member' }] });
+    const res = await request('/api/user/add-camera', { method: 'POST', as: viewer, body: { deviceSerial: 'DEV9', validateCode: 'ABCDEF' }, headers: { 'X-Workspace-Id': String(org._id) } });
     assert.equal(res.status, 403);
 });
 
@@ -132,11 +134,11 @@ test('admin sees and manages every camera', async () => {
     assert.equal((await request('/api/user/camera', { method: 'PUT', as: admin, body: { deviceSerial: 'DEV1', deviceName: 'Renamed by admin' } })).status, 200);
 });
 
-test('an owner demoted to "user" can still view but no longer manage', async () => {
+test('the owner manages their camera whatever the system role ("manager" is retired)', async () => {
     const owner = await createUser({ role: 'user' });
     await createCamera(owner, { deviceSerial: 'DEV1' });
-    assert.equal((await json(await request('/api/user/cameras', { as: owner }))).body.cameras[0].canManage, false);
-    assert.equal((await request('/api/user/camera', { method: 'PUT', as: owner, body: { deviceSerial: 'DEV1', deviceName: 'x' } })).status, 404);
+    assert.equal((await json(await request('/api/user/cameras', { as: owner }))).body.cameras[0].canManage, true);
+    assert.equal((await request('/api/user/camera', { method: 'PUT', as: owner, body: { deviceSerial: 'DEV1', deviceName: 'x' } })).status, 200);
 });
 
 test('alerts reach the owner and everyone the camera is shared with', async () => {

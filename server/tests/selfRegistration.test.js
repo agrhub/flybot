@@ -113,9 +113,8 @@ beforeEach(async () => {
     certSeq = 0;
     registration.resetClaimLocks();
     env.DEMO_MAX_UNCLAIMED = 200;
-    env.DEMO_MAX_CAMERAS_PER_USER = 3;
-    env.DEMO_MAX_SNAPSHOTS_PER_DAY = 48;
     env.SELF_REGISTRATION = true;
+    require('../src/services/planService').clearCache();
 });
 
 // ---------- Helpers ----------
@@ -295,6 +294,8 @@ test('claim: moves the camera to the person, shadow claimed + interval, preview 
     const cam = await models.Camera.findOne({ deviceSerial: 'ESPF85B1B92877C' }).lean();
     assert.equal(String(cam.userId), String(person._id));
     assert.equal(cam.unclaimed, false);
+    const personal = await models.Organization.findOne({ kind: 'personal', 'members.userId': person._id }).lean();
+    assert.equal(String(cam.orgId), String(personal._id), 'in the claimer\'s personal workspace');
     const photo = await models.Snapshot.findOne({ deviceSerial: 'ESPF85B1B92877C' }).lean();
     assert.equal(photo.unclaimed, undefined, 'the photo is kept');
     assert.equal(photo.expiresAt, undefined);
@@ -330,26 +331,35 @@ test('claim: wrong code = the same 404 as an unknown serial; 5 failures lock the
     assert.equal((await claim(person, { serial: 'ESPF85B1B92877C', verifyCode: '9WBYWY' })).status, 200);
 });
 
-test('demo limits: cameras per person, photos per day, live minutes; admins are exempt', async () => {
-    env.DEMO_MAX_CAMERAS_PER_USER = 1;
+/** Set the FREE plan's numbers as the admin would (Admin > Plans). */
+async function freePlan(values) {
+    const planService = require('../src/services/planService');
+    await planService.ensureSeeded();
+    await models.Plan.updateOne({ code: 'free' }, { $set: values });
+    planService.clearCache();
+}
+
+test('plan limits: cameras per workspace, photos per day, live minutes; admins are exempt', async () => {
+    await freePlan({ maxCameras: 1, snapshotsPerDay: 2 });
     const a = await register(body({ serial: 'ESP000000000001' }));
     await register(body({ serial: 'ESP000000000002' }));
     const person = await createUser({ role: 'user' });
     assert.equal((await claim(person, { serial: 'ESP000000000001', verifyCode: '9WBYWY' })).status, 200);
     const over = await claim(person, { serial: 'ESP000000000002', verifyCode: '9WBYWY' });
     assert.equal(over.status, 403);
-    assert.equal(over.body.code, 'LIMIT_REACHED');
+    assert.equal(over.body.code, 'UPGRADE_REQUIRED');
+    assert.equal(over.body.limit, 'cameras');
+    assert.equal(over.body.max, 1);
     const admin = await createUser({ role: 'admin' });
     assert.equal((await claim(admin, { serial: 'ESP000000000002', verifyCode: '9WBYWY' })).status, 200);
 
     // Photos a day (claimed camera of a non-exempt owner)
-    env.DEMO_MAX_SNAPSHOTS_PER_DAY = 2;
     const statuses = [];
     for (let i = 0; i < 3; i++) statuses.push((await upload('ESP000000000001', a.body.deviceToken)).status);
     assert.deepEqual(statuses, [200, 200, 429]);
     await settle();
 
-    // Live view: 5 minutes per request for a demo camera, more for an admin
+    // Live view: the plan's minutes per request (FREE: 5), more for an admin
     const cam = await models.Camera.findOne({ deviceSerial: 'ESP000000000001' }).lean();
     assert.equal(await registration.liveMinutes(cam, { id: String(person._id), role: 'user' }, 20), 5);
     assert.equal(await registration.liveMinutes(cam, admin, 20), 20);
@@ -479,15 +489,38 @@ test('timezone helpers: POSIX table and computed strings, private addresses, cou
     assert.equal(timezoneService.zoneOfLocation({ lat: 0, lng: 0 }), null);
 });
 
-test('entitlements: one helper for every limit; free plan from the DEMO_* settings, operators unlimited', () => {
+test('entitlements: plan values + add-ons, expired paid plan falls back to FREE, operators unlimited', async () => {
     const { getEntitlements, systemLimits, capped } = require('../src/services/entitlements');
-    assert.deepEqual(getEntitlements({ role: 'user', email: 'a@example.test' }), { plan: 'free', maxCameras: 3, snapshotsPerDay: 48, liveMinutes: 5, deepAnalysis: true });
-    assert.equal(getEntitlements({ role: 'manager' }).plan, 'free');
-    assert.equal(getEntitlements(null).plan, 'free');
-    assert.deepEqual(getEntitlements({ role: 'admin' }), { plan: 'unlimited', maxCameras: null, snapshotsPerDay: null, liveMinutes: null, deepAnalysis: true });
+    const person = await createUser({ role: 'user', email: 'a@example.test' });
+    const ws = await models.Organization.create({ name: 'A', kind: 'personal', members: [{ userId: person._id, email: person.email, role: 'owner' }], plan: { code: 'free' } });
+    const free = await getEntitlements(person, ws);
+    assert.equal(free.plan, 'free');
+    assert.equal(free.maxCameras, 3, 'seeded from DEMO_MAX_CAMERAS_PER_USER');
+    assert.equal(free.snapshotsPerDay, 48);
+    assert.equal(free.liveMinutes, 5);
+    assert.equal(free.deepAnalysisPerMonth, 20);
+    assert.equal(free.features.apiAndWebhooks, false);
+
+    await models.Organization.updateOne({ _id: ws._id }, { $set: { plan: { code: 'pro', addonCameras: 4, expiresAt: new Date(Date.now() + 86400000) } } });
+    const pro = await getEntitlements(person, ws._id);
+    assert.equal(pro.plan, 'pro');
+    assert.equal(pro.maxCameras, 14, 'PRO 10 + 4 add-ons');
+    assert.equal(pro.features.apiAndWebhooks, true);
+
+    await models.Organization.updateOne({ _id: ws._id }, { $set: { 'plan.expiresAt': new Date(Date.now() - 1000) } });
+    const lapsed = await getEntitlements(person, ws._id);
+    assert.equal(lapsed.plan, 'free');
+    assert.equal(lapsed.expired, true);
+    assert.equal(lapsed.maxCameras, 3, 'no add-ons once expired');
+
+    const admin = await createUser({ role: 'admin' });
+    const op = await getEntitlements(admin, ws._id);
+    assert.equal(op.plan, 'unlimited');
+    assert.equal(op.maxCameras, null);
     env.DEMO_EXEMPT_EMAILS.push('owner@example.test');
-    assert.equal(getEntitlements({ role: 'manager', email: 'Owner@example.test' }).plan, 'unlimited');
+    assert.equal((await getEntitlements({ role: 'user', email: 'Owner@example.test' }, ws._id)).plan, 'unlimited');
     env.DEMO_EXEMPT_EMAILS.pop();
+    assert.equal((await getEntitlements(person, null)).maxCameras, 0, 'no workspace, no cameras');
     assert.equal(systemLimits().maxUnclaimed, 200);
     assert.equal(capped(20, 5), 5);
     assert.equal(capped(20, null), 20);

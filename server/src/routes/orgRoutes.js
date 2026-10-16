@@ -13,7 +13,8 @@ router.post('/:id/remind', shareLimiter, orgController.remindLog);
 router.get('/:id/report', analyticsLimiter, orgController.downloadReport);
 router.post('/:id/report/send', reportSendLimiter, orgController.sendReport);
 // Viewers (role "user") join organizations but do not create them
-router.post('/', requireRole('admin', 'manager'), orgController.createOrg);
+// Organizations are made by the admin (others ask with an upgrade request of type "organization")
+router.post('/', requireRole('admin'), orgController.createOrg);
 router.put('/:id', orgController.updateOrg);
 router.delete('/:id', orgController.deleteOrg);
 router.post('/:id/members', shareLimiter, orgController.addMember);

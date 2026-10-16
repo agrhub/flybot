@@ -15,7 +15,10 @@ function viewFilter(user) {
     if (isAdmin(user)) return { unclaimed: { $ne: true } };
     const id = idOf(user);
     if (!id) return { _id: null }; // matches nothing
-    return { $or: [{ userId: id }, { 'sharedWith.userId': id }] };
+    const base = { $or: [{ userId: id }, { 'sharedWith.userId': id }] };
+    // More than one workspace: only the current one's cameras (services/workspaceService.js)
+    const scope = require('../services/workspaceService').scopeFilter(user, { ownerField: 'userId' });
+    return scope ? { $and: [base, scope] } : base;
 }
 
 function viewableCameras(user, extra = {}) {
@@ -40,11 +43,9 @@ function canManageCamera(user, camera) {
     if (!camera) return false;
     if (camera.unclaimed) return false; // nobody's yet: only the claim flow touches it
     if (isAdmin(user)) return true;
-    // Whoever claimed a self-registered camera runs it, whatever their role (demo cameras)
-    if (camera.selfRegistered && !camera.unclaimed && camera.userId && String(camera.userId) === idOf(user)) return true;
-    if (roleOf(user) !== 'manager') return false;
     const id = idOf(user);
-    if (String(camera.userId) === id) return true;
+    // The camera's owner runs it (their workspace role decides whether they could add it)
+    if (camera.userId && String(camera.userId) === id) return true;
     // Organization owners and managers (share entries kept by services/orgService.js)
     return (camera.sharedWith || []).some(sh => sh.viaOrg && String(sh.userId) === id && ['owner', 'manager'].includes(sh.orgRole));
 }
@@ -58,8 +59,7 @@ function isCameraOwner(user, camera) {
     if (!camera) return false;
     if (camera.unclaimed) return false; // nobody's yet: only the claim flow touches it
     if (isAdmin(user)) return true;
-    if (camera.selfRegistered && !camera.unclaimed && camera.userId && String(camera.userId) === idOf(user)) return true;
-    return roleOf(user) === 'manager' && String(camera.userId) === idOf(user);
+    return !!camera.userId && String(camera.userId) === idOf(user);
 }
 
 async function findOwnedCamera(user, deviceSerial) {

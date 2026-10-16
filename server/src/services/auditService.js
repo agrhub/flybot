@@ -64,7 +64,13 @@ const AUDIT_ACTIONS = [
     'sentinel.proposal_decided',
     'sentinel.review_requested',
     'sentinel.analysis',
-    'sentinel.approval_decided'
+    'sentinel.approval_decided',
+    // Workspaces and plans (admin), upgrade requests, the one-time move to workspaces
+    'workspace.created',
+    'workspace.plan_changed',
+    'workspace.settings_changed',
+    'workspace.upgrade_requested',
+    'system.workspaces_migrated'
 ];
 const CATEGORIES = [...new Set(AUDIT_ACTIONS.map(a => a.split('.')[0]))];
 

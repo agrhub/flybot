@@ -1,12 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const integrationController = require('../controllers/integrationController');
-const { authenticate, requireRole } = require('../middlewares/auth');
+const { authenticate } = require('../middlewares/auth');
+const { requireFeature } = require('../services/entitlements');
 const { requireStringFields } = require('../middlewares/validate');
 const { rateLimit } = require('../middlewares/rateLimit');
 
-// API keys and webhooks are for integrations: managers and admins
-router.use(authenticate, requireRole('admin', 'manager'), requireStringFields);
+// API keys and webhooks: a plan feature (apiAndWebhooks) of the current workspace
+router.use(authenticate, requireFeature('apiAndWebhooks'), requireStringFields);
 
 router.get('/keys', integrationController.listKeys);
 router.post('/keys', integrationController.createKey);

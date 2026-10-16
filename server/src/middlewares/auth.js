@@ -72,6 +72,8 @@ async function authenticate(req, res, next) {
             role: roleOf(user),
             sentinelViewer: !!user.sentinelViewer
         };
+        // The current workspace (X-Workspace-Id, else the saved one, else the personal one)
+        await require('../services/workspaceService').attach(req, user);
         req.sessionId = sessionId;
         req.authToken = token;
         return next();
@@ -153,9 +155,17 @@ function requireRole(...roles) {
     };
 }
 
+/** Admin pages: admins do everything, "support" accounts read (GET) only. */
+function requireAdminOrSupportRead(req, res, next) {
+    const role = req.user?.role;
+    if (role === 'admin' || (role === 'support' && req.method === 'GET')) return next();
+    return res.status(403).json({ success: false, code: 'FORBIDDEN', message: 'You do not have permission to do this.' });
+}
+
 module.exports = {
     authenticate,
     requireRole,
+    requireAdminOrSupportRead,
     readToken,
     resolveToken,
     signToken,

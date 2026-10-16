@@ -1,6 +1,6 @@
 const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose');
-const { User, Session } = require('../models');
+const { User, Session, Organization } = require('../models');
 const { roleOf } = require('../constants/roles');
 
 // Lazy: shareController pulls in notification/mail services
@@ -74,6 +74,52 @@ function toPublicUser(user) {
     };
 }
 
+/**
+ * The profile the app keeps (toPublicUser) plus the current workspace, how many there are, the
+ * plan and what the person may do there (capabilities, from the workspace role and the plan),
+ * and APP_MODE. `req` gives the X-Workspace-Id the app asked for.
+ */
+async function publicUser(user, req = null) {
+    const base = toPublicUser(user);
+    const workspaceService = require('../services/workspaceService');
+    const entitlements = require('../services/entitlements');
+    let docs = [];
+    let current = null;
+    try {
+        docs = await workspaceService.workspaceDocsOf(user);
+        const requested = String(req?.get?.('X-Workspace-Id') || '').trim();
+        current = await workspaceService.currentOf(user, /^[a-f0-9]{24}$/i.test(requested) ? requested : null, docs);
+    } catch (err) {
+        console.warn('⚠️ Workspace not resolved for the profile:', err.message);
+    }
+    const workspace = current ? workspaceService.viewOf(current, String(user._id)) : null;
+    const ctx = { id: String(user._id), email: user.email, role: roleOf(user), sentinelViewer: !!user.sentinelViewer, workspace, workspaceCount: docs.length };
+    const ent = await entitlements.getEntitlements(ctx, current);
+    const works = entitlements.operatorAccount(ctx) || workspaceService.canWorkIn(workspace);
+    const mode = workspaceService.mode();
+    return {
+        ...base,
+        ...sentinelUi.accessFor(ctx),
+        appMode: mode,
+        workspace,
+        workspaceCount: docs.length,
+        plan: { code: ent.plan, name: ent.planName, expired: !!ent.expired, expiresAt: ent.expiresAt || null },
+        capabilities: {
+            addCameras: works,
+            buildDashboards: works,
+            createFarms: works,
+            claimCameras: works,
+            integrations: works && !!ent.features.apiAndWebhooks,
+            pdfReports: !!ent.features.pdfReports,
+            telegram: !!ent.features.telegram,
+            // b2c / hybrid: the pricing page and upgrade requests; b2b: the organization's owner asks the admin
+            pricing: mode !== 'b2b',
+            upgradeRequests: !!workspace || mode !== 'b2b',
+            requestOrganization: mode === 'hybrid'
+        }
+    };
+}
+
 async function sendVerificationEmail(user) {
     const raw = await createToken(user._id, 'email_verify', EMAIL_VERIFY_TTL_HOURS * 60 * 60 * 1000);
     queueMail(emailTemplates.verifyEmailEmail({
@@ -107,13 +153,23 @@ function validNotificationPrefs(prefs) {
  * User Registration
  */
 async function register(req, res) {
-    // Admins control self sign-up in Settings > System (env ALLOW_REGISTRATION is the default)
-    const { getSettings } = require('../services/settingsService');
-    if (!(await getSettings()).allowRegistration) {
-        return res.status(403).json({ success: false, message: "Registration is disabled." });
+    const email = readEmail(req.body);
+    const workspaceService = require('../services/workspaceService');
+    if (workspaceService.mode() === 'b2b') {
+        // Organizations only: sign-up by invitation (an organization added this email), unless ALLOW_SIGNUP
+        const { ALLOW_SIGNUP } = require('../config/env');
+        const invited = EMAIL_REGEX.test(email) && await Organization.exists({ members: { $elemMatch: { email, userId: null } } });
+        if (!ALLOW_SIGNUP && !invited) {
+            return res.status(403).json({ success: false, code: 'INVITE_ONLY', message: "Sign-up is by invitation only." });
+        }
+    } else {
+        // Admins control self sign-up in Settings > System (env ALLOW_REGISTRATION is the default)
+        const { getSettings } = require('../services/settingsService');
+        if (!(await getSettings()).allowRegistration) {
+            return res.status(403).json({ success: false, message: "Registration is disabled." });
+        }
     }
 
-    const email = readEmail(req.body);
     const { password } = req.body;
     if (!EMAIL_REGEX.test(email) || email.length > 254) {
         return res.status(400).json({ success: false, message: "Please enter a valid email address." });
@@ -139,6 +195,8 @@ async function register(req, res) {
             role: isFirstAccount ? 'admin' : 'user'
         });
         await newUser.save();
+        // b2c / hybrid: the personal workspace on the FREE plan
+        await workspaceService.ensurePersonal(newUser).catch(err => console.warn('⚠️ Personal workspace not created:', err.message));
         recordAudit(req, {
             action: 'auth.register',
             actor: { id: newUser._id, email: newUser.email },
@@ -203,7 +261,7 @@ async function login(req, res) {
         res.json({
             success: true,
             token,
-            user: toPublicUser(user)
+            user: await publicUser(user, req)
         });
     } catch (err) {
         sendServerError(res, err, { context: 'Login' });
@@ -264,7 +322,7 @@ async function getMe(req, res) {
     try {
         const user = await User.findById(req.user.id);
         if (!user) return res.status(404).json({ success: false, message: "User not found." });
-        res.json({ success: true, user: toPublicUser(user) });
+        res.json({ success: true, user: await publicUser(user, req) });
     } catch (err) {
         sendServerError(res, err, { context: 'Get profile' });
     }
@@ -547,7 +605,7 @@ async function updateProfile(req, res) {
         res.json({
             success: true,
             message: "Profile updated successfully!",
-            user: toPublicUser(user)
+            user: await publicUser(user, req)
         });
     } catch (err) {
         sendServerError(res, err, { context: 'Update profile' });
@@ -565,7 +623,7 @@ async function uploadAvatar(req, res) {
         const user = await User.findById(req.user.id);
         if (!user) return res.status(404).json({ success: false, message: "User not found." });
         await avatarService.saveAvatar(user, buffer);
-        res.json({ success: true, user: toPublicUser(user) });
+        res.json({ success: true, user: await publicUser(user, req) });
     } catch (err) {
         sendServerError(res, err, { context: 'Upload avatar' });
     }
@@ -579,7 +637,7 @@ async function deleteAvatar(req, res) {
         const user = await User.findById(req.user.id);
         if (!user) return res.status(404).json({ success: false, message: "User not found." });
         await avatarService.removeAvatar(user);
-        res.json({ success: true, user: toPublicUser(user) });
+        res.json({ success: true, user: await publicUser(user, req) });
     } catch (err) {
         sendServerError(res, err, { context: 'Delete avatar' });
     }

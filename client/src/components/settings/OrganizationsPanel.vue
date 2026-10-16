@@ -1,8 +1,10 @@
 <template>
   <div v-loading="loading">
     <PageHeader :title="t('orgs.title')" :subtitle="t('orgs.subtitle')">
-      <template v-if="canManageCameras" #actions>
-        <el-button type="primary" :icon="Plus" @click="openCreate">{{ t('orgs.create') }}</el-button>
+      <!-- Organizations are made by the admin; others ask for one (APP_MODE hybrid) -->
+      <template v-if="isAdmin || capabilities.requestOrganization" #actions>
+        <el-button v-if="isAdmin" type="primary" :icon="Plus" @click="openCreate">{{ t('orgs.create') }}</el-button>
+        <el-button v-else type="primary" plain :icon="Plus" data-test="org-request" @click="openUpgradeDialog({ type: 'organization' })">{{ t('orgs.request') }}</el-button>
       </template>
     </PageHeader>
 
@@ -15,6 +17,7 @@
             <el-icon class="is-primary"><OfficeBuilding /></el-icon>
             <span class="org-name truncate">{{ org.name }}</span>
             <el-tag v-if="org.myRole" size="small" effect="light" round>{{ t(`orgs.roles.${org.myRole}`) }}</el-tag>
+            <el-tag v-if="org.plan" size="small" effect="plain" round>{{ org.plan.toUpperCase() }}</el-tag>
           </div>
           <div class="flex items-center gap-2">
             <span class="org-meta">{{ t('orgs.summary', { members: org.members.length, cameras: org.cameras.length, farms: org.farmCount }) }}</span>
@@ -30,6 +33,12 @@
           </div>
         </div>
       </template>
+
+      <!-- The owner may hide members' personal workspaces (their data stays) -->
+      <div v-if="org.myRole === 'owner' && org.kind === 'organization'" class="flex items-center gap-2 mb-3">
+        <el-switch :model-value="org.settings?.allowMemberPersonalWorkspaces !== false" :aria-label="t('orgs.allowPersonal')" @change="(value) => setAllowPersonal(org, value)" />
+        <span class="org-meta">{{ t('orgs.allowPersonal') }}</span>
+      </div>
 
       <!-- Members -->
       <h4 class="org-section">{{ t('orgs.members') }}</h4>
@@ -147,13 +156,14 @@ import { useI18n } from 'vue-i18n';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Plus, OfficeBuilding, MoreFilled, Edit, Delete, SwitchButton, UserFilled, Upload } from '@element-plus/icons-vue';
 import api from '@/services/api';
+import { openUpgradeDialog } from '@/composables/useUpgrade';
 import PageHeader from '@/components/common/PageHeader.vue';
 import { useAuth } from '@/composables/useAuth';
 import { useCameras } from '@/composables/useCameras';
 import UserAvatar from '@/components/common/UserAvatar.vue';
 
 const { t } = useI18n();
-const { user, isAdmin, canManageCameras } = useAuth();
+const { user, isAdmin, canManageCameras, capabilities } = useAuth();
 const { cameras, loadCameras } = useCameras();
 
 const orgs = ref([]);
@@ -167,6 +177,14 @@ const myId = computed(() => user.value?.id);
 const manageable = computed(() => new Set(cameras.value.filter(c => c.canManage).map(c => c.deviceSerial)));
 const addableFor = (org) => cameras.value.filter(c => c.canManage && !org.cameras.some(oc => oc.deviceSerial === c.deviceSerial));
 const isOwnerOf = (org) => org.myRole === 'owner' || isAdmin.value;
+const setAllowPersonal = async (org, value) => {
+  try {
+    await api.updateWorkspaceSettings(org.id, { allowMemberPersonalWorkspaces: value });
+    org.settings = { ...(org.settings || {}), allowMemberPersonalWorkspaces: value };
+  } catch (err) {
+    ElMessage.error(errorText(err));
+  }
+};
 const assignableRoles = (org) => (isOwnerOf(org) ? ['member', 'manager', 'owner'] : ['member']);
 const isLastOwner = (org, m) => m.role === 'owner' && org.members.filter(x => x.role === 'owner').length === 1;
 const canEditMember = (org, m) => m.userId !== myId.value && (isOwnerOf(org) || (org.canManage && m.role === 'member'));

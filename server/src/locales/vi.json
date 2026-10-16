@@ -75,6 +75,18 @@
       "org_digest": {
         "subject": "🧑‍🌾 {orgName}: {count} hộ cần thăm vườn tuần này",
         "body": "Tuần qua ở {orgName} (trung bình {ftd} ruồi/bẫy/ngày), {count} hộ có bẫy chạm ngưỡng mà chưa ghi biện pháp nào: {names}. Xem chi tiết và gửi lời nhắc trong Vườn & lô, Tổng quan hợp tác xã."
+      },
+      "upgrade_requested": {
+        "subject": "⭐ Yêu cầu nâng cấp: {plan} từ {email}",
+        "body": "{email} yêu cầu gói {plan} ({workspace}). Xem tại Quản trị, Yêu cầu nâng cấp."
+      },
+      "upgrade_decided": {
+        "subject": "⭐ Yêu cầu nâng cấp của bạn: {outcome}",
+        "body": "Yêu cầu gói {plan} của bạn đã được {outcome}. {note}"
+      },
+      "upgrade_outcome": {
+        "approved": "chấp thuận",
+        "rejected": "từ chối"
       }
     },
     "cameraShared": {
@@ -474,7 +486,27 @@
     "trapKindStickyLure": "trapKind phải là sticky hoặc lure.",
     "claimLocked": "Nhập sai mã quá nhiều lần cho số sê-ri này. Hãy thử lại sau.",
     "planCameraLimit": "Gói của bạn cho nhận tối đa {count} camera.",
-    "farmNotYours": "Không tìm thấy vườn hoặc vườn không thuộc về bạn."
+    "farmNotYours": "Không tìm thấy vườn hoặc vườn không thuộc về bạn.",
+    "accountDisabledTransfer": "Tài khoản này đã bị vô hiệu hóa.",
+    "inviteOnly": "Chỉ đăng ký được khi có lời mời.",
+    "notInPlan": "Gói của bạn không có tính năng này. Hãy yêu cầu nâng cấp.",
+    "noCameraWorkspace": "Bạn không thêm được camera trong không gian làm việc này.",
+    "noWorkspaceAction": "Bạn không làm được việc này trong không gian làm việc này.",
+    "planDeepLimit": "Gói của bạn cho {count} lượt phân tích sâu mỗi tháng.",
+    "planCameraLimitWs": "Gói của bạn cho {count} camera trong không gian này.",
+    "planMemberLimit": "Gói của bạn cho {count} người trong không gian này.",
+    "unknownPlan": "Không có gói này.",
+    "planFeaturesObject": "features phải là một đối tượng.",
+    "planFeatureBool": "features.{name} phải là true hoặc false.",
+    "planNameEmpty": "Tên không được để trống.",
+    "planVisibleBool": "visible phải là true hoặc false.",
+    "workspaceNotFound": "Không tìm thấy không gian làm việc.",
+    "addonCamerasRange": "addonCameras phải là số nguyên từ 0 đến 100000.",
+    "expiresAtDate": "expiresAt phải là một ngày.",
+    "planCodeInvalid": "plan phải là free, pro hoặc enterprise.",
+    "orgSettingOnly": "Chỉ tổ chức mới có cài đặt này.",
+    "orgsOffB2c": "Chế độ này không dùng tổ chức (APP_MODE=b2c).",
+    "allowPersonalBool": "allowMemberPersonalWorkspaces phải là true hoặc false."
   },
   "reportPdf": {
     "range": "Khoảng thời gian: {from} - {to} ({days} ngày)",

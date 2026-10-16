@@ -170,6 +170,13 @@ async function runStartupMigrations() {
         console.error('❌ Organization migration failed:', err);
     }
     try {
+        // After organizations-v1: workspaces, plans, the retired "manager" role
+        await runOnce('workspaces-v1', () => require('./workspaceMigration').migrateToWorkspaces());
+        await require('./planService').ensureSeeded();
+    } catch (err) {
+        console.error('❌ Workspace migration failed:', err);
+    }
+    try {
         await lowercaseEmails();
     } catch (err) {
         console.error('❌ Email normalization failed:', err);

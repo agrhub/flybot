@@ -7,7 +7,12 @@ const userSchema = new mongoose.Schema({
     avatar: { type: String, default: '' },
     // admin: full control | manager: owns and shares cameras, builds dashboards | user: views shared items
     // (accounts created before roles existed get one from services/migrations.js at startup)
-    role: { type: String, enum: ['admin', 'manager', 'user'], default: 'user' },
+    // System role: admin (platform operator) | support (read-only admin pages) | user. What an
+    // account may do with cameras comes from its workspaces and their plans (services/entitlements.js);
+    // "manager" is the retired global role, moved to "user" by the workspaces-v1 migration
+    role: { type: String, enum: ['admin', 'support', 'manager', 'user'], default: 'user' },
+    // The workspace the app shows (null = the personal one, or the first)
+    currentWorkspaceId: { type: mongoose.Schema.Types.ObjectId, ref: 'Organization', default: null },
     // Disabled accounts cannot sign in; set by an admin
     disabled: { type: Boolean, default: false },
     // Read-only access to the FlyBot Sentinel pages for a "user" account (e.g. a competition judge);

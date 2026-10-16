@@ -7,13 +7,18 @@ before(startDb);
 after(stopDb);
 beforeEach(clearDb);
 
-const cameras = async (user) => (await json(await request('/api/user/cameras', { as: user }))).body.cameras;
+// The current workspace scopes the lists (X-Workspace-Id); without one, the personal workspace
+const inWs = (org) => (org ? { 'X-Workspace-Id': String(org.id || org._id) } : {});
+const cameras = async (user, org = null) => (await json(await request('/api/user/cameras', { as: user, headers: inWs(org) }))).body.cameras;
 const listed = (list) => list.map(c => c.deviceSerial);
 
+// Organizations are made by the admin (POST /api/admin/workspaces) for an owner
 async function newOrg(owner, name = 'Mango Co') {
-    const res = await json(await request('/api/orgs', { method: 'POST', as: owner, body: { name } }));
-    assert.equal(res.status, 201);
-    return res.body.organization;
+    const admin = (await models.User.findOne({ role: 'admin' })) || await createUser({ role: 'admin', email: `admin${Date.now()}@example.test` });
+    const res = await json(await request('/api/admin/workspaces', { method: 'POST', as: admin, body: { name, ownerEmail: owner.email, plan: 'enterprise' } }));
+    assert.equal(res.status, 201, JSON.stringify(res.body));
+    const list = await json(await request('/api/orgs', { as: owner }));
+    return list.body.organizations.find(o => o.id === res.body.workspace.id);
 }
 
 test('migration: one organization per manager, holding their cameras and farms', async () => {
@@ -25,7 +30,7 @@ test('migration: one organization per manager, holding their cameras and farms',
 
     assert.equal(await orgService.migrateToOrganizations(), 1);
     assert.equal(await orgService.migrateToOrganizations(), 0, 'idempotent');
-    const org = await models.Organization.findOne().lean();
+    const org = await models.Organization.findOne({ kind: 'organization' }).lean();
     assert.equal(org.name, 'Lan');
     assert.deepEqual(org.members.map(m => m.role), ['owner']);
     assert.equal(String((await models.Camera.findOne({ deviceSerial: 'M1' })).orgId), String(org._id));
@@ -39,8 +44,8 @@ test('members see the organization\'s cameras; managers manage them; removal tak
     const worker = await createUser({ email: 'worker@example.test' });
     const org = await newOrg(owner);
 
-    // New cameras go into the owner's organization
-    const added = await request('/api/user/add-camera', { method: 'POST', as: owner, body: { deviceSerial: 'CAM01', validateCode: 'ABCDEF' } });
+    // New cameras go into the current workspace: the organization
+    const added = await request('/api/user/add-camera', { method: 'POST', as: owner, body: { deviceSerial: 'CAM01', validateCode: 'ABCDEF' }, headers: inWs(org) });
     assert.equal(added.status, 200, JSON.stringify(await added.clone().json()));
     assert.equal(String((await models.Camera.findOne({ deviceSerial: 'CAM01' })).orgId), org.id);
 
@@ -49,16 +54,17 @@ test('members see the organization\'s cameras; managers manage them; removal tak
     assert.equal(res.body.organization.members.length, 3);
     assert.match(sentMails.at(-1).subject, /Mango Co/);
 
-    assert.deepEqual(listed(await cameras(worker)), ['CAM01']);
-    assert.equal((await cameras(colleague))[0].canManage, true, 'organization manager');
-    assert.equal((await cameras(worker))[0].canManage, false, 'member only views');
+    assert.deepEqual(listed(await cameras(worker, org)), ['CAM01']);
+    assert.deepEqual(listed(await cameras(worker)), [], 'their personal workspace does not show it');
+    assert.equal((await cameras(colleague, org))[0].canManage, true, 'organization manager');
+    assert.equal((await cameras(worker, org))[0].canManage, false, 'member only views');
 
     // A member cannot add people; the colleague (manager) can add members but not owners
     assert.equal((await request(`/api/orgs/${org.id}/members`, { method: 'POST', as: worker, body: { email: 'x@example.test' } })).status, 403);
     assert.equal((await request(`/api/orgs/${org.id}/members`, { method: 'POST', as: colleague, body: { email: 'y@example.test', role: 'owner' } })).status, 403);
 
     await request(`/api/orgs/${org.id}/members`, { method: 'DELETE', as: owner, body: { email: 'worker@example.test' } });
-    assert.deepEqual(listed(await cameras(worker)), []);
+    assert.deepEqual(listed(await cameras(worker, org)), []);
 
     // The last owner cannot leave
     const leave = await json(await request(`/api/orgs/${org.id}/members`, { method: 'DELETE', as: owner, body: { email: owner.email } }));
@@ -74,9 +80,9 @@ test('farms of the organization; moving cameras between organizations', async ()
     await request(`/api/orgs/${orgA.id}/members`, { method: 'POST', as: owner, body: { email: 'm@example.test' } });
     await orgService.syncOrgShares(await models.Organization.findById(orgA.id));
 
-    // Farms created now land in the first owned organization (A)
-    const farm = await json(await request('/api/farms', { method: 'POST', as: owner, body: { name: 'North' } }));
-    const farms = await json(await request('/api/farms', { as: member }));
+    // Farms created now land in the current workspace (A)
+    const farm = await json(await request('/api/farms', { method: 'POST', as: owner, body: { name: 'North' }, headers: inWs(orgA) }));
+    const farms = await json(await request('/api/farms', { as: member, headers: inWs(orgA) }));
     assert.deepEqual(farms.body.farms.map(f => f.id), [farm.body.farm.id]);
     assert.equal((await request(`/api/farms/${farm.body.farm.id}`, { method: 'PUT', as: member, body: { name: 'x' } })).status, 403);
 

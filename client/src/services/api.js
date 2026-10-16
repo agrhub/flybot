@@ -1,3 +1,4 @@
+import { openUpgradeDialog } from '@/composables/useUpgrade';
 import axios from 'axios';
 import i18n from '@/i18n';
 import { ElMessage } from 'element-plus';
@@ -19,6 +20,13 @@ apiClient.interceptors.request.use((config) => {
   }
   // Server messages come back in the app's language
   config.headers['X-Language'] = i18n.global.locale.value;
+  // The workspace the app shows (composables/useWorkspace.js); the server falls back to the saved one
+  try {
+    const workspaceId = localStorage.getItem('workspaceId');
+    if (workspaceId) config.headers['X-Workspace-Id'] = workspaceId;
+  } catch {
+    // storage blocked: the server's saved workspace applies
+  }
   return config;
 });
 
@@ -36,6 +44,10 @@ apiClient.interceptors.response.use(
         ElMessage.warning({ message: i18n.global.t('offline.needsNetwork'), grouping: true });
       }
     }
+    // A plan limit: the upgrade dialog explains it and offers a request (components/plans/UpgradeDialog.vue)
+    if (error.response?.status === 403 && error.response.data?.code === 'UPGRADE_REQUIRED' && !error.config?.skipUpgradeDialog) {
+      openUpgradeDialog(error.response.data);
+    }
     if (error.response && error.response.status === 401) {
       // Auth pages (login, reset password, verify email) handle their own errors
       if (!window.location.pathname.startsWith('/auth/')) {
@@ -49,6 +61,59 @@ apiClient.interceptors.response.use(
 );
 
 export default {
+  // ---------- Workspaces, plans, upgrade requests ----------
+  getWorkspaces() {
+    return apiClient.get('/workspaces');
+  },
+  setCurrentWorkspace(workspaceId) {
+    return apiClient.put('/workspaces/current', { workspaceId });
+  },
+  updateWorkspaceSettings(id, settings) {
+    return apiClient.put(`/workspaces/${id}/settings`, settings);
+  },
+  getEntitlements() {
+    return apiClient.get('/me/entitlements');
+  },
+  getPlans() {
+    return apiClient.get('/plans');
+  },
+  createUpgradeRequest(data) {
+    return apiClient.post('/upgrade-requests', data, { skipUpgradeDialog: true });
+  },
+  getUpgradeRequests() {
+    return apiClient.get('/upgrade-requests');
+  },
+  cancelUpgradeRequest(id) {
+    return apiClient.post(`/upgrade-requests/${id}/cancel`);
+  },
+  forwardUpgradeRequest(id, forward, note = '') {
+    return apiClient.post(`/upgrade-requests/${id}/forward`, { forward, note });
+  },
+  adminGetPlans() {
+    return apiClient.get('/admin/plans');
+  },
+  adminUpdatePlan(code, data) {
+    return apiClient.put(`/admin/plans/${code}`, data);
+  },
+  adminGetWorkspaces(params = {}) {
+    return apiClient.get('/admin/workspaces', { params });
+  },
+  adminCreateOrganization(data) {
+    return apiClient.post('/admin/workspaces', data);
+  },
+  adminAssignPlan(id, data) {
+    return apiClient.put(`/admin/workspaces/${id}/plan`, data);
+  },
+  adminGetUpgradeRequests(status = '') {
+    return apiClient.get('/admin/upgrade-requests', { params: status ? { status } : {} });
+  },
+  adminApproveUpgrade(id, data) {
+    return apiClient.post(`/admin/upgrade-requests/${id}/approve`, data);
+  },
+  adminRejectUpgrade(id, data) {
+    return apiClient.post(`/admin/upgrade-requests/${id}/reject`, data);
+  },
+
   login(email, password, language) {
     return apiClient.post('/auth/login', { email, password, language });
   },

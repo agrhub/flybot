@@ -161,8 +161,6 @@ const payloadOf = (notification) => ({
     params: notification.params || {}
 });
 
-// Only active managers and admins keep integrations
-const INTEGRATION_ROLES = ['admin', 'manager'];
 
 /**
  * Send a new notification to the user's webhooks that subscribe to its type.
@@ -170,7 +168,8 @@ const INTEGRATION_ROLES = ['admin', 'manager'];
 async function dispatch(userId, notification) {
     const hooks = await Webhook.find({ userId, active: true, events: notification.type });
     if (!hooks.length) return 0;
-    if (!(await User.exists({ _id: userId, disabled: { $ne: true }, role: { $in: INTEGRATION_ROLES } }))) return 0;
+    // Webhooks keep firing while the account's plan has API & webhooks (services/entitlements.js)
+    if (!(await require('./entitlements').integrationsAllowed(userId))) return 0;
     await Promise.all(hooks.map(hook => deliver(hook, notification.type, payloadOf(notification))));
     return hooks.length;
 }
@@ -185,12 +184,10 @@ async function subscribers(userIds, event) {
     if (!ids.length) return [];
     const hooks = await Webhook.find({ userId: { $in: ids }, active: true, events: event });
     if (!hooks.length) return [];
-    const allowed = await User.find({
-        _id: { $in: [...new Set(hooks.map(h => String(h.userId)))] },
-        disabled: { $ne: true },
-        role: { $in: INTEGRATION_ROLES }
-    }).select('_id').lean();
-    const allowedIds = new Set(allowed.map(u => String(u._id)));
+    const owners = [...new Set(hooks.map(h => String(h.userId)))];
+    const entitlements = require('./entitlements');
+    const allowedIds = new Set();
+    for (const id of owners) if (await entitlements.integrationsAllowed(id)) allowedIds.add(id);
     return hooks.filter(h => allowedIds.has(String(h.userId)));
 }
 

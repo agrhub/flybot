@@ -73,7 +73,8 @@ test('viewers and other managers cannot change a farm', async () => {
     assert.equal((await request(`/api/farms/${farmId}`, { method: 'PUT', as: viewer, body: { name: 'x' } })).status, 403);
     assert.equal((await setCameras(viewer, farmId, plotId, [])).status, 403);
     assert.equal((await request(`/api/farms/${farmId}`, { as: other })).status, 404);
-    assert.equal((await request('/api/farms', { method: 'POST', as: viewer, body: { name: 'Mine' } })).status, 403);
+    // Their own farm, in their personal workspace, is fine
+    assert.equal((await request('/api/farms', { method: 'POST', as: viewer, body: { name: 'Mine' } })).status, 201);
 });
 
 test('plot validation', async () => {

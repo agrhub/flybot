@@ -252,13 +252,13 @@ function created(serial, certificatePem, deviceToken, channelName) {
 // ---------- Upload limits (device API) ----------
 
 /**
- * May this camera upload a photo now? Unclaimed: 1 an hour. Claimed self-registered: the owner's
- * entitlements.snapshotsPerDay in any 24 h. Returns null, or { status: 429, body } with
+ * May this camera upload a photo now? Unclaimed: 1 an hour. Any other CamOS camera: its
+ * workspace plan's snapshotsPerDay in any 24 h (services/entitlements.js). Returns null, or { status: 429, body } with
  * the next allowed time as nextWakeAt.
  */
 async function uploadLimit(camera, now = new Date()) {
-    if (!camera?.selfRegistered) return null;
-    if (camera.unclaimed) {
+    if (!camera) return null;
+    if (camera.selfRegistered && camera.unclaimed) {
         const last = await Snapshot.findOne({ deviceSerial: camera.deviceSerial }).sort({ createdAt: -1 }).select('createdAt').lean();
         if (last && now - new Date(last.createdAt) < UNCLAIMED_PHOTO_EVERY_MS) {
             const next = new Date(new Date(last.createdAt).getTime() + UNCLAIMED_PHOTO_EVERY_MS);
@@ -266,7 +266,7 @@ async function uploadLimit(camera, now = new Date()) {
         }
         return null;
     }
-    const { snapshotsPerDay } = await entitlements.entitlementsOfOwner(camera);
+    const { snapshotsPerDay } = await entitlements.entitlementsOfCamera(camera);
     if (snapshotsPerDay === null) return null;
     const since = new Date(now.getTime() - DAY_MS);
     const recent = await Snapshot.find({ deviceSerial: camera.deviceSerial, createdAt: { $gt: since } }).sort({ createdAt: 1 }).select('createdAt').limit(snapshotsPerDay).lean();
@@ -353,13 +353,16 @@ async function claim(user, body, now = new Date()) {
     }
 
     const actor = await User.findById(userId).select('role email name').lean();
-    const { maxCameras, plan } = entitlements.getEntitlements(actor);
-    if (maxCameras !== null) {
-        const owned = await Camera.countDocuments({ userId, selfRegistered: true, unclaimed: { $ne: true } });
-        if (owned >= maxCameras) {
-            return { status: 403, body: { success: false, code: 'LIMIT_REACHED', message: `Your plan lets you claim ${maxCameras} cameras.`, limit: maxCameras, plan } };
-        }
+    // The camera goes into the person's current workspace, within its plan's camera limit
+    const workspace = user?.workspace || null;
+    if (!workspace && !entitlements.operatorAccount(user)) {
+        return { status: 403, body: { success: false, code: 'NO_WORKSPACE', message: 'You cannot add cameras in this workspace.' } };
     }
+    if (workspace && !entitlements.operatorAccount(user) && !require('./workspaceService').canWorkIn(workspace)) {
+        return { status: 403, body: { success: false, code: 'NO_WORKSPACE', message: 'You cannot add cameras in this workspace.' } };
+    }
+    const blocked = await entitlements.checkCameraLimit(user, workspace);
+    if (blocked) return blocked;
 
     let farmId = null;
     if (b.farmId !== undefined && b.farmId !== null && b.farmId !== '') {
@@ -374,11 +377,17 @@ async function claim(user, body, now = new Date()) {
     // Claimed once: whoever gets here first wins
     const updated = await Camera.findOneAndUpdate(
         { _id: camera._id, unclaimed: true },
-        { $set: { userId, unclaimed: false, claimedAt: now, trapKind, captureIntervalMinutes: interval, deviceName, ...(farmId ? { farmId } : {}) } },
+        { $set: { userId, unclaimed: false, claimedAt: now, trapKind, captureIntervalMinutes: interval, deviceName, ...(farmId ? { farmId } : {}), ...(workspace ? { orgId: workspace.id } : {}) } },
         { new: true }
     ).lean();
     if (!updated) return notFoundAnswer;
     claimFailures.delete(serial);
+    // Members of an organization workspace see it too
+    if (workspace?.kind === 'organization') {
+        const { Organization } = require('../models');
+        const org = await Organization.findById(workspace.id);
+        if (org) await require('./orgService').syncOrgShares(org);
+    }
     // The preview photos stay with the new owner
     await Snapshot.updateMany({ deviceSerial: serial, unclaimed: true }, { $unset: { unclaimed: 1, expiresAt: 1 } });
 
@@ -421,10 +430,10 @@ async function previewOf(serial) {
 
 // ---------- Live view ----------
 
-/** Minutes of live view one request may ask for (self-registered cameras: the viewer's entitlements). */
+/** Minutes of live view one request may ask for: the camera's workspace plan (operators: as asked). */
 async function liveMinutes(camera, user, asked) {
-    if (!camera?.selfRegistered) return asked;
-    return entitlements.capped(asked, entitlements.getEntitlements(user).liveMinutes);
+    if (!camera || entitlements.operatorAccount(user)) return asked;
+    return entitlements.capped(asked, (await entitlements.entitlementsOfCamera(camera)).liveMinutes);
 }
 
 // ---------- Cleanup ----------

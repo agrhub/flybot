@@ -8,6 +8,8 @@
 
     <!-- Right Controls -->
     <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+      <!-- Personal workspace / organizations (only with more than one) -->
+      <WorkspaceSwitcher />
       <!-- Language and theme: under "More" on phones -->
       <LanguageSelect v-if="!isMobile" />
 
@@ -127,6 +129,7 @@ import { Sunny, Moon, Bell, MagicStick, User, Lock, Reading, SwitchButton, Guide
 import { useTheme } from '@/utils/theme';
 import { useAuth } from '@/composables/useAuth';
 import LanguageSelect from '@/components/shared/LanguageSelect.vue';
+import WorkspaceSwitcher from '@/components/plans/WorkspaceSwitcher.vue';
 import { useAppTour } from '@/composables/useAppTour';
 import { useNotifications } from '@/composables/useNotifications';
 import { useBreakpoints } from '@/composables/useBreakpoints';

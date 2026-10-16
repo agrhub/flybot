@@ -63,8 +63,10 @@ test('admin changes roles and disables accounts; disabled accounts are signed ou
     const admin = await createUser({ role: 'admin' });
     const user = await createUser({ role: 'user' });
 
-    const promoted = await json(await request(`/api/admin/users/${user._id}`, { method: 'PUT', as: admin, body: { role: 'manager' } }));
-    assert.equal(promoted.body.user.role, 'manager');
+    const promoted = await json(await request(`/api/admin/users/${user._id}`, { method: 'PUT', as: admin, body: { role: 'support' } }));
+    assert.equal(promoted.body.user.role, 'support');
+    // "manager" is retired as a system role
+    assert.equal((await request(`/api/admin/users/${user._id}`, { method: 'PUT', as: admin, body: { role: 'manager' } })).status, 400);
 
     const fresh = await models.User.findById(user._id);
     const disabled = await request(`/api/admin/users/${user._id}`, { method: 'PUT', as: admin, body: { disabled: true } });
