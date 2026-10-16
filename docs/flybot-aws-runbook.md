@@ -1,118 +1,94 @@
-# FlyBot on AWS — runbook (branch `feat/aws`)
+# FlyBot on AWS
 
-FlyBot as the OpenCV AI Competition 2026 entry: the same app, with OpenCV 5 detection on a Lambda
-(`AI_PROVIDER=opencv-lambda`), CamOS trap cameras on AWS IoT Core, live view over Kinesis Video
-Streams WebRTC, and the Sentinel console read from FlyBot's own MongoDB. Everything else (EZVIZ
-cameras, alerts, reports, chatbot) is unchanged. Contracts: flybot-aws `docs/CONTRACTS.md`.
+How FlyBot runs on AWS, what each AWS service does, the permissions it needs, and how to work on it from your computer. The one-command deployment itself lives in the **flybot-aws** repository (`./deploy.sh`); this page explains what it sets up for FlyBot. The deployment steps are in [DEPLOY.md](../DEPLOY.md).
 
 ## What runs where
 
-| Part | Where | Code |
+| Part | AWS service | Notes |
 |---|---|---|
-| FlyBot (API + Vue client) | EC2 t4g.small, `docker compose` (flybot-aws `docker-compose.yml`) behind Caddy (TLS for `flybot.agrhub.com`) | this repo |
-| MongoDB | the same host, compose service `mongo` (volume `mongo-data`) | |
-| Photos | S3 bucket of the stack (`PHOTOS_BUCKET`), read by the instance role | `server/src/config/s3.js` |
-| Vision + agent | Lambda `flybot-vision-<stage>` (arm64 container, OpenCV 5) | `server/src/services/visionLambda.js` |
-| Camera transport | AWS IoT Core (Device Shadow, RPC topics, lifecycle), the device API `/api/device` | `server/src/platforms/camos.js`, `iotEvents.js`, `routes/deviceRoutes.js` |
-| Live view | KVS signaling channel `cam-<serial>` per camera, browser as VIEWER | `platforms/kinesis.js`, `client/src/components/cameras/KvsViewer.vue` |
+| FlyBot (API and web app) | EC2 (Graviton, `t4g.small`), Node.js 22 under systemd | Built on your computer and shipped as a release archive through S3; the instance never builds anything |
+| HTTPS | Caddy on the same instance | Automatic certificate for your domain |
+| Database | MongoDB on the same instance | |
+| Photos | Amazon S3, private bucket | Read and written with the instance role; photos reach the browser only through FlyBot's access checks |
+| Counting and the vision agent | AWS Lambda (arm64 container, OpenCV 5) | `AI_PROVIDER=opencv-lambda`; FlyBot invokes it for every photo and for the assistant's deep analysis |
+| Trap cameras | AWS IoT Core | Device Shadow (schedule, live view request, clock), RPC topics, connection events; certificates for self-registered cameras |
+| Live view | Kinesis Video Streams WebRTC | One signaling channel per camera (`cam-<serial>`); the browser joins as viewer with 15-minute credentials |
+| Secrets | AWS Secrets Manager | `FLYBOT_SECRETS` names the secrets FlyBot reads at start-up |
 
-## Environment variables
+EZVIZ cameras, alerts, reports and the assistant work the same as anywhere else.
 
-Read by `server/src/config/env.js`. On the EC2 host the stack's user-data writes the first group into `flybot-aws/.env`; secrets come from Secrets Manager (`FLYBOT_SECRETS`); the rest has defaults.
+## Settings on AWS
 
-| Variable | Meaning |
+flybot-aws writes the settings into the instance's environment. The ones that matter on AWS:
+
+| Variable | Typical value | Meaning |
+|---|---|---|
+| `AI_PROVIDER` | `opencv-lambda` | Count with the vision Lambda |
+| `VISION_LAMBDA_NAME` | `flybot-vision-<stage>` | The Lambda function |
+| `S3_BUCKET_NAME` | the stack's photo bucket | `S3_ENDPOINT`, `S3_ACCESS_KEY`, `S3_SECRET_KEY` stay empty: the instance role is used |
+| `AWS_REGION` | the stack's region | Every AWS client uses it |
+| `IOT_ENDPOINT` | `xxxxxxxx-ats.iot.<region>.amazonaws.com` | `aws iot describe-endpoint --endpoint-type iot:Data-ATS` |
+| `IOT_EVENTS` | `mqtt` | FlyBot subscribes to the cameras' messages over MQTT/WebSocket (on the instance with `ENABLE_CRON=true`). `rule`: an IoT rule posts them to `POST /api/device/events` with `IOT_RULE_SECRET` instead |
+| `KVS_VIEWER_ROLE_ARN` | the stack's viewer role | Without it, CamOS live view answers "not set up" |
+| `FLYBOT_SECRETS` | `flybot-<stage>-app` | A Secrets Manager secret holding `JWT_SECRET`, `APP_KEY`, `SECRET_KEY`, `SMTP_PASS`, `TELEGRAM_BOT_TOKEN`... as JSON |
+| `APP_MODE` | `hybrid` | Personal workspaces with open sign-up, organizations alongside |
+| `TRUST_PROXY`, `COOKIE_SECURE` | `1`, `true` | Behind Caddy over HTTPS |
+
+Every setting is listed in the [README](../README.md#configuration).
+
+## Permissions of the instance role
+
+| For | Actions |
 |---|---|
-| `AI_PROVIDER` | `opencv-lambda` for the competition setup (`vertex`, `roboflow`, `both`, `sentinel` still work) |
-| `VISION_LAMBDA_NAME` | Lambda function name, invoked with the AWS SDK (RequestResponse, timeout `VISION_LAMBDA_TIMEOUT_S` = 120) |
-| `VISION_LAMBDA_URL` | Local development: the same JSON posted here (`http://localhost:9001/invoke`, or `http://host.docker.internal:9001/invoke` from the container). Wins over the name |
-| `PHOTOS_BY_REFERENCE` | `true` (default with S3): the Lambda gets `{s3Bucket, s3Key}`; `false` (MinIO): a signed URL |
-| `S3_BUCKET_NAME` / `PHOTOS_BUCKET` | The photo bucket; `S3_ENDPOINT`, `S3_ACCESS_KEY`, `S3_SECRET_KEY` only for MinIO (empty = instance role, real S3) |
-| `AWS_REGION` | `ap-southeast-2` (the account's only region) |
-| `IOT_ENDPOINT` | `a38gyfo6dhqxf4-ats.iot.ap-southeast-2.amazonaws.com` (`aws iot describe-endpoint --endpoint-type iot:Data-ATS --profile sentinel`) |
-| `IOT_EVENTS` | `mqtt` (default): FlyBot subscribes to `camos/+/{state,event,telemetry,rpc/res}`, the shadow updates and the lifecycle events over MQTT/WebSocket with SigV4, on the `ENABLE_CRON=true` instance. `rule`: an IoT rule posts the same messages to `POST /api/device/events` (header `X-IoT-Rule-Secret` = `IOT_RULE_SECRET`). `off` |
-| `KVS_VIEWER_ROLE_ARN` | Role the browser assumes through FlyBot (STS, 15 min, policy limited to the one channel) to join as VIEWER. Empty: live view of CamOS cameras answers `503 LIVE_NOT_CONFIGURED` |
-| `DEVICE_API_BASE_URL` | What the cameras call (default `APP_BASE_URL`) |
-| `DEVICE_OTA_FW`, `DEVICE_OTA_URL`, `DEVICE_OTA_SHA256` | Firmware offered by `GET /api/device/ota` |
-| `SELF_REGISTRATION`, `IOT_THING_TYPE`, `IOT_POLICY_NAME`, `REGISTER_MAX_PER_IP_HOUR` (5), `REGISTER_MAX_PER_HOUR` (60) | Zero-touch self-registration of the public firmware (`POST /api/device/register`, below) |
-| `APP_MODE` (`hybrid`), `ALLOW_SIGNUP`, `PLAN_RETENTION` | Workspaces and plans (API.md): `hybrid` = personal workspaces with open sign-up plus organizations made by the admin; `b2c` personal only; `b2b` organizations only, sign-up by invitation |
-| `DEMO_MAX_CAMERAS_PER_USER` (3), `DEMO_MAX_SNAPSHOTS_PER_DAY` (48), `DEMO_LIVE_MINUTES` (5), `DEMO_MAX_UNCLAIMED` (200), `DEMO_EXEMPT_EMAILS` | The FREE plan's first values (then Admin > Plans), the cap on unclaimed cameras, and accounts without limits (admins too) |
-| `DEVICE_DEFAULT_TIMEZONE` | Timezone of `GET /api/device/time` when neither farm, GPS nor IP tells (`Asia/Ho_Chi_Minh`) |
-| `FLYBOT_SECRETS` | Comma-separated Secrets Manager secret names; each a JSON object (`JWT_SECRET`, `APP_KEY`, `SECRET_KEY`, `SMTP_PASS`, `TELEGRAM_BOT_TOKEN`, ...) filling in what the environment did not set. Read once at start-up with the instance role |
-| `SENTINEL_CONSOLE` | `true` shows the Sentinel menu with another `AI_PROVIDER` (it is on with `opencv-lambda`) |
-| `JWT_SECRET`, `APP_KEY`, `SECRET_KEY`, `VERTEX_*`, `GOOGLE_APPLICATION_CREDENTIALS`, `SMTP_*`, `TELEGRAM_*` | As before (`.env.example`). `APP_KEY`/`SECRET_KEY` only matter for EZVIZ cameras; Vertex/Gemini only for the chatbot |
+| Counting | `lambda:InvokeFunction` on the vision Lambda |
+| Photos | `s3:GetObject`, `s3:PutObject`, `s3:DeleteObject`, `s3:ListBucket` on the photo bucket |
+| Cameras | `iot:GetThingShadow`, `iot:UpdateThingShadow`, `iot:Publish` (RPC topics), `iot:Connect`, `iot:Subscribe`, `iot:Receive` |
+| Self-registration | `iot:CreateCertificateFromCsr`, `iot:CreateThing`, `iot:DescribeThing`, `iot:AttachPolicy`, `iot:AttachThingPrincipal`, `iot:DetachThingPrincipal`, `iot:DetachPolicy`, `iot:UpdateCertificate`, `iot:DeleteCertificate`, `iot:DeleteThing` |
+| Live view | `kinesisvideo:CreateSignalingChannel`, `DescribeSignalingChannel`, `GetSignalingChannelEndpoint`, `GetIceServerConfig`, `DeleteSignalingChannel`; `sts:AssumeRole` on the viewer role (which allows `kinesisvideo:ConnectAsViewer` on the cameras' channels) |
+| Secrets | `secretsmanager:GetSecretValue` on the FlyBot secrets |
 
-Self-registration additionally needs: `iot:CreateCertificateFromCsr`, `iot:CreateThing`, `iot:DescribeThing`, `iot:AttachPolicy`, `iot:AttachThingPrincipal`, `iot:DetachThingPrincipal`, `iot:DetachPolicy`, `iot:UpdateCertificate`, `iot:DeleteCertificate`, `iot:DeleteThing`, `kinesisvideo:DeleteSignalingChannel` (and `iam:PassRole` is not needed).
+## CamOS cameras
 
-Instance role permissions FlyBot uses: `lambda:InvokeFunction` on the vision Lambda; `s3:GetObject/PutObject/DeleteObject/ListBucket` on the photo bucket; `iot:GetThingShadow`, `iot:UpdateThingShadow`, `iot:Publish` (`camos/*/rpc/req`), `iot:Connect`, `iot:Subscribe`, `iot:Receive`; `kinesisvideo:CreateSignalingChannel`, `DescribeSignalingChannel`, `GetSignalingChannelEndpoint`, `GetIceServerConfig`; `sts:AssumeRole` on `KVS_VIEWER_ROLE_ARN`; `secretsmanager:GetSecretValue` on `flybot-*`.
+### A camera with the public firmware (self-registration)
 
-## Run it on a laptop (docker compose + the local Lambda)
+1. Flash the public firmware release. On first boot the camera picks its serial (`ESP` + its MAC) and a 6-character code, and shows both on its setup page and as a QR code.
+2. It connects to the network, makes its own key pair, and registers with FlyBot (`POST /api/device/register`). FlyBot asks AWS IoT to sign the camera's certificate, creates its IoT thing and live view channel, and keeps it **unclaimed**: one photo an hour, analyzed but shown to nobody, deleted after 24 hours.
+3. The grower signs in, opens **Cameras → Claim a camera** (or the link in the QR code), scans the QR or types the serial and code, and picks the trap kind (lure or sticky), the farm and the photo schedule. The camera is theirs at once; its first photo shows on the page, and at its next wake it takes the grower's schedule and the farm's time zone.
+4. A camera nobody claims within 7 days is removed (certificate, IoT thing, channel and photos). Deleting a claimed camera does the same, so it can register again.
 
-1. Vision Lambda locally (flybot-aws): `cd lambda/vision && uv sync && uv run --env-file ../../.env python -m sentinel.lambda_local` → `http://localhost:9001/invoke`. With `PHOTOS_BY_REFERENCE=true` it reads photos from the S3 bucket with your `aws login --profile sentinel` session; with MinIO it reads the signed URL FlyBot sends.
-2. `cd flybot-aws && cp .env.example .env`, then set: `DOMAIN_NAME=localhost`, `COOKIE_SECURE=false`, `APP_BASE_URL=http://localhost:8080`, `JWT_SECRET=<48 random chars>`, `VISION_LAMBDA_URL=http://host.docker.internal:9001/invoke`, `PHOTOS_BUCKET=<bucket>` and the three `AWS_*` credentials from `aws configure export-credentials --profile sentinel --format env` (12 h). For EZVIZ cameras also `APP_KEY` / `SECRET_KEY`.
-3. `docker compose up -d --build mongo flybot` (the image builds the client and the server; arm64 and amd64). Open `http://localhost:8080`, register: the first account is the admin.
-4. Add the two EZVIZ cameras (serial + verification code, trap kind **lure** for the orchard traps) or a CamOS camera (platform CamOS: you get the provisioning token for its portal). "Capture now" on an EZVIZ camera stores the photo, calls the local Lambda and shows the count; the Sentinel menu lists the trace.
-5. Chatbot: "Why did the count on Lô A jump today?" → `analyze_photo_deep` → the Lambda's `deep` answer; its proposals become cards you confirm.
+### A camera from your own fleet (pairing)
 
-Without Docker: `npm install` at the repo root, `.env` at the root with the same values plus `MONGO_URI`, `npm run dev` (server :3003, client :3000).
+1. In FlyBot: **Cameras → Add camera**, platform **CamOS**, the serial and the code from the label, the trap kind. FlyBot shows a pairing token (valid 24 hours, shown once), its address, the AWS IoT endpoint and the live view channel.
+2. In the camera's setup page (its own Wi-Fi `CAM-xxxx`, `http://192.168.4.1`): the network, the IoT endpoint, the device certificate, FlyBot's address and the pairing token.
+3. The camera pairs once (`POST /api/device/pair`), then uploads photos on its schedule and sleeps in between. FlyBot shows "sleeping, next wake HH:MM"; **Request live at next wake** asks it to start live view when it wakes.
 
-## Run it on AWS
+Every CamOS photo goes through the same steps as an EZVIZ photo: storage, counting, alerts, webhooks, the Sentinel screen.
 
-The SAM stack (flybot-aws `infra/deploy.sh`, agent L) creates the bucket, the Lambda, the IoT thing type/policy, the EC2 with its role and Elastic IP, and boots it with user-data that clones flybot-aws, writes `.env` and runs `docker compose up -d --build`. The owner points `flybot.agrhub.com` at the Elastic IP; Caddy obtains the certificate on first start.
+### Clock and time zone
 
-Checks after a deploy: `curl -s https://flybot.agrhub.com/health` → `{"status":"ok"}`; `curl -s https://flybot.agrhub.com/api/device/time` → the time and the timezone (device API on); signed in as admin, `GET /api/system/info` → `info.ai.provider: "opencv-lambda"`, `info.sentinel.enabled: true`; a "Capture now" on an EZVIZ camera ends with a count and a trace in the Sentinel console. Logs: `docker compose logs -f flybot` on the host (`📡 IoT Core subscriber started`, `🤖 OpenCV Lambda processed snapshot ...`).
+Cameras ask `GET /api/device/time` for the time, their time zone and its POSIX form. FlyBot takes the time zone from the camera's farm, else its last GPS position, else the country of its network address, else `DEVICE_DEFAULT_TIMEZONE`. When it changes (the camera is claimed into a farm, the farm's time zone is edited, the camera moves), FlyBot updates the camera's shadow.
 
-Update: `git -C /opt/flybot/flybot-aws pull --ff-only && git submodule update --init --recursive && docker compose up -d --build`.
+## Working on it from your computer
 
-## Public firmware: flash, register, claim
+1. Run the vision Lambda locally from flybot-aws (it answers `http://localhost:9001/invoke`); its README has the commands.
+2. In FlyBot's `.env`: `AI_PROVIDER=opencv-lambda`, `VISION_LAMBDA_URL=http://localhost:9001/invoke`, and either MinIO (`S3_ENDPOINT`, keys, `PHOTOS_BY_REFERENCE=false`) or an S3 bucket with AWS credentials in the environment. For CamOS cameras and live view, also `AWS_REGION`, `IOT_ENDPOINT` and `KVS_VIEWER_ROLE_ARN`.
+3. `npm run dev`, open `http://localhost:3000`, sign up (the first account is the administrator), add a camera and press **Capture now**: the count comes from the local Lambda, and the photo appears on the Sentinel screen.
 
-1. Flash the public release (GitHub Releases or the browser flasher). First boot: serial `ESP<MAC>`, a 6-character verify code kept in NVS, shown on the portal page and the label QR (`CAMOS:1;SN:...;VC:...;M:...;;`).
-2. The camera generates its key pair and CSR, calls `POST https://flybot.agrhub.com/api/device/register`, stores the certificate and device token, connects to AWS IoT Core. It is **unclaimed**: 1 photo an hour, rule planner only, photos hidden and kept 24 h.
-3. The person signs in (or registers) on FlyBot and opens `/claim` (the QR's `claimUrl`, or Cameras → **Claim a camera**), scans the label QR or types serial + code, picks lure/sticky, the farm and the schedule. The camera is theirs: shadow `claimed: true`, their interval, the farm's timezone (`tz`), and the first photo shows right away.
-4. Not claimed within 7 days: the hourly job deletes the certificate, thing, channel and photos. Deleting a claimed camera in FlyBot does the same, so the device can register again.
-5. Clock: `GET /api/device/time` (no auth) answers the time, the IANA timezone with its POSIX string for `setenv("TZ")`, where it came from (farm, GPS, IP, default) and the public IP.
-6. Limits (the workspace plan, FREE by default): 3 cameras per workspace, 48 photos per camera per day, 5 minutes per live request, 20 deep analyses a month; 200 unclaimed cameras in total. Admins and `DEMO_EXEMPT_EMAILS` are exempt. Past a limit the app offers "Ask for an upgrade".
+No test calls AWS: `npm test` replaces the AWS clients with fakes and the Lambda with a local stub.
 
-Check on the server: `curl -s https://flybot.agrhub.com/api/device/time` → `{"timezone":"Asia/Ho_Chi_Minh",...,"tzSource":"ip"}`; `curl -s -X POST -H 'Content-Type: application/json' -d '{}' https://flybot.agrhub.com/api/device/register` → `400`.
+## Checks after a deploy
 
-## CamOS camera: from the box to a photo
+- `https://<your domain>/health` answers `{"status":"ok"}`.
+- `https://<your domain>/api/device/time` answers the time and a time zone (the camera API is up).
+- Signed in as the administrator, **Settings → Capture pipeline** shows the background jobs running, and **Capture now** on a camera ends with a count and an entry on the Sentinel screen.
+- On the instance: `systemctl status flybot caddy mongod`, and `journalctl -u flybot -f` for the server log (it reports when the IoT Core subscriber starts and each photo the Lambda counts).
 
-1. In FlyBot: Cameras → Add → platform **CamOS**, the serial and the verification code printed on the label, trap kind. The dialog shows the provisioning token (24 h, once), FlyBot's address, the IoT endpoint and the channel name (`cam-<serial>`); "Settings → Provision again" makes a new token.
-2. In the camera's setup portal (SoftAP `CAM-xxxx`, `http://192.168.4.1`): Wi-Fi/APN, the IoT endpoint, the device certificate and key (`infra/iot/provision-camera.sh`), FlyBot's address and the provisioning token.
-3. The camera calls `POST /api/device/pair` once and receives its device token (stored hashed); then it uploads photos on its schedule (`POST /api/device/snapshot`, shadow `capture.intervalMin`), reports state/telemetry over MQTT, and sleeps. FlyBot shows "sleeping, next wake HH:MM"; "Request live at next wake" writes `live.requested` into its shadow.
-4. Every uploaded photo goes through the same pipeline as an EZVIZ photo: storage, the Lambda, alerts, the `snapshot_analyzed` webhook, the Sentinel trace.
+## Read-only reviewer accounts
 
-## Workspaces, plans and upgrades (APP_MODE=hybrid)
-
-- Sign-up makes a personal workspace on FREE (3 cameras). The first account is the admin.
-- Settings > Plan & usage shows "2/3 cameras", "deep analysis 5/20 this month" and the person's requests; /pricing shows the plans and the "Organization / Business: contact us" card.
-- A limit (403 `UPGRADE_REQUIRED`) opens "Ask for an upgrade"; the admins get a notification (in-app, email, Telegram as set). Settings > Admin > Upgrade requests: approve (plan, add-on cameras, paid until, paid, note) or turn down with a note. Payment is arranged outside FlyBot.
-- Settings > Admin > Plans: the numbers of FREE / PRO / ENTERPRISE (the seed values are placeholders: set them before inviting people) and the price note. Admin > Workspaces: every workspace's plan, add-ons and expiry; "New organization" for a business (owner email, plan).
-- An account in more than one workspace (its personal one and organizations) switches in the top bar; the current workspace scopes cameras, farms, reports and limits. An organization's owner can hide members' personal workspaces (Settings > Organizations).
-- System roles: admin, support (reads the admin pages), user. The global "manager" role is gone: the `workspaces-v1` migration (once, at start-up, logged and audited) gave each former manager a personal workspace on PRO (ENTERPRISE with more than 10 cameras), kept existing organizations on ENTERPRISE, and moved cameras, farms and reports outside any workspace into their owner's personal one.
-
-## How a judge logs in
-
-1. Open `https://flybot.agrhub.com/auth/login` → **Register** with an email (public sign-up is on). New accounts have the role **user** (read-only). Confirm the email, or an admin confirms it: Admin → Users → the account (`PUT /api/admin/users/{id} {"emailVerified": true}`).
-2. The owner of the orchard cameras shares them with the judge: Cameras → the trap → Share → the judge's email (`POST /api/user/camera/share`).
-3. An admin turns on the read-only Sentinel pages for the account (a `sentinelViewer` account never decides approvals, whatever it owns): `PUT /api/admin/users/{id} {"sentinelViewer": true}` (or in mongosh `db.users.updateOne({email: "judge@..."}, {$set: {sentinelViewer: true}})`). The judge reloads: the **Sentinel** menu shows Overview, Traces, Approvals (read-only), Devices for the shared cameras; the camera pages show the photos, counts and the chatbot (`analyze_photo_deep` works for shared cameras; actions need manage rights the judge does not have).
-4. After judging: `{"sentinelViewer": false}`, remove the shares, or disable the account.
-
-## Tests
-
-`npm test` at the repo root (server `node --test`, client `vitest`). Nothing calls AWS: the AWS clients are replaced with fakes (`server/src/platforms/aws.setClient`) and the Lambda with a local HTTP stub. On Windows with a full `C:` drive run the server tests with `TEMP=D:/some/dir` (mongodb-memory-server needs 500 MB free on the temp drive).
-
-| File | Covers |
-|---|---|
-| `server/tests/platforms.test.js` | the adapter interface, EZVIZ unchanged, CamOS shadow/RPC/snapshot wait/messages/sleep, KVS channel + viewer config, the SigV4 WebSocket URL |
-| `server/tests/deviceApi.test.js` | pair (hashed tokens), snapshot upload (limits, meta, pipeline), time, ota, the IoT-rule webhook |
-| `server/tests/opencvLambda.test.js` | the CONTRACTS request, stored results, proposals → cards → confirm, retry after an error, deep mode, Lambda.Invoke |
-| `server/tests/agentSentinelTools.test.js` | `analyze_photo_deep`, `propose_action` and every card action |
-| `server/tests/selfRegistration.test.js` | register (CSR mock, idempotency, 409, rate limit), unclaimed mode, claim (success, wrong code, lockout), cleanup, limits, device time and timezone |
-| `server/tests/workspaces.test.js` | APP_MODE sign-up (b2c, b2b, hybrid), plan limits, add-ons, expiry, admin plan edits, switcher scoping, organization setting, upgrade requests (plan, organization, b2b owner first), the workspaces-v1 migration |
-| `server/tests/sentinelUi.test.js` | the Sentinel console from MongoDB (access, summary, traces, approvals, devices, evidence) |
+To let someone look without changing anything (an auditor, a partner): they sign up, the camera owner shares the cameras with their email, and an administrator turns on `sentinelViewer` for the account (`PUT /api/admin/users/{id}` with `{"sentinelViewer": true}`; there is no switch for it in the app yet). They see the photos, counts and the Sentinel screen for the shared cameras, but cannot decide proposals or change cameras. Turn it off, or remove the shares, when they are done.
 
 ## Third-party data
 
-- IP to country: `ip3country` (ISC), which "includes IP2Location LITE data available from https://lite.ip2location.com" (CC BY-SA 4.0). Keep this attribution wherever FlyBot's notices are shown.
-- GPS to timezone: `@photostructure/tz-lookup` (CC0). Country to timezone: `countries-and-timezones` (MIT).
-- IANA to POSIX TZ: `server/src/data/posixTz.json`, generated from Node's own tzdata (`node server/scripts/build_posix_tz.js`; run again after a Node upgrade).
+- Network address to country: `ip3country` (ISC), which includes IP2Location LITE data available from https://lite.ip2location.com (CC BY-SA 4.0). Keep this attribution with FlyBot's notices.
+- GPS position to time zone: `@photostructure/tz-lookup` (CC0). Country to time zone: `countries-and-timezones` (MIT).
+- Time zone rules for the cameras: `server/src/data/posixTz.json`, generated from Node's time zone data (`node server/scripts/build_posix_tz.js`; run it again after a Node upgrade).

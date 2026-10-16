@@ -1,6 +1,13 @@
-# Fruit fly detection model
+# Fruit fly detection models
 
-FlyBot counts the insects on every trap photo with an object detection model trained on Roboflow. This page describes the project, the model, how FlyBot calls it, and how to retrain it on new photos.
+FlyBot counts the insects on every trap photo with an object detection model. Two are available:
+
+| `AI_PROVIDER` | Model | Where it runs |
+|---|---|---|
+| `opencv-lambda` (recommended on AWS) | YOLO26n exported to ONNX, run by OpenCV 5's DNN module, with a planning agent that proposes camera actions and answers deep-analysis questions | An AWS Lambda (arm64) deployed by flybot-aws; the model card, scores and training notes are in that repository |
+| `roboflow` | RF-DETR Small trained on Roboflow (below) | Roboflow's serverless workflow, or your own Roboflow Inference server |
+
+The rest of this page describes the Roboflow project and model, how FlyBot calls them, and how to retrain on photos reviewed in FlyBot. Reviewed photos are useful for either model.
 
 ## Roboflow project
 

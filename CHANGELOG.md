@@ -1,5 +1,34 @@
 # Changelog
 
+## 1.6.0 (2026-10-17)
+
+### FlyBot on AWS
+- FlyBot now runs on AWS with one command (flybot-aws): photos on Amazon S3, an EC2 instance with HTTPS, secrets in AWS Secrets Manager. The app is built once on your computer and installed as a release; updating or going back to the previous release is the same command.
+- **Counting with OpenCV 5** on AWS Lambda: every photo is counted by a YOLO26n model, compared with the trap's previous photo (new flies, a replaced card) and checked for quality. A planning agent suggests what to do (take an extra photo, photograph more often for a day, adjust the camera image, ask a person to check), and nothing happens until you press Confirm.
+- **Deep analysis** in the assistant: ask "why did the count jump today?" about a photo and the vision agent looks at it in detail.
+- **Sentinel screen**: for every photo, what the vision agent saw, counted and proposed, with the proposals waiting for a decision and the state of each camera.
+
+### New cameras
+- **CamOS trap cameras** (ESP32-S3, AMB82) on AWS IoT Core: Wi-Fi or 4G, solar and battery, GPS. They take photos on their own schedule and sleep in between; the camera card shows the battery, the signal and "sleeping, next wake 14:30".
+- **Live view over Kinesis Video Streams**, also for cameras asleep: "Request live at next wake".
+- **Cameras that join by themselves**: flash the public firmware, then scan the QR code on **Claim a camera**. The camera gets its own AWS IoT certificate, your photo schedule and your farm's time zone; its first photo shows at once. A camera nobody claims is removed after a week.
+- Cameras set their clock and time zone automatically (from the farm, the GPS position or the network).
+
+### Plans and workspaces
+- Every account has a **personal workspace**; businesses and cooperatives get an **organization**. People in several switch between them in the top bar; each shows its own cameras, farms and reports.
+- **FREE, PRO and ENTERPRISE plans**, set by the administrator: cameras, photos per day, deep analyses per month, members, PDF reports, API and webhooks. **Plan & usage** in Settings shows what you use ("2/3 cameras").
+- **Ask for an upgrade** when a limit is reached, or ask for an organization from the **Plans** page; the administrator approves it and arranges payment directly.
+- New **Support** role that can read the administration pages. The former "manager" role is now covered by owning or managing a workspace.
+
+### For administrators
+- Settings → **Plans**, **Workspaces** and **Upgrade requests**.
+- Updating keeps every account's access: former managers get a personal workspace on PRO (ENTERPRISE with more than 10 cameras) and existing organizations move to ENTERPRISE. Check the plan numbers before inviting people.
+- `APP_MODE` chooses how people join: `hybrid` (default), `b2c` or `b2b` (by invitation).
+
+### Integrations
+- The `snapshot_analyzed` webhook sends every analyzed photo (count, boxes, quality, a link to the photo) to another system.
+- API keys and webhooks are part of the PRO and ENTERPRISE plans.
+
 ## 1.5.0 (2026-10-14)
 
 ### What to do next

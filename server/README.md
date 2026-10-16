@@ -1,6 +1,6 @@
 # FlyBot API server
 
-Backend API service for EZVIZ camera management, AI insect detection (Vertex AI & Roboflow), and S3 snapshot storage.
+The FlyBot API server: cameras (EZVIZ, CamOS on AWS IoT Core, Kinesis Video Streams), insect counting (the OpenCV 5 vision Lambda, Roboflow or Vertex AI), photo storage on S3, alerts, reports, workspaces and plans, and the FlyBot assistant. Every setting is listed in the [README](../README.md#configuration).
 
 ## Running
 ```bash
@@ -13,7 +13,9 @@ npm start
 Set these in the root `.env`:
 
 - `JWT_SECRET`: at least 32 random characters. The server refuses to start without it.
-- `MONGO_URI`, `APP_KEY`, `SECRET_KEY`, the `S3_*` settings, and `ROBOFLOW_API_KEY` when `AI_PROVIDER=roboflow`.
+- `MONGO_URI` and the photo bucket (`S3_BUCKET_NAME`, plus `S3_ENDPOINT` and keys for MinIO).
+- For counting: `VISION_LAMBDA_NAME` (or `VISION_LAMBDA_URL`) with `AI_PROVIDER=opencv-lambda`, or `ROBOFLOW_API_KEY` with `AI_PROVIDER=roboflow`.
+- For EZVIZ cameras: `APP_KEY` and `SECRET_KEY`. For CamOS cameras and live view: `AWS_REGION`, `IOT_ENDPOINT`, `KVS_VIEWER_ROLE_ARN`.
 
 Optional:
 
@@ -33,14 +35,14 @@ The web app can be installed (Chrome/Edge: install button in the address bar or 
 
 Push needs HTTPS (or `localhost`). Pest alerts, cameras going offline, failing AI analysis and new camera/dashboard shares are pushed; "back online" stays in-app. Signing out removes the device, so the next person on a shared phone does not get the previous account's alerts.
 
-## Roles and sharing
-- **admin**: everything: all cameras, all accounts (Settings → Users / All cameras) and system settings. The first account ever created is the admin.
-- **manager**: adds cameras, edits, deletes and shares the cameras they own, builds dashboards.
-- **user** (viewer): sees only cameras and dashboards shared with them.
+## Accounts, workspaces and sharing
+- **System roles:** **admin** (everything: every workspace, every account, plans and system settings; the first account ever created), **support** (reads the admin pages) and **user**.
+- **Workspaces:** every account has a personal workspace; organizations (made by an admin) have members who are **owner**, **manager** or **member**. Owners and managers add cameras, farms and reports to the workspace; members view them. The owner of a camera always manages it.
+- **Plans:** each workspace is on FREE, PRO or ENTERPRISE, which set how many cameras, photos a day, deep analyses and members it may have. Admins edit the plans under Settings → Plans and approve upgrade requests under Settings → Upgrade requests.
 
 A device serial can be registered only once. Others get access when the owner shares the camera by email (Settings → Camera management → Share). Sharing with an email that has no account sends an invitation; access starts once that person signs up and confirms the address.
 
-On startup the server assigns roles to accounts created before roles existed: the earliest account becomes admin, accounts that own cameras become managers, the rest viewers.
+When a database from an older version starts for the first time, it is moved to workspaces once (see [DEPLOY.md](../DEPLOY.md#upgrading-an-existing-database)); nothing is deleted.
 
 Databases from before this change may hold the same serial on several accounts. The server logs a warning; merge them (the earliest record keeps ownership, the others are shared with) before the unique index can be built:
 ```bash
@@ -57,8 +59,8 @@ node scripts/rebuild_daily_stats.js
 ## Activity log
 Sign-ins (including failed ones), password changes, account changes, camera and dashboard sharing, ownership transfers and system settings changes are recorded with the actor, IP and time. Admins see them in Settings → Activity log and can export CSV. Entries expire after 12 months (MongoDB TTL index). Verification codes and passwords are never recorded.
 
-## Custom dashboards
-Admins and managers build dashboards (Dashboards in the sidebar) from widgets: key figures, daily trend, species, camera ranking and latest snapshots. A dashboard can be shared by email (read-only) or published with a public link (`/d/<token>`, no sign-in). A public link only shows cameras the owner owns (an admin owner: any camera), and a new link can be created at any time to stop the old one.
+## Custom reports
+Owners and managers of a workspace build reports (Reports in the sidebar) from widgets: key figures, daily trend, species, camera ranking and latest snapshots. A report can be shared by email (read-only) or published with a public link (`/d/<token>`, no sign-in). A public link only shows cameras the owner owns (an admin owner: any camera), and a new link can be created at any time to stop the old one.
 
 ## Email (password reset, email confirmation, alerts)
 - `APP_BASE_URL`: public URL of the web app, used in email links (e.g. `https://flybot.example.com`). Required in production; links are never built from request headers.

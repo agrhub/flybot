@@ -1,17 +1,52 @@
 # Deploying FlyBot
 
-One Docker image (`Dockerfile`) runs on both targets. The server serves the API and the built Vue client on one port.
+The server serves the API and the built web app on one port. Three ways to run it:
 
-| | Cloud Run | Compute Engine VM |
-|---|---|---|
-| Build and run | `cloudbuild.yaml` | `compose.yaml` |
-| Restart after a crash | Automatic | `restart: unless-stopped` |
-| Config | `deploy/cloudrun.env.yaml` + Secret Manager | `.env` on the VM |
-| HTTPS | Built in | Needs a load balancer or a reverse proxy (Caddy/nginx) |
+| | AWS (recommended) | Google Cloud Run | A VM with Docker |
+|---|---|---|---|
+| How | flybot-aws `./deploy.sh`: EC2 + systemd | `deploy/deploy-cloudrun.sh` / `cloudbuild.yaml` | `compose.yaml` |
+| Built where | On your computer; the release archive goes through S3 | Cloud Build | On the VM (needs 4 GB of memory or more) |
+| Counting | OpenCV 5 vision Lambda | Roboflow workflow | Roboflow, or the Lambda if the VM has AWS access |
+| CamOS cameras and Kinesis live view | Yes (AWS IoT Core, KVS) | Only with AWS credentials and settings | Only with AWS credentials and settings |
+| Settings and secrets | flybot-aws `deploy.env`, AWS Secrets Manager | `deploy/cloudrun.env.yaml`, Secret Manager | `.env` on the VM |
+| HTTPS | Caddy on the instance | Built in | A load balancer or a reverse proxy (Caddy/nginx) |
 
-> **Run the background jobs in one place only.** If both deployments use the same MongoDB, set `ENABLE_CRON=false` on one of them. Otherwise snapshots get captured and analyzed twice.
+> **Run the background jobs in one place only.** If two deployments use the same MongoDB, set `ENABLE_CRON=false` on all but one. Otherwise photos get captured and analyzed twice, and only one of them may receive the cameras' AWS IoT messages and the Telegram updates.
 
-## Cloud Run: automated deploy script
+## AWS (EC2 + systemd, via flybot-aws)
+
+The **flybot-aws** repository deploys everything FlyBot needs on AWS with one command, and can be re-run after any change:
+
+Requirements on your computer: the AWS CLI v2 and the SAM CLI, signed in to the AWS account (the flybot-aws README shows how), Node.js 22, and flybot-aws cloned with FlyBot as its `flybot/` submodule.
+
+```bash
+cp deploy.env.example deploy.env   # once: domain, emails, EZVIZ keys, Telegram/SMTP, Google key path
+./deploy.sh                        # Windows: deploy.bat
+```
+
+It creates (or updates):
+
+- the **S3 bucket** for photos and release archives,
+- the **vision Lambda** (OpenCV 5, arm64) that counts the insects and answers the assistant's deep-analysis questions,
+- the **AWS IoT Core** thing type and device policy for CamOS cameras, and the role the browser uses for **Kinesis Video Streams** live view,
+- the **secrets** in AWS Secrets Manager,
+- an **EC2 instance** (`t4g.small`, Elastic IP) running MongoDB, Caddy (HTTPS for your domain) and FlyBot under systemd.
+
+FlyBot is built **on your computer** (`npm run build`), packed as a release archive and uploaded to S3; the instance downloads it and restarts the service. Nothing is built on the instance: a small instance runs out of memory building the web app. `./deploy.sh --rollback` puts the previous release back. Point your domain's DNS at the Elastic IP; Caddy obtains the certificate on the first visit.
+
+What runs where, the permissions of the instance role, CamOS cameras and the checks after a deploy are in [docs/flybot-aws-runbook.md](docs/flybot-aws-runbook.md).
+
+### Upgrading an existing database
+
+The first start of this version migrates the data once, logs what it is about to change, and records it in the audit log (`system.workspaces_migrated`); it deletes nothing:
+
+- every account gets a personal workspace (FREE); former **managers** become regular users and their personal workspace is on **PRO** (ENTERPRISE when they own more than 10 cameras), marked "grandfathered";
+- existing organizations become organization workspaces on **ENTERPRISE**, with their members and roles;
+- cameras, farms and reports outside any workspace move into their owner's personal workspace; shared cameras stay shared.
+
+Check the plan numbers under **Settings → Plans** before inviting people: the starting values are placeholders.
+
+## Google Cloud Run: automated deploy script
 
 The scripts below do everything in the Cloud Run sections that follow: enable APIs, create the service account, repository, permissions and secrets, generate the Cloud Run settings from `deploy/cloudrun.env.yaml` and `.env`, build, deploy and check `/health`. They are safe to re-run; anything that already exists is skipped.
 
@@ -89,8 +124,7 @@ done
 | `flybot-smtp-pass` (optional) | `SMTP_PASS`, only needed when sending email |
 | `flybot-telegram-bot-token` (optional) | `TELEGRAM_BOT_TOKEN`, only needed for Telegram alerts |
 | `flybot-roboflow-upload-key` (optional) | `ROBOFLOW_UPLOAD_API_KEY`, only needed for retraining uploads |
-| `flybot-sentinel-api-secret` (optional) | `SENTINEL_API_SECRET`, only needed for the FlyBot Sentinel internal API (API.md) |
-| `flybot-sentinel-ui-token` (optional) | `SENTINEL_UI_TOKEN`, the Sentinel UI API operator token for the Sentinel console (API.md "Sentinel console proxy"); set `SENTINEL_UI_URL` too |
+| `flybot-sentinel-api-secret` (optional) | `SENTINEL_API_SECRET`, only needed for the signed vision agent API (API.md) |
 
 To change a secret later, run `gcloud secrets versions add NAME --data-file=-`, then redeploy.
 
@@ -115,7 +149,7 @@ For email (password reset, email confirmation, alert emails), fill `SMTP_HOST`, 
 
 To send reviewed photos to Roboflow for retraining, set `ROBOFLOW_UPLOAD_PROJECT` to the project ID (the dataset slug in the project URL) and `ROBOFLOW_UPLOAD_CLASS` to its class name (default `fruit_fly`). Uploads need the workspace's **private** API key. If `ROBOFLOW_API_KEY` is a publishable key, set `ROBOFLOW_UPLOAD_API_KEY` too: the deploy script stores it as the `flybot-roboflow-upload-key` secret (by hand: add `,ROBOFLOW_UPLOAD_API_KEY=flybot-roboflow-upload-key:latest` to `_EXTRA_SECRETS`). An admin then turns it on under Settings → System.
 
-For the FlyBot Sentinel console (menu **Sentinel**, API.md "Sentinel console proxy"), set `SENTINEL_UI_URL` (the Sentinel UI API base ending in `/ui`, in `.env` or `deploy/cloudrun.env.yaml`) and `SENTINEL_UI_TOKEN` (Sentinel's operator token) in `.env`: the deploy script stores the token as the `flybot-sentinel-ui-token` secret (by hand: add `,SENTINEL_UI_TOKEN=flybot-sentinel-ui-token:latest` to `_EXTRA_SECRETS`). Without both, the menu stays hidden.
+The Sentinel screen reads FlyBot's own database; it is on with `AI_PROVIDER=opencv-lambda`, or with `SENTINEL_CONSOLE=true` for another provider.
 
 ### 5. Deploy
 ```bash
@@ -128,7 +162,9 @@ This builds the image, pushes it, and deploys it. The service runs as **exactly 
 
 Restrict the Maps key to your Cloud Run URL or domain under **APIs & Services → Credentials**. It is visible to every browser that loads the page.
 
-## Compute Engine VM
+## A VM with Docker (Compute Engine or any host)
+
+Building the image compiles the web app, which needs about 2 GB of memory for Node alone: use a machine with 4 GB or more, or build the image elsewhere and pull it.
 
 ### 1. Create the VM
 Attach the `flybot-run` service account so Vertex AI works without a key file:
@@ -187,9 +223,9 @@ git pull && docker compose up -d --build
 Cloud Run gives you HTTPS automatically; the VM does not. Either put a Google Cloud load balancer with a managed certificate in front of it, or run Caddy on the VM as a reverse proxy to `localhost:3000`. Caddy obtains certificates automatically. Then set `COOKIE_SECURE=true` and `TRUST_PROXY=1`.
 
 ## Checks after a deploy
-- `GET /health` returns `{"status":"ok"}`.
+- `GET /health` returns `{"status":"ok"}`. On AWS, also `GET /api/device/time` (the camera API) and the steps in [docs/flybot-aws-runbook.md](docs/flybot-aws-runbook.md#checks-after-a-deploy).
 - Logging in works, and camera snapshot images load. Images need the login cookie, so if they fail on plain HTTP, check that `COOKIE_SECURE` is not `true`.
-- The logs show `⏰ Periodic Cron jobs initialized.` on exactly one deployment.
+- The logs show `⏰ Periodic Cron jobs initialized.` on exactly one deployment (on AWS: `journalctl -u flybot`).
 - After upgrading an existing database: if the logs warn about duplicate camera serials, run `node scripts/merge_duplicate_cameras.js --apply` once (see `server/README.md`, Roles and sharing).
 - After upgrading: the old single-field index `deviceSerial_1` on `snapshots` is no longer used (replaced by `{deviceSerial, createdAt}`). It can be dropped to save space and write time: `db.snapshots.dropIndex("deviceSerial_1")`.
 - Optional, once: `node scripts/find_orphan_files.js --out orphans.txt` (from `server/`) lists photo files in S3 that no snapshot points to, from captures whose database save failed before this was handled. It only reports; nothing is deleted.
@@ -203,6 +239,6 @@ Cloud Run gives you HTTPS automatically; the VM does not. Either put a Google Cl
   3. In the browser's network tab, copy the `accessToken` from the `/api/live` answer. Check it can only see that user's cameras, for example with `POST /api/lapp/device/list` on the EZVIZ API.
   4. If video fails, the server log shows `EZVIZ sub-account token failed` with the EZVIZ error code.
 - **Viewers can see a camera's verification code.** Encrypted streams are decrypted in the browser, so the live/playback response includes the code. Change the code on the device if you remove someone's access to an encrypted camera.
-- **Rate limits are per instance.** Login, chat, share and capture limits live in memory. `cloudbuild.yaml` pins Cloud Run to one instance (`--max-instances=1`); raising it multiplies every limit unless they move to a shared store.
+- **Rate limits are per instance.** Login, chat, share, capture, camera registration and claim limits live in memory. Cloud Run is pinned to one instance (`--max-instances=1`) and the AWS deployment runs one; more instances multiply every limit unless they move to a shared store.
 - **Snapshot bucket must be private.** Images are served through `/api/s3` with access checks; a public bucket or public `S3_PUBLIC_URL` would bypass them, since object keys are predictable.
 - **Public dashboards are cached for 60 s.** After a camera is transferred or its share removed, a public link can show it for up to a minute.
