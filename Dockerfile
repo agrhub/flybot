@@ -18,7 +18,9 @@ COPY server server
 ARG VITE_GOOGLE_MAP_KEY=""
 ENV VITE_GOOGLE_MAP_KEY=${VITE_GOOGLE_MAP_KEY}
 
-# Builds client, bundles server and copies client assets into server/dist
+# Builds client, bundles server and copies client assets into server/dist.
+# The Vite build needs more than the default V8 heap (~940 MB on a 2 GB host such as t4g.small); swap covers the rest.
+ENV NODE_OPTIONS=--max-old-space-size=2048
 RUN npm run build
 
 # ---------- Runtime stage ----------
