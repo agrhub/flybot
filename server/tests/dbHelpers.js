@@ -56,7 +56,20 @@ async function stopDb() {
     server?.closeAllConnections?.();
     await new Promise(resolve => (server ? server.close(resolve) : resolve()));
     await mongoose.disconnect();
-    await mongod?.stop();
+    const dbPath = mongod?.instanceInfo?.dbPath;
+    await mongod?.stop({ doCleanup: true, force: true });
+    // Windows sometimes still holds the data files when stop() returns: each instance's data
+    // directory (~200 MB) must not pile up in the temp folder
+    if (dbPath) {
+        const fs = require('fs');
+        for (let i = 0; i < 10 && fs.existsSync(dbPath); i++) {
+            try {
+                fs.rmSync(dbPath, { recursive: true, force: true });
+            } catch {
+                await new Promise(resolve => setTimeout(resolve, 200));
+            }
+        }
+    }
 }
 
 async function clearDb() {

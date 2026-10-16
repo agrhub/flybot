@@ -458,6 +458,23 @@ export default {
   getLiveStream(deviceSerial, urlId = '', quality = 1, protocol = 1) {
     return apiClient.post('/live', { deviceSerial, urlId, quality, protocol });
   },
+  // Platform-aware camera endpoints (EZVIZ live URL shape, or the KVS viewer config for CamOS cameras)
+  getCameraLive(deviceSerial) {
+    return apiClient.get(`/cameras/${encodeURIComponent(deviceSerial)}/live`);
+  },
+  requestCameraLive(deviceSerial, minutes = 5) {
+    return apiClient.post(`/cameras/${encodeURIComponent(deviceSerial)}/live/request`, { minutes });
+  },
+  getCameraPlayback(deviceSerial, from, to) {
+    return apiClient.get(`/cameras/${encodeURIComponent(deviceSerial)}/playback`, { params: { from, to } });
+  },
+  getCameraStatus(deviceSerial) {
+    return apiClient.get(`/cameras/${encodeURIComponent(deviceSerial)}/status`);
+  },
+  // CamOS cameras: a new provisioning token for the camera's portal
+  provisionCamera(deviceSerial) {
+    return apiClient.post('/user/camera/provision', { deviceSerial });
+  },
   disableStream(deviceSerial, urlId = '', channelNo = 1) {
     return apiClient.post('/live/disable', { deviceSerial, channelNo, urlId });
   },

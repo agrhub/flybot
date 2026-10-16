@@ -1227,6 +1227,13 @@ async function rateChatMessage(req, res) {
     }
 }
 
+/** The camera of a confirmed card, if the person may manage it. */
+async function manageable(req, payload) {
+    const { findManageableCamera } = require('../utils/ownership');
+    const camera = await findManageableCamera(req.user, String(payload.deviceSerial || ''));
+    return camera || { error: "Camera not found or you cannot manage it." };
+}
+
 const CONFIRM_ACTIONS = {
     // A sticky card replaced: the same checks as POST /api/user/camera/maintenance
     async card_change(req, payload) {
@@ -1239,6 +1246,79 @@ const CONFIRM_ACTIONS = {
         }
         await require('../services/maintenanceService').recordEvent({ deviceSerial: camera.deviceSerial, type: 'card_replaced', at, note: payload.note || '', user: req.user });
         return {};
+    },
+    // ---- Actions the vision Lambda and the chatbot propose (services/sentinelService.js checkAction) ----
+    // An extra photo now (the Sentinel capture budget does not apply: a person confirmed it)
+    async capture_now(req, payload) {
+        const camera = await manageable(req, payload);
+        if (camera.error) return camera;
+        const { captureAndSaveSnapshot } = require('../cron/captureJob');
+        const saved = await captureAndSaveSnapshot(camera.deviceSerial, { trigger: 'sentinel' });
+        if (!saved) {
+            // A CamOS camera on battery takes the photo at its next wake (the request is in its shadow)
+            if (camera.platform === 'camos') {
+                const status = await require('../platforms').get(camera).getStatus(camera.deviceSerial).catch(() => null);
+                if (status && (status.sleeping || !status.online)) return { message: 'The camera is asleep: it will take the photo at its next wake.' };
+            }
+            return { error: 'The camera did not return an image. It may be offline.' };
+        }
+        return { message: `Photo ${saved._id} stored.` };
+    },
+    // A faster (or slower) capture interval for 24 hours, and the camera's own schedule for CamOS
+    async set_interval(req, payload) {
+        const camera = await manageable(req, payload);
+        if (camera.error) return camera;
+        const { CAPTURE_INTERVALS } = require('../services/captureSchedule');
+        const minutes = Number(payload.minutes);
+        if (!CAPTURE_INTERVALS.includes(minutes)) return { error: `minutes must be one of ${CAPTURE_INTERVALS.join(', ')}.` };
+        const now = new Date();
+        await Camera.updateOne({ _id: camera._id }, { $set: { sentinelInterval: { minutes, until: new Date(now.getTime() + 24 * 3600 * 1000), setAt: now, reason: String(payload.reason || 'confirmed proposal').slice(0, 300) } } });
+        if (camera.platform === 'camos') {
+            await require('../platforms').get(camera).setCaptureSchedule(camera.deviceSerial, minutes)
+                .catch(err => console.warn(`⚠️ Shadow interval not set (${camera.deviceSerial}): ${err.message}`));
+        }
+        require('../services/auditService').recordAudit(req, { action: 'sentinel.capture_interval', target: { type: 'camera', id: camera.deviceSerial, label: camera.deviceName }, details: { minutes, hours: 24, via: 'card' } });
+        return { message: `Every ${minutes} minutes for 24 hours.` };
+    },
+    // Image settings of a CamOS camera (shadow desired video.image)
+    async set_isp(req, payload) {
+        const camera = await manageable(req, payload);
+        if (camera.error) return camera;
+        if (camera.platform !== 'camos') return { error: 'Image settings can only be changed on a CamOS camera.' };
+        const image = {};
+        if (payload.brightness !== undefined) image.brightness = Number(payload.brightness);
+        if (payload.wdr !== undefined) image.wdr = typeof payload.wdr === 'boolean' ? (payload.wdr ? 2 : 0) : Number(payload.wdr);
+        if (!Object.keys(image).length) return { error: 'Nothing to change.' };
+        await require('../platforms/camos').updateDesired(camera.deviceSerial, { video: { image } });
+        return { message: `Image settings sent: ${Object.entries(image).map(([k, v]) => `${k}=${v}`).join(', ')}.` };
+    },
+    // A person's review of the photo (the same flag as POST /api/sentinel/review-request)
+    async review_request(req, payload) {
+        const camera = await manageable(req, payload);
+        if (camera.error) return camera;
+        const { Snapshot } = require('../models');
+        const now = new Date();
+        const snapshot = payload.snapshotId && require('mongoose').isValidObjectId(payload.snapshotId)
+            ? await Snapshot.findOne({ _id: payload.snapshotId, deviceSerial: camera.deviceSerial }).select('_id review').lean()
+            : await Snapshot.findOne({ deviceSerial: camera.deviceSerial }).sort({ createdAt: -1 }).select('_id review').lean();
+        if (!snapshot) return { error: 'Photo not found.' };
+        if (snapshot.review?.status) return { message: 'This photo was already reviewed.' };
+        await Snapshot.updateOne({ _id: snapshot._id, 'review.requested': { $exists: false } }, { $set: { 'review.requested': { at: now, reason: String(payload.reason || 'Sentinel asked for a check').slice(0, 300), by: 'sentinel' } } });
+        return { message: 'Marked for review in the photo history.' };
+    },
+    // A message in the owner's notification feed (and their channels)
+    async notify(req, payload) {
+        const camera = await manageable(req, payload);
+        if (camera.error) return camera;
+        const message = String(payload.message || '').trim().slice(0, 500);
+        if (!message) return { error: 'Nothing to send.' };
+        await require('../services/notificationService').notifyUser({
+            userId: req.user.id,
+            type: 'review_requested',
+            deviceSerial: camera.deviceSerial,
+            params: { deviceName: camera.deviceName || camera.deviceSerial, reason: message, snapshotId: payload.snapshotId ? String(payload.snapshotId) : '' }
+        });
+        return { message: 'Sent.' };
     },
     // A logbook treatment: the same checks as POST /api/treatments
     async treatment(req, payload) {

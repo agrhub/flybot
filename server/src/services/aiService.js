@@ -258,10 +258,15 @@ async function analyzeInsectsRoboflow(base64Image, snapshotId, imageUrl = null) 
  * fetch the image from (the camera's fresh picture link); without it the image is sent inline.
  * Returns true when the snapshot now has an AI result.
  */
-async function analyzeSnapshot(base64Image, snapshotId, imageUrl = null) {
+async function analyzeSnapshot(base64Image, snapshotId, imageUrl = null, { buffer = null } = {}) {
     const provider = env.AI_PROVIDER;
     // Sentinel analyzes the photo itself (POST /api/sentinel/analysis)
     if (provider === 'sentinel') return false;
+    if (provider === 'opencv-lambda') {
+        // The vision Lambda reads the photo from storage (by reference); the buffer only gives its size
+        const result = await require('./visionLambda').analyzeSnapshot(snapshotId, { buffer: buffer || (base64Image ? Buffer.from(base64Image, 'base64') : null) });
+        return result.ok;
+    }
     if (provider === 'roboflow') {
         await analyzeInsectsRoboflow(base64Image, snapshotId, imageUrl);
     } else if (provider === 'both') {

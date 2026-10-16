@@ -4,6 +4,7 @@ const { navigationDeclarations, navigationExecutors } = require('./navigationToo
 const { operationsDeclarations, operationsExecutors } = require('./operationsTools');
 const { actionDeclarations, actionExecutors } = require('./actionTools');
 const { insightDeclarations, insightExecutors } = require('./insightTools');
+const { sentinelDeclarations, sentinelExecutors } = require('./sentinelTools');
 
 const allFunctionDeclarations = [
     ...cameraDeclarations,
@@ -11,6 +12,7 @@ const allFunctionDeclarations = [
     ...operationsDeclarations,
     ...insightDeclarations,
     ...actionDeclarations,
+    ...sentinelDeclarations,
     ...navigationDeclarations
 ];
 
@@ -20,6 +22,7 @@ const allExecutors = {
     ...operationsExecutors,
     ...insightExecutors,
     ...actionExecutors,
+    ...sentinelExecutors,
     ...navigationExecutors
 };
 

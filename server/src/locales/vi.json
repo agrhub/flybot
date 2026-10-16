@@ -163,6 +163,7 @@
     "sentinel": {
       "card_change": "🛰️ <b>FlyBot Sentinel đề xuất: đã thay tấm bẫy dính</b>\nBẫy: {trap}\nLúc: {at}",
       "treatment": "🛰️ <b>FlyBot Sentinel đề xuất ghi nhật ký: {type}{product}</b>\nBẫy: {traps}\nLúc: {at}",
+      "action": "🛰️ <b>FlyBot Sentinel đề xuất: {action}</b>\nBẫy: {trap}\nThiết lập: {params}",
       "reason": "Lý do: {reason}",
       "expires": "Chưa có gì được ghi cho đến khi bạn bấm Xác nhận. Đề xuất hết hạn lúc {at}.",
       "confirm": "✅ Xác nhận",
@@ -180,6 +181,43 @@
     "testBody": "Bạn sẽ nhận cảnh báo sâu bệnh và trạng thái camera trên thiết bị này."
   },
   "apiMessages": {
+    "aws_camera_asleep_next_wake": "Camera đang ngủ: nó sẽ chụp ảnh ở lần thức tiếp theo.",
+    "aws_photo_id_stored": "Đã lưu ảnh {id}.",
+    "aws_minutes_must_be_one_of": "minutes phải là một trong {list}.",
+    "aws_every_minutes_for_24_hours": "Mỗi {minutes} phút trong 24 giờ.",
+    "aws_image_settings_camos_only": "Chỉ chỉnh được thiết lập hình ảnh trên camera CamOS.",
+    "aws_nothing_to_change": "Không có gì để thay đổi.",
+    "aws_photo_not_found": "Không tìm thấy ảnh.",
+    "aws_photo_already_reviewed": "Ảnh này đã được kiểm tra.",
+    "aws_marked_for_review": "Đã đánh dấu cần kiểm tra trong lịch sử ảnh.",
+    "aws_nothing_to_send": "Không có gì để gửi.",
+    "aws_sent": "Đã gửi.",
+    "aws_platform_must_be": "platform phải là 'ezviz' hoặc 'camos'.",
+    "aws_serial_registered_as_ezviz": "Số sê-ri này đã đăng ký là camera EZVIZ.",
+    "aws_only_camos_provisioned": "Chỉ camera CamOS mới cấp phát theo cách này.",
+    "aws_only_camos_live_request": "Chỉ camera CamOS mới nhận yêu cầu xem trực tiếp.",
+    "aws_too_many_requests": "Quá nhiều yêu cầu.",
+    "aws_too_many_attempts": "Quá nhiều lần thử.",
+    "aws_iot_rule_secret_not_set": "Chưa đặt IOT_RULE_SECRET.",
+    "aws_topic_is_required": "Cần có topic.",
+    "aws_unknown_device_or_bad_token": "Thiết bị lạ hoặc token sai.",
+    "aws_too_many_requests_for_this_camera": "Quá nhiều yêu cầu cho camera này.",
+    "aws_too_many_photos_for_this_camera": "Quá nhiều ảnh cho camera này.",
+    "aws_multipart_image_required": "Cần multipart/form-data có phần image.",
+    "aws_pair_fields_required": "Cần serial, verifyCode và provisionToken.",
+    "aws_pair_refused": "Camera lạ, sai mã hoặc token cấp phát đã hết hạn.",
+    "aws_meta_too_large": "meta quá lớn.",
+    "aws_meta_not_json": "meta không phải JSON hợp lệ.",
+    "aws_meta_must_be_object": "meta phải là một đối tượng.",
+    "aws_image_part_required": "Cần có phần image.",
+    "aws_image_at_most_bytes": "image tối đa {bytes} byte.",
+    "aws_image_must_be_jpeg": "image phải là JPEG.",
+    "aws_action_must_be_one_of": "action phải là một trong {list}.",
+    "aws_set_interval_needs_minutes": "set_interval cần minutes, một trong {list}.",
+    "aws_set_isp_camos_only": "Thiết lập hình ảnh (set_isp) chỉ đổi được trên camera CamOS.",
+    "aws_set_isp_invalid_key": "set_isp: {key} không hợp lệ.",
+    "aws_set_isp_needs_fields": "set_isp cần brightness và/hoặc wdr.",
+    "aws_notify_needs_message": "notify cần có message.",
     "a_camera_to_remove_is_not_in_this": "Camera cần gỡ không thuộc tổ chức này.",
     "api_key_not_found": "Không tìm thấy API key.",
     "an_organization_needs_at_least_one_owner": "Tổ chức phải có ít nhất một chủ sở hữu.",
@@ -622,6 +660,13 @@
     }
   },
   "sentinel": {
-    "message": "**FlyBot Sentinel** đề xuất thay đổi này. Chưa có gì được ghi cho đến khi bạn bấm Xác nhận.\n\n{reason}"
+    "message": "**FlyBot Sentinel** đề xuất thay đổi này. Chưa có gì được ghi cho đến khi bạn bấm Xác nhận.\n\n{reason}",
+    "actions": {
+      "capture_now": "chụp thêm một ảnh ngay",
+      "set_interval": "đổi chu kỳ chụp",
+      "set_isp": "chỉnh thiết lập hình ảnh",
+      "review_request": "nhờ người kiểm tra ảnh",
+      "notify": "gửi thông báo"
+    }
   }
 }

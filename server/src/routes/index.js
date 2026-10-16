@@ -19,9 +19,12 @@ const integrationRoutes = require('./integrationRoutes');
 const publicApiRoutes = require('./publicApiRoutes');
 const sentinelRoutes = require('./sentinelRoutes');
 const sentinelUiRoutes = require('./sentinelUiRoutes');
+const deviceRoutes = require('./deviceRoutes');
 
 // S3 image stream route must be mounted before generic /api route
 router.use('/api/s3', s3Routes);
+// CamOS cameras (device token, not a user session): before /api, whose sign-in would refuse them
+router.use('/api/device', deviceRoutes);
 router.use('/api/auth', authRoutes);
 router.use('/api/ai', aiRoutes);
 router.use('/api/notifications', notificationRoutes);

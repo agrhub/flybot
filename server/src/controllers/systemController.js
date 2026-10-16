@@ -34,7 +34,7 @@ async function getSystemInfo(req, res) {
             ]))
             : [];
 
-        const provider = ['vertex', 'roboflow', 'both', 'sentinel'].includes(AI_PROVIDER) ? AI_PROVIDER : 'vertex';
+        const provider = ['vertex', 'roboflow', 'both', 'sentinel', 'opencv-lambda'].includes(AI_PROVIDER) ? AI_PROVIDER : 'vertex';
         res.json({
             success: true,
             info: {

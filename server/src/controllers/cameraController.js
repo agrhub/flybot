@@ -10,6 +10,33 @@ const { CARD_REMINDER_DAYS, cardDueAt } = require('../services/maintenanceServic
 const { TRAP_KINDS, DEFAULT_TRAP_KIND } = require('../constants/trap');
 
 const cameraTarget = (camera) => ({ type: 'camera', id: camera.deviceSerial, label: camera.deviceName });
+const platforms = require('../platforms');
+const camosPlatform = require('../platforms/camos');
+const deviceService = require('../services/deviceService');
+
+/** The CamOS device fields a viewer may see (power mode, sleep, battery, network, firmware). */
+function deviceView(camera, now = new Date()) {
+    const d = camera.device || {};
+    const sleeping = !!d.sleeping && (!d.wakeAt || new Date(d.wakeAt) > now);
+    return {
+        paired: !!d.tokenHash,
+        pairedAt: d.pairedAt || null,
+        fw: d.fw || null,
+        net: d.net || null,
+        rssi: d.rssi ?? null,
+        battery: d.battery || null,
+        location: d.location || null,
+        power: { mode: d.power?.mode || 'auto' },
+        sleeping,
+        wakeAt: sleeping ? d.wakeAt || null : null,
+        nextWakeAt: sleeping || Number(camera.status) !== 1 ? camosPlatform.nextWakeOf(camera, now) : null,
+        lastSeenAt: d.lastSeenAt || null,
+        liveRequested: !!d.liveRequested,
+        kvsChannelName: d.kvsChannelName || null,
+        thingName: d.thingName || null,
+        provisionExpiresAt: d.tokenHash ? null : d.provisionExpiresAt || null
+    };
+}
 const thresholdService = require('../services/thresholdService');
 const { viewFilter, viewableCameras, findViewableCamera, findManageableCamera, findOwnedCamera, canManageCamera } = require('../utils/ownership');
 
@@ -30,6 +57,9 @@ function toClientCamera(camera, user) {
     obj.access = isOwner ? 'owner' : (sharedWithMe ? 'shared' : 'admin');
     obj.canManage = canManage;
     obj.cardDueAt = cardDueAt(obj);
+    obj.platform = platforms.platformOf(obj);
+    // CamOS cameras: what the device reported, never its token hashes or raw shadow
+    obj.device = obj.device ? deviceView(obj) : undefined;
     if (canManage) {
         obj.sharedWith = (obj.sharedWith || []).map(sh => ({
             email: sh.email,
@@ -109,7 +139,15 @@ async function addCamera(req, res) {
         if (!deviceSerial || !validateCode) {
             return res.status(400).json({ success: false, message: "Missing deviceSerial or validateCode." });
         }
-        if (!/^[A-Za-z0-9]{3,32}$/.test(deviceSerial) || validateCode.length > 32) {
+        if (!/^[A-Za-z0-9_-]{3,64}$/.test(deviceSerial) || validateCode.length > 32) {
+            return res.status(400).json({ success: false, message: "Invalid serial number or verification code." });
+        }
+        const platform = req.body.platform === undefined ? 'ezviz' : req.body.platform;
+        if (!['ezviz', 'camos'].includes(platform)) {
+            return res.status(400).json({ success: false, message: "platform must be 'ezviz' or 'camos'." });
+        }
+        if (platform === 'camos') return addCamosCamera(req, res, { deviceSerial, validateCode, customName, trapKind });
+        if (!/^[A-Za-z0-9]{3,32}$/.test(deviceSerial)) {
             return res.status(400).json({ success: false, message: "Invalid serial number or verification code." });
         }
 
@@ -195,6 +233,154 @@ async function addCamera(req, res) {
             });
         }
         sendServerError(res, error);
+    }
+}
+
+/**
+ * A CamOS camera (ESP32 trap on AWS IoT Core): registered from its label (serial + verification
+ * code), no cloud call. The answer carries a provisioning token (shown once) the owner gives the
+ * camera through its portal; the camera then calls POST /api/device/pair.
+ */
+async function addCamosCamera(req, res, { deviceSerial, validateCode, customName, trapKind }) {
+    const userId = req.user.id;
+    const existing = await Camera.findOne({ deviceSerial });
+    if (existing && String(existing.userId) !== String(userId)) {
+        return res.status(409).json({ success: false, code: 'CAMERA_TAKEN', message: "This camera is already registered to another account. Ask its owner to share it with you." });
+    }
+    let camera = existing;
+    if (camera) {
+        if (camera.platform !== 'camos') return res.status(409).json({ success: false, message: "This serial is registered as an EZVIZ camera." });
+        camera.validateCode = validateCode.trim();
+        if (customName) camera.deviceName = customName.trim();
+        await camera.save();
+    } else {
+        const { defaultAlertThreshold } = await require('../services/settingsService').getSettings();
+        camera = new Camera({
+            userId,
+            deviceSerial,
+            platform: 'camos',
+            validateCode: validateCode.trim(),
+            deviceName: (customName || `Trap ${deviceSerial}`).trim(),
+            status: 0,
+            alertThreshold: defaultAlertThreshold,
+            trapKind: trapKind || DEFAULT_TRAP_KIND,
+            device: { thingName: deviceSerial }
+        });
+        await camera.save();
+        await require('../services/orgService').adoptCamera(req.user, camera)
+            .catch(err => console.warn('⚠️ Camera not added to an organization:', err.message));
+        recordAudit(req, { action: 'camera.added', target: cameraTarget(camera), details: { platform: 'camos' } });
+    }
+    const provisioning = await deviceService.issueProvisionToken(camera);
+    const fresh = await Camera.findById(camera._id);
+    res.json({
+        success: true,
+        message: existing ? "Device information updated successfully." : "Camera added successfully.",
+        camera: toClientCamera(fresh, req.user),
+        provisioning: provisioningView(fresh, provisioning)
+    });
+}
+
+/** What the owner types into the camera's portal (or scans): token, API base, IoT endpoint, QR text. */
+function provisioningView(camera, { provisionToken, expiresAt, pairUrl, apiBase }) {
+    const { IOT_ENDPOINT, AWS_REGION } = require('../config/env');
+    const esc = (v) => String(v || '').replace(/([\\;:])/g, '\\$1');
+    return {
+        provisionToken,
+        expiresAt,
+        pairUrl,
+        apiBase,
+        iotEndpoint: IOT_ENDPOINT || null,
+        kvs: { region: AWS_REGION, channelName: camera.device?.kvsChannelName || `cam-${camera.deviceSerial}` },
+        // CamOS protocol v1 section 12.2 network QR (Wi-Fi fields are added by the app when scanned)
+        qr: `CAMOS:1;K:${esc(provisionToken)};E:${esc(IOT_ENDPOINT)};U:${esc(apiBase)};;`
+    };
+}
+
+/**
+ * POST /api/user/camera/provision { deviceSerial }: a new provisioning token for a CamOS camera
+ * (the old one is replaced; a paired camera keeps its device token until it pairs again).
+ */
+async function provisionCamera(req, res) {
+    const { deviceSerial } = req.body;
+    if (!deviceSerial) return res.status(400).json({ success: false, message: "Missing deviceSerial." });
+    try {
+        const camera = await findManageableCamera(req.user, deviceSerial);
+        if (!camera) return res.status(404).json({ success: false, message: "Device not found or permission denied." });
+        if (camera.platform !== 'camos') return res.status(400).json({ success: false, message: "Only CamOS cameras are provisioned this way." });
+        const provisioning = await deviceService.issueProvisionToken(camera);
+        recordAudit(req, { action: 'camera.updated', target: cameraTarget(camera), details: { provisioned: true } });
+        const fresh = await Camera.findById(camera._id);
+        res.json({ success: true, provisioning: provisioningView(fresh, provisioning) });
+    } catch (err) {
+        sendServerError(res, err, { context: 'Camera provisioning' });
+    }
+}
+
+/**
+ * GET /api/cameras/:serial/live: the live session of a camera through its platform. EZVIZ
+ * cameras answer with the existing live URL shape (POST /api/live); CamOS/KVS cameras with the
+ * KVS viewer config (CONTRACTS section 4) and, for a camera on battery, a live request for its
+ * next wake.
+ */
+async function getLive(req, res) {
+    const deviceSerial = String(req.params.serial || '');
+    try {
+        const camera = await findViewableCamera(req.user, deviceSerial);
+        if (!camera) return res.status(404).json({ success: false, code: 'NOT_FOUND', message: "Camera not found or permission denied." });
+        if (platforms.platformOf(camera) === 'ezviz') {
+            req.body = { ...(req.body || {}), deviceSerial };
+            return getLiveStream(req, res);
+        }
+        const session = await platforms.get(camera).liveSession(deviceSerial, { user: req.user, minutes: 5 });
+        res.setHeader('Cache-Control', 'no-store');
+        res.json({ success: true, ...session });
+    } catch (err) {
+        if (err.code === 'LIVE_NOT_CONFIGURED') return res.status(503).json({ success: false, code: err.code, message: err.message });
+        sendServerError(res, err, { context: 'Live session' });
+    }
+}
+
+/** POST /api/cameras/:serial/live/request { minutes }: ask a sleeping CamOS camera for live view at its next wake. */
+async function requestLive(req, res) {
+    const deviceSerial = String(req.params.serial || '');
+    const minutes = Number.isInteger(req.body?.minutes) ? Math.min(Math.max(req.body.minutes, 1), 30) : 5;
+    try {
+        const camera = await findViewableCamera(req.user, deviceSerial);
+        if (!camera) return res.status(404).json({ success: false, code: 'NOT_FOUND', message: "Camera not found or permission denied." });
+        if (platforms.platformOf(camera) !== 'camos') return res.status(400).json({ success: false, message: "Only CamOS cameras take a live request." });
+        const result = await camosPlatform.requestLive(deviceSerial, { minutes });
+        recordAudit(req, { action: 'camera.updated', target: cameraTarget(camera), details: { liveRequested: true, minutes } });
+        res.json({ success: true, ...result });
+    } catch (err) {
+        sendServerError(res, err, { context: 'Live request' });
+    }
+}
+
+/** GET /api/cameras/:serial/playback?from&to: SD records (EZVIZ) or the snapshot timeline (CamOS). */
+async function getPlayback(req, res) {
+    const deviceSerial = String(req.params.serial || '');
+    try {
+        const camera = await findViewableCamera(req.user, deviceSerial);
+        if (!camera) return res.status(404).json({ success: false, code: 'NOT_FOUND', message: "Camera not found or permission denied." });
+        const { from, to } = req.query;
+        const result = await platforms.get(camera).playback(deviceSerial, { from: from ? String(from) : undefined, to: to ? String(to) : undefined });
+        res.json({ success: true, ...result });
+    } catch (err) {
+        sendServerError(res, err, { context: 'Playback' });
+    }
+}
+
+/** GET /api/cameras/:serial/status: online, power mode, sleeping and next wake (platform-aware). */
+async function getCameraStatus(req, res) {
+    const deviceSerial = String(req.params.serial || '');
+    try {
+        const camera = await findViewableCamera(req.user, deviceSerial);
+        if (!camera) return res.status(404).json({ success: false, code: 'NOT_FOUND', message: "Camera not found or permission denied." });
+        const status = await platforms.get(camera).getStatus(deviceSerial);
+        res.json({ success: true, status });
+    } catch (err) {
+        sendServerError(res, err, { context: 'Camera status' });
     }
 }
 
@@ -640,6 +826,12 @@ module.exports = {
     getLiveStream,
     getRecords,
     getPlaybackStream,
-    disableStream
+    disableStream,
+    provisionCamera,
+    getLive,
+    requestLive,
+    getPlayback,
+    getCameraStatus,
+    deviceView
 };
 

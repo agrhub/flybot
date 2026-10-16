@@ -21,6 +21,9 @@ if (foundEnv) {
 } else {
     require('dotenv').config();
 }
+// On AWS: secrets (JWT, EZVIZ, SMTP, Telegram...) from Secrets Manager (FLYBOT_SECRETS), filling
+// in what .env and the environment did not set
+if (process.env.FLYBOT_SECRETS && process.env.NODE_ENV !== 'test') require('./secrets').loadSecretsSync();
 
 // Configure Google Application Credentials for Vertex AI
 // Stray quotes around the value (e.g. ''./key.json') would otherwise become part of the path
@@ -55,30 +58,6 @@ if (configuredCred) {
 }
 
 // The SMTP login, when it is an email address, doubles as sender and contact address
-// Sentinel UI API base: https (http only for a local mock), no query, always ending in /ui
-function normalizeSentinelUiUrl(raw) {
-    const value = String(raw || '').trim().replace(/\/+$/, '');
-    if (!value) return '';
-    let url;
-    try {
-        url = new URL(value);
-    } catch {
-        console.warn('⚠️ SENTINEL_UI_URL is not a URL: the Sentinel console stays off');
-        return '';
-    }
-    const local = ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname);
-    if (url.protocol !== 'https:' && !(url.protocol === 'http:' && local)) {
-        console.warn('⚠️ SENTINEL_UI_URL must be https: the Sentinel console stays off');
-        return '';
-    }
-    if (url.search || url.hash || url.username || url.password) {
-        console.warn('⚠️ SENTINEL_UI_URL must not carry a query or credentials: the Sentinel console stays off');
-        return '';
-    }
-    const base = `${url.origin}${url.pathname.replace(/\/+$/, '')}`;
-    return base.endsWith('/ui') ? base : `${base}/ui`;
-}
-
 const SMTP_USER = (process.env.SMTP_USER || "").trim();
 const SMTP_USER_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(SMTP_USER) ? SMTP_USER : "";
 
@@ -161,9 +140,46 @@ const config = {
     // Roboflow
     ROBOFLOW_API_KEY: process.env.ROBOFLOW_API_KEY || "",
     ROBOFLOW_WORKFLOW_URL: process.env.ROBOFLOW_WORKFLOW_URL || "https://serverless.roboflow.com/new-workspace-z1wc7/workflows/fruit-fly-detection-and-count-1790390843624",
-    // vertex | roboflow | both | sentinel ("sentinel": no cloud model at capture; FlyBot Sentinel
-    // sets the counts through POST /api/sentinel/analysis)
+    // vertex | roboflow | both | sentinel | opencv-lambda ("sentinel": no cloud model at capture;
+    // FlyBot Sentinel sets the counts through POST /api/sentinel/analysis. "opencv-lambda": the
+    // vision Lambda of flybot-aws is called for every photo, services/visionLambda.js)
     AI_PROVIDER: process.env.AI_PROVIDER || "vertex",
+
+    // ---------- AWS (flybot-aws): vision Lambda, IoT Core, Kinesis Video Streams ----------
+    // Credentials: the EC2 instance role, or AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY in the
+    // environment (the default AWS credential chain). Region for every AWS client here.
+    AWS_REGION: (process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || "ap-southeast-2").trim(),
+    // Vision Lambda (CONTRACTS section 1): the function name (SDK Invoke), or for local
+    // development the URL of `uv run python -m sentinel.lambda_local` (http://localhost:9001/invoke).
+    // The URL wins when both are set.
+    VISION_LAMBDA_NAME: (process.env.VISION_LAMBDA_NAME || "").trim(),
+    VISION_LAMBDA_URL: (process.env.VISION_LAMBDA_URL || "").trim(),
+    // Seconds one Lambda call may take (CONTRACTS: 120)
+    VISION_LAMBDA_TIMEOUT_S: Math.min(Math.max(parseInt(process.env.VISION_LAMBDA_TIMEOUT_S || '120', 10) || 120, 5), 300),
+    // "true" when the photo bucket is real S3 the Lambda can read by bucket/key (the default when
+    // S3_ENDPOINT is empty or an amazonaws.com endpoint); otherwise the Lambda gets a signed URL
+    PHOTOS_BY_REFERENCE: process.env.PHOTOS_BY_REFERENCE !== undefined
+        ? process.env.PHOTOS_BY_REFERENCE === 'true'
+        : (!process.env.S3_ENDPOINT || /amazonaws\.com/i.test(process.env.S3_ENDPOINT)),
+    // AWS IoT Core data endpoint of the account (aws iot describe-endpoint --endpoint-type iot:Data-ATS)
+    IOT_ENDPOINT: (process.env.IOT_ENDPOINT || "").replace(/^https?:\/\//, "").trim(),
+    // Device->cloud messages: "mqtt" (MQTT over WebSocket with SigV4, the default when IOT_ENDPOINT is
+    // set and ENABLE_CRON is on), "rule" (an IoT rule posts them to /api/device/events) or "off"
+    IOT_EVENTS: (process.env.IOT_EVENTS || "mqtt").trim(),
+    // Shared secret of the IoT rule -> /api/device/events webhook (header X-IoT-Rule-Secret)
+    IOT_RULE_SECRET: (process.env.IOT_RULE_SECRET || "").trim(),
+    // IAM role the browser assumes (through FlyBot, STS AssumeRole, 15 min) to join a KVS signaling
+    // channel as VIEWER. Empty = live view of CamOS cameras answers 503
+    KVS_VIEWER_ROLE_ARN: (process.env.KVS_VIEWER_ROLE_ARN || "").trim(),
+    // Public base URL the cameras call (device API). Default: APP_BASE_URL
+    DEVICE_API_BASE_URL: (process.env.DEVICE_API_BASE_URL || process.env.APP_BASE_URL || "").replace(/\/+$/, ""),
+    // Firmware offered to the cameras by GET /api/device/ota (all three set = offered)
+    DEVICE_OTA_FW: (process.env.DEVICE_OTA_FW || "").trim(),
+    DEVICE_OTA_URL: (process.env.DEVICE_OTA_URL || "").trim(),
+    DEVICE_OTA_SHA256: (process.env.DEVICE_OTA_SHA256 || "").trim().toLowerCase(),
+    // Sentinel console (menu "Sentinel", read from MongoDB): on with AI_PROVIDER=opencv-lambda,
+    // or SENTINEL_CONSOLE=true on a server that keeps old traces with another provider
+    SENTINEL_CONSOLE: process.env.SENTINEL_CONSOLE === 'true',
 
     // FlyBot Sentinel internal API (/api/sentinel, HMAC-signed). Unset = the API answers 503.
     SENTINEL_API_SECRET: (process.env.SENTINEL_API_SECRET || "").trim(),
@@ -171,11 +187,6 @@ const config = {
     SENTINEL_CAPTURE_BUDGET: /^\d+$/.test((process.env.SENTINEL_CAPTURE_BUDGET || '').trim()) ? Math.min(parseInt(process.env.SENTINEL_CAPTURE_BUDGET, 10), 96) : 4,
     // A Sentinel proposal not confirmed within this many hours expires
     SENTINEL_PROPOSAL_TTL_HOURS: Math.min(Math.max(parseInt(process.env.SENTINEL_PROPOSAL_TTL_HOURS || '24', 10) || 24, 1), 168),
-    // Sentinel operator console inside FlyBot: /api/sentinel/ui/* proxies the Sentinel UI API
-    // (base URL ending in /ui) with the operator token, which never reaches browsers.
-    // Either unset = the proxy answers 503 SENTINEL_DISABLED and the client hides the menu.
-    SENTINEL_UI_URL: normalizeSentinelUiUrl(process.env.SENTINEL_UI_URL),
-    SENTINEL_UI_TOKEN: (process.env.SENTINEL_UI_TOKEN || "").trim(),
     // Retraining data: reviewed snapshots are uploaded to this Roboflow project (dataset slug).
     // Needs a private API key (falls back to ROBOFLOW_API_KEY). Empty = off.
     ROBOFLOW_UPLOAD_PROJECT: process.env.ROBOFLOW_UPLOAD_PROJECT || "",

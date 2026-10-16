@@ -378,6 +378,163 @@ async function createProposal(body, req, now = new Date()) {
     }, 201);
 }
 
+// ---------- Proposals of the vision Lambda and the chatbot (CONTRACTS section 1) ----------
+
+const ACTIONS = ['capture_now', 'set_interval', 'set_isp', 'review_request', 'notify'];
+const ISP_FIELDS = { brightness: (v) => Number.isInteger(v) && v >= -64 && v <= 64, wdr: (v) => typeof v === 'boolean' || (Number.isInteger(v) && v >= 0 && v <= 2) };
+
+/**
+ * Check one proposed action and its parameters ({ action, params }). Returns { action, params }
+ * with only the known parameters, or { error }.
+ */
+function checkAction(action, params = {}, { camera = null } = {}) {
+    if (!ACTIONS.includes(action)) return { error: `action must be one of ${ACTIONS.join(', ')}.` };
+    const p = isPlainObject(params) ? params : {};
+    if (action === 'set_interval') {
+        if (!CAPTURE_INTERVALS.includes(p.minutes)) return { error: `set_interval needs minutes, one of ${CAPTURE_INTERVALS.join(', ')}.` };
+        return { action, params: { minutes: p.minutes } };
+    }
+    if (action === 'set_isp') {
+        if (camera && camera.platform !== 'camos') return { error: 'Image settings (set_isp) can only be changed on a CamOS camera.' };
+        const out = {};
+        for (const [key, ok] of Object.entries(ISP_FIELDS)) {
+            if (p[key] === undefined) continue;
+            if (!ok(p[key])) return { error: `set_isp: invalid ${key}.` };
+            out[key] = p[key];
+        }
+        if (!Object.keys(out).length) return { error: 'set_isp needs brightness and/or wdr.' };
+        return { action, params: out };
+    }
+    if (action === 'notify') {
+        const message = clip(String(p.message || '').trim(), 500);
+        if (!message) return { error: 'notify needs a message.' };
+        return { action, params: { message } };
+    }
+    return { action, params: {} };
+}
+
+/**
+ * The confirm card of a proposed action, as the chat panel shows it (and aiController's
+ * CONFIRM_ACTIONS run it). `snapshot` is the photo it came from, if any.
+ */
+function actionCard({ action, params, camera, reason, snapshot = null, confidence = null }) {
+    return {
+        type: 'confirm',
+        action,
+        state: 'pending',
+        payload: { deviceSerial: camera.deviceSerial, ...params, ...(snapshot ? { snapshotId: String(snapshot._id) } : {}) },
+        summary: {
+            trap: camera.deviceName || camera.deviceSerial,
+            trapKind: require('../constants/trap').trapKindOf(camera),
+            action,
+            params,
+            ...(confidence !== null ? { confidence } : {})
+        },
+        ...(reason ? { reason: clip(reason, MAX_REASON) } : {})
+    };
+}
+
+/**
+ * The vision Lambda proposed actions for a photo (response.proposals): one confirm card each in
+ * the owner's "sentinel" conversation, a SentinelProposal row, and the Telegram message. Nothing
+ * runs until the owner confirms. Returns the proposals created.
+ */
+async function createLambdaProposals({ snapshot, camera, proposals, traceId = null, evidence = null, now = new Date() }) {
+    const owner = camera?.userId ? await User.findById(camera.userId) : null;
+    if (!owner || owner.disabled) return [];
+    const user = userContext(owner);
+    const created = [];
+    for (const proposal of (proposals || []).slice(0, 5)) {
+        if (!isPlainObject(proposal)) continue;
+        const checked = checkAction(proposal.action, proposal.params, { camera });
+        if (checked.error) {
+            console.warn(`⚠️ Lambda proposal skipped (${camera.deviceSerial}): ${checked.error}`);
+            continue;
+        }
+        const reason = clip(String(proposal.reason || '').trim() || `Sentinel: ${checked.action}`, MAX_REASON);
+        const confidence = Number.isFinite(proposal.confidence) ? Math.max(0, Math.min(1, Number(proposal.confidence))) : null;
+        const card = actionCard({ ...checked, camera, reason, snapshot, confidence });
+        const stored = await storeProposalCard({
+            owner,
+            user,
+            card: { ...card, traceId: traceId || undefined },
+            type: checked.action,
+            serials: [camera.deviceSerial],
+            reason,
+            evidence: [],
+            photos: snapshot ? [{ snap: snapshot, caption: '' }] : [],
+            extra: { payload: { action: checked.action, params: checked.params, proposalId: typeof proposal.id === 'string' ? proposal.id.slice(0, 40) : undefined, evidence: evidence || undefined }, snapshotId: snapshot?._id, traceId: traceId || undefined, confidence: confidence ?? undefined, source: 'lambda' },
+            now
+        });
+        created.push(stored);
+    }
+    return created;
+}
+
+/**
+ * Store one confirm card in the owner's "sentinel" conversation with its SentinelProposal row and
+ * Telegram message (shared by the HMAC API proposals and the Lambda's). Returns { proposal, card, messageId }.
+ */
+async function storeProposalCard({ owner, user, card, type, serials, reason, evidence = [], photos = [], extra = {}, now = new Date() }) {
+    const proposalId = new mongoose.Types.ObjectId();
+    const messageId = crypto.randomUUID();
+    const expiresAt = new Date(now.getTime() + env.SENTINEL_PROPOSAL_TTL_HOURS * 3600 * 1000);
+    const fullCard = {
+        ...card,
+        source: 'sentinel',
+        proposalId: String(proposalId),
+        reason: reason.slice(0, MAX_REASON),
+        evidence: evidence.filter(e => e.url).map(e => ({ url: e.url, caption: e.caption })),
+        expiresAt: expiresAt.toISOString()
+    };
+    const messageCards = [fullCard];
+    if (photos.length) {
+        const names = new Map((await Camera.find({ deviceSerial: { $in: photos.map(p => p.snap.deviceSerial) } }).select('deviceSerial deviceName').lean())
+            .map(c => [c.deviceSerial, c.deviceName || c.deviceSerial]));
+        messageCards.push({
+            type: 'photos',
+            items: photos.map(p => ({
+                id: String(p.snap._id),
+                deviceSerial: p.snap.deviceSerial,
+                name: p.caption || names.get(p.snap.deviceSerial) || p.snap.deviceSerial,
+                at: p.snap.createdAt,
+                count: p.snap.aiProcessed ? p.snap.pestCount ?? null : null,
+                imageKey: p.snap.s3Key
+            }))
+        });
+    }
+    const content = translate(user.language, 'sentinel.message', { reason: fullCard.reason });
+    await ChatSession.updateOne(
+        { userId: owner._id, sessionId: SENTINEL_SESSION },
+        {
+            $set: { updatedAt: now },
+            $push: { messages: { $each: [{ id: messageId, role: 'assistant', content, cards: messageCards, at: now }], $slice: -MAX_CHAT_MESSAGES } }
+        },
+        { upsert: true }
+    );
+    const proposal = await SentinelProposal.create({
+        _id: proposalId,
+        userId: owner._id,
+        type,
+        deviceSerials: serials,
+        sessionId: SENTINEL_SESSION,
+        messageId,
+        cardIndex: 0,
+        reason: fullCard.reason,
+        evidence: evidence.map(e => ({ url: e.url, snapshotId: e.snapshotId, ref: e.ref, caption: e.caption })),
+        expiresAt,
+        ...extra
+    });
+    recordAudit(null, {
+        actor: ACTOR,
+        action: 'sentinel.proposal_created',
+        target: { type: 'proposal', id: String(proposalId), label: `${type}: ${serials.join(', ')}` },
+        details: { type, cameras: serials, ownerId: user.id, expiresAt: expiresAt.toISOString(), evidence: evidence.length, source: extra.source || 'sentinel' }
+    });
+    const telegram = await sendProposalToTelegram(proposal, owner, fullCard, [...evidence, ...photos]);
+    return { proposal, card: fullCard, messageId, telegram };
+}
+
 const farmTime = new Intl.DateTimeFormat('en-GB', { timeZone: TIMEZONE, day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
 const formatAt = (value) => farmTime.format(new Date(value)).replace(',', '');
 
@@ -392,17 +549,23 @@ async function sendProposalToTelegram(proposal, owner, card, evidence) {
     const summary = card.summary || {};
     const lines = [card.action === 'card_change'
         ? t('card_change', { trap: escapeHtml(summary.trap), at: formatAt(summary.at) })
-        : t('treatment', {
-            type: escapeHtml(summary.type),
-            product: summary.product ? ` · ${escapeHtml(summary.product)}` : '',
-            traps: escapeHtml((summary.traps || []).join(', ')),
-            at: formatAt(summary.at)
-        })];
+        : card.action === 'treatment'
+            ? t('treatment', {
+                type: escapeHtml(summary.type),
+                product: summary.product ? ` · ${escapeHtml(summary.product)}` : '',
+                traps: escapeHtml((summary.traps || []).join(', ')),
+                at: formatAt(summary.at)
+            })
+            : t('action', {
+                action: escapeHtml(translate(lang, `sentinel.actions.${card.action}`)),
+                trap: escapeHtml(summary.trap || ''),
+                params: escapeHtml(Object.entries(summary.params || {}).map(([k, v]) => `${k}=${v}`).join(', ') || '-')
+            })];
     lines.push(t('reason', { reason: escapeHtml(card.reason) }));
     const captions = evidence.map(e => e.caption).filter(Boolean);
     if (captions.length) lines.push(escapeHtml(captions.join(' · ')));
     lines.push(t('expires', { at: formatAt(proposal.expiresAt) }));
-    const first = evidence[0];
+    const first = evidence.find(e => e?.url || e?.snap);
     const photoUrl = first?.url || (first?.snap ? await require('./s3Service').getSignedDownloadUrl(first.snap.s3Key, 3600) : null);
     try {
         const sent = await telegramService.sendWithButtons(chatId, {
@@ -686,6 +849,11 @@ module.exports = {
     capture,
     setCaptureInterval,
     createProposal,
+    ACTIONS,
+    checkAction,
+    actionCard,
+    createLambdaProposals,
+    storeProposalCard,
     recordDecision,
     decideFromTelegram,
     getProposal,

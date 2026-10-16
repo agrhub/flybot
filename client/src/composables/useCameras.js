@@ -14,8 +14,12 @@ const addingCamera = ref(false);
 const newCameraForm = reactive({
   deviceSerial: '',
   validateCode: '',
-  trapKind: 'sticky'
+  trapKind: 'sticky',
+  // ezviz (EZVIZ Open Platform) or camos (ESP32 trap camera on AWS IoT Core)
+  platform: 'ezviz'
 });
+// What a newly added CamOS camera needs typed into its portal (shown once, in the add dialog)
+const provisioning = ref(null);
 
 export function useCameras() {
   const router = useRouter();
@@ -70,6 +74,8 @@ export function useCameras() {
     newCameraForm.deviceSerial = '';
     newCameraForm.validateCode = '';
     newCameraForm.trapKind = 'sticky';
+    newCameraForm.platform = 'ezviz';
+    provisioning.value = null;
     isAddCameraOpen.value = true;
   };
 
@@ -99,14 +105,16 @@ export function useCameras() {
 
     addingCamera.value = true;
     try {
-      const res = await api.createCamera({ deviceSerial: serial, validateCode: code, trapKind: newCameraForm.trapKind });
+      const res = await api.createCamera({ deviceSerial: serial, validateCode: code, trapKind: newCameraForm.trapKind, platform: newCameraForm.platform });
       if (res.data?.success) {
         ElNotification({
           title: t('common.success'),
           message: t('cameras.added'),
           type: 'success'
         });
-        isAddCameraOpen.value = false;
+        // A CamOS camera: the dialog stays open with the provisioning token for the camera's portal
+        if (res.data.provisioning) provisioning.value = { ...res.data.provisioning, deviceSerial: serial };
+        else isAddCameraOpen.value = false;
         await loadCameras();
         const newlyAdded = cameras.value.find(c => c.deviceSerial === serial);
         if (newlyAdded) {
@@ -140,6 +148,7 @@ export function useCameras() {
     isAddCameraOpen,
     addingCamera,
     newCameraForm,
+    provisioning,
     loadCameras,
     selectCamera,
     selectCameraAndGoToLive,

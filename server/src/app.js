@@ -180,6 +180,11 @@ async function startServer() {
 
         // 5. Telegram bot (one consumer per bot, so only on the background-jobs instance)
         telegramService.startPolling();
+
+        // 6. CamOS cameras: device->cloud messages from AWS IoT Core (one subscriber, on this instance)
+        require('./platforms/iotEvents').start()
+            .then(on => { if (on) console.log('📡 IoT Core subscriber started'); })
+            .catch(err => console.error('❌ IoT Core subscriber failed to start:', err.message));
     });
 
     // Graceful shutdown: Cloud Run / Docker send SIGTERM before stopping the container
@@ -189,6 +194,7 @@ async function startServer() {
         shuttingDown = true;
         console.log(`🛑 ${signal} received, shutting down...`);
         telegramService.stopPolling();
+        require('./platforms/iotEvents').stop();
         setTimeout(() => process.exit(1), 10000).unref();
         server.close(async () => {
             await mongoose.disconnect().catch(() => {});

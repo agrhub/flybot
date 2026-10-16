@@ -1,5 +1,5 @@
 const express = require('express');
-const { Readable, Transform } = require('stream');
+const { Transform } = require('stream');
 const { pipeline } = require('stream/promises');
 const router = express.Router();
 const { authenticate } = require('../middlewares/auth');
@@ -10,10 +10,9 @@ const { recordAudit } = require('../services/auditService');
 const sentinelUi = require('../services/sentinelUiService');
 
 /**
- * FlyBot Sentinel operator console: /api/sentinel/ui/* → the Sentinel UI API (API.md "Sentinel console proxy").
- * FlyBot signs in for the person with its operator token; the browser only ever sees FlyBot's session.
+ * Sentinel console: /api/sentinel/ui/* (API.md "Sentinel console"), read from MongoDB
+ * (services/sentinelUiService.js). On with AI_PROVIDER=opencv-lambda or SENTINEL_CONSOLE=true.
  * Read: admins, managers, and "user" accounts with sentinelViewer (judges). Decide: admins and managers.
- * Only the routes below reach Sentinel; anything else answers 404 here.
  */
 
 // Configuration first: off = every route answers 503, signed in or not (the client hides the menu)
@@ -50,10 +49,8 @@ const QUERY_RULES = {
     until: (v) => v.length <= 40 && SAFE.test(v),
     loop: (v) => ['per_photo', 'daily_per_plot', 'followup'].includes(v),
     limit: (v) => /^\d{1,3}$/.test(v) && Number(v) >= 1 && Number(v) <= 100,
-    cursor: (v) => v.length <= 2048 && /^[A-Za-z0-9._~:+/=%-]+$/.test(v),
-    status: (v) => ['pending', 'approved', 'rejected', 'expired'].includes(v),
-    date: (v) => /^\d{4}-\d{2}-\d{2}$/.test(v),
-    name: (v) => /^[A-Za-z0-9._-]{1,128}$/.test(v) && !v.includes('..')
+    cursor: (v) => v.length <= 64 && SAFE.test(v),
+    status: (v) => ['pending', 'approved', 'rejected', 'expired'].includes(v)
 };
 
 /** Keep only the allowed parameters of this route, each a single valid string; else a 400 message. */
@@ -68,49 +65,48 @@ function pickQuery(query, allowed) {
     return { query: out };
 }
 
-/** GET route that forwards to `path(req)` with the allowed query parameters (then `shape`, if any). */
-function proxyGet(allowed, path, shape) {
+/** GET route answered by `run(query, req)`; null = 404. */
+function page(allowed, run) {
     return async (req, res) => {
         const picked = pickQuery(req.query, allowed);
         if (picked.error) return bad(res, picked.error);
-        const target = path(req);
-        if (!target) return res.status(404).json({ success: false, code: 'NOT_FOUND', message: 'Not found.' });
         try {
-            const { status, data } = await sentinelUi.callJson(target, { query: picked.query });
+            const data = await run(picked.query, req);
             res.setHeader('Cache-Control', 'no-store');
-            return res.status(status).json(shape ? shape(data, req) : data);
+            if (!data) return res.status(404).json({ success: false, code: 'NOT_FOUND', message: 'Not found.' });
+            return res.json(data);
         } catch (err) {
             return sendError(res, err, 'Sentinel console');
         }
     };
 }
 
-// Path segments: validated, then encoded (daily/follow-up event ids contain ":")
+// Path segments: validated (trace ids tr_..., snap_<id> or an ObjectId; approval ids; serials)
 const EVENT_ID = /^[A-Za-z0-9_.:-]{1,160}$/;
-const APPROVAL_ID = /^[A-Za-z0-9_.:-]{1,128}$/;
+const APPROVAL_ID = /^[a-f0-9]{24}$/i;
 const SERIAL = /^[A-Za-z0-9_-]{1,64}$/;
-const segment = (value, pattern) => (typeof value === 'string' && pattern.test(value) ? encodeURIComponent(value) : null);
-const withSegment = (prefix, param, pattern) => (req) => {
-    const seg = segment(req.params[param], pattern);
-    return seg ? `${prefix}/${seg}` : null;
-};
+const segment = (value, pattern) => (typeof value === 'string' && pattern.test(value) ? value : null);
 
-// FlyBot always calls with the operator token, so `role` says what this person may do
-// ("judge" = read-only), as the Sentinel web app expects (UI_API.md)
-router.get('/summary', readLimiter, proxyGet(['hours'], () => 'summary', (data, req) => ({ ...data, role: canDecideSentinel(req.user) ? 'operator' : 'judge' })));
-router.get('/traces', readLimiter, proxyGet(['camera', 'since', 'until', 'loop', 'limit', 'cursor'], () => 'traces'));
-router.get('/traces/:id', readLimiter, proxyGet([], withSegment('traces', 'id', EVENT_ID)));
-router.get('/approvals', readLimiter, proxyGet(['status', 'limit', 'cursor'], () => 'approvals'));
-// Read-only; the console polls it after a decision until the status changes
-router.get('/approvals/:id', readLimiter, proxyGet([], withSegment('approvals', 'id', APPROVAL_ID)));
-router.get('/devices', readLimiter, proxyGet([], () => 'devices'));
-router.get('/devices/:serial', readLimiter, proxyGet([], withSegment('devices', 'serial', SERIAL)));
-router.get('/density', readLimiter, proxyGet(['date'], () => 'density'));
-router.get('/bench', readLimiter, proxyGet(['name'], () => 'bench'));
+router.get('/summary', readLimiter, page(['hours'], (q, req) => sentinelUi.summary({ user: req.user, hours: q.hours })));
+router.get('/traces', readLimiter, page(['camera', 'since', 'until', 'loop', 'limit', 'cursor'], (q, req) => sentinelUi.traces({ user: req.user, ...q })));
+router.get('/traces/:id', readLimiter, page([], (q, req) => {
+    const id = segment(req.params.id, EVENT_ID);
+    return id ? sentinelUi.trace({ user: req.user, id }) : null;
+}));
+router.get('/approvals', readLimiter, page(['status', 'limit', 'cursor'], (q, req) => sentinelUi.approvals({ user: req.user, ...q })));
+router.get('/approvals/:id', readLimiter, page([], (q, req) => {
+    const id = segment(req.params.id, APPROVAL_ID);
+    return id ? sentinelUi.approval({ user: req.user, id }) : null;
+}));
+router.get('/devices', readLimiter, page([], (q, req) => sentinelUi.devices({ user: req.user })));
+router.get('/devices/:serial', readLimiter, page([], (q, req) => {
+    const serial = segment(req.params.serial, SERIAL);
+    return serial ? sentinelUi.device({ user: req.user, serial }) : null;
+}));
 
 /**
  * POST /api/sentinel/ui/approvals/:id/decide  { decision: "approve" | "reject" }
- * `by` is always the signed-in person (anything the browser sends is ignored).
+ * Runs (or drops) the proposal's confirm card. `by` is always the signed-in person.
  */
 router.post('/approvals/:id/decide', decideLimiter, async (req, res) => {
     if (!canDecideSentinel(req.user)) {
@@ -122,30 +118,30 @@ router.post('/approvals/:id/decide', decideLimiter, async (req, res) => {
     if (!['approve', 'reject'].includes(decision)) return bad(res, 'decision must be "approve" or "reject".');
     const by = sentinelUi.deciderName(req.user);
     try {
-        const { status, data } = await sentinelUi.callJson(`approvals/${id}/decide`, { method: 'POST', body: { decision, by } });
+        const data = await sentinelUi.decide({ user: req.user, id, decision, req });
         recordAudit(req, {
             action: 'sentinel.approval_decided',
-            target: { type: 'sentinel_approval', id: req.params.id },
-            details: { decision }
+            target: { type: 'sentinel_approval', id },
+            details: { decision, state: data.state }
         });
         res.setHeader('Cache-Control', 'no-store');
-        return res.status(status).json({ ...data, by });
+        return res.status(202).json({ ...data, by });
     } catch (err) {
         return sendError(res, err, 'Sentinel decide');
     }
 });
 
 /**
- * GET /api/sentinel/ui/evidence?key=<key or s3:// ref>
- * The image itself (FlyBot reads Sentinel's presigned URL), so it works as <img src> with the
- * session cookie and no Sentinel token or presigned URL reaches the browser.
+ * GET /api/sentinel/ui/evidence?key=<storage key>
+ * The picture itself (a photo or the Lambda's annotated evidence), from FlyBot's bucket, so it
+ * works as <img src> with the session cookie. Only for cameras the person may see.
  */
 router.get('/evidence', mediaLimiter, async (req, res) => {
     const { key } = req.query;
     if (!sentinelUi.isEvidenceKey(key)) return bad(res, 'Invalid key.');
     let media;
     try {
-        media = await sentinelUi.fetchEvidence(key);
+        media = await sentinelUi.fetchEvidence({ user: req.user, key });
     } catch (err) {
         return sendError(res, err, 'Sentinel evidence');
     }
@@ -153,10 +149,9 @@ router.get('/evidence', mediaLimiter, async (req, res) => {
     res.setHeader('Content-Type', media.contentType);
     if (media.contentLength) res.setHeader('Content-Length', String(media.contentLength));
     if (media.etag) res.setHeader('ETag', media.etag);
-    if (media.lastModified) res.setHeader('Last-Modified', media.lastModified);
     // Evidence objects never change once written; per person (behind sign-in)
     res.setHeader('Cache-Control', 'private, max-age=3600');
-    res.setHeader('Content-Disposition', media.inline ? 'inline' : 'attachment');
+    res.setHeader('Content-Disposition', 'inline');
     res.setHeader('Content-Security-Policy', "default-src 'none'; sandbox");
 
     let bytes = 0;
@@ -168,18 +163,15 @@ router.get('/evidence', mediaLimiter, async (req, res) => {
         }
     });
     try {
-        await pipeline(Readable.fromWeb(media.body), limit, res);
+        await pipeline(media.body, limit, res);
     } catch (err) {
-        media.abort();
         if (!res.headersSent) return sendError(res, err, 'Sentinel evidence');
         console.warn('⚠️ Sentinel evidence stream stopped:', err.message);
         res.destroy();
-    } finally {
-        media.done();
     }
 });
 
-// Anything else under /api/sentinel/ui never reaches Sentinel
+// Anything else under /api/sentinel/ui answers 404 here
 router.use((req, res) => res.status(404).json({ success: false, code: 'NOT_FOUND', message: 'Not found.' }));
 
 module.exports = router;

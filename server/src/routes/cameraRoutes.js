@@ -29,9 +29,17 @@ router.post('/user/camera/share', shareLimiter, shareController.addShare);
 router.delete('/user/camera/share', shareController.removeShare);
 router.post('/user/share/remind', shareLimiter, shareController.remindInvitee);
 router.post('/user/camera/capture', captureLimiter, cameraController.captureNow);
+// CamOS cameras: a new provisioning token for the camera's portal
+router.post('/user/camera/provision', cameraController.provisionCamera);
 router.get('/user/camera/maintenance', maintenanceController.listEvents);
 router.post('/user/camera/maintenance', maintenanceController.addEvent);
 router.delete('/user/camera/maintenance/:id', maintenanceController.deleteEvent);
+
+// Platform-aware camera endpoints (EZVIZ, CamOS over IoT Core, KVS live view)
+router.get('/cameras/:serial/live', cameraController.getLive);
+router.post('/cameras/:serial/live/request', cameraController.requestLive);
+router.get('/cameras/:serial/playback', cameraController.getPlayback);
+router.get('/cameras/:serial/status', cameraController.getCameraStatus);
 
 // Stream & playback routes
 router.post('/live', cameraController.getLiveStream);

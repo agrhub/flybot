@@ -289,6 +289,53 @@
     "openPhoto": "Xem ảnh phân tích: {name}"
   },
   "cameras": {
+    "platformLabel": "Nền tảng camera",
+    "platform": {
+      "ezviz": "EZVIZ",
+      "camos": "CamOS",
+      "kinesis": "KVS"
+    },
+    "platformHint": {
+      "camos": "Camera bẫy CamOS (ESP32) trên AWS IoT Core: nhập số sê-ri và mã xác minh in trên nhãn. Bạn sẽ nhận một mã cấp phát để nhập vào trang cài đặt của camera."
+    },
+    "power": {
+      "auto": "Nguồn tự động",
+      "battery": "Pin",
+      "powered": "Điện lưới",
+      "hint": {
+        "auto": "Tự chuyển giữa chế độ điện lưới và pin theo điện áp pin",
+        "battery": "Chạy pin và năng lượng mặt trời: chụp theo lịch rồi ngủ",
+        "powered": "Có điện lưới: luôn kết nối, xem trực tiếp khi cần"
+      }
+    },
+    "sleeping": "Đang ngủ",
+    "sleepingNextWake": "Đang ngủ, thức lúc {time}",
+    "requestLive": "Yêu cầu xem trực tiếp lần thức tới",
+    "liveRequested": "Đã yêu cầu xem trực tiếp lần thức tới",
+    "liveRequestedNote": "Camera sẽ phát trực tiếp khi thức dậy lần tới.",
+    "liveStarting": "Camera đang bắt đầu phát trực tiếp.",
+    "kvs": {
+      "connecting": "Đang kết nối camera (WebRTC)...",
+      "waiting": "Đang chờ camera vào kênh. Có thể camera đang ngủ: hãy yêu cầu xem trực tiếp lần thức tới.",
+      "playing": "Trực tiếp",
+      "error": "Xem trực tiếp đã dừng.",
+      "failed": "Không bắt đầu được xem trực tiếp.",
+      "disconnected": "Camera đã ngắt kết nối.",
+      "badConfig": "Cấu hình xem trực tiếp chưa đầy đủ.",
+      "notConfigured": "Máy chủ này chưa bật xem trực tiếp cho camera CamOS.",
+      "liveOnRequest": "Xem trực tiếp bắt đầu khi bạn mở camera."
+    },
+    "provisioning": {
+      "title": "Đã thêm camera {serial}. Cài đặt ngay.",
+      "intro": "Mở trang cài đặt của camera (Wi-Fi \"CAM-xxxx\", http://192.168.4.1) và nhập các giá trị này. Mã có hiệu lực 24 giờ và chỉ hiện một lần; bạn có thể tạo mã mới trong cài đặt camera.",
+      "token": "Mã cấp phát",
+      "apiBase": "Địa chỉ FlyBot",
+      "iotEndpoint": "Điểm kết nối AWS IoT",
+      "channel": "Kênh trực tiếp",
+      "qr": "Nội dung QR",
+      "expires": "Mã có hiệu lực đến {time}.",
+      "done": "Xong"
+    },
     "title": "Quản Lý & Xem Camera",
     "subtitle": "Xem trực tiếp luồng video, lưới đa camera và điều khiển phát lại thẻ nhớ",
     "singleView": "Chế độ đơn",

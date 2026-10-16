@@ -6,11 +6,17 @@
         <div id="hls-video" ref="hlsContainer" class="w-full h-full object-contain hidden"></div>
         <video ref="hlsVideo" controls autoplay playsinline class="w-full h-full object-contain hidden"></video>
         <div id="ezopen-video" ref="ezopenVideo" class="w-full h-full object-contain hidden"></div>
-        <div v-if="!camera || isPlaceholderVisible" class="live-tab__scrim absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
+        <!-- CamOS cameras: Kinesis Video Streams WebRTC -->
+        <KvsViewer v-if="kvsConfig" :config="kvsConfig" class="absolute inset-0" @state="onKvsState" />
+        <div v-if="!camera || (isPlaceholderVisible && !kvsConfig)" class="live-tab__scrim absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
           <el-icon :size="48" class="live-tab__scrim-icon mb-3"><VideoCamera /></el-icon>
           <p class="text-sm font-medium max-w-md">{{ placeholderText }}</p>
+          <div v-if="isCamos && camera" class="flex items-center gap-2 mt-4">
+            <el-button type="primary" size="small" :icon="VideoCamera" :loading="kvsLoading" @click="playLiveStream">{{ t('cameras.live') }}</el-button>
+            <el-button size="small" :icon="Clock" :loading="requestingLive" @click="requestLive">{{ t('cameras.requestLive') }}</el-button>
+          </div>
           <el-button
-            v-if="camera && camera.canManage !== false"
+            v-else-if="camera && camera.canManage !== false"
             @click="openValidateCodeDialog"
             type="primary"
             size="small"
@@ -26,10 +32,13 @@
       <!-- Under the video: what is playing, and the camera actions -->
       <div class="flex flex-wrap items-center justify-between gap-2">
         <div class="flex flex-wrap items-center gap-2">
-          <el-tag :type="camera?.status === 1 ? 'success' : 'info'" effect="light" round size="small">
-            {{ camera?.status === 1 ? t('common.online') : t('common.offline') }}
+          <el-tag :type="camera?.device?.sleeping ? 'warning' : camera?.status === 1 ? 'success' : 'info'" effect="light" round size="small">
+            {{ camera?.device?.sleeping ? sleepText : camera?.status === 1 ? t('common.online') : t('common.offline') }}
           </el-tag>
-          <el-tag type="success" effect="plain" size="small">HD</el-tag>
+          <el-tag :type="isCamos ? 'primary' : 'info'" effect="plain" size="small">{{ t(`cameras.platform.${camera?.platform || 'ezviz'}`) }}</el-tag>
+          <el-tag v-if="isCamos && camera?.device?.power?.mode" type="info" effect="plain" size="small">{{ t(`cameras.power.${camera.device.power.mode}`) }}</el-tag>
+          <el-tag v-if="isCamos && camera?.device?.battery?.pct != null" type="info" effect="plain" size="small">{{ camera.device.battery.pct }} %</el-tag>
+          <el-tag v-if="!isCamos" type="success" effect="plain" size="small">HD</el-tag>
           <span class="live-tab__value">{{ currentStreamType }}</span>
           <el-tag v-if="health?.imageIssues?.length" type="warning" effect="light" round size="small">{{ t('cameras.imageQuality.label') }}: {{ health.imageIssues.map(i => t(`cameras.imageQuality.issues.${i}`)).join(', ') }}</el-tag>
         </div>
@@ -140,8 +149,9 @@
       </el-descriptions>
     </el-dialog>
 
-    <!-- Recordings: clips and a timeline under the video -->
+    <!-- Recordings: clips and a timeline under the video (EZVIZ SD card; CamOS photos are in the history) -->
     <PlaybackControls
+      v-if="!isCamos"
       :camera="camera"
       @play-playback="handlePlayPlayback"
       @back-to-live="playLiveStream"
@@ -191,13 +201,14 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { loadEzuikit, loadHlsPlayers } from '@/utils/lazyLibs'
 import api from '@/services/api'
 import PlaybackControls from './PlaybackControls.vue'
 import TrapMaintenanceCard from './TrapMaintenanceCard.vue'
+import KvsViewer from './KvsViewer.vue'
 import { ElNotification } from 'element-plus'
-import { VideoCamera, Key, Lock, EditPen, Camera, InfoFilled } from '@element-plus/icons-vue'
+import { VideoCamera, Key, Lock, EditPen, Camera, InfoFilled, Clock } from '@element-plus/icons-vue'
 import { useBreakpoints } from '@/composables/useBreakpoints'
 import { useNotifications } from '@/composables/useNotifications'
 import { useI18n } from 'vue-i18n'
@@ -216,6 +227,58 @@ const isPlaceholderVisible = ref(true)
 const placeholderText = ref(t('cameras.noCameraSelected'))
 const currentStreamType = ref(t('cameras.waitingConnection'))
 const currentStreamId = ref('')
+
+// CamOS cameras: live over KVS WebRTC, asked for at the next wake when the camera sleeps
+const isCamos = computed(() => ['camos', 'kinesis'].includes(props.camera?.platform))
+const kvsConfig = ref(null)
+const kvsLoading = ref(false)
+const requestingLive = ref(false)
+const sleepText = computed(() => {
+  const at = props.camera?.device?.nextWakeAt || props.camera?.device?.wakeAt
+  return at ? t('cameras.sleepingNextWake', { time: new Date(at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }) : t('cameras.sleeping')
+})
+const onKvsState = (state) => {
+  if (state === 'playing') {
+    isPlaceholderVisible.value = false
+    currentStreamType.value = t('cameras.live')
+  } else if (state === 'waiting') {
+    currentStreamType.value = t('cameras.kvs.waiting')
+  } else if (state === 'error') {
+    currentStreamType.value = t('cameras.streamError')
+  }
+}
+const requestLive = async () => {
+  requestingLive.value = true
+  try {
+    const res = await api.requestCameraLive(props.camera.deviceSerial, 5)
+    ElNotification({ title: t('common.success'), message: res.data?.sent ? t('cameras.liveStarting') : t('cameras.liveRequestedNote'), type: 'success' })
+  } catch (err) {
+    ElNotification({ title: t('common.error'), message: requestErrorText(t, err, t('cameras.streamError')), type: 'error' })
+  } finally {
+    requestingLive.value = false
+  }
+}
+const playKvs = async () => {
+  kvsConfig.value = null
+  kvsLoading.value = true
+  placeholderText.value = t('cameras.kvs.connecting')
+  try {
+    const res = await api.getCameraLive(props.camera.deviceSerial)
+    const data = res.data
+    if (data?.platform === 'kinesis' && data.channelARN) {
+      kvsConfig.value = data
+      currentStreamType.value = t('cameras.kvs.connecting')
+      if (data.camera?.sleeping) placeholderText.value = sleepText.value
+    } else {
+      placeholderText.value = data?.message || t('cameras.player.streamUnavailable')
+    }
+  } catch (err) {
+    placeholderText.value = err.response?.status === 503 ? t('cameras.kvs.notConfigured') : requestErrorText(t, err, t('cameras.player.systemError'))
+    currentStreamType.value = t('cameras.streamError')
+  } finally {
+    kvsLoading.value = false
+  }
+}
 
 // Device health and manual capture
 const { relativeTime } = useNotifications()
@@ -334,6 +397,7 @@ const handleSaveValidateCode = async () => {
 }
 
 const resetPlayer = () => {
+  kvsConfig.value = null
   if (hlsEzPlayer) {
     try { hlsEzPlayer.destroy() } catch (e) {}
     hlsEzPlayer = null
@@ -560,6 +624,8 @@ const playLiveStream = async () => {
     currentStreamType.value = t('cameras.player.noDevice')
     return
   }
+
+  if (isCamos.value) return playKvs()
 
   // Automatically open popup only when camera is ENCRYPTED (isEncrypt === 1) and missing validateCode
   if (props.camera?.isEncrypt === 1 && !props.camera?.validateCode) {

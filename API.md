@@ -289,22 +289,78 @@ Errors: `400 INVALID_REQUEST` (`snapshotId`, a `source` other than `sentinel`, `
 
 ### `AI_PROVIDER=sentinel`
 
-Runs FlyBot with Sentinel as its only counter (a minimal mode for the competition setup). The capture job stores each photo and checks its quality but calls no cloud model, and the automatic AI retry is off. `snapshot_analyzed` is sent right away with `aiSource: "pending"` so Sentinel can fetch the photo, and the photo gets its count when Sentinel posts `/analysis`. Until then it shows as not analyzed; if Sentinel never answers it stays so, and no "AI failing" alert is raised for it. The assistant's photo questions still use Vertex AI.
+Runs FlyBot with Sentinel as its only counter (the first competition build;  below replaces it). The capture job stores each photo and checks its quality but calls no cloud model, and the automatic AI retry is off. `snapshot_analyzed` is sent right away with `aiSource: "pending"` so Sentinel can fetch the photo, and the photo gets its count when Sentinel posts `/analysis`. Until then it shows as not analyzed; if Sentinel never answers it stays so, and no "AI failing" alert is raised for it. The assistant's photo questions still use Vertex AI.
 
-## Sentinel console proxy
+## Camera platforms (EZVIZ, CamOS on AWS IoT Core, Kinesis Video Streams)
 
-The FlyBot Sentinel operator console lives inside FlyBot (menu **Sentinel**). Its pages call FlyBot, and FlyBot calls the Sentinel UI API (flybot-sentinel `docs/UI_API.md`) with Sentinel's **operator token**, which stays on the server: browsers only ever hold their FlyBot session. People, not machines: sign in as usual (Bearer JWT or the session cookie, so evidence pictures work as `<img src>`). API keys are not accepted.
+Each camera has a `platform` (`Camera.platform`, default `ezviz`): how FlyBot reaches it (`server/src/platforms/`). Every adapter answers the same calls — list, snapshot, live session, playback, capture schedule, status — and the rest of FlyBot does not care which one it talks to.
 
-Base URL: `https://YOUR_FLYBOT_DOMAIN/api/sentinel/ui`
+| Platform | Camera | Snapshot | Live view | Playback | Capture schedule |
+|---|---|---|---|---|---|
+| `ezviz` | EZVIZ Open Platform camera (unchanged) | FlyBot polls the camera on its schedule | EZVIZ live URL (HLS / ezopen) | EZVIZ SD-card records | FlyBot's capture job |
+| `camos` | CamOS trap camera (ESP32-S3, AMB82) on AWS IoT Core | The camera uploads on its own schedule (device API below); "capture now" = RPC `snapshot.now` and a wait for the upload | KVS WebRTC viewer config; a camera on battery joins at its next wake (`live.requested` in its shadow) | The snapshot timeline | Shadow `capture.intervalMin` |
+| `kinesis` | A KVS signaling channel only | none | KVS WebRTC viewer config | none | none |
+
+`GET /api/user/cameras` returns `platform` and, for CamOS cameras, `device` (`paired`, `fw`, `net`, `rssi`, `battery {mv, pct, charging, solarMv}`, `location`, `power {mode: auto|battery|powered}`, `sleeping`, `wakeAt`, `nextWakeAt`, `lastSeenAt`, `liveRequested`, `kvsChannelName`; never its token hashes).
+
+### Platform-aware endpoints (session sign-in)
+
+| Request | Answer |
+|---|---|
+| `GET /api/cameras/{serial}/live` | EZVIZ: the same answer as `POST /api/live` (`{code, data: {url, accessToken, ...}}`). CamOS / KVS: `{success, platform: "kinesis", channelARN, channelName, region, signalingEndpoints: {WSS, HTTPS}, iceServers: [...], clientId, credentials: {accessKeyId, secretAccessKey, sessionToken, expiration}, expiresAt, camera: <status>, live: {requested, sent, nextWakeAt}}` — the browser joins the channel as VIEWER (`client/src/components/cameras/KvsViewer.vue`). The credentials come from `KVS_VIEWER_ROLE_ARN` assumed for 15 minutes with a policy limited to that channel; without the role: `503 LIVE_NOT_CONFIGURED` |
+| `POST /api/cameras/{serial}/live/request` `{minutes?}` | CamOS only: `live.requested` (and `minutes`, 1-30, default 5) in the shadow for the next wake, plus RPC `live.start` when the camera is awake. `{success, requested, sent, nextWakeAt}` |
+| `GET /api/cameras/{serial}/playback?from&to` | EZVIZ: `{kind: "video", records}`; CamOS: `{kind: "snapshots", items: [{id, at, imageKey, count, trigger, issues, traceId}]}` |
+| `GET /api/cameras/{serial}/status` | `{status: {platform, online, power: {mode}, sleeping, wakeAt, nextWakeAt, lastSeenAt, battery, net, rssi, fw, ...}}` |
+| `POST /api/user/add-camera` `{deviceSerial, validateCode, deviceName?, trapKind?, platform: "camos"}` | Registers a CamOS camera from its label (no cloud call) and answers with `provisioning: {provisionToken, expiresAt, pairUrl, apiBase, iotEndpoint, kvs: {region, channelName}, qr}` — shown once; the owner types it into the camera's setup portal. `platform` omitted or `ezviz`: unchanged |
+| `POST /api/user/camera/provision` `{deviceSerial}` | A new provisioning token for a CamOS camera (manage rights) |
 
 ### Settings
 
-| Variable | Default | Meaning |
-|---|---|---|
-| `SENTINEL_UI_URL` | (empty) | Base URL of the Sentinel UI API, ending in `/ui` (added when missing), e.g. `https://<api-id>.execute-api.ap-southeast-2.amazonaws.com/ui` or `https://<cloudfront>/ui`. Must be `https` (plain `http` only for localhost); no query string. |
-| `SENTINEL_UI_TOKEN` | (empty) | Sentinel's operator token (flybot-sentinel `data/secrets/ui-token.txt`, Secrets Manager `sentinel-<stage>-ui-token`). Production: Secret Manager `flybot-sentinel-ui-token`. Use the operator token, not the judge token: FlyBot enforces who may decide itself. |
+| Variable | Meaning |
+|---|---|
+| `AWS_REGION` | Region of every AWS client (default `ap-southeast-2`). Credentials: the EC2 instance role, or `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` |
+| `IOT_ENDPOINT` | The account's IoT data endpoint (`aws iot describe-endpoint --endpoint-type iot:Data-ATS`) |
+| `IOT_EVENTS` | `mqtt` (default): FlyBot subscribes to the cameras' topics over MQTT/WebSocket with SigV4, on the `ENABLE_CRON` instance; `rule`: an IoT rule posts the messages to `POST /api/device/events`; `off` |
+| `IOT_RULE_SECRET` | Shared secret of that rule (header `X-IoT-Rule-Secret`) |
+| `KVS_VIEWER_ROLE_ARN` | IAM role the browser assumes (through FlyBot) to join a signaling channel as viewer |
+| `DEVICE_API_BASE_URL` | Public base URL the cameras call (default `APP_BASE_URL`) |
+| `DEVICE_OTA_FW`, `DEVICE_OTA_URL`, `DEVICE_OTA_SHA256` | Firmware offered by `GET /api/device/ota` (all three set = offered) |
 
-Either empty: every route below answers `503 {"code":"SENTINEL_DISABLED"}` (signed in or not), and `GET /api/auth/me` reports `sentinelEnabled: false` so the client hides the menu.
+IoT Core messages FlyBot handles (`platforms/camos.js handleMessage`): `camos/<serial>/state`, `camos/<serial>/event` (`goodbye` with `sleeping`/`wakeAt`, `boot`, `low_power`, ...), `camos/<serial>/telemetry`, `camos/<serial>/rpc/res`, the shadow's reported side (`$aws/things/<serial>/shadow/update/accepted`) and the lifecycle events (`$aws/events/presence/connected|disconnected/<clientId>`). Shadow keys written by FlyBot: `capture.intervalMin`, `capture.requestNow`, `live.requested`, `live.minutes`, `video.image` (from a confirmed `set_isp`). RPC methods sent: `snapshot.now`, `live.start {minutes}`, `live.stop`, `gps.fix`, `reboot`, `ota.apply`.
+
+## Device API (CamOS cameras)
+
+What the ESP32 / AMB82 cameras call over HTTPS (flybot-aws `docs/CONTRACTS.md` section 2). No user session: every call but `/pair` and `/events` carries `X-Device-Serial` and `X-Device-Token` (the token from pairing; FlyBot stores its SHA-256 only). Base URL: `DEVICE_API_BASE_URL/api/device`.
+
+| Request | Answer |
+|---|---|
+| `POST /pair` `{serial, verifyCode, provisionToken}` | `200 {ok, deviceToken, iot: {endpoint, thingName}, kvs: {region, channelName}}`; `401` on an unknown camera, a wrong label code or an expired/used provisioning token (24 h, one use). 10 tries a minute per IP |
+| `POST /snapshot` multipart/form-data: part `image` (`image/jpeg`, at most 2 MB), part `meta` (`application/json`: `{v, serial, capturedAt, trigger: schedule|rpc|boot, battery: {mv, pct, charging, solarMv}, net: wifi|4g, rssi, location: {lat, lng, fixAt}, fw}`) | `200 {ok, snapshotId, nextWakeAt}` as soon as the photo is stored (the analysis, alerts, quality check and webhook run in the background); `413` too large, `415` not a JPEG, `400` bad meta, `401` bad token, `429` more than 12 photos a minute. The photo goes through the same pipeline as EZVIZ photos (storage, AI provider, alerts, `snapshot_analyzed`); `capturedAt` is kept when it is within a week of the server clock |
+| `GET /time` | `{now, epoch}` (NTP fallback on 4G) |
+| `GET /ota` | `{fw, url, sha256}` or `204` when there is nothing newer than the camera's `fw` |
+| `POST /events` `{topic, payload}` with `X-IoT-Rule-Secret` | The IoT-rule fallback for camera->cloud messages (`IOT_EVENTS=rule`); `401` bad secret, `503` when `IOT_RULE_SECRET` is empty |
+
+Limits: 120 calls a minute per client IP, 30 a minute per camera. A photo uploaded while FlyBot waits on `snapshot.now` answers that request (the "capture now" button, a confirmed `capture_now` card, the Sentinel `POST /capture`).
+
+## `AI_PROVIDER=opencv-lambda`
+
+Every photo is analyzed by the vision Lambda of flybot-aws (OpenCV 5 detection + the agent) with the request of `docs/CONTRACTS.md` section 1 (`services/visionLambda.js`): `Lambda.Invoke` (RequestResponse) on `VISION_LAMBDA_NAME` from the instance role, or — for local development — the same JSON posted to `VISION_LAMBDA_URL` (`http://localhost:9001/invoke`, `uv run python -m sentinel.lambda_local`; the URL wins when both are set). Timeout `VISION_LAMBDA_TIMEOUT_S` (120).
+
+The photo travels by reference: `{s3Bucket, s3Key}` when the bucket is real S3 (`PHOTOS_BY_REFERENCE`, default true when `S3_ENDPOINT` is empty or an `amazonaws.com` endpoint), otherwise a signed URL valid an hour. The request also carries the previous analyzed photo of the camera (`prevPhoto`), the camera (`id`, `name`, `trapKind` sticky|lure, `platform`, `location`), the last 14 counts (`history`) and the locale.
+
+Stored on the snapshot: `aiProvider: "opencv-lambda"`, counts as `aiResults.summary` / `pestCount` (statistics, alerts and the history page read them as with any provider), boxes in pixels as `aiResults.insects`, and the full answer under `lambda` (`traceId`, `model`, `counts`, `boxes` normalised, `quality`, `diff`, `density`, `proposals`, `trace`, `evidence`, `timings`, `width`, `height`, `status`, `attempts`). `snapshot_analyzed` is sent unchanged (`aiProvider: "opencv-lambda"`, `aiSource: "cloud"`).
+
+On an error (`FunctionError`, HTTP 4xx/5xx, timeout) the photo is kept, `lambda.status` is `failed` with `lambda.error {code, message}`, and the call is retried once after 30 s in the background; a success then runs the alerts (latest photo only) and the webhook. After that the usual AI retry job takes over.
+
+**Proposals.** Each `proposals[]` item (`capture_now`, `set_interval {minutes}`, `set_isp {brightness, wdr}`, `review_request`, `notify {message}`) becomes a confirm card in the camera owner's **Sentinel** conversation (session `sentinel`), a `SentinelProposal` row (`source: "lambda"`, `traceId`, `snapshotId`, `confidence`) and a Telegram message with Confirm / Reject. Nothing runs until the owner confirms (`POST /api/ai/chat/confirm`, Telegram, or the Sentinel console): `capture_now` takes a photo now (a sleeping CamOS camera takes it at its next wake), `set_interval` sets the camera's interval for 24 hours (`Camera.sentinelInterval`; CamOS: the shadow too), `set_isp` writes `video.image` to a CamOS shadow (refused for EZVIZ), `review_request` flags the photo for a person, `notify` writes a notification. The assistant proposes the same actions with its `propose_action` tool.
+
+**Deep analysis.** The assistant's `analyze_photo_deep` tool sends `mode: "deep"` with the user's question (photo id, or a camera's latest photo) and answers with the Lambda's `answer` (markdown) and counts; the question, answer and trace are kept under `lambda.deep` (last 10). Gemini remains the chat model. Quota: 20 photo looks per person per hour (shared with `inspect_photo`).
+
+## Sentinel console
+
+The console (menu **Sentinel**: Overview, Traces, Approvals, Devices) reads FlyBot's own database: a *trace* is a photo analyzed by the vision Lambda, an *approval* is a `SentinelProposal` (the confirm card), a *device* is a camera. On when `AI_PROVIDER=opencv-lambda`, or `SENTINEL_CONSOLE=true` on a server that keeps old traces with another provider; otherwise every route answers `503 {"code":"SENTINEL_DISABLED"}` and `GET /api/auth/me` reports `sentinelEnabled: false` so the client hides the menu. People, not machines: sign in as usual (Bearer JWT or the session cookie, so evidence pictures work as `<img src>`).
+
+Base URL: `https://YOUR_FLYBOT_DOMAIN/api/sentinel/ui`
 
 ### Who may use it
 
@@ -314,41 +370,23 @@ Either empty: every route below answers `503 {"code":"SENTINEL_DISABLED"}` (sign
 | user with `sentinelViewer` (e.g. a competition judge; set by an admin) | yes | no (`403 FORBIDDEN`) |
 | any other user | no (`403 FORBIDDEN`) | no |
 
-`GET /api/auth/me` (and the sign-in answer) carries `sentinelEnabled` (configured and allowed to read) and `sentinelCanDecide`; `GET /api/system/info` has the same as `info.sentinel: { enabled, canDecide }`. An admin sets `sentinelViewer` with `PUT /api/admin/users/{id} {"sentinelViewer": true|false}` (audited as `user.sentinel_access_changed`). The Sentinel pages show every camera Sentinel knows, not only the cameras shared with the person.
+Everyone sees the cameras they may see in FlyBot (owned, shared with them, or every camera for an admin). `GET /api/auth/me` carries `sentinelEnabled` and `sentinelCanDecide`; `GET /api/system/info` has the same as `info.sentinel: { enabled, canDecide }`. An admin sets `sentinelViewer` with `PUT /api/admin/users/{id} {"sentinelViewer": true|false}` (audited as `user.sentinel_access_changed`).
 
 ### Routes
 
-Only these reach Sentinel; any other path or method answers `404 NOT_FOUND` without calling it. Query parameters not listed are dropped; a listed one with a bad value answers `400 BAD_REQUEST`.
+| Request | Answer |
+|---|---|
+| `GET /summary?hours=` (1-168, default 24) | `{role: operator|judge, hours, photos, photos_by_source: {ezviz, camos}, decisions: {<action>: n, no_op: n}, proposals_pending, devices: {online, total}, planner_mode: rule|llm, last_photo_at, kill_switch: {global: false, cameras: []}, provider, lambda}` |
+| `GET /traces?camera=&since=&until=&limit=&cursor=` | `{items: [slim trace], next}` newest first; `next` is a time cursor. A slim trace: `event_id` (the Lambda's `traceId`, or `snap_<id>`), `snapshot_id`, `camera`, `camera_name`, `source` (platform), `trap_kind`, `created_at`, `captured_at`, `state` (`done` \| `failed`), `outcome`, `counts: {opencv, npu: null, production}`, `quality: {ok, issues}` (the Lambda's flags), `decisions: [{rule, action, reasons, params}]` (its proposals), `approval: {approval_id, kind, status}`, `planner: {name, model}`, `image` (storage key) |
+| `GET /traces/{event_id}` | `{trace: {...slim, opencv_outputs: {<serial>: {counts, by_class, quality: {ok, issues, scores: {blur, exposure}}, new_catch: {new_count, disappeared_count, persisted_count, card_change_suspected}, density, image, previous_image, evidence: [keys], analyzer, vision_ms, battery_percent, boxes}}, planner: {name, model, llm_turns, tokens}, reasoning_summary, tool_calls: [{index, name, status, ms, args, result}] (the trace steps), events, approval, approvals, deep: [{at, question, answer, trace_id}], timings, model}, media: {}}` |
+| `GET /approvals?status=&limit=` (`pending`, `approved`, `rejected`, `expired`) | `{items: [{approval_id, event_id, kind, status, cameras, created_at, expires_at, decided_at, decided_by, on_timeout, source, flybot_proposal_id, payload: {action, params, reason, result}, evidence}], next: null}` (`confirmed` → `approved`; `failed` → `rejected`; a pending one past its time reads as `expired`) |
+| `GET /approvals/{id}` | `{approval, media: {}}` |
+| `POST /approvals/{id}/decide` `{"decision": "approve" \| "reject"}` | Admins and managers. Runs (or drops) the proposal's confirm card as its owner would in the chat panel (claimed once): `202 {queued: true, applied: true, approval_id, decision, state: done|cancelled|failed|expired, message, by}` with `by` always the signed-in person; `409 CONFLICT` when it was already decided. Audited as `sentinel.approval_decided` |
+| `GET /devices`, `GET /devices/{serial}` | `{items: [...]}` / `{device, media: {}}`: `serial`, `name`, `online`, `trap_kind`, `source`, `fw`, `net`, `battery_percent`, `rssi`, `telemetry`, `last_seen_at`, `last_photo: {key, at, count}`, `lat`, `lon`, `power_mode`, `sleeping`, `wake_at`, `reported` / `desired` (the shadow), `reported_version`, `desired_version`, `capture_interval_min`, `agent_state: {budgets: {captures_used, captures_limit}}`; the detail adds `telemetry_history` (battery and signal from the last 60 CamOS uploads) |
+| `GET /evidence?key=` | The picture itself from FlyBot's bucket (`snapshots/<serial>/...`, `evidence/<serial>/...`, `frames/<serial>/...`; jpg/png/webp, at most 25 MB) for a camera the person may see (`Cache-Control: private, max-age=3600`) |
 
-| Request | Sentinel route | Query forwarded |
-|---|---|---|
-| `GET /summary` | `GET /ui/summary` | `hours` (1-168). `role` in the answer is FlyBot's: `operator` for admins and managers, `judge` for read-only people |
-| `GET /traces` | `GET /ui/traces` | `camera`, `since`, `until`, `loop` (`per_photo`, `daily_per_plot`, `followup`), `limit` (1-100), `cursor` |
-| `GET /traces/{event_id}` | `GET /ui/traces/{event_id}` | (URL-encode the id: daily ids contain `:`) |
-| `GET /approvals` | `GET /ui/approvals` | `status` (`pending`, `approved`, `rejected`, `expired`), `limit`, `cursor` |
-| `GET /approvals/{id}` | `GET /ui/approvals/{id}` | (poll it after a decision) |
-| `GET /devices` | `GET /ui/devices` | |
-| `GET /devices/{serial}` | `GET /ui/devices/{serial}` | |
-| `GET /density` | `GET /ui/density` | `date` (`YYYY-MM-DD`) |
-| `GET /bench` | `GET /ui/bench` | `name` (a file name) |
-| `POST /approvals/{id}/decide` | `POST /ui/approvals/{id}/decide` | Body `{"decision": "approve" \| "reject"}`. Admins and managers only. `by` is always set by FlyBot to the signed-in person (`Name <email>`, or the email when that is longer than 80 characters); a `by` sent by the browser is ignored. Answer: Sentinel's `202 {"queued": true, "approval_id", "decision"}` plus `by`. Audited as `sentinel.approval_decided` |
-| `GET /evidence?key=` | `GET /ui/evidence?key=&json=1`, then the presigned URL | `key`: an object key or `s3://` ref under `frames/`, `clips/`, `evidence/`, `density/` or `bench/`. FlyBot reads the presigned URL itself and streams the file back (`Cache-Control: private, max-age=3600`, `ETag`, images and mp4/webm inline, anything else as a download, at most 25 MB). Neither the token nor the presigned URL reaches the browser |
-
-JSON answers are Sentinel's as-is (`Cache-Control: no-store`), except `role` in `/summary` and `by` in decide. Detail routes still include Sentinel's `media` map of presigned S3 URLs (valid 10 minutes, no token in them); the client may use them or `/evidence`.
+Any other path or method answers `404 NOT_FOUND`; a listed query parameter with a bad value `400 BAD_REQUEST`. JSON answers carry `Cache-Control: no-store`.
 
 ### Errors, limits
 
-`{ "success": false, "code": "...", "message": "..." }`, never a `401` for a Sentinel-side problem (the client would sign the person out):
-
-| Status | `code` | When |
-|---|---|---|
-| 400 | `BAD_REQUEST` | Bad query value, bad `decision`, bad evidence key; or Sentinel refused the body |
-| 403 | `FORBIDDEN` | Not allowed to read, or a read-only person deciding |
-| 404 | `NOT_FOUND` | Path not proxied; unknown trace/approval/device/object |
-| 409 | `CONFLICT` | The approval is not pending any more |
-| 502 | `SENTINEL_AUTH` / `SENTINEL_FORBIDDEN` | Sentinel refused FlyBot's token (wrong token / judge token used) |
-| 502 | `SENTINEL_UPSTREAM` / `SENTINEL_UNREACHABLE` | Sentinel answered 5xx or something unreadable / cannot be reached |
-| 503 | `SENTINEL_DISABLED` / `SENTINEL_BUSY` | Not configured / Sentinel answered 429 |
-| 504 | `SENTINEL_TIMEOUT` | No answer within 5 seconds (evidence files: headers within 5 s, the whole file within 30 s) |
-
-Sentinel's own error texts are not passed on. Limits per person: 120 reads, 300 evidence files and 20 decisions per minute (`429` with `Retry-After`).
+`{ "success": false, "code": "...", "message": "..." }`: `400 BAD_REQUEST`, `403 FORBIDDEN`, `404 NOT_FOUND`, `409 CONFLICT`, `413 TOO_LARGE`, `502 SENTINEL_STORAGE` (the bucket did not answer), `503 SENTINEL_DISABLED`. Limits per person: 120 reads, 300 evidence files and 20 decisions per minute (`429` with `Retry-After`).

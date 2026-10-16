@@ -16,11 +16,54 @@ const shareSchema = new mongoose.Schema({
     orgRole: { type: String, enum: ['owner', 'manager', 'member', null], default: null }
 }, { _id: false });
 
+const PLATFORMS = ['ezviz', 'camos', 'kinesis'];
+
+/**
+ * A CamOS camera (ESP32 trap, AMB82) reached through AWS IoT Core and the device API
+ * (platforms/camos.js, routes/deviceRoutes.js). Tokens are stored hashed (SHA-256) only.
+ */
+const deviceSchema = new mongoose.Schema({
+    // Per-device API token (X-Device-Token), issued by POST /api/device/pair
+    tokenHash: { type: String, default: undefined },
+    tokenIssuedAt: { type: Date, default: undefined },
+    // One-time provisioning token the owner gives the camera (portal / network QR)
+    provisionTokenHash: { type: String, default: undefined },
+    provisionExpiresAt: { type: Date, default: undefined },
+    pairedAt: { type: Date, default: undefined },
+    // AWS IoT thing (default: the serial) and the KVS signaling channel (cam-<serial>)
+    thingName: { type: String, default: undefined },
+    kvsChannelName: { type: String, default: undefined },
+    kvsChannelArn: { type: String, default: undefined },
+    // What the camera last reported (device API meta, MQTT state/telemetry, shadow reported)
+    fw: { type: String, default: undefined },
+    net: { type: String, default: undefined }, // wifi | 4g
+    rssi: { type: Number, default: undefined },
+    battery: { type: mongoose.Schema.Types.Mixed, default: undefined }, // { mv, pct, charging, solarMv }
+    location: { type: mongoose.Schema.Types.Mixed, default: undefined }, // { lat, lng, fixAt }
+    power: { type: mongoose.Schema.Types.Mixed, default: undefined }, // { mode: auto | battery | powered }
+    sleeping: { type: Boolean, default: undefined },
+    wakeAt: { type: Date, default: undefined },
+    lastSeenAt: { type: Date, default: undefined },
+    // FlyBot asked for a live session at the next wake (shadow desired live.requested)
+    liveRequested: { type: Boolean, default: undefined },
+    liveRequestedAt: { type: Date, default: undefined },
+    shadow: {
+        reported: { type: mongoose.Schema.Types.Mixed, default: undefined },
+        desired: { type: mongoose.Schema.Types.Mixed, default: undefined },
+        reportedAt: { type: Date, default: undefined },
+        desiredAt: { type: Date, default: undefined }
+    }
+}, { _id: false });
+
 const cameraSchema = new mongoose.Schema({
     // Owner (the account that registered the device)
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', index: true },
     // A physical device can be registered only once; others get access through sharing
     deviceSerial: { type: String, required: true, unique: true },
+    // How the camera is reached (platforms/): EZVIZ Open Platform (default), CamOS over AWS IoT
+    // Core + the device API, or a KVS-only camera (live view, no snapshots)
+    platform: { type: String, enum: PLATFORMS, default: 'ezviz' },
+    device: { type: deviceSchema, default: undefined },
     sharedWith: { type: [shareSchema], default: [] },
     validateCode: { type: String, default: '' },
     deviceName: { type: String, default: 'Camera' },
@@ -82,6 +125,9 @@ const cameraSchema = new mongoose.Schema({
 cameraSchema.index({ 'sharedWith.userId': 1 });
 cameraSchema.index({ 'sharedWith.email': 1 });
 
+cameraSchema.index({ platform: 1 });
+
 const Camera = mongoose.model('Camera', cameraSchema);
 
 module.exports = Camera;
+module.exports.PLATFORMS = PLATFORMS;

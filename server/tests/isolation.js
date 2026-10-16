@@ -36,3 +36,37 @@ axios.interceptors.request.use((config) => {
     }
     return config;
 });
+
+// Vertex AI / Gemini (@google/genai) never runs in tests: the client is replaced by one whose
+// every call fails, so a test that reaches the AI without stubbing it fails loudly instead of
+// calling Google. Tests stub aiService / agent.setModelClient as before.
+const Module = require('module');
+const genaiPath = require.resolve('@google/genai');
+const realGenai = require(genaiPath);
+class TestGoogleGenAI {
+    constructor() {
+        const refuse = (name) => async () => { throw new Error(`Test tried to call Vertex AI (${name}): stub it`); };
+        const surface = () => new Proxy({}, { get: (_, prop) => (prop === 'then' ? undefined : refuse(String(prop))) });
+        this.models = surface();
+        this.chats = surface();
+        this.files = surface();
+        this.caches = surface();
+    }
+}
+const genaiModule = new Module(genaiPath);
+genaiModule.filename = genaiPath;
+genaiModule.loaded = true;
+genaiModule.exports = { ...realGenai, GoogleGenAI: TestGoogleGenAI };
+require.cache[genaiPath] = genaiModule;
+
+// Plain fetch() (Node's undici, used by some SDKs) is held to the same rule as axios
+const realFetch = globalThis.fetch;
+if (typeof realFetch === 'function') {
+    globalThis.fetch = (input, init) => {
+        const raw = typeof input === 'string' ? input : input?.url || String(input);
+        let host = '';
+        try { host = new URL(raw).hostname; } catch { host = ''; }
+        if (!LOCAL_HOSTS.has(host)) return Promise.reject(new Error(`Test tried to call an external service: ${raw.slice(0, 80)} (stub it)`));
+        return realFetch(input, init);
+    };
+}

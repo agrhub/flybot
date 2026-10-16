@@ -1,8 +1,7 @@
-const axios = require('axios');
 const { Camera, Snapshot } = require('../models');
 const { S3_PUBLIC_URL, CAPTURE_CONCURRENCY } = require('../config/env');
 const { runPool } = require('../utils/concurrency');
-const ezvizService = require('../services/ezvizService');
+const platforms = require('../platforms');
 const s3Service = require('../services/s3Service');
 const aiService = require('../services/aiService');
 const notificationService = require('../services/notificationService');
@@ -33,103 +32,118 @@ async function checkAlerts(deviceSerial, snapshotId) {
 }
 
 /**
- * Capture image from camera, upload to S3, and trigger AI analysis.
+ * Store one photo of a camera: upload to S3, the Snapshot row, the camera thumbnail. Returns the
+ * saved document. `trigger`: 'sentinel' (an extra photo FlyBot Sentinel asked for; the camera's
+ * schedule is not moved), or what a CamOS camera said ('schedule' | 'rpc' | 'boot'); `meta`:
+ * what the camera sent with the photo; `capturedAt`: when it was taken (default now).
+ */
+async function storeSnapshot(deviceSerial, buffer, { trigger, meta, capturedAt } = {}) {
+    const fileName = `${deviceSerial}_${Date.now()}.jpg`;
+    const s3Key = `snapshots/${deviceSerial}/${fileName}`;
+
+    await s3Service.uploadSnapshot(s3Key, buffer, 'image/jpeg');
+
+    const finalUrl = `${S3_PUBLIC_URL || ''}/${s3Key}`;
+
+    const newSnapshot = new Snapshot({
+        deviceSerial: deviceSerial,
+        imageUrl: finalUrl,
+        s3Key: s3Key,
+        ...(trigger ? { trigger } : {}),
+        ...(meta ? { meta } : {}),
+        ...(capturedAt instanceof Date && !isNaN(capturedAt) ? { createdAt: capturedAt } : {})
+    });
+    let savedDoc;
+    try {
+        savedDoc = await newSnapshot.save();
+    } catch (saveErr) {
+        // Nothing would point to the file: remove it rather than leave it in the bucket
+        await s3Service.deleteS3Object(s3Key).catch((delErr) => {
+            console.warn(`⚠️ Could not remove unsaved photo ${s3Key}:`, delErr.message);
+        });
+        throw saveErr;
+    }
+
+    // Save thumbnail image to Camera for display across cameras and settings pages
+    try {
+        await Camera.updateMany(
+            { deviceSerial: deviceSerial },
+            {
+                $set: {
+                    thumbnailUrl: finalUrl,
+                    picUrl: finalUrl,
+                    lastSync: new Date()
+                }
+            }
+        );
+        console.log(`🖼️ Updated camera thumbnail for ${deviceSerial}: ${finalUrl}`);
+    } catch (camErr) {
+        console.warn(`⚠️ Failed to update camera thumbnail for ${deviceSerial}:`, camErr.message);
+    }
+    return savedDoc;
+}
+
+/**
+ * After a photo is stored: the AI analysis, the alerts, the quality check and the
+ * snapshot_analyzed webhook. `picUrl`: a link the Roboflow provider can fetch the photo from.
+ * With AI_PROVIDER=sentinel no cloud model runs here: the photo waits for
+ * POST /api/sentinel/analysis, and its alerts run then. Never throws.
+ */
+async function finishSnapshot(savedDoc, buffer, { picUrl = null } = {}) {
+    const deviceSerial = savedDoc.deviceSerial;
+    try {
+        const awaitSentinel = aiService.isSentinelMode();
+        if (!awaitSentinel) {
+            // 4. Send to AI for processing
+            await aiService.analyzeSnapshot(buffer.toString('base64'), savedDoc._id, picUrl, { buffer });
+
+            console.log(`📸 Snapshot saved & sent to AI: ${deviceSerial}`);
+
+            // 5. Alerts: pest threshold reached, or AI analysis failing repeatedly
+            await checkAlerts(deviceSerial, savedDoc._id);
+        } else {
+            console.log(`📸 Snapshot saved, waiting for the Sentinel analysis: ${deviceSerial}`);
+        }
+
+        // 6. Photo quality: dark, blurry, dirty lens or a full sticky card
+        try {
+            const analyzed = await Snapshot.findById(savedDoc._id).lean();
+            const count = analyzed?.aiProcessed ? notificationService.countPests(analyzed.aiResults?.summary) : 0;
+            await imageQuality.checkSnapshot(analyzed || savedDoc, buffer, { count });
+        } catch (qualityErr) {
+            console.error(`⚠️ Image quality check failed (${deviceSerial}):`, qualityErr.message);
+        }
+
+        // 7. Webhook snapshot_analyzed, once the AI result and the quality are both stored
+        // (AI_PROVIDER=sentinel: once the quality is stored, with aiSource "pending").
+        // In the background, so a slow receiver does not hold up the next capture
+        snapshotEvents.emitAnalyzed(savedDoc._id, { buffer, pending: awaitSentinel });
+    } catch (error) {
+        console.error(`❌ Snapshot processing error (${deviceSerial}):`, error.message);
+    }
+    return savedDoc;
+}
+
+/**
+ * Capture image from camera (through its platform adapter), upload to S3, and trigger AI analysis.
  * trigger 'sentinel': an extra photo FlyBot Sentinel asked for; it is marked on the snapshot and
  * does not move the camera's schedule (lastCaptureAt).
- * With AI_PROVIDER=sentinel no cloud model runs here: the photo waits for
- * POST /api/sentinel/analysis, and its alerts run then.
+ * A CamOS camera uploads the photo itself (device API): its adapter answers with the stored
+ * snapshot, which is returned as is.
  */
 async function captureAndSaveSnapshot(deviceSerial, { trigger } = {}) {
     try {
         // Record the attempt first, so an offline camera is retried on its normal cadence, not every tick
         if (trigger !== 'sentinel') await Camera.updateMany({ deviceSerial }, { $set: { lastCaptureAt: new Date() } });
 
-        const captureRes = await ezvizService.captureDevice(deviceSerial);
+        const platform = await platforms.forSerial(deviceSerial);
+        const shot = await platform.snapshot(deviceSerial);
+        if (!shot) return null;
+        if (shot.snapshot) return shot.snapshot;
 
-        if (captureRes.code != '200') {
-            console.log(`Can't get image from device ${deviceSerial}`);
-            return null;
-        }
-
-        if (captureRes.code === '200' && captureRes.data?.picUrl) {
-            const picUrl = captureRes.data.picUrl;
-
-            // 1. Download image
-            const imageRes = await axios.get(picUrl, { responseType: 'arraybuffer', timeout: 30000, maxContentLength: 20 * 1024 * 1024 });
-            const buffer = Buffer.from(imageRes.data, 'binary');
-            const base64Image = buffer.toString('base64');
-
-            // 2. Upload to S3
-            const fileName = `${deviceSerial}_${Date.now()}.jpg`;
-            const s3Key = `snapshots/${deviceSerial}/${fileName}`;
-
-            await s3Service.uploadSnapshot(s3Key, buffer, 'image/jpeg');
-
-            const finalUrl = `${S3_PUBLIC_URL || ''}/${s3Key}`;
-
-            // 3. Save to Database
-            const newSnapshot = new Snapshot({
-                deviceSerial: deviceSerial,
-                imageUrl: finalUrl,
-                s3Key: s3Key,
-                ...(trigger === 'sentinel' ? { trigger } : {})
-            });
-            let savedDoc;
-            try {
-                savedDoc = await newSnapshot.save();
-            } catch (saveErr) {
-                // Nothing would point to the file: remove it rather than leave it in the bucket
-                await s3Service.deleteS3Object(s3Key).catch((delErr) => {
-                    console.warn(`⚠️ Could not remove unsaved photo ${s3Key}:`, delErr.message);
-                });
-                throw saveErr;
-            }
-
-            // 3.1. Save thumbnail image to Camera for display across cameras and settings pages
-            try {
-                await Camera.updateMany(
-                    { deviceSerial: deviceSerial },
-                    {
-                        $set: {
-                            thumbnailUrl: finalUrl,
-                            picUrl: finalUrl,
-                            lastSync: new Date()
-                        }
-                    }
-                );
-                console.log(`🖼️ Updated camera thumbnail for ${deviceSerial}: ${finalUrl}`);
-            } catch (camErr) {
-                console.warn(`⚠️ Failed to update camera thumbnail for ${deviceSerial}:`, camErr.message);
-            }
-
-            const awaitSentinel = aiService.isSentinelMode();
-            if (!awaitSentinel) {
-                // 4. Send to AI for processing
-                await aiService.analyzeSnapshot(base64Image, savedDoc._id, picUrl);
-
-                console.log(`📸 Snapshot saved & sent to AI: ${deviceSerial}`);
-
-                // 5. Alerts: pest threshold reached, or AI analysis failing repeatedly
-                await checkAlerts(deviceSerial, savedDoc._id);
-            } else {
-                console.log(`📸 Snapshot saved, waiting for the Sentinel analysis: ${deviceSerial}`);
-            }
-
-            // 6. Photo quality: dark, blurry, dirty lens or a full sticky card
-            try {
-                const analyzed = await Snapshot.findById(savedDoc._id).lean();
-                const count = analyzed?.aiProcessed ? notificationService.countPests(analyzed.aiResults?.summary) : 0;
-                await imageQuality.checkSnapshot(analyzed || savedDoc, buffer, { count });
-            } catch (qualityErr) {
-                console.error(`⚠️ Image quality check failed (${deviceSerial}):`, qualityErr.message);
-            }
-
-            // 7. Webhook snapshot_analyzed, once the AI result and the quality are both stored
-            // (AI_PROVIDER=sentinel: once the quality is stored, with aiSource "pending").
-            // In the background, so a slow receiver does not hold up the next capture
-            snapshotEvents.emitAnalyzed(savedDoc._id, { buffer, pending: awaitSentinel });
-            return savedDoc;
-        }
+        const buffer = shot.buffer;
+        const savedDoc = await storeSnapshot(deviceSerial, buffer, { trigger });
+        return await finishSnapshot(savedDoc, buffer, { picUrl: shot.picUrl || null });
     } catch (error) {
         console.error(`❌ Snapshot error (${deviceSerial}):`, error.message);
     }
@@ -179,7 +193,10 @@ async function autoCaptureDueCameras() {
     if (captureRunInProgress) return null;
     captureRunInProgress = true;
     try {
-        const cameras = await Camera.find({}).select('deviceSerial captureIntervalMinutes captureDaytimeOnly lastCaptureAt');
+        // CamOS cameras take their photos by their own schedule (shadow capture.intervalMin) and
+        // upload them to the device API: only EZVIZ cameras are polled here
+        const cameras = await Camera.find({ $or: [{ platform: 'ezviz' }, { platform: { $exists: false } }] })
+            .select('deviceSerial captureIntervalMinutes captureDaytimeOnly lastCaptureAt sentinelInterval');
         const due = dueSerials(cameras, new Date());
         if (due.length === 0) return { cameras: 0, saved: 0 };
         console.log(`🚀 Capturing ${due.length} due camera(s), ${CAPTURE_CONCURRENCY} at a time...`);
@@ -234,7 +251,7 @@ async function retryFailedAnalyses(now = new Date()) {
         result.retried++;
         try {
             const buffer = await s3Service.readS3Buffer(snap.s3Key);
-            if (!(await aiService.analyzeSnapshot(buffer.toString('base64'), snap._id))) continue;
+            if (!(await aiService.analyzeSnapshot(buffer.toString('base64'), snap._id, null, { buffer }))) continue;
             result.succeeded++;
             const newer = await Snapshot.exists({ deviceSerial: snap.deviceSerial, createdAt: { $gt: snap.createdAt } });
             if (!newer) await checkAlerts(snap.deviceSerial, snap._id);
@@ -252,6 +269,8 @@ module.exports = {
     AI_RETRY,
     checkAlerts,
     retryFailedAnalyses,
+    storeSnapshot,
+    finishSnapshot,
     captureAndSaveSnapshot,
     autoCaptureDueCameras,
     backfillCameraThumbnails

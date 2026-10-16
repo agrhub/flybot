@@ -33,8 +33,36 @@ const snapshotSchema = new mongoose.Schema({
         sentinel: { type: mongoose.Schema.Types.Mixed, default: undefined }
     },
     // What took the photo, when it was not the schedule or a person: 'sentinel' = an extra
-    // capture FlyBot Sentinel asked for (POST /api/sentinel/capture)
-    trigger: { type: String, enum: ['sentinel'], default: undefined },
+    // capture FlyBot Sentinel asked for (POST /api/sentinel/capture or an approved proposal);
+    // 'schedule' | 'rpc' | 'boot' = what a CamOS camera said when it uploaded the photo
+    trigger: { type: String, enum: ['sentinel', 'schedule', 'rpc', 'boot'], default: undefined },
+    // What a CamOS camera sent with the photo (POST /api/device/snapshot `meta`): battery,
+    // network, signal, location, firmware
+    meta: { type: mongoose.Schema.Types.Mixed, default: undefined },
+    // The vision Lambda's answer (AI_PROVIDER=opencv-lambda, services/visionLambda.js,
+    // flybot-aws docs/CONTRACTS.md section 1), stored as received: counts go to
+    // aiResults.summary and boxes (in pixels) to aiResults.insects like every other provider
+    lambda: {
+        status: { type: String, enum: ['ok', 'failed'], default: undefined },
+        error: { type: mongoose.Schema.Types.Mixed, default: undefined },
+        attempts: { type: Number, default: undefined },
+        analyzedAt: { type: Date, default: undefined },
+        traceId: { type: String, default: undefined },
+        model: { type: mongoose.Schema.Types.Mixed, default: undefined },
+        counts: { type: mongoose.Schema.Types.Mixed, default: undefined },
+        boxes: { type: mongoose.Schema.Types.Mixed, default: undefined }, // normalised, as sent
+        quality: { type: mongoose.Schema.Types.Mixed, default: undefined },
+        diff: { type: mongoose.Schema.Types.Mixed, default: undefined },
+        density: { type: mongoose.Schema.Types.Mixed, default: undefined },
+        proposals: { type: mongoose.Schema.Types.Mixed, default: undefined },
+        trace: { type: mongoose.Schema.Types.Mixed, default: undefined },
+        evidence: { type: mongoose.Schema.Types.Mixed, default: undefined },
+        timings: { type: mongoose.Schema.Types.Mixed, default: undefined },
+        width: { type: Number, default: undefined },
+        height: { type: Number, default: undefined },
+        // Deep-analysis questions asked through the chatbot (last few)
+        deep: { type: [mongoose.Schema.Types.Mixed], default: undefined }
+    },
     // Pest total of aiResults.summary, kept in step with it, so filters by count (alarm status)
     // need not add up the summary of every photo. Older photos get it in the background after start-up.
     pestCount: { type: Number, default: undefined },
@@ -100,6 +128,8 @@ snapshotSchema.pre('save', function keepPestCount() {
 });
 // Retention cleanup scans by age only
 snapshotSchema.index({ createdAt: 1 });
+// Sentinel console: traces by id, and the latest traces
+snapshotSchema.index({ 'lambda.traceId': 1 }, { sparse: true });
 
 const Snapshot = mongoose.model('Snapshot', snapshotSchema);
 

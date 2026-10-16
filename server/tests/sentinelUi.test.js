@@ -1,215 +1,204 @@
 const { test, before, after, beforeEach } = require('node:test');
 const assert = require('node:assert/strict');
-const http = require('http');
 
-// Must be set before config/env loads (dbHelpers loads it); the real URL is set once the stub listens
-const TOKEN = 'operator-token-'.padEnd(48, 'q');
-process.env.SENTINEL_UI_URL = 'http://127.0.0.1:9/ui';
-process.env.SENTINEL_UI_TOKEN = TOKEN;
+// Must be set before config/env loads (dbHelpers loads it)
+process.env.AI_PROVIDER = 'opencv-lambda';
+process.env.VISION_LAMBDA_URL = 'http://127.0.0.1:9/invoke';
+process.env.TELEGRAM_BOT_TOKEN = '';
 
-const { models, startDb, stopDb, clearDb, request, createUser, json } = require('./dbHelpers');
+const { models, startDb, stopDb, clearDb, request, createUser, createCamera, json } = require('./dbHelpers');
 const env = require('../src/config/env');
+const sentinelService = require('../src/services/sentinelService');
 
-// ---------- Stub Sentinel UI API (+ the "S3" its presigned URLs point to) ----------
-const JPEG = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(2048, 7), Buffer.from([0xff, 0xd9])]);
-const PRESIGNED_SIG = 'X-Amz-Signature=deadbeefcafe';
-let calls;
-let mode; // per test: override answers ('401', '500', '404')
-let stub;
-let stubBase;
-
-function stubHandler(req, res) {
-    const url = new URL(req.url, 'http://stub');
-    let raw = '';
-    req.on('data', (c) => { raw += c; });
-    req.on('end', () => {
-        const call = { method: req.method, path: url.pathname, query: Object.fromEntries(url.searchParams), auth: req.headers.authorization, body: raw ? JSON.parse(raw) : null };
-        calls.push(call);
-        const send = (status, body, headers = {}) => {
-            res.writeHead(status, { 'Content-Type': 'application/json', ...headers });
-            res.end(JSON.stringify(body));
-        };
-        if (url.pathname.startsWith('/s3/')) {
-            if (!url.search.includes(PRESIGNED_SIG)) return send(403, { error: 'unsigned' });
-            res.writeHead(200, { 'Content-Type': 'image/jpeg', 'Content-Length': JPEG.length, ETag: '"abc123"' });
-            return res.end(JPEG);
-        }
-        if (req.headers.authorization !== `Bearer ${TOKEN}`) return send(401, { error: { code: 'UNAUTHORIZED', message: 'bad token' } });
-        if (mode === '401') return send(401, { error: { code: 'UNAUTHORIZED', message: 'bad token' } });
-        if (mode === '500') return send(500, { error: { code: 'INTERNAL', message: 'DynamoDB exploded at arn:aws:...' } });
-        const p = url.pathname;
-        if (p === '/ui/summary') return send(200, { role: 'operator', photos: 3, hours: Number(url.searchParams.get('hours') || 24) });
-        if (p === '/ui/traces') return send(200, { items: [{ event_id: '01JT1', camera: 'BE4089629' }], next: null });
-        if (p.startsWith('/ui/traces/')) {
-            const id = decodeURIComponent(p.slice('/ui/traces/'.length));
-            return id === 'missing' ? send(404, { error: { code: 'NOT_FOUND', message: 'trace not found' } }) : send(200, { trace: { event_id: id }, media: {} });
-        }
-        if (p === '/ui/approvals') return send(200, { items: [], next: null });
-        if (/^\/ui\/approvals\/[^/]+$/.test(p)) return send(200, { approval: { approval_id: p.split('/').pop(), status: 'pending' }, media: {} });
-        if (p.startsWith('/ui/devices/')) return send(200, { device: { serial: p.split('/').pop() }, media: {} });
-        const decide = p.match(/^\/ui\/approvals\/([^/]+)\/decide$/);
-        if (decide && req.method === 'POST') {
-            if (decide[1] === 'apr_done') return send(409, { error: { code: 'CONFLICT', message: 'approval is not pending' } });
-            return send(202, { queued: true, approval_id: decide[1], decision: call.body.decision });
-        }
-        if (p === '/ui/devices') return send(200, { items: [{ serial: 'BE4089629' }] });
-        if (p === '/ui/density') return send(200, { dates: ['2026-10-14'] });
-        if (p === '/ui/bench') return send(200, { items: [] });
-        if (p === '/ui/evidence') {
-            if (url.searchParams.get('json') !== '1') return send(302, {}, { Location: `${stubBase}/s3/x.jpg?${PRESIGNED_SIG}` });
-            const key = url.searchParams.get('key');
-            if (key.includes('gone')) return send(404, { error: { code: 'NOT_FOUND', message: 'no such object' } });
-            return send(200, { url: `${stubBase}/s3/${key.replace(/^s3:\/\/[^/]+\//, '')}?${PRESIGNED_SIG}`, expires_in: 600 });
-        }
-        return send(404, { error: { code: 'NOT_FOUND', message: 'route' } });
-    });
-}
-
-before(async () => {
-    stub = http.createServer(stubHandler);
-    await new Promise((resolve) => stub.listen(0, '127.0.0.1', resolve));
-    stubBase = `http://127.0.0.1:${stub.address().port}`;
-    await startDb();
-});
-after(async () => {
-    stub?.closeAllConnections?.();
-    await new Promise((resolve) => stub.close(resolve));
-    await stopDb();
-});
+before(startDb);
+after(stopDb);
 beforeEach(async () => {
     await clearDb();
-    calls = [];
-    mode = null;
-    env.SENTINEL_UI_URL = `${stubBase}/ui`;
-    env.SENTINEL_UI_TOKEN = TOKEN;
+    env.AI_PROVIDER = 'opencv-lambda';
+    env.SENTINEL_CONSOLE = false;
 });
 
+const get = (path, as) => request(`/api/sentinel/ui${path}`, { as });
+const post = (path, as, body) => request(`/api/sentinel/ui${path}`, { method: 'POST', as, body });
 const viewer = (extra = {}) => createUser({ role: 'user', sentinelViewer: true, name: 'Judge One', ...extra });
-const uiCalls = () => calls.filter(c => c.path.startsWith('/ui/'));
 
-/** Every answer must be free of the Sentinel token (body and headers). */
-async function noLeak(res) {
-    const text = await res.clone().text();
-    assert.ok(!text.includes(TOKEN), 'token in body');
-    for (const [, value] of res.headers) assert.ok(!value.includes(TOKEN), 'token in a header');
-    return res;
+/** An orchard: a manager with two analyzed photos on CAM1 (one with a proposal), a judge who sees CAM1 only. */
+async function orchard() {
+    const owner = await createUser({ role: 'manager', name: 'Grace Grower', email: 'grace@example.test' });
+    const judge = await viewer();
+    const cam1 = await createCamera(owner, { deviceSerial: 'CAM1', deviceName: 'Lô A', trapKind: 'lure', status: 1, sharedWith: [{ userId: judge._id, email: judge.email }] });
+    await createCamera(owner, { deviceSerial: 'CAM2', deviceName: 'Lô B', status: 0 });
+    const lambda = (traceId, total, extra = {}) => ({
+        status: 'ok', attempts: 1, analyzedAt: new Date(), traceId,
+        model: { name: 'yolo26n', version: '2026-10-18', engine: 'opencv-5.0.0-dnn-new' },
+        counts: { total, byClass: { fruit_fly: total } },
+        quality: { ok: true, flags: [], blur: 0.1, exposure: 0.5 },
+        trace: { planner: 'rule', steps: [{ tool: 'detect', ms: 410 }], ms: 1320 },
+        evidence: { annotatedS3Key: 'evidence/CAM1/a.annotated.jpg', crops: [] },
+        timings: { totalMs: 1320, dnnMs: 410 },
+        ...extra
+    });
+    const old = await models.Snapshot.create({ deviceSerial: 'CAM1', imageUrl: 'x', s3Key: 'snapshots/CAM1/a.jpg', createdAt: new Date(Date.now() - 3600 * 1000), aiProcessed: true, aiProvider: 'opencv-lambda', aiResults: { summary: { fruit_fly: 5 } }, lambda: lambda('tr_old', 5) });
+    const latest = await models.Snapshot.create({
+        deviceSerial: 'CAM1', imageUrl: 'x', s3Key: 'snapshots/CAM1/b.jpg', aiProcessed: true, aiProvider: 'opencv-lambda', aiResults: { summary: { fruit_fly: 14 } },
+        meta: { battery: { pct: 72 }, rssi: -61 },
+        lambda: lambda('tr_new', 14, { diff: { newCount: 9, goneCount: 0, cardMoved: false }, quality: { ok: false, flags: ['dark'], blur: 0.3, exposure: 0.2 }, proposals: [{ id: 'p1', action: 'set_interval', params: { minutes: 15 }, reason: 'Count doubled', confidence: 0.8 }] })
+    });
+    const other = await models.Snapshot.create({ deviceSerial: 'CAM2', imageUrl: 'x', s3Key: 'snapshots/CAM2/c.jpg', aiProcessed: true, aiProvider: 'opencv-lambda', aiResults: { summary: { fruit_fly: 1 } }, lambda: lambda('tr_cam2', 1) });
+    const [created] = await sentinelService.createLambdaProposals({ snapshot: latest, camera: cam1.toObject(), proposals: latest.lambda.proposals, traceId: 'tr_new' });
+    return { owner, judge, cam1, old, latest, other, proposal: created.proposal };
 }
-const get = async (path, as) => noLeak(await request(`/api/sentinel/ui${path}`, { as }));
-const post = async (path, as, body) => noLeak(await request(`/api/sentinel/ui${path}`, { method: 'POST', as, body }));
 
-// ---------- Configuration ----------
+// ---------- Configuration and access ----------
 
-test('disabled: every route answers 503 SENTINEL_DISABLED and the profile hides the menu', async () => {
-    env.SENTINEL_UI_URL = '';
+test('off unless AI_PROVIDER=opencv-lambda or SENTINEL_CONSOLE: 503 everywhere, menu hidden', async () => {
+    env.AI_PROVIDER = 'roboflow';
     const admin = await createUser({ role: 'admin' });
-    for (const [path, as] of [['/summary', undefined], ['/summary', admin], ['/evidence?key=frames/a.jpg', admin], ['/nope', admin]]) {
+    for (const [path, as] of [['/summary', undefined], ['/summary', admin], ['/evidence?key=snapshots/CAM1/a.jpg', admin], ['/nope', admin]]) {
         const { status, body } = await json(await get(path, as));
-        assert.equal(status, 503);
+        assert.equal(status, 503, path);
         assert.equal(body.code, 'SENTINEL_DISABLED');
     }
-    const decide = await json(await post('/approvals/apr_1/decide', admin, { decision: 'approve' }));
-    assert.equal(decide.status, 503);
-    assert.equal(calls.length, 0);
-
     const me = await json(await request('/api/auth/me', { as: admin }));
     assert.equal(me.body.user.sentinelEnabled, false);
     assert.equal(me.body.user.sentinelCanDecide, false);
+    env.SENTINEL_CONSOLE = true;
+    assert.equal((await get('/summary', admin)).status, 200, 'SENTINEL_CONSOLE=true turns it on with any provider');
     const info = await json(await request('/api/system/info', { as: admin }));
-    assert.deepEqual(info.body.info.sentinel, { enabled: false, canDecide: false });
+    assert.deepEqual(info.body.info.sentinel, { enabled: true, canDecide: true });
 });
 
-test('a URL without a token counts as disabled', async () => {
-    env.SENTINEL_UI_TOKEN = '';
-    const admin = await createUser({ role: 'admin' });
-    assert.equal((await get('/summary', admin)).status, 503);
-});
-
-test('env: SENTINEL_UI_URL is normalized to a base ending in /ui and must be https', () => {
-    const key = require.resolve('../src/config/env');
-    const loaded = require.cache[key];
-    const load = (value) => {
-        const saved = process.env.SENTINEL_UI_URL;
-        process.env.SENTINEL_UI_URL = value;
-        delete require.cache[key];
-        const origWarn = console.warn;
-        console.warn = () => {};
-        try {
-            return require('../src/config/env').SENTINEL_UI_URL;
-        } finally {
-            console.warn = origWarn;
-            process.env.SENTINEL_UI_URL = saved;
-            // Keep the instance the app already holds
-            require.cache[key] = loaded;
-        }
-    };
-    assert.equal(load('https://abc.execute-api.ap-southeast-2.amazonaws.com/ui/'), 'https://abc.execute-api.ap-southeast-2.amazonaws.com/ui');
-    assert.equal(load('https://d146vb7dg01iax.cloudfront.net'), 'https://d146vb7dg01iax.cloudfront.net/ui');
-    assert.equal(load('http://example.com/ui'), '');
-    assert.equal(load('http://127.0.0.1:4000/ui'), 'http://127.0.0.1:4000/ui');
-    assert.equal(load('https://x.test/ui?token=1'), '');
-    assert.equal(load('not a url'), '');
-    assert.equal(require('../src/config/env'), env);
-});
-
-// ---------- Who may use it ----------
-
-test('sign-in required; a "user" account without sentinelViewer gets 403 and nothing reaches Sentinel', async () => {
+test('sign-in required; a "user" account without sentinelViewer gets 403', async () => {
     assert.equal((await get('/summary')).status, 401);
     const plain = await createUser({ role: 'user' });
     const { status, body } = await json(await get('/summary', plain));
     assert.equal(status, 403);
     assert.equal(body.code, 'FORBIDDEN');
-    assert.equal((await get('/evidence?key=frames/a.jpg', plain)).status, 403);
-    assert.equal(calls.length, 0);
-
+    assert.equal((await get('/evidence?key=snapshots/CAM1/a.jpg', plain)).status, 403);
     const me = await json(await request('/api/auth/me', { as: plain }));
     assert.equal(me.body.user.sentinelEnabled, false);
 });
 
-test('viewer (sentinelViewer): reads every allowed route with FlyBot\'s operator token', async () => {
-    const judge = await viewer();
+// ---------- Pages ----------
+
+test('summary: the judge reads only the cameras shared with them; managers are operators', async () => {
+    const { owner, judge } = await orchard();
     const me = await json(await request('/api/auth/me', { as: judge }));
     assert.equal(me.body.user.sentinelEnabled, true);
     assert.equal(me.body.user.sentinelCanDecide, false);
-    const info = await json(await request('/api/system/info', { as: judge }));
-    assert.deepEqual(info.body.info.sentinel, { enabled: true, canDecide: false });
 
     const summary = await json(await get('/summary?hours=12', judge));
     assert.equal(summary.status, 200);
-    assert.equal(summary.body.photos, 3);
-    assert.equal(summary.body.hours, 12);
-    // Sentinel answered "operator" (FlyBot's token); the person is read-only
     assert.equal(summary.body.role, 'judge');
-    const manager = await createUser({ role: 'manager' });
-    assert.equal((await json(await get('/summary', manager))).body.role, 'operator');
-    for (const path of ['/traces', '/traces/01JT1', '/approvals?status=pending', '/approvals/apr_1', '/devices', '/devices/BE4089629', '/density?date=2026-10-14', '/bench?name=cool_c8g.json']) {
-        const res = await get(path, judge);
-        assert.equal(res.status, 200, path);
-        assert.equal(res.headers.get('cache-control'), 'no-store');
-    }
-    assert.ok(uiCalls().length >= 9);
-    for (const call of uiCalls()) assert.equal(call.auth, `Bearer ${TOKEN}`);
+    assert.equal(summary.body.hours, 12);
+    assert.equal(summary.body.photos, 2, 'CAM1 only');
+    assert.deepEqual(summary.body.photos_by_source, { ezviz: 2 });
+    assert.deepEqual(summary.body.decisions, { set_interval: 1, no_op: 1 });
+    assert.equal(summary.body.proposals_pending, 1);
+    assert.deepEqual(summary.body.devices, { online: 1, total: 1 });
+    assert.equal(summary.body.planner_mode, 'rule');
+    assert.deepEqual(summary.body.kill_switch, { global: false, cameras: [] });
+    assert.ok(summary.body.last_photo_at);
+
+    const mine = await json(await get('/summary', owner));
+    assert.equal(mine.body.role, 'operator');
+    assert.equal(mine.body.photos, 3);
+    assert.deepEqual(mine.body.devices, { online: 1, total: 2 });
+    assert.equal((await get('/summary?hours=0', owner)).status, 400);
 });
 
-test('viewer cannot decide (403, Sentinel not called); manager decides with `by` set by FlyBot', async () => {
-    const judge = await viewer();
-    const denied = await json(await post('/approvals/apr_1/decide', judge, { decision: 'approve', by: 'Judge' }));
+test('traces: analyzed photos newest first, filter by camera, cursor paging, one trace in full', async () => {
+    const { owner, judge, latest, old, proposal } = await orchard();
+    const raw = await get('/traces', judge);
+    assert.equal(raw.headers.get('cache-control'), 'no-store');
+    const list = await json(raw);
+    assert.equal(list.status, 200);
+    assert.deepEqual(list.body.items.map(t => t.event_id), ['tr_new', 'tr_old']);
+    const [first] = list.body.items;
+    assert.equal(first.camera, 'CAM1');
+    assert.equal(first.camera_name, 'Lô A');
+    assert.equal(first.trap_kind, 'lure');
+    assert.equal(first.source, 'ezviz');
+    assert.deepEqual(first.counts, { opencv: 14, npu: null, production: 14 });
+    assert.deepEqual(first.quality, { ok: false, issues: ['dark'] });
+    assert.equal(first.outcome, 'proposed: set_interval');
+    assert.deepEqual(first.decisions[0], { rule: 'set_interval', action: 'set_interval', reasons: ['Count doubled', 'confidence 0.8'], params: { minutes: 15 } });
+    assert.deepEqual(first.approval, { approval_id: String(proposal._id), kind: 'set_interval', status: 'pending' });
+    assert.equal(first.planner.name, 'rule');
+    assert.equal(first.snapshot_id, String(latest._id));
+    assert.equal(list.body.next, null);
+
+    // Paging and filters
+    const page = await json(await get('/traces?limit=1', judge));
+    assert.equal(page.body.items.length, 1);
+    assert.ok(page.body.next);
+    const rest = await json(await get(`/traces?limit=1&cursor=${encodeURIComponent(page.body.next)}`, judge));
+    assert.deepEqual(rest.body.items.map(t => t.event_id), ['tr_old']);
+    assert.equal((await json(await get('/traces?camera=CAM2', judge))).body.items.length, 0, 'not shared with the judge');
+    assert.equal((await json(await get('/traces?camera=CAM2', owner))).body.items.length, 1);
+    assert.equal((await json(await get(`/traces?since=${encodeURIComponent(new Date(Date.now() - 600 * 1000).toISOString())}`, owner))).body.items.length, 2);
+
+    // One trace: Perception -> Decision -> Action
+    const one = await json(await get('/traces/tr_new', judge));
+    assert.equal(one.status, 200);
+    const trace = one.body.trace;
+    const obs = trace.opencv_outputs.CAM1;
+    assert.equal(obs.counts.opencv, 14);
+    assert.deepEqual(obs.quality, { ok: false, issues: ['dark'], scores: { blur: 0.3, exposure: 0.2 } });
+    assert.deepEqual(obs.new_catch, { new_count: 9, disappeared_count: 0, persisted_count: 5, card_change_suspected: false, card_change_reasons: [] });
+    assert.equal(obs.image, 'snapshots/CAM1/b.jpg');
+    assert.equal(obs.previous_image, 'snapshots/CAM1/a.jpg');
+    assert.deepEqual(obs.evidence, ['evidence/CAM1/a.annotated.jpg']);
+    assert.equal(obs.analyzer, 'yolo26n / 2026-10-18 / opencv-5.0.0-dnn-new');
+    assert.equal(obs.vision_ms, 410);
+    assert.equal(obs.battery_percent, 72);
+    assert.deepEqual(trace.tool_calls.map(c => [c.name, c.status, c.ms]), [['detect', 'ok', 410]]);
+    assert.equal(trace.approval.approval_id, String(proposal._id));
+    assert.equal(trace.approval.payload.reason, 'Count doubled');
+    assert.equal(trace.reasoning_summary, 'Count doubled');
+    // By snapshot id too; unknown or another person's camera = 404
+    assert.equal((await get(`/traces/snap_${old._id}`, judge)).status, 200);
+    assert.equal((await get('/traces/tr_cam2', judge)).status, 404);
+    assert.equal((await get('/traces/tr_cam2', owner)).status, 200);
+    assert.equal((await get('/traces/nope', owner)).status, 404);
+});
+
+test('approvals: listed by status; the viewer cannot decide; a manager\'s decision runs the card once', async () => {
+    const { owner, judge, proposal } = await orchard();
+    const pending = await json(await get('/approvals?status=pending', judge));
+    assert.equal(pending.status, 200);
+    assert.equal(pending.body.items.length, 1);
+    const [a] = pending.body.items;
+    assert.equal(a.approval_id, String(proposal._id));
+    assert.equal(a.event_id, 'tr_new');
+    assert.equal(a.kind, 'set_interval');
+    assert.equal(a.status, 'pending');
+    assert.deepEqual(a.cameras, ['CAM1']);
+    assert.deepEqual(a.payload, { action: 'set_interval', params: { minutes: 15 }, reason: 'Count doubled' });
+    assert.equal(a.flybot_proposal_id, String(proposal._id));
+    assert.ok(a.expires_at);
+    assert.equal((await json(await get('/approvals?status=approved', judge))).body.items.length, 0);
+    assert.equal((await json(await get(`/approvals/${proposal._id}`, judge))).body.approval.status, 'pending');
+
+    const denied = await json(await post(`/approvals/${proposal._id}/decide`, judge, { decision: 'approve' }));
     assert.equal(denied.status, 403);
-    assert.equal(denied.body.code, 'FORBIDDEN');
-    assert.equal(uiCalls().length, 0);
+    assert.equal((await json(await post(`/approvals/${proposal._id}/decide`, owner, { decision: 'maybe' }))).status, 400);
+    assert.equal((await models.Camera.findOne({ deviceSerial: 'CAM1' }).lean()).sentinelInterval?.minutes, undefined, 'nothing applied yet');
 
-    const manager = await createUser({ role: 'manager', name: 'Grace Grower', email: 'grace@example.test' });
-    const ok = await json(await post('/approvals/apr_1/decide', manager, { decision: 'approve', by: 'Mallory the impostor' }));
-    assert.equal(ok.status, 202);
+    const ok = await json(await post(`/approvals/${proposal._id}/decide`, owner, { decision: 'approve', by: 'Mallory the impostor' }));
+    assert.equal(ok.status, 202, JSON.stringify(ok.body));
     assert.equal(ok.body.queued, true);
+    assert.equal(ok.body.state, 'done');
     assert.equal(ok.body.by, 'Grace Grower <grace@example.test>');
-    const [call] = uiCalls();
-    assert.equal(call.method, 'POST');
-    assert.equal(call.path, '/ui/approvals/apr_1/decide');
-    assert.deepEqual(call.body, { decision: 'approve', by: 'Grace Grower <grace@example.test>' });
-    assert.equal(call.auth, `Bearer ${TOKEN}`);
+    assert.equal((await models.Camera.findOne({ deviceSerial: 'CAM1' }).lean()).sentinelInterval.minutes, 15, 'the card ran');
+    assert.equal((await json(await get(`/approvals/${proposal._id}`, judge))).body.approval.status, 'approved');
+    assert.equal((await json(await get('/approvals?status=pending', judge))).body.items.length, 0);
+    assert.equal((await json(await get('/approvals?status=approved', judge))).body.items.length, 1);
+    const again = await json(await post(`/approvals/${proposal._id}/decide`, owner, { decision: 'reject' }));
+    assert.equal(again.status, 409);
+    assert.equal(again.body.code, 'CONFLICT');
+    assert.equal((await json(await post('/approvals/64b000000000000000000009/decide', owner, { decision: 'reject' }))).status, 404);
 
-    // Audited in FlyBot (Admin → Audit log, category FlyBot Sentinel)
     let entry;
     for (let i = 0; i < 20 && !entry; i++) {
         entry = await models.AuditLog.findOne({ action: 'sentinel.approval_decided' });
@@ -217,137 +206,66 @@ test('viewer cannot decide (403, Sentinel not called); manager decides with `by`
     }
     assert.ok(entry);
     assert.equal(entry.actorEmail, 'grace@example.test');
-    assert.equal(entry.targetId, 'apr_1');
+    assert.equal(entry.targetId, String(proposal._id));
+    // A trace now shows the decided approval
+    assert.equal((await json(await get('/traces/tr_new', judge))).body.trace.approval.status, 'approved');
 });
 
-test('decide: admin allowed; bad decision 400 before Sentinel; 409 passed on; long names fall back to the email', async () => {
-    const admin = await createUser({ role: 'admin', name: 'A'.repeat(90), email: 'boss@example.test' });
-    const badBody = await json(await post('/approvals/apr_1/decide', admin, { decision: 'maybe' }));
-    assert.equal(badBody.status, 400);
-    assert.equal(uiCalls().length, 0);
+test('devices: the cameras with their last photo, telemetry, shadow and capture budget', async () => {
+    const { owner, judge } = await orchard();
+    await models.Camera.updateOne({ deviceSerial: 'CAM2' }, { $set: { platform: 'camos', device: { fw: '0.1.0', net: '4g', rssi: -70, battery: { pct: 61 }, power: { mode: 'battery' }, sleeping: true, wakeAt: new Date(Date.now() + 1800 * 1000), lastSeenAt: new Date(), shadow: { reported: { version: 3, video: { image: { brightness: 10 } } }, desired: { version: 4, video: { image: { brightness: 20 } } } } }, sentinelCaptures: { day: '2026-10-16', count: 2 } } });
+    const list = await json(await get('/devices', judge));
+    assert.equal(list.status, 200);
+    assert.deepEqual(list.body.items.map(d => d.serial), ['CAM1']);
+    const all = await json(await get('/devices', owner));
+    assert.deepEqual(all.body.items.map(d => d.serial), ['CAM1', 'CAM2']);
+    const cam2 = all.body.items[1];
+    assert.equal(cam2.source, 'camos');
+    assert.equal(cam2.online, false);
+    assert.equal(cam2.sleeping, true);
+    assert.equal(cam2.power_mode, 'battery');
+    assert.equal(cam2.battery_percent, 61);
+    assert.equal(cam2.rssi, -70);
+    assert.equal(cam2.fw, '0.1.0');
+    assert.equal(cam2.reported_version, 3);
+    assert.equal(cam2.desired_version, 4);
+    assert.deepEqual(cam2.agent_state.budgets, { captures_used: 2, captures_limit: env.SENTINEL_CAPTURE_BUDGET });
+    const cam1 = all.body.items[0];
+    assert.equal(cam1.online, true);
+    assert.equal(cam1.last_photo.key, 'snapshots/CAM1/b.jpg');
+    assert.equal(cam1.last_photo.count, 14);
 
-    const conflict = await json(await post('/approvals/apr_done/decide', admin, { decision: 'reject' }));
-    assert.equal(conflict.status, 409);
-    assert.equal(conflict.body.code, 'CONFLICT');
-
-    const ok = await json(await post('/approvals/apr_2/decide', admin, { decision: 'reject' }));
-    assert.equal(ok.status, 202);
-    assert.equal(uiCalls().at(-1).body.by, 'boss@example.test');
+    const one = await json(await get('/devices/CAM1', judge));
+    assert.equal(one.status, 200);
+    assert.equal(one.body.device.serial, 'CAM1');
+    assert.deepEqual(one.body.device.telemetry_history.map(h => h.battery_percent), [72]);
+    assert.equal((await get('/devices/CAM2', judge)).status, 404);
 });
 
-// ---------- Allow-list ----------
-
-test('allow-list: unknown paths and methods answer 404 without calling Sentinel', async () => {
-    const admin = await createUser({ role: 'admin' });
-    for (const path of ['/health', '/kill-switch', '/devices/BE4089629/state', '/approvals/apr_1/decide', '/traces/a/b']) {
-        const res = await get(path, admin);
-        assert.equal(res.status, 404, path);
-    }
-    for (const path of ['/summary', '/traces', '/approvals/apr_1', '/devices']) {
-        assert.equal((await post(path, admin, {})).status, 404, `POST ${path}`);
-    }
-    assert.equal((await request('/api/sentinel/ui/approvals/apr_1/decide', { method: 'DELETE', as: admin })).status, 404);
-    assert.equal(uiCalls().length, 0);
-});
-
-test('allow-list: only the route\'s own query parameters are forwarded, each validated', async () => {
-    const admin = await createUser({ role: 'admin' });
-    const res = await get('/traces?camera=BE4089629&limit=20&access_token=steal&json=1&loop=per_photo', admin);
-    assert.equal(res.status, 200);
-    assert.deepEqual(uiCalls()[0].query, { camera: 'BE4089629', limit: '20', loop: 'per_photo' });
-
-    for (const path of ['/traces?camera=../x', '/traces?limit=1000', '/summary?hours=0', '/approvals?status=all', '/density?date=yesterday', '/bench?name=../secrets', '/traces?camera=a&camera=b']) {
-        assert.equal((await get(path, admin)).status, 400, path);
-    }
-    assert.equal(uiCalls().length, 1);
-
-    // Daily ids contain ":" and are sent encoded
-    await get(`/traces/${encodeURIComponent('daily:farm1:2026-10-14')}`, admin);
-    assert.equal(uiCalls().at(-1).path, '/ui/traces/daily%3Afarm1%3A2026-10-14');
-});
-
-// ---------- Upstream errors ----------
-
-test('upstream errors become clean JSON (never 401, no upstream details)', async () => {
-    const admin = await createUser({ role: 'admin' });
-    mode = '401';
-    let r = await json(await get('/summary', admin));
-    assert.equal(r.status, 502);
-    assert.equal(r.body.code, 'SENTINEL_AUTH');
-
-    mode = '500';
-    r = await json(await get('/summary', admin));
-    assert.equal(r.status, 502);
-    assert.equal(r.body.code, 'SENTINEL_UPSTREAM');
-    assert.ok(!JSON.stringify(r.body).includes('arn:aws'));
-
-    mode = null;
-    r = await json(await get('/traces/missing', admin));
-    assert.equal(r.status, 404);
-    assert.equal(r.body.code, 'NOT_FOUND');
-
-    env.SENTINEL_UI_URL = 'http://127.0.0.1:9/ui'; // nothing listens there
-    r = await json(await get('/summary', admin));
-    assert.equal(r.status, 502);
-    assert.equal(r.body.code, 'SENTINEL_UNREACHABLE');
-});
-
-// ---------- Evidence ----------
-
-test('evidence: streams the image with cache headers; no token or presigned URL reaches the browser', async () => {
-    const judge = await viewer();
-    const res = await get('/evidence?key=s3://sentinel-685527430355-dev/frames/BE4089629/2026/10/15/01JT1.jpg', judge);
+test('evidence: pictures stream from FlyBot\'s bucket for visible cameras only; keys are checked', async () => {
+    const { judge } = await orchard();
+    const res = await get('/evidence?key=snapshots/CAM1/b.jpg', judge);
     assert.equal(res.status, 200);
     assert.equal(res.headers.get('content-type'), 'image/jpeg');
-    assert.equal(res.headers.get('cache-control'), 'private, max-age=3600');
-    assert.equal(res.headers.get('etag'), '"abc123"');
-    assert.equal(res.headers.get('content-disposition'), 'inline');
-    const bytes = Buffer.from(await res.arrayBuffer());
-    assert.deepEqual(bytes, JPEG);
-    for (const [, value] of res.headers) assert.ok(!value.includes('X-Amz') && !value.includes('/s3/'));
-
-    const [lookup, fetchObj] = calls;
-    assert.equal(lookup.path, '/ui/evidence');
-    assert.equal(lookup.query.json, '1');
-    assert.equal(lookup.auth, `Bearer ${TOKEN}`);
-    assert.equal(fetchObj.path, '/s3/frames/BE4089629/2026/10/15/01JT1.jpg');
-    // The presigned request carries no Sentinel token
-    assert.equal(fetchObj.auth, undefined);
+    assert.equal(res.headers.get('content-security-policy'), "default-src 'none'; sandbox");
+    assert.equal(await res.text(), 'JPEGDATA');
+    assert.equal((await get('/evidence?key=evidence/CAM1/a.annotated.jpg', judge)).status, 200);
+    assert.equal((await get('/evidence?key=snapshots/CAM2/c.jpg', judge)).status, 404, 'not shared with the judge');
+    for (const key of ['snapshots/CAM1/../CAM2/c.jpg', 'secrets/CAM1/x.jpg', 'snapshots/CAM1/x.exe', 's3://bucket/snapshots/CAM1/b.jpg', '']) {
+        assert.equal((await get(`/evidence?key=${encodeURIComponent(key)}`, judge)).status, 400, key);
+    }
 });
 
-test('evidence: keys outside the allowed prefixes are refused; a missing object is 404', async () => {
+test('allow-list: unknown paths, methods and query parameters', async () => {
     const admin = await createUser({ role: 'admin' });
-    for (const key of ['', 'secrets/ui-token.txt', 'frames/../secrets/x', 's3://bucket/agent_state/x.json', 'https://evil.test/frames/x.jpg']) {
-        assert.equal((await get(`/evidence?key=${encodeURIComponent(key)}`, admin)).status, 400, key);
+    for (const path of ['/health', '/kill-switch', '/devices/CAM1/state', '/approvals/apr_1/decide', '/traces/a/b', '/density', '/bench']) {
+        assert.equal((await get(path, admin)).status, 404, path);
     }
-    assert.equal(calls.length, 0);
-    const gone = await json(await get('/evidence?key=evidence/gone.jpg', admin));
-    assert.equal(gone.status, 404);
-});
-
-// ---------- Admin switch ----------
-
-test('admin turns sentinelViewer on and off (audited); other values refused', async () => {
-    const admin = await createUser({ role: 'admin' });
-    const judge = await createUser({ role: 'user' });
-    const bad = await json(await request(`/api/admin/users/${judge._id}`, { method: 'PUT', as: admin, body: { sentinelViewer: 'yes' } }));
-    assert.equal(bad.status, 400);
-
-    const on = await json(await request(`/api/admin/users/${judge._id}`, { method: 'PUT', as: admin, body: { sentinelViewer: true } }));
-    assert.equal(on.status, 200);
-    assert.equal(on.body.user.sentinelViewer, true);
-    assert.equal((await get('/summary', await models.User.findById(judge._id))).status, 200);
-
-    await request(`/api/admin/users/${judge._id}`, { method: 'PUT', as: admin, body: { sentinelViewer: false } });
-    assert.equal((await get('/summary', judge)).status, 403);
-    let entries = [];
-    for (let i = 0; i < 20 && entries.length < 2; i++) {
-        entries = await models.AuditLog.find({ action: 'user.sentinel_access_changed' });
-        if (entries.length < 2) await new Promise(r => setTimeout(r, 25));
+    for (const path of ['/summary', '/traces', '/approvals/64b000000000000000000009', '/devices']) {
+        assert.equal((await post(path, admin, {})).status, 404, `POST ${path}`);
     }
-    assert.equal(entries.length, 2);
-
-    // A manager cannot change it (admin-only route)
-    const manager = await createUser({ role: 'manager' });
-    assert.equal((await request(`/api/admin/users/${judge._id}`, { method: 'PUT', as: manager, body: { sentinelViewer: true } })).status, 403);
+    assert.equal((await request('/api/sentinel/ui/approvals/64b000000000000000000009/decide', { method: 'DELETE', as: admin })).status, 404);
+    for (const path of ['/traces?camera=../x', '/traces?limit=1000', '/summary?hours=0', '/approvals?status=all', '/traces?camera=a&camera=b', '/traces?cursor=' + 'x'.repeat(70)]) {
+        assert.equal((await get(path, admin)).status, 400, path);
+    }
 });

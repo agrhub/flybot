@@ -163,6 +163,7 @@
     "sentinel": {
       "card_change": "🛰️ <b>FlyBot Sentinel suggests: sticky card replaced</b>\nTrap: {trap}\nWhen: {at}",
       "treatment": "🛰️ <b>FlyBot Sentinel suggests a logbook entry: {type}{product}</b>\nTraps: {traps}\nWhen: {at}",
+      "action": "🛰️ <b>FlyBot Sentinel suggests: {action}</b>\nTrap: {trap}\nSettings: {params}",
       "reason": "Why: {reason}",
       "expires": "Nothing is recorded until you press Confirm. The suggestion expires at {at}.",
       "confirm": "✅ Confirm",
@@ -180,6 +181,43 @@
     "testBody": "You will get pest alerts and camera status changes on this device."
   },
   "apiMessages": {
+    "aws_camera_asleep_next_wake": "The camera is asleep: it will take the photo at its next wake.",
+    "aws_photo_id_stored": "Photo {id} stored.",
+    "aws_minutes_must_be_one_of": "minutes must be one of {list}.",
+    "aws_every_minutes_for_24_hours": "Every {minutes} minutes for 24 hours.",
+    "aws_image_settings_camos_only": "Image settings can only be changed on a CamOS camera.",
+    "aws_nothing_to_change": "Nothing to change.",
+    "aws_photo_not_found": "Photo not found.",
+    "aws_photo_already_reviewed": "This photo was already reviewed.",
+    "aws_marked_for_review": "Marked for review in the photo history.",
+    "aws_nothing_to_send": "Nothing to send.",
+    "aws_sent": "Sent.",
+    "aws_platform_must_be": "platform must be 'ezviz' or 'camos'.",
+    "aws_serial_registered_as_ezviz": "This serial is registered as an EZVIZ camera.",
+    "aws_only_camos_provisioned": "Only CamOS cameras are provisioned this way.",
+    "aws_only_camos_live_request": "Only CamOS cameras take a live request.",
+    "aws_too_many_requests": "Too many requests.",
+    "aws_too_many_attempts": "Too many attempts.",
+    "aws_iot_rule_secret_not_set": "IOT_RULE_SECRET is not set.",
+    "aws_topic_is_required": "topic is required.",
+    "aws_unknown_device_or_bad_token": "Unknown device or bad token.",
+    "aws_too_many_requests_for_this_camera": "Too many requests for this camera.",
+    "aws_too_many_photos_for_this_camera": "Too many photos for this camera.",
+    "aws_multipart_image_required": "multipart/form-data with an image part is required.",
+    "aws_pair_fields_required": "serial, verifyCode and provisionToken are required.",
+    "aws_pair_refused": "Unknown camera, wrong code or expired provisioning token.",
+    "aws_meta_too_large": "meta is too large.",
+    "aws_meta_not_json": "meta is not valid JSON.",
+    "aws_meta_must_be_object": "meta must be an object.",
+    "aws_image_part_required": "image part is required.",
+    "aws_image_at_most_bytes": "image must be at most {bytes} bytes.",
+    "aws_image_must_be_jpeg": "image must be a JPEG.",
+    "aws_action_must_be_one_of": "action must be one of {list}.",
+    "aws_set_interval_needs_minutes": "set_interval needs minutes, one of {list}.",
+    "aws_set_isp_camos_only": "Image settings (set_isp) can only be changed on a CamOS camera.",
+    "aws_set_isp_invalid_key": "set_isp: invalid {key}.",
+    "aws_set_isp_needs_fields": "set_isp needs brightness and/or wdr.",
+    "aws_notify_needs_message": "notify needs a message.",
     "a_camera_to_remove_is_not_in_this": "A camera to remove is not in this organization.",
     "api_key_not_found": "API key not found.",
     "an_organization_needs_at_least_one_owner": "An organization needs at least one owner.",
@@ -622,6 +660,13 @@
     }
   },
   "sentinel": {
-    "message": "**FlyBot Sentinel** suggests this change. Nothing is recorded until you press Confirm.\n\n{reason}"
+    "message": "**FlyBot Sentinel** suggests this change. Nothing is recorded until you press Confirm.\n\n{reason}",
+    "actions": {
+      "capture_now": "take an extra photo now",
+      "set_interval": "change the capture interval",
+      "set_isp": "adjust the image settings",
+      "review_request": "ask a person to check the photo",
+      "notify": "send a notice"
+    }
   }
 }

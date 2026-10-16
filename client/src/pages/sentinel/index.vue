@@ -67,22 +67,21 @@
 import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
-import { Refresh, Odometer, List, Stamp, MapLocation, VideoCamera, Histogram } from '@element-plus/icons-vue';
+import { Refresh, Odometer, List, Stamp, VideoCamera } from '@element-plus/icons-vue';
 import PageHeader from '@/components/common/PageHeader.vue';
 import { useSentinel } from '@/composables/useSentinel';
 import { relative } from '@/utils/sentinel/time';
 
 /**
- * FlyBot Sentinel console: the agent that watches the traps. One page with tabs (overview, traces,
- * approvals, density map, devices, benchmark); hidden when the server does not have it on.
+ * Sentinel console: the vision agent's traces, proposals and the cameras, read from FlyBot's own
+ * database. One page with tabs (overview, traces, approvals, devices); hidden when the server
+ * does not have it on (AI_PROVIDER=opencv-lambda or SENTINEL_CONSOLE=true).
  */
 const TABS = [
   { name: 'overview', route: 'sentinel', icon: Odometer },
   { name: 'traces', route: 'sentinel-traces', icon: List },
   { name: 'approvals', route: 'sentinel-approvals', icon: Stamp },
-  { name: 'density', route: 'sentinel-density', icon: MapLocation },
   { name: 'devices', route: 'sentinel-devices', icon: VideoCamera },
-  { name: 'bench', route: 'sentinel-bench', icon: Histogram },
 ];
 
 const { t, locale } = useI18n();

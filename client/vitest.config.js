@@ -16,6 +16,7 @@ export default defineConfig({
   test: {
     environment: 'happy-dom',
     include: ['tests/unit/**/*.test.js'],
+    setupFiles: ['tests/unit/setup.js'],
     // Element Plus ships ES modules with CSS imports
     server: { deps: { inline: ['element-plus'] } },
     css: false

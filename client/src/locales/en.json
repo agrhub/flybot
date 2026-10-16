@@ -289,6 +289,53 @@
     "openPhoto": "Open the analyzed photo: {name}"
   },
   "cameras": {
+    "platformLabel": "Camera platform",
+    "platform": {
+      "ezviz": "EZVIZ",
+      "camos": "CamOS",
+      "kinesis": "KVS"
+    },
+    "platformHint": {
+      "camos": "A CamOS trap camera (ESP32) on AWS IoT Core: enter the serial and the verification code printed on its label. You will get a provisioning token to type into the camera's setup portal."
+    },
+    "power": {
+      "auto": "Auto power",
+      "battery": "Battery",
+      "powered": "Mains",
+      "hint": {
+        "auto": "Switches between mains and battery mode by its battery voltage",
+        "battery": "On battery and solar: takes photos on a schedule and sleeps in between",
+        "powered": "Mains powered: always connected, live view on demand"
+      }
+    },
+    "sleeping": "Sleeping",
+    "sleepingNextWake": "Sleeping, next wake {time}",
+    "requestLive": "Request live at next wake",
+    "liveRequested": "Live requested for the next wake",
+    "liveRequestedNote": "The camera will start live view when it next wakes up.",
+    "liveStarting": "The camera is starting live view.",
+    "kvs": {
+      "connecting": "Connecting to the camera (WebRTC)...",
+      "waiting": "Waiting for the camera to join. It may be asleep: request live at its next wake.",
+      "playing": "Live",
+      "error": "Live view stopped.",
+      "failed": "Live view could not be started.",
+      "disconnected": "The camera disconnected.",
+      "badConfig": "The live view configuration is incomplete.",
+      "notConfigured": "Live view of CamOS cameras is not set up on this server.",
+      "liveOnRequest": "Live view starts when you open the camera."
+    },
+    "provisioning": {
+      "title": "Camera {serial} added. Set it up now.",
+      "intro": "Open the camera's setup portal (Wi-Fi \"CAM-xxxx\", http://192.168.4.1) and enter these values. The token works for 24 hours and is shown only once; you can make a new one from the camera settings.",
+      "token": "Provisioning token",
+      "apiBase": "FlyBot address",
+      "iotEndpoint": "AWS IoT endpoint",
+      "channel": "Live channel",
+      "qr": "QR text",
+      "expires": "Token valid until {time}.",
+      "done": "Done"
+    },
     "title": "Camera Surveillance & Management",
     "subtitle": "Stream real-time video, multi-camera grid and control SD card playback",
     "singleView": "Single Player",

@@ -52,8 +52,16 @@
 
       <!-- Right: Status Badges -->
       <div class="flex items-center gap-1.5 shrink-0">
+        <!-- Camera platform (EZVIZ cloud, CamOS on AWS IoT Core) -->
+        <el-tag :type="isCamos ? 'primary' : 'info'" effect="plain" size="small" class="!hidden sm:!inline-flex" data-test="platform-badge">
+          {{ t(`cameras.platform.${platform}`) }}
+        </el-tag>
+        <!-- CamOS: how the camera is powered -->
+        <el-tooltip v-if="isCamos && powerMode" :content="t(`cameras.power.hint.${powerMode}`)" placement="top">
+          <el-tag type="info" effect="plain" size="small" class="!hidden sm:!inline-flex" data-test="power-mode">{{ t(`cameras.power.${powerMode}`) }}</el-tag>
+        </el-tooltip>
         <!-- HD Stream Quality Tag -->
-        <el-tag type="info" effect="plain" size="small" class="!hidden sm:!inline-flex">HD</el-tag>
+        <el-tag v-if="!isCamos" type="info" effect="plain" size="small" class="!hidden sm:!inline-flex">HD</el-tag>
 
         <!-- Live Status Pill -->
         <el-tag
@@ -76,6 +84,16 @@
           size="small"
         >
           {{ t('cameras.waitingConnection') }}
+        </el-tag>
+        <el-tag
+          v-else-if="sleeping"
+          type="warning"
+          effect="light"
+          round
+          size="small"
+          data-test="sleeping-pill"
+        >
+          {{ nextWakeText }}
         </el-tag>
         <el-tag
           v-else
@@ -166,8 +184,20 @@
           <span class="text-xs">{{ t('cameras.connectingStream') }}</span>
         </div>
 
+        <!-- CamOS: the camera sleeps between photos; live view is asked for its next wake -->
+        <div v-if="isCamos && !loading && !isPlaying" class="grid-cam__scrim grid-cam__scrim--strong absolute inset-0 flex flex-col items-center justify-center p-5 text-center z-20" data-test="camos-overlay">
+          <el-icon :size="26" class="mb-2"><Moon v-if="sleeping" /><VideoCamera v-else /></el-icon>
+          <p class="text-xs font-medium max-w-xs leading-relaxed">{{ sleeping ? nextWakeText : (camera.status === 1 ? t('cameras.kvs.liveOnRequest') : t('cameras.deviceOffline')) }}</p>
+          <div class="flex items-center gap-2 mt-3">
+            <el-button v-if="camera.status === 1 && !sleeping" type="primary" size="small" :icon="VideoCamera" @click.stop="emit('expand', camera)">{{ t('cameras.live') }}</el-button>
+            <el-button size="small" :icon="Clock" :loading="requestingLive" :disabled="liveRequested" @click.stop="requestLive">
+              {{ liveRequested ? t('cameras.liveRequested') : t('cameras.requestLive') }}
+            </el-button>
+          </div>
+        </div>
+
         <!-- Error / Decryption / Offline Overlay -->
-        <div v-if="hasError && !loading" class="grid-cam__scrim grid-cam__scrim--strong absolute inset-0 flex flex-col items-center justify-center p-5 text-center z-20">
+        <div v-else-if="hasError && !loading" class="grid-cam__scrim grid-cam__scrim--strong absolute inset-0 flex flex-col items-center justify-center p-5 text-center z-20">
           <el-icon :size="28" class="grid-cam__warn-icon mb-2"><WarningFilled /></el-icon>
           <p class="text-xs font-medium max-w-xs leading-relaxed">
             {{ errorMessage || t('cameras.streamError') }}
@@ -276,7 +306,9 @@ import {
   FullScreen,
   Loading,
   WarningFilled,
-  ArrowRight
+  ArrowRight,
+  Moon,
+  Clock
 } from '@element-plus/icons-vue';
 
 const props = defineProps({
@@ -296,6 +328,30 @@ const hasError = ref(false);
 const errorMessage = ref('');
 const copiedSn = ref(false);
 
+// Platform: EZVIZ cloud camera (default) or a CamOS trap camera on AWS IoT Core
+const platform = computed(() => props.camera?.platform || 'ezviz');
+const isCamos = computed(() => platform.value === 'camos' || platform.value === 'kinesis');
+const powerMode = computed(() => (isCamos.value ? props.camera?.device?.power?.mode || 'auto' : null));
+const sleeping = computed(() => !!props.camera?.device?.sleeping);
+const nextWakeAt = computed(() => props.camera?.device?.nextWakeAt || props.camera?.device?.wakeAt || null);
+const nextWakeText = computed(() => (nextWakeAt.value
+  ? t('cameras.sleepingNextWake', { time: new Date(nextWakeAt.value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) })
+  : t('cameras.sleeping')));
+const liveRequested = ref(!!props.camera?.device?.liveRequested);
+const requestingLive = ref(false);
+const requestLive = async () => {
+  requestingLive.value = true;
+  try {
+    const res = await api.requestCameraLive(props.camera.deviceSerial, 5);
+    liveRequested.value = true;
+    ElNotification({ title: t('common.success'), message: res.data?.sent ? t('cameras.liveStarting') : t('cameras.liveRequestedNote'), type: 'success' });
+  } catch (err) {
+    ElNotification({ title: t('common.error'), message: requestErrorText(t, err, t('cameras.streamError')), type: 'error' });
+  } finally {
+    requestingLive.value = false;
+  }
+};
+
 const thumbError = ref(false);
 const cameraThumbnail = computed(() => {
   if (thumbError.value) return '';
@@ -314,7 +370,7 @@ const savingCode = ref(false);
 let playerInstance = null;
 
 const formatModel = (val) => {
-  if (!val) return 'EZVIZ Smart';
+  if (!val) return isCamos.value ? 'CamOS ESP32' : 'EZVIZ Smart';
   if (val.length > 20) {
     return val.substring(0, 18) + '...';
   }
@@ -382,6 +438,8 @@ const handleSaveCode = async () => {
 };
 
 const startLiveStream = async () => {
+  // CamOS cameras play in the detail view (KVS WebRTC); the card shows the sleep state
+  if (isCamos.value) return;
   if (props.camera.status !== 1) {
     hasError.value = true;
     errorMessage.value = t('cameras.deviceOffline');

@@ -5,15 +5,37 @@
     width="460px"
     append-to-body
   >
+    <!-- A CamOS camera was just added: what to type into its portal (shown once) -->
+    <div v-if="provisioning" class="flex flex-col gap-3" data-test="provisioning">
+      <el-alert type="success" :closable="false" show-icon :title="t('cameras.provisioning.title', { serial: provisioning.deviceSerial })" :description="t('cameras.provisioning.intro')" />
+      <el-descriptions :column="1" size="small" border>
+        <el-descriptions-item v-for="row in provisioningRows" :key="row.key" :label="t(`cameras.provisioning.${row.key}`)">
+          <div class="flex items-center justify-between gap-2 min-w-0">
+            <code class="prov-value truncate" :title="row.value">{{ row.value || '--' }}</code>
+            <el-button v-if="row.value" link size="small" :type="copied === row.key ? 'success' : 'primary'" :icon="copied === row.key ? Check : DocumentCopy" @click="copy(row.key, row.value)" />
+          </div>
+        </el-descriptions-item>
+      </el-descriptions>
+      <p class="prov-hint">{{ t('cameras.provisioning.expires', { time: new Date(provisioning.expiresAt).toLocaleString() }) }}</p>
+    </div>
+
+    <template v-else>
     <el-alert
       type="info"
       :closable="false"
       show-icon
-      :title="t('cameras.connectPrompt')"
+      :title="newCameraForm.platform === 'camos' ? t('cameras.platformHint.camos') : t('cameras.connectPrompt')"
       class="mb-4"
     />
 
     <el-form label-position="top" @submit.prevent>
+      <!-- EZVIZ cloud camera, or a CamOS trap camera on AWS IoT Core -->
+      <el-form-item :label="t('cameras.platformLabel')">
+        <el-radio-group v-model="newCameraForm.platform" data-test="platform">
+          <el-radio-button v-for="p in ['ezviz', 'camos']" :key="p" :value="p">{{ t(`cameras.platform.${p}`) }}</el-radio-button>
+        </el-radio-group>
+      </el-form-item>
+
       <el-form-item :label="t('cameras.serialNumber')">
         <el-input
           v-model="newCameraForm.deviceSerial"
@@ -43,33 +65,70 @@
         </el-radio-group>
       </el-form-item>
     </el-form>
+    </template>
 
     <template #footer>
-      <el-button @click="closeAddCameraModal">
-        {{ t('common.cancel') }}
-      </el-button>
-      <el-button
-        type="primary"
-        :icon="Plus"
-        :loading="addingCamera"
-        @click="submitAddCamera"
-      >
-        {{ t('cameras.addCameraBtn') }}
-      </el-button>
+      <template v-if="provisioning">
+        <el-button type="primary" @click="closeAddCameraModal">{{ t('cameras.provisioning.done') }}</el-button>
+      </template>
+      <template v-else>
+        <el-button @click="closeAddCameraModal">
+          {{ t('common.cancel') }}
+        </el-button>
+        <el-button
+          type="primary"
+          :icon="Plus"
+          :loading="addingCamera"
+          @click="submitAddCamera"
+        >
+          {{ t('cameras.addCameraBtn') }}
+        </el-button>
+      </template>
     </template>
   </el-dialog>
 </template>
 
 <script setup>
+import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { Plus, Lock, VideoCamera } from '@element-plus/icons-vue';
+import { Plus, Lock, VideoCamera, Check, DocumentCopy } from '@element-plus/icons-vue';
 import { useCameras } from '@/composables/useCameras';
 
 const { t } = useI18n();
-const { isAddCameraOpen, addingCamera, newCameraForm, closeAddCameraModal, submitAddCamera } = useCameras();
+const { isAddCameraOpen, addingCamera, newCameraForm, provisioning, closeAddCameraModal, submitAddCamera } = useCameras();
+
+const provisioningRows = computed(() => {
+  const p = provisioning.value || {};
+  return [
+    { key: 'token', value: p.provisionToken },
+    { key: 'apiBase', value: p.apiBase },
+    { key: 'iotEndpoint', value: p.iotEndpoint },
+    { key: 'channel', value: p.kvs?.channelName },
+    { key: 'qr', value: p.qr },
+  ];
+});
+const copied = ref('');
+const copy = async (key, value) => {
+  try {
+    await navigator.clipboard.writeText(value);
+    copied.value = key;
+    setTimeout(() => { if (copied.value === key) copied.value = ''; }, 2000);
+  } catch {
+    // Clipboard not available (http): the value is on screen
+  }
+};
 </script>
 
 <style scoped>
+.prov-value {
+  font-size: 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.prov-hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
 .trap-kind {
   display: flex;
   flex-direction: column;

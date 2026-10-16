@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 
-const PROPOSAL_TYPES = ['card_change', 'treatment'];
+// card_change / treatment: the HMAC API (POST /api/sentinel/proposals); the others: the vision
+// Lambda's proposals (CONTRACTS section 1) and the chatbot's propose_action tool
+const PROPOSAL_TYPES = ['card_change', 'treatment', 'capture_now', 'set_interval', 'set_isp', 'review_request', 'notify'];
 const PROPOSAL_STATES = ['pending', 'confirmed', 'rejected', 'failed', 'expired'];
 // Kept for a year after creation, like the audit log
 const RETENTION_DAYS = 365;
@@ -19,6 +21,12 @@ const sentinelProposalSchema = new mongoose.Schema({
     messageId: { type: String, required: true, unique: true },
     cardIndex: { type: Number, default: 0 },
     reason: { type: String, default: '' },
+    // Lambda proposals: the action parameters, the photo and the trace they came from
+    payload: { type: mongoose.Schema.Types.Mixed, default: undefined },
+    snapshotId: { type: mongoose.Schema.Types.ObjectId, ref: 'Snapshot', default: undefined },
+    traceId: { type: String, default: undefined },
+    confidence: { type: Number, default: undefined },
+    source: { type: String, enum: ['sentinel', 'lambda', 'chat'], default: 'sentinel' },
     // ref: a reference that is not a picture link (e.g. s3://bucket/key of Sentinel's evidence), kept as text
     evidence: { type: [{ _id: false, url: String, snapshotId: String, ref: String, caption: String }], default: [] },
     state: { type: String, enum: PROPOSAL_STATES, default: 'pending' },
