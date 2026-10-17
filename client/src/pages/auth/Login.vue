@@ -132,6 +132,7 @@ import { ref, reactive, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import api from '@/services/api';
 import { useI18n } from 'vue-i18n';
+import { savedLocale, SUPPORTED_LOCALES } from '@/i18n';
 import { useAuth } from '@/composables/useAuth';
 import { ElNotification } from 'element-plus';
 
@@ -203,8 +204,15 @@ const handleLogin = async () => {
   }
   loading.value = true;
   try {
-    const response = await api.login(loginForm.email, loginForm.password, locale.value);
+    // Only a language picked on this browser updates the account; otherwise the account's own language wins
+    const picked = savedLocale();
+    const response = await api.login(loginForm.email, loginForm.password, picked || undefined);
     if (response.data.success) {
+      const accountLanguage = response.data.user?.language;
+      if (!picked && SUPPORTED_LOCALES.some((l) => l.code === accountLanguage)) {
+        locale.value = accountLanguage;
+        try { localStorage.setItem('flybot_language', accountLanguage); } catch (e) {}
+      }
       setAuth(response.data.user, response.data.token || null);
       ElNotification({ title: t('auth.loginSuccess'), message: t('auth.welcomeBack'), type: 'success' });
       const redirect = route.query.redirect || '/dashboard';
