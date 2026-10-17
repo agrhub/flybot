@@ -186,6 +186,28 @@ async function liveSession(deviceSerial, { user, minutes = 5 } = {}) {
  * The camera's own web page on its local network: camos-esp32-trap firmware 0.4.1 and later answers
  * flybot-<last 6 letters/digits of the serial>.local over mDNS. Null for other cameras (AMB82, older firmware).
  */
+/** The credential provider host and role alias a camera needs for live view, or null when this server has none. */
+function liveCredentials() {
+    return env.IOT_CREDENTIALS_ENDPOINT && env.IOT_ROLE_ALIAS
+        ? { credentialsEndpoint: env.IOT_CREDENTIALS_ENDPOINT, roleAlias: env.IOT_ROLE_ALIAS }
+        : null;
+}
+
+/**
+ * A camera that registered before this server had live credentials reports live.supported false: give it the
+ * credential provider and role alias through the shadow (desired kvs.*), once per alias.
+ */
+async function offerLiveCredentials(deviceSerial, reported) {
+    const creds = liveCredentials();
+    if (!creds || reported?.live?.supported !== false) return false;
+    const camera = await Camera.findOne({ deviceSerial, platform: PLATFORM }).select('device.liveCredsAlias device.kvsChannelName').lean();
+    if (!camera || camera.device?.liveCredsAlias === creds.roleAlias) return false;
+    const channelName = camera.device?.kvsChannelName || require('./kinesis').channelNameOf(deviceSerial);
+    await updateDesired(deviceSerial, { kvs: { region: env.AWS_REGION, channelName, ...creds } });
+    await Camera.updateMany({ deviceSerial, platform: PLATFORM }, { $set: { 'device.liveCredsAlias': creds.roleAlias } });
+    return true;
+}
+
 function localConsoleUrl(deviceSerial, fw) {
     if (!/^ESP/i.test(String(deviceSerial || ''))) return null;
     const v = String(fw || '').match(/(\d+)\.(\d+)\.(\d+)/);
@@ -369,6 +391,7 @@ async function handleMessage(topicName, payload, { now = new Date() } = {}) {
             const fields = deviceFieldsOf(doc);
             const set = { ...fields, 'device.lastSeenAt': now };
             if (kind === 'shadow/reported') Object.assign(set, { 'device.shadow.reported': doc, 'device.shadow.reportedAt': now });
+            if (kind === 'shadow/reported') await offerLiveCredentials(deviceSerial, doc).catch(err => console.warn(`⚠️ Live credentials not offered (${deviceSerial}): ${err.message}`));
             await Camera.updateMany({ deviceSerial, platform: PLATFORM }, { $set: set });
             return { deviceSerial, kind };
         }
@@ -404,6 +427,7 @@ async function handleMessage(topicName, payload, { now = new Date() } = {}) {
         const set = { ...deviceFieldsOf(reported), 'device.lastSeenAt': now, 'device.shadow.reported': reported, 'device.shadow.reportedAt': now };
         if (reported.live && typeof reported.live === 'object' && reported.live.requested === false) set['device.liveRequested'] = false;
         await Camera.updateMany({ deviceSerial: camera.deviceSerial }, { $set: set });
+        await offerLiveCredentials(camera.deviceSerial, reported).catch(err => console.warn(`⚠️ Live credentials not offered (${camera.deviceSerial}): ${err.message}`));
         return { deviceSerial: camera.deviceSerial, kind: 'shadow' };
     }
     return null;
@@ -430,6 +454,8 @@ module.exports = {
     snapshotArrived,
     liveSession,
     localConsoleUrl,
+    liveCredentials,
+    offerLiveCredentials,
     requestLive,
     playback,
     setCaptureSchedule,

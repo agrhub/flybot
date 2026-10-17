@@ -241,7 +241,7 @@ function created(serial, certificatePem, deviceToken, channelName) {
             ok: true,
             certificatePem,
             deviceToken,
-            iot: { endpoint: env.IOT_ENDPOINT || null, thingName: serial },
+            iot: { endpoint: env.IOT_ENDPOINT || null, thingName: serial, ...(require('../platforms/camos').liveCredentials() || {}) },
             kvs: { region: env.AWS_REGION, channelName: channelName || require('../platforms/kinesis').channelNameOf(serial) },
             claimUrl: claimUrlOf(serial),
             claimed: false

@@ -86,7 +86,7 @@ async function pair({ serial, verifyCode, provisionToken }, now = new Date()) {
         body: {
             ok: true,
             deviceToken,
-            iot: { endpoint: env.IOT_ENDPOINT || null, thingName: d.thingName || serial },
+            iot: { endpoint: env.IOT_ENDPOINT || null, thingName: d.thingName || serial, ...(require('../platforms/camos').liveCredentials() || {}) },
             kvs: { region: env.AWS_REGION, channelName }
         }
     };

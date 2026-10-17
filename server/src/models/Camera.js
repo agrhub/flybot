@@ -46,6 +46,8 @@ const deviceSchema = new mongoose.Schema({
     // AWS IoT thing (default: the serial) and the KVS signaling channel (cam-<serial>)
     thingName: { type: String, default: undefined },
     kvsChannelName: { type: String, default: undefined },
+    // The IoT role alias offered to the camera for live view (shadow desired kvs.roleAlias), so it is sent once
+    liveCredsAlias: { type: String, default: undefined },
     kvsChannelArn: { type: String, default: undefined },
     // What the camera last reported (device API meta, MQTT state/telemetry, shadow reported)
     fw: { type: String, default: undefined },

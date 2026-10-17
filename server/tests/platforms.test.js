@@ -298,6 +298,40 @@ test('camos: a camera that reports no cloud live view gets no viewer session, an
     assert.equal(camos.localConsoleUrl('ESP32S3-0A1B2C', null), null);
 });
 
+test('camos: a camera without live credentials gets the credential provider and role alias once, through the shadow', async () => {
+    const owner = await createUser({ role: 'manager' });
+    await createCamera(owner, { deviceSerial: 'ESPLIVE00001', platform: 'camos', status: 1, device: { thingName: 'ESPLIVE00001', kvsChannelName: 'cam-ESPLIVE00001' } });
+    const iot = fakeClient({ UpdateThingShadowCommand: shadowPayload({ desired: {} }) });
+    aws.setClient('iotData', iot);
+    const saved = { host: env.IOT_CREDENTIALS_ENDPOINT, alias: env.IOT_ROLE_ALIAS };
+    try {
+        env.IOT_CREDENTIALS_ENDPOINT = '';
+        env.IOT_ROLE_ALIAS = '';
+        await camos.handleMessage('camos/ESPLIVE00001/shadow/reported', { live: { supported: false } });
+        assert.equal(iot.calls.filter(c => c.name === 'UpdateThingShadowCommand').length, 0, 'nothing to offer without them');
+        assert.equal(camos.liveCredentials(), null);
+
+        env.IOT_CREDENTIALS_ENDPOINT = 'abc.credentials.iot.ap-southeast-2.amazonaws.com';
+        env.IOT_ROLE_ALIAS = 'flybot-camera-kvs-test';
+        assert.deepEqual(camos.liveCredentials(), { credentialsEndpoint: 'abc.credentials.iot.ap-southeast-2.amazonaws.com', roleAlias: 'flybot-camera-kvs-test' });
+        await camos.handleMessage('camos/ESPLIVE00001/shadow/reported', { live: { supported: false } });
+        const updates = iot.calls.filter(c => c.name === 'UpdateThingShadowCommand');
+        assert.equal(updates.length, 1);
+        assert.deepEqual(JSON.parse(updates[0].input.payload.toString()).state.desired.kvs, {
+            region: env.AWS_REGION, channelName: 'cam-ESPLIVE00001',
+            credentialsEndpoint: 'abc.credentials.iot.ap-southeast-2.amazonaws.com', roleAlias: 'flybot-camera-kvs-test'
+        });
+        // Once per alias, and never to a camera that already streams
+        await camos.handleMessage('camos/ESPLIVE00001/shadow/reported', { live: { supported: false } });
+        await camos.handleMessage('$aws/things/ESPLIVE00001/shadow/update/accepted', { state: { reported: { live: { supported: true } } } });
+        assert.equal(iot.calls.filter(c => c.name === 'UpdateThingShadowCommand').length, 1);
+    } finally {
+        env.IOT_CREDENTIALS_ENDPOINT = saved.host;
+        env.IOT_ROLE_ALIAS = saved.alias;
+        aws.setClient('iotData', null);
+    }
+});
+
 test('iotEvents: the WebSocket URL is SigV4-signed for iotdevicegateway, with the session token after the signature', async () => {
     const iotEvents = require('../src/platforms/iotEvents');
     const url = await iotEvents.presignUrl({
