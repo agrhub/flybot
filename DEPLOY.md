@@ -169,7 +169,7 @@ To send reviewed photos to Roboflow for retraining, set `ROBOFLOW_UPLOAD_PROJECT
 
 The Sentinel screen reads FlyBot's own database; it is on with `AI_PROVIDER=opencv-lambda`, or with `SENTINEL_CONSOLE=true` for another provider.
 
-For online payment of plans (API.md "Payments", setup in [docs/flybot-aws-runbook.md](docs/flybot-aws-runbook.md#payments)), set `PAYMENTS_ENABLED=true`, store each provider key as a secret and add them to `_EXTRA_SECRETS` (`,PAYOS_CLIENT_ID=flybot-payos-client-id:latest,PAYOS_API_KEY=flybot-payos-api-key:latest,PAYOS_CHECKSUM_KEY=flybot-payos-checksum-key:latest,STRIPE_SECRET_KEY=flybot-stripe-secret-key:latest,STRIPE_WEBHOOK_SECRET=flybot-stripe-webhook-secret:latest`). Use test keys until launch; a live Stripe key also needs `PAYMENTS_ALLOW_LIVE=true`.
+For online payment of plans (setup guide: [docs/payments.md](docs/payments.md), Vietnamese: [docs/payments.vi.md](docs/payments.vi.md)), set `PAYMENTS_ENABLED=true`, store each provider key as a secret and add them to `_EXTRA_SECRETS` (`,PAYOS_CLIENT_ID=flybot-payos-client-id:latest,PAYOS_API_KEY=flybot-payos-api-key:latest,PAYOS_CHECKSUM_KEY=flybot-payos-checksum-key:latest,STRIPE_SECRET_KEY=flybot-stripe-secret-key:latest,STRIPE_WEBHOOK_SECRET=flybot-stripe-webhook-secret:latest`). Use test keys until launch; a live Stripe key also needs `PAYMENTS_ALLOW_LIVE=true`.
 
 ### 5. Deploy
 ```bash

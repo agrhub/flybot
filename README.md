@@ -48,7 +48,7 @@ Commercial (1080p, 60 s, with music): [English](https://ezviz.agrhub.com/media/f
 <br><sub>Installs on the phone like an app, with push notifications</sub>
 </p>
 
-Other screens: **Sentinel** (what the vision agent saw and proposed for each photo, and the proposals waiting for a decision), **Claim a camera** (take over a camera that registered itself), **Plan & usage** and **Plans** (limits and upgrades), and the admin pages (users, camera fleet, serial registry, firmware, system settings, capture pipeline, usage, activity log, plans, workspaces, upgrade requests). Screenshots in Vietnamese are in [client/public/manual/vi](client/public/manual/vi); the in-app **Guide** (`/manual`) explains every screen.
+Other screens: **Sentinel** (what the vision agent saw and proposed for each photo, and the proposals waiting for a decision), **Claim a camera** (take over a camera that registered itself), **Plan & usage** and **Plans** (limits and upgrades), and the admin pages (users, camera fleet, serial registry, firmware, system settings, capture pipeline, usage, activity log, plans, workspaces, upgrade requests, revenue). Screenshots in Vietnamese are in [client/public/manual/vi](client/public/manual/vi); the in-app **Guide** (`/manual`) explains every screen.
 
 ## Cameras
 
@@ -78,7 +78,7 @@ Each workspace is on a plan the administrator configures:
 | Members | 1 | 5 | no limit |
 | PDF reports, API and webhooks | no | yes | yes |
 
-These are starting values; the administrator changes them under **Settings → Plans**. When a limit is reached, FlyBot offers **Ask for an upgrade**; the administrator approves the request and arranges payment directly. With online payment turned on, the owner can also pay for a plan from the pricing page, by VietQR bank transfer (PayOS) or by card (Stripe, renewing automatically). Receipts are under **Settings → Plan and usage**. A plan that is not renewed keeps working for a grace period, then the workspace goes back to FREE without losing data ([API.md](API.md#payments), [AWS guide](docs/flybot-aws-runbook.md#payments)).
+These are starting values; the administrator changes them under **Settings → Plans**. When a limit is reached, FlyBot offers **Ask for an upgrade**; the administrator approves the request and arranges payment directly. With online payment turned on, the owner can also pay for a plan from the pricing page, by VietQR bank transfer (PayOS) or by card (Stripe, renewing automatically). Receipts are under **Settings → Plan & usage**. A plan that is not renewed keeps working for a grace period, then the workspace goes back to FREE without losing data ([setup guide](docs/payments.md), [API.md](API.md#payments)).
 
 `APP_MODE` sets how people join: `hybrid` (default: open sign-up with a personal workspace, organizations alongside), `b2c` (personal workspaces only) or `b2b` (organizations only, sign-up by invitation).
 
@@ -264,6 +264,7 @@ More about email, Telegram, push notifications and daily statistics: [server/REA
 
 - [DEPLOY.md](DEPLOY.md): AWS (recommended), Google Cloud Run and VM deployment, checks after a deploy, known risks
 - [docs/flybot-aws-runbook.md](docs/flybot-aws-runbook.md): FlyBot on AWS: architecture, permissions, CamOS cameras, local development with the vision Lambda
+- [docs/payments.md](docs/payments.md) ([tiếng Việt](docs/payments.vi.md)): setting up online payments: PayOS and Stripe accounts, keys, webhooks, test purchase, security
 - [API.md](API.md): API reference (app, integrations and webhooks, cameras, vision agent, administration)
 - [docs/AI_MODEL.md](docs/AI_MODEL.md): the fruit fly detection models and how to retrain them
 - [server/README.md](server/README.md): server features and settings
