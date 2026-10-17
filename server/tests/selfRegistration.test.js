@@ -331,6 +331,24 @@ test('claim: wrong code = the same 404 as an unknown serial; 5 failures lock the
     assert.equal((await claim(person, { serial: 'ESPF85B1B92877C', verifyCode: '9WBYWY' })).status, 200);
 });
 
+test('claim through "Add camera": a CamOS serial that registered itself is claimed by the same dialog', async () => {
+    await register();
+    const person = await createUser({ role: 'user', email: 'adder@example.test' });
+    const add = (b) => request('/api/user/add-camera', { method: 'POST', as: person, body: b }).then(json);
+    const wrong = await add({ platform: 'camos', deviceSerial: 'ESPF85B1B92877C', validateCode: 'ZZZZZZ', trapKind: 'lure' });
+    assert.equal(wrong.status, 404, 'a wrong code is the claim 404, not a new pre-provisioned camera');
+    assert.equal(await models.Camera.countDocuments({ deviceSerial: 'ESPF85B1B92877C' }), 1);
+    const res = await add({ platform: 'camos', deviceSerial: 'espf85b1b92877c', validateCode: '9wbywy', trapKind: 'sticky' });
+    assert.equal(res.status, 200, JSON.stringify(res.body));
+    assert.equal(res.body.camera.deviceSerial, 'ESPF85B1B92877C');
+    assert.equal(res.body.provisioning, undefined, 'no provisioning token for a self-registered camera');
+    const cam = await models.Camera.findOne({ deviceSerial: 'ESPF85B1B92877C' }).lean();
+    assert.equal(String(cam.userId), String(person._id));
+    assert.equal(cam.unclaimed, false);
+    assert.equal(cam.trapKind, 'sticky');
+    assert.ok(await models.AuditLog.findOne({ action: 'camera.claimed' }).lean());
+});
+
 /** Set the FREE plan's numbers as the admin would (Admin > Plans). */
 async function freePlan(values) {
     const planService = require('../src/services/planService');

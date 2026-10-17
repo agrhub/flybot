@@ -83,6 +83,17 @@ export function useCameras() {
     isAddCameraOpen.value = false;
   };
 
+  // The claim answers of a self-registered CamOS camera, in the same words as the /claim page
+  const claimErrorText = (err) => {
+    if (newCameraForm.platform !== 'camos') return '';
+    const data = err.response?.data || {};
+    if (data.code === 'NOT_FOUND') return t('claim.errors.notFound');
+    if (data.code === 'LOCKED') return t('claim.errors.locked');
+    if (data.code === 'NO_WORKSPACE') return t('claim.errors.noWorkspace');
+    if (data.code === 'LIMIT_REACHED' || data.code === 'UPGRADE_REQUIRED') return t('claim.errors.limit', { limit: data.max ?? data.limit ?? 3 });
+    return '';
+  };
+
   const submitAddCamera = async () => {
     const serial = newCameraForm.deviceSerial?.trim();
     const code = newCameraForm.validateCode?.trim();
@@ -107,9 +118,11 @@ export function useCameras() {
     try {
       const res = await api.createCamera({ deviceSerial: serial, validateCode: code, trapKind: newCameraForm.trapKind, platform: newCameraForm.platform });
       if (res.data?.success) {
+        // A CamOS camera that registered itself was claimed (no provisioning token to show)
+        const claimed = newCameraForm.platform === 'camos' && !res.data.provisioning;
         ElNotification({
           title: t('common.success'),
-          message: t('cameras.added'),
+          message: claimed ? t('cameras.claimedNote') : t('cameras.added'),
           type: 'success'
         });
         // A CamOS camera: the dialog stays open with the provisioning token for the camera's portal
@@ -132,7 +145,7 @@ export function useCameras() {
     } catch (err) {
       ElNotification({
         title: t('common.error'),
-        message: err.response?.data?.message || t('cameras.addRequestFailed'),
+        message: claimErrorText(err) || err.response?.data?.message || t('cameras.addRequestFailed'),
         type: 'error'
       });
       return false;

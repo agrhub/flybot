@@ -12,8 +12,9 @@
             @change="setGridLayout"
           />
 
-          <!-- A CamOS camera that registered itself: anyone signed in may claim it -->
-          <el-button :icon="Connection" data-test="claim-link" @click="router.push({ name: 'claim' })">
+          <!-- Add camera covers claiming a self-registered CamOS camera; people who cannot add cameras
+               here may still claim one into their personal workspace -->
+          <el-button v-if="!canManageCameras" :icon="Connection" data-test="claim-link" @click="router.push({ name: 'claim' })">
             {{ t('claim.button') }}
           </el-button>
           <!-- Add Camera Button -->
@@ -32,7 +33,7 @@
           <el-button v-if="canManageCameras" type="primary" :icon="Plus" @click="openAddCameraModal">
             {{ t('cameras.addCameraBtn') }}
           </el-button>
-          <el-button @click="router.push({ name: 'claim' })">{{ t('claim.button') }}</el-button>
+          <el-button v-if="!canManageCameras" @click="router.push({ name: 'claim' })">{{ t('claim.button') }}</el-button>
         </el-empty>
       </el-card>
 

@@ -295,8 +295,9 @@
       "camos": "CamOS",
       "kinesis": "KVS"
     },
+    "claimedNote": "Camera claimed: it is now in your account.",
     "platformHint": {
-      "camos": "A CamOS trap camera (ESP32) on AWS IoT Core: enter the serial and the verification code printed on its label. You will get a provisioning token to type into the camera's setup portal."
+      "camos": "A CamOS trap camera (ESP32): scan the QR on its label, or type the serial and the 6-character verify code from the label or its setup page. A camera that set itself up joins your account at once; a camera set up by hand gets a provisioning token for its setup portal."
     },
     "power": {
       "auto": "Auto power",

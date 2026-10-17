@@ -243,6 +243,13 @@ async function addCamera(req, res) {
  */
 async function addCamosCamera(req, res, { deviceSerial, validateCode, customName, trapKind }) {
     const userId = req.user.id;
+    // A camera that registered itself (public firmware): the serial + verify code claim it, the same as
+    // POST /api/cameras/claim, so one "Add camera" dialog covers both kinds of CamOS camera
+    const selfRegistered = await Camera.exists({ deviceSerial: String(deviceSerial).trim().toUpperCase(), selfRegistered: true });
+    if (selfRegistered) {
+        req.body = { serial: deviceSerial, verifyCode: validateCode, trapKind, ...(customName ? { deviceName: customName } : {}) };
+        return claimCamera(req, res);
+    }
     const existing = await Camera.findOne({ deviceSerial });
     if (existing && String(existing.userId) !== String(userId)) {
         return res.status(409).json({ success: false, code: 'CAMERA_TAKEN', message: "This camera is already registered to another account. Ask its owner to share it with you." });
