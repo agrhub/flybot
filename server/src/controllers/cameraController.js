@@ -243,6 +243,15 @@ async function addCamera(req, res) {
  */
 async function addCamosCamera(req, res, { deviceSerial, validateCode, customName, trapKind }) {
     const userId = req.user.id;
+    // camos-esp32-trap serials are upper case (ESP + MAC), as the camera registers them
+    if (/^esp[0-9a-f]{12}$/i.test(String(deviceSerial).trim())) deviceSerial = String(deviceSerial).trim().toUpperCase();
+    // A camera that registered itself (public firmware): the serial + verify code claim it, the same as
+    // POST /api/cameras/claim, so one "Add camera" dialog covers both kinds of CamOS camera
+    const selfRegistered = await Camera.exists({ deviceSerial: String(deviceSerial).trim().toUpperCase(), selfRegistered: true });
+    if (selfRegistered) {
+        req.body = { serial: deviceSerial, verifyCode: validateCode, trapKind, ...(customName ? { deviceName: customName } : {}) };
+        return claimCamera(req, res);
+    }
     const existing = await Camera.findOne({ deviceSerial });
     if (existing && String(existing.userId) !== String(userId)) {
         return res.status(409).json({ success: false, code: 'CAMERA_TAKEN', message: "This camera is already registered to another account. Ask its owner to share it with you." });
@@ -270,6 +279,17 @@ async function addCamosCamera(req, res, { deviceSerial, validateCode, customName
         await require('../services/orgService').adoptCamera(req.user, camera)
             .catch(err => console.warn('⚠️ Camera not added to an organization:', err.message));
         recordAudit(req, { action: 'camera.added', target: cameraTarget(camera), details: { platform: 'camos' } });
+    }
+    // camos-esp32-trap cameras (serial ESP + MAC) register themselves: no token to type in, the camera joins this
+    // account when it registers with the same verify code (registrationService.registerForOwner)
+    if (/^ESP[0-9A-F]{12}$/.test(String(deviceSerial).trim().toUpperCase())) {
+        const fresh = await Camera.findById(camera._id);
+        return res.json({
+            success: true,
+            pending: true,
+            message: "Camera added. It joins your account by itself when it connects.",
+            camera: toClientCamera(fresh, req.user)
+        });
     }
     const provisioning = await deviceService.issueProvisionToken(camera);
     const fresh = await Camera.findById(camera._id);

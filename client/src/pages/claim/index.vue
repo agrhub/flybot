@@ -70,13 +70,14 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { Camera } from '@element-plus/icons-vue';
 import PageHeader from '@/components/common/PageHeader.vue';
 import api from '@/services/api';
 import { parseClaimCode } from '@/utils/claimCode';
+import { useClaimQrScan } from '@/composables/useClaimQrScan';
 
 /**
  * /claim: take over a CamOS camera that registered itself (public firmware). Reached from the QR
@@ -101,47 +102,7 @@ const fill = (parsed) => {
 };
 
 // ---------- QR scan (BarcodeDetector where the browser has it) ----------
-const canScan = typeof window !== 'undefined' && 'BarcodeDetector' in window && !!navigator.mediaDevices?.getUserMedia;
-const scanning = ref(false);
-const scanError = ref('');
-const videoRef = ref(null);
-let stream = null;
-let timer = null;
-
-async function startScan() {
-  scanError.value = '';
-  try {
-    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
-    scanning.value = true;
-    await new Promise((r) => requestAnimationFrame(r));
-    if (videoRef.value) videoRef.value.srcObject = stream;
-    const detector = new window.BarcodeDetector({ formats: ['qr_code'] });
-    timer = setInterval(async () => {
-      if (!videoRef.value || videoRef.value.readyState < 2) return;
-      try {
-        const codes = await detector.detect(videoRef.value);
-        const parsed = codes.map((c) => parseClaimCode(c.rawValue)).find((p) => p?.serial);
-        if (parsed) {
-          fill(parsed);
-          stopScan();
-        }
-      } catch {
-        // next frame
-      }
-    }, 400);
-  } catch {
-    scanError.value = t('claim.scanFailed');
-    stopScan();
-  }
-}
-
-function stopScan() {
-  clearInterval(timer);
-  timer = null;
-  stream?.getTracks().forEach((track) => track.stop());
-  stream = null;
-  scanning.value = false;
-}
+const { canScan, scanning, scanError, videoRef, startScan, stopScan } = useClaimQrScan(fill, { failedText: t('claim.scanFailed') });
 
 // ---------- Claim ----------
 async function submit() {
@@ -189,7 +150,6 @@ onMounted(async () => {
     farms.value = [];
   }
 });
-onBeforeUnmount(stopScan);
 </script>
 
 <style scoped>

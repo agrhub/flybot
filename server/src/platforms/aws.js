@@ -52,8 +52,8 @@ function setClient(name, fake) {
 
 /** The credentials the default chain resolves to (for SigV4 outside the SDK clients). */
 async function credentials() {
-    const { fromNodeProviderChain } = require('@aws-sdk/credential-provider-node');
-    return fromNodeProviderChain()();
+    const { defaultProvider } = require('@aws-sdk/credential-provider-node');
+    return defaultProvider()();
 }
 
 /** The command's constructor name, so a fake client can tell commands apart. */

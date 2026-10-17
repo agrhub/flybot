@@ -202,9 +202,9 @@ test('register: idempotent before the first connect (same certificate), 409 afte
     assert.equal(late.body.error, 'serial_taken');
 });
 
-test('register: a serial an owner already has, or a thing that is not ours, is taken', async () => {
+test('register: a serial an owner already has with another code, or a thing that is not ours, is taken', async () => {
     const owner = await createUser({ role: 'manager' });
-    await models.Camera.create({ deviceSerial: 'ESP0123456789AB', userId: owner._id, platform: 'camos', validateCode: '9WBYWY' });
+    await models.Camera.create({ deviceSerial: 'ESP0123456789AB', userId: owner._id, platform: 'camos', validateCode: 'ABCDEF' });
     assert.equal((await register(body({ serial: 'ESP0123456789AB' }))).body.error, 'serial_taken');
 
     iotFail.CreateThingCommand = awsErr('ResourceAlreadyExistsException');
@@ -329,6 +329,53 @@ test('claim: wrong code = the same 404 as an unknown serial; 5 failures lock the
     assert.equal((await claim(person, { serial: 'ESP999999999999', verifyCode: 'ZZZZZZ' })).body.code, 'LOCKED');
     registration.resetClaimLocks();
     assert.equal((await claim(person, { serial: 'ESPF85B1B92877C', verifyCode: '9WBYWY' })).status, 200);
+});
+
+test('claim through "Add camera": a CamOS serial that registered itself is claimed by the same dialog', async () => {
+    await register();
+    const person = await createUser({ role: 'user', email: 'adder@example.test' });
+    const add = (b) => request('/api/user/add-camera', { method: 'POST', as: person, body: b }).then(json);
+    const wrong = await add({ platform: 'camos', deviceSerial: 'ESPF85B1B92877C', validateCode: 'ZZZZZZ', trapKind: 'lure' });
+    assert.equal(wrong.status, 404, 'a wrong code is the claim 404, not a new pre-provisioned camera');
+    assert.equal(await models.Camera.countDocuments({ deviceSerial: 'ESPF85B1B92877C' }), 1);
+    const res = await add({ platform: 'camos', deviceSerial: 'espf85b1b92877c', validateCode: '9wbywy', trapKind: 'sticky' });
+    assert.equal(res.status, 200, JSON.stringify(res.body));
+    assert.equal(res.body.camera.deviceSerial, 'ESPF85B1B92877C');
+    assert.equal(res.body.provisioning, undefined, 'no provisioning token for a self-registered camera');
+    const cam = await models.Camera.findOne({ deviceSerial: 'ESPF85B1B92877C' }).lean();
+    assert.equal(String(cam.userId), String(person._id));
+    assert.equal(cam.unclaimed, false);
+    assert.equal(cam.trapKind, 'sticky');
+    assert.ok(await models.AuditLog.findOne({ action: 'camera.claimed' }).lean());
+});
+
+test('re-add: an owner adds an ESP serial before it registers; the camera then joins that account with the same code', async () => {
+    const person = await createUser({ role: 'user', email: 'readd@example.test' });
+    const add = (b) => request('/api/user/add-camera', { method: 'POST', as: person, body: b }).then(json);
+    const added = await add({ platform: 'camos', deviceSerial: 'espf85b1b92877c', validateCode: '9wbywy', trapKind: 'sticky' });
+    assert.equal(added.status, 200, JSON.stringify(added.body));
+    assert.equal(added.body.pending, true);
+    assert.equal(added.body.provisioning, undefined, 'no token to type in for a self-registering camera');
+    let cam = await models.Camera.findOne({ deviceSerial: 'ESPF85B1B92877C' }).lean();
+    assert.equal(String(cam.userId), String(person._id));
+
+    // Another code is still refused
+    const wrong = await register(body({ verifyCode: 'ZZZZZZ' }));
+    assert.equal(wrong.status, 409);
+    const res = await register();
+    assert.equal(res.status, 201, JSON.stringify(res.body));
+    assert.equal(res.body.claimed, true);
+    assert.match(res.body.certificatePem, /BEGIN CERTIFICATE/);
+    cam = await models.Camera.findOne({ deviceSerial: 'ESPF85B1B92877C' }).lean();
+    assert.equal(String(cam.userId), String(person._id), 'still the owner\'s camera');
+    assert.equal(cam.unclaimed, false);
+    assert.equal(cam.selfRegistered, true);
+    assert.equal(cam.trapKind, 'sticky');
+    assert.ok(cam.device.tokenHash);
+    assert.equal(cam.device.provisionTokenHash, undefined);
+    assert.equal(await models.Camera.countDocuments({ deviceSerial: 'ESPF85B1B92877C' }), 1);
+    // Registered now: a second registration is the usual 409
+    assert.equal((await register()).status, 409);
 });
 
 /** Set the FREE plan's numbers as the admin would (Admin > Plans). */

@@ -295,8 +295,10 @@
       "camos": "CamOS",
       "kinesis": "KVS"
     },
+    "pendingNote": "Camera added. Power it on with Wi-Fi set up: it joins your account by itself within a minute.",
+    "claimedNote": "Camera claimed: it is now in your account.",
     "platformHint": {
-      "camos": "A CamOS trap camera (ESP32) on AWS IoT Core: enter the serial and the verification code printed on its label. You will get a provisioning token to type into the camera's setup portal."
+      "camos": "A CamOS trap camera (ESP32): scan the QR on its label, or type the serial and the 6-character verify code from the label or its setup page. A camera that set itself up joins your account at once; a camera set up by hand gets a provisioning token for its setup portal."
     },
     "power": {
       "auto": "Auto power",
@@ -323,7 +325,19 @@
       "disconnected": "The camera disconnected.",
       "badConfig": "The live view configuration is incomplete.",
       "notConfigured": "Live view of CamOS cameras is not set up on this server.",
-      "liveOnRequest": "Live view starts when you open the camera."
+      "liveOnRequest": "Live view starts when you open the camera.",
+      "notSupported": "This camera has no live view over the internet yet. Use Capture now for a fresh photo.",
+      "notSupportedLocal": "This camera has no live view over the internet yet. Use Capture now for a fresh photo, or watch it live from a phone or computer on the same Wi-Fi:",
+      "notSupportedShort": "No live view over the internet",
+      "quality": "Live quality",
+      "qualityHint": "Medium and High send the camera's own JPEG pictures over a data channel (more detail, needs a good uplink); Low sends H.264, which every camera can do.",
+      "qualityOptions": {
+        "auto": "Auto",
+        "low": "Low · H.264 320×240",
+        "medium": "Medium · JPEG 640×480",
+        "high": "High · JPEG 1024×768"
+      },
+      "liveInfo": "Live · {mode} {width}×{height} · {fps} fps"
     },
     "provisioning": {
       "title": "Camera {serial} added. Set it up now.",

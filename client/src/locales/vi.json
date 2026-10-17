@@ -295,8 +295,10 @@
       "camos": "CamOS",
       "kinesis": "KVS"
     },
+    "pendingNote": "Đã thêm camera. Bật camera đã cài Wi-Fi: camera sẽ tự vào tài khoản của bạn trong khoảng một phút.",
+    "claimedNote": "Đã nhận camera: camera đã vào tài khoản của bạn.",
     "platformHint": {
-      "camos": "Camera bẫy CamOS (ESP32) trên AWS IoT Core: nhập số sê-ri và mã xác minh in trên nhãn. Bạn sẽ nhận một mã cấp phát để nhập vào trang cài đặt của camera."
+      "camos": "Camera bẫy CamOS (ESP32): quét mã QR trên nhãn, hoặc nhập số serial và mã xác minh 6 ký tự trên nhãn hay trang cài đặt của camera. Camera đã tự đăng ký sẽ vào tài khoản của bạn ngay; camera cài đặt thủ công sẽ nhận mã cấp phát để nhập vào trang cài đặt của nó."
     },
     "power": {
       "auto": "Nguồn tự động",
@@ -323,7 +325,19 @@
       "disconnected": "Camera đã ngắt kết nối.",
       "badConfig": "Cấu hình xem trực tiếp chưa đầy đủ.",
       "notConfigured": "Máy chủ này chưa bật xem trực tiếp cho camera CamOS.",
-      "liveOnRequest": "Xem trực tiếp bắt đầu khi bạn mở camera."
+      "liveOnRequest": "Xem trực tiếp bắt đầu khi bạn mở camera.",
+      "notSupported": "Camera này chưa xem trực tiếp được qua Internet. Bấm Chụp ngay để lấy ảnh mới.",
+      "notSupportedLocal": "Camera này chưa xem trực tiếp được qua Internet. Bấm Chụp ngay để lấy ảnh mới, hoặc xem trực tiếp từ điện thoại hay máy tính cùng mạng Wi-Fi:",
+      "notSupportedShort": "Không xem trực tiếp qua Internet",
+      "quality": "Chất lượng xem trực tiếp",
+      "qualityHint": "Trung bình và Cao gửi ảnh JPEG của chính camera qua kênh dữ liệu (rõ hơn, cần đường truyền tốt); Thấp gửi H.264, camera nào cũng gửi được.",
+      "qualityOptions": {
+        "auto": "Tự động",
+        "low": "Thấp · H.264 320×240",
+        "medium": "Trung bình · JPEG 640×480",
+        "high": "Cao · JPEG 1024×768"
+      },
+      "liveInfo": "Trực tiếp · {mode} {width}×{height} · {fps} khung hình/giây"
     },
     "provisioning": {
       "title": "Đã thêm camera {serial}. Cài đặt ngay.",

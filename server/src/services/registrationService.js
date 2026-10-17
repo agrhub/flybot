@@ -150,6 +150,12 @@ async function register(body, now = new Date()) {
     const csrHash = sha256(csr);
 
     const existing = await Camera.findOne({ deviceSerial: serial }).lean();
+    // Added by its owner (serial + verify code, Add camera) before it registered, or added again after the owner
+    // removed it: the matching code proves the camera is the one the owner typed in, so it joins that account
+    if (existing && !existing.selfRegistered && existing.platform === 'camos' && existing.userId && !existing.device?.tokenHash
+        && normCode(existing.validateCode) === verifyCode) {
+        return registerForOwner(existing, { serial, csr, csrHash, fw: b.fw, now });
+    }
     if (existing) {
         const d = existing.device || {};
         const sameCode = existing.selfRegistered && normCode(existing.validateCode) === verifyCode;
@@ -234,6 +240,37 @@ async function register(body, now = new Date()) {
     }
 }
 
+/** Registration of a camera an owner already added: thing, certificate, channel and token, claimed at once. */
+async function registerForOwner(camera, { serial, csr, csrHash, fw, now }) {
+    let cert = null;
+    try {
+        const thing = await ensureThing(serial);
+        if (!thing.ok) return fail(409, 'serial_taken', 'This serial is already registered.');
+        cert = await issueCertificate(serial, csr);
+        const kvs = await require('../platforms/kinesis').ensureChannel(serial);
+        const deviceToken = newToken();
+        await Camera.updateOne({ _id: camera._id }, {
+            $set: {
+                selfRegistered: true, unclaimed: false, claimedAt: now,
+                'device.thingName': serial, 'device.registeredAt': now, 'device.csrHash': csrHash,
+                'device.tokenHash': sha256(deviceToken), 'device.tokenIssuedAt': now,
+                'device.certificateArn': cert.certificateArn, 'device.certificateId': cert.certificateId, 'device.certificatePem': cert.certificatePem,
+                'device.kvsChannelName': kvs.channelName, 'device.kvsChannelArn': kvs.channelArn,
+                ...(fw ? { 'device.fw': String(fw) } : {})
+            },
+            $unset: { 'device.provisionTokenHash': 1, 'device.provisionExpiresAt': 1 }
+        });
+        console.log(`📟 Camera ${serial} registered into its owner's account`);
+        const answer = created(serial, cert.certificatePem, deviceToken, kvs.channelName);
+        answer.body.claimed = true;
+        return answer;
+    } catch (err) {
+        console.error(`❌ Registration of ${serial} (added by its owner) failed: ${awsError(err)} ${err.message}`);
+        await teardownAws({ deviceSerial: serial, device: { ...(cert || {}), thingName: serial } }).catch(() => {});
+        return fail(502, 'aws_failed', 'The camera could not be registered with AWS IoT. Try again later.');
+    }
+}
+
 function created(serial, certificatePem, deviceToken, channelName) {
     return {
         status: 201,
@@ -241,7 +278,7 @@ function created(serial, certificatePem, deviceToken, channelName) {
             ok: true,
             certificatePem,
             deviceToken,
-            iot: { endpoint: env.IOT_ENDPOINT || null, thingName: serial },
+            iot: { endpoint: env.IOT_ENDPOINT || null, thingName: serial, ...(require('../platforms/camos').liveCredentials() || {}) },
             kvs: { region: env.AWS_REGION, channelName: channelName || require('../platforms/kinesis').channelNameOf(serial) },
             claimUrl: claimUrlOf(serial),
             claimed: false

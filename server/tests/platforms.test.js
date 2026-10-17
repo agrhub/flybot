@@ -96,11 +96,17 @@ test('camos: shadow and RPC go through the IoT data plane; snapshot waits for th
         const cam = await models.Camera.findOne({ deviceSerial: 'ESP1' }).lean();
         assert.equal(cam.captureIntervalMinutes, 60);
         assert.deepEqual(cam.device.shadow.desired, { capture: { intervalMin: 60 } });
+        // The firmware reads camos/<serial>/shadow/desired: the whole desired document, retained, with a version
+        const toCamera = iot.calls.find(c => c.name === 'PublishCommand' && c.input.topic === 'camos/ESP1/shadow/desired');
+        assert.equal(toCamera.input.retain, true);
+        const desiredDoc = JSON.parse(toCamera.input.payload.toString());
+        assert.deepEqual(desiredDoc.capture, { intervalMin: 60 });
+        assert.ok(Number.isInteger(desiredDoc.version));
 
         // RPC without waiting: published on camos/<serial>/rpc/req
         const sent = await camos.rpc('ESP1', 'reboot');
         assert.equal(sent.sent, true);
-        const publish = iot.calls.find(c => c.name === 'PublishCommand');
+        const publish = iot.calls.find(c => c.name === 'PublishCommand' && c.input.topic.endsWith('/rpc/req'));
         assert.equal(publish.input.topic, 'camos/ESP1/rpc/req');
         const body = JSON.parse(publish.input.payload.toString());
         assert.equal(body.method, 'reboot');
@@ -134,9 +140,9 @@ test('camos: shadow and RPC go through the IoT data plane; snapshot waits for th
         await models.Camera.updateOne({ deviceSerial: 'ESP1' }, { $set: { 'device.sleeping': true, 'device.wakeAt': new Date(Date.now() + 3600 * 1000) } });
         const before = iot.calls.length;
         assert.equal(await camos.snapshot('ESP1', { timeoutMs: 50 }), null);
-        const desired = JSON.parse(iot.calls.at(-1).input.payload.toString()).state.desired;
+        const desired = JSON.parse(iot.calls.filter(c => c.name === 'UpdateThingShadowCommand').at(-1).input.payload.toString()).state.desired;
         assert.ok(desired.capture.requestNow > 0);
-        assert.equal(iot.calls.slice(before).some(c => c.name === 'PublishCommand'), false);
+        assert.equal(iot.calls.slice(before).some(c => c.name === 'PublishCommand' && c.input.topic.endsWith('/rpc/req')), false, 'no RPC to a sleeping camera');
         const status = await camos.getStatus('ESP1');
         assert.equal(status.online, false);
         assert.equal(status.sleeping, true);
@@ -249,7 +255,7 @@ test('kinesis: one channel per camera, viewer config with 15-minute credentials 
         assert.match(assume.input.Policy, /cam-ESP4/);
         // The camera is awake and powered: live.start was sent and live.requested written to the shadow
         assert.equal(session.live.sent, true);
-        assert.equal(JSON.parse(iot.calls.find(c => c.name === 'PublishCommand').input.payload.toString()).method, 'live.start');
+        assert.equal(JSON.parse(iot.calls.find(c => c.name === 'PublishCommand' && c.input.topic.endsWith('/rpc/req')).input.payload.toString()).method, 'live.start');
         assert.deepEqual(JSON.parse(iot.calls.find(c => c.name === 'UpdateThingShadowCommand').input.payload.toString()).state.desired.live, { requested: true, minutes: 5 });
         assert.equal((await models.Camera.findOne({ deviceSerial: 'ESP4' }).lean()).device.liveRequested, true);
 
@@ -261,6 +267,97 @@ test('kinesis: one channel per camera, viewer config with 15-minute credentials 
     } finally {
         aws.setClient('kinesisVideo', null);
         aws.setClient('sts', null);
+        aws.setClient('iotData', null);
+    }
+});
+
+test('camos: a camera that reports no cloud live view gets no viewer session, and its local page when it has one', async () => {
+    const owner = await createUser({ role: 'manager' });
+    await createCamera(owner, {
+        deviceSerial: 'ESPF85B1000001', platform: 'camos', status: 1,
+        device: { lastSeenAt: new Date(), fw: '0.4.2', power: { mode: 'powered' }, shadow: { reported: { live: { supported: false, requested: false } } } }
+    });
+    const kv = fakeClient({});
+    const iot = fakeClient({});
+    aws.setClient('kinesisVideo', kv);
+    aws.setClient('iotData', iot);
+    try {
+        const session = await camos.liveSession('ESPF85B1000001', { user: { id: String(owner._id) }, minutes: 5 });
+        assert.equal(session.supported, false);
+        assert.equal(session.localUrl, 'http://flybot-000001.local/');
+        assert.equal(session.credentials, undefined, 'no viewer credentials');
+        assert.equal(kv.calls.length, 0, 'KVS not asked');
+        assert.equal(iot.calls.length, 0, 'no live request to the camera');
+        assert.equal((await camos.getStatus('ESPF85B1000001')).liveSupported, false);
+    } finally {
+        aws.setClient('kinesisVideo', null);
+        aws.setClient('iotData', null);
+    }
+
+    // Cameras that never report live.supported keep live view (AMB82), and only ESP firmware 0.4.1+ has a local name
+    await createCamera(owner, { deviceSerial: 'AIC54F2000001', platform: 'camos', status: 1, device: { fw: '1.2.0' } });
+    assert.equal((await camos.getStatus('AIC54F2000001')).liveSupported, true);
+    assert.equal(camos.localConsoleUrl('AIC54F2000001', '1.2.0'), null);
+    assert.equal(camos.localConsoleUrl('ESP32S3-0A1B2C', '0.4.0'), null);
+    assert.equal(camos.localConsoleUrl('ESP32S3-0A1B2C', '0.4.1'), 'http://flybot-0a1b2c.local/');
+    assert.equal(camos.localConsoleUrl('ESP32S3-0A1B2C', '0.10.0'), 'http://flybot-0a1b2c.local/');
+    assert.equal(camos.localConsoleUrl('ESP32S3-0A1B2C', null), null);
+});
+
+test('camos: a camera without live credentials gets the credential provider and role alias once, through the shadow', async () => {
+    const owner = await createUser({ role: 'manager' });
+    await createCamera(owner, { deviceSerial: 'ESPLIVE00001', platform: 'camos', status: 1, device: { thingName: 'ESPLIVE00001', kvsChannelName: 'cam-ESPLIVE00001' } });
+    const iot = fakeClient({ UpdateThingShadowCommand: shadowPayload({ desired: {} }) });
+    aws.setClient('iotData', iot);
+    const saved = { host: env.IOT_CREDENTIALS_ENDPOINT, alias: env.IOT_ROLE_ALIAS };
+    try {
+        env.IOT_CREDENTIALS_ENDPOINT = '';
+        env.IOT_ROLE_ALIAS = '';
+        await camos.handleMessage('camos/ESPLIVE00001/shadow/reported', { live: { supported: false } });
+        assert.equal(iot.calls.filter(c => c.name === 'UpdateThingShadowCommand').length, 0, 'nothing to offer without them');
+        assert.equal(camos.liveCredentials(), null);
+
+        env.IOT_CREDENTIALS_ENDPOINT = 'abc.credentials.iot.ap-southeast-2.amazonaws.com';
+        env.IOT_ROLE_ALIAS = 'flybot-camera-kvs-test';
+        assert.deepEqual(camos.liveCredentials(), { credentialsEndpoint: 'abc.credentials.iot.ap-southeast-2.amazonaws.com', roleAlias: 'flybot-camera-kvs-test' });
+        await camos.handleMessage('camos/ESPLIVE00001/shadow/reported', { live: { supported: false } });
+        const updates = iot.calls.filter(c => c.name === 'UpdateThingShadowCommand');
+        assert.equal(updates.length, 1);
+        assert.deepEqual(JSON.parse(updates[0].input.payload.toString()).state.desired.kvs, {
+            region: env.AWS_REGION, channelName: 'cam-ESPLIVE00001',
+            credentialsEndpoint: 'abc.credentials.iot.ap-southeast-2.amazonaws.com', roleAlias: 'flybot-camera-kvs-test'
+        });
+        // Once per alias, and never to a camera that already streams
+        await camos.handleMessage('camos/ESPLIVE00001/shadow/reported', { live: { supported: false } });
+        await camos.handleMessage('$aws/things/ESPLIVE00001/shadow/update/accepted', { state: { reported: { live: { supported: true } } } });
+        assert.equal(iot.calls.filter(c => c.name === 'UpdateThingShadowCommand').length, 1);
+    } finally {
+        env.IOT_CREDENTIALS_ENDPOINT = saved.host;
+        env.IOT_ROLE_ALIAS = saved.alias;
+        aws.setClient('iotData', null);
+    }
+});
+
+test('camos: a live request is reset in the desired settings once the camera has taken it', async () => {
+    const owner = await createUser({ role: 'manager' });
+    await createCamera(owner, { deviceSerial: 'ESPLIVE00002', platform: 'camos', status: 1, device: { thingName: 'ESPLIVE00002', liveRequested: true, shadow: { desired: { live: { requested: true, minutes: 5 } } } } });
+    const iot = fakeClient({ UpdateThingShadowCommand: shadowPayload({ desired: {} }) });
+    aws.setClient('iotData', iot);
+    try {
+        await camos.handleMessage('camos/ESPLIVE00002/shadow/reported', { live: { supported: true, requested: false, active: false } });
+        assert.equal(iot.calls.filter(c => c.name === 'UpdateThingShadowCommand').length, 0, 'not taken yet');
+        // The camera applied the retained desired document at connect: it reports the request and starts the session
+        await camos.handleMessage('camos/ESPLIVE00002/shadow/reported', { live: { supported: true, requested: true, active: false } });
+        const updates = iot.calls.filter(c => c.name === 'UpdateThingShadowCommand');
+        assert.equal(updates.length, 1);
+        assert.deepEqual(JSON.parse(updates[0].input.payload.toString()).state.desired, { live: { requested: false } });
+        const toCamera = iot.calls.filter(c => c.name === 'PublishCommand' && c.input.topic === 'camos/ESPLIVE00002/shadow/desired').at(-1);
+        assert.equal(JSON.parse(toCamera.input.payload.toString()).live.requested, false, 'the retained document no longer asks');
+        const cam = await models.Camera.findOne({ deviceSerial: 'ESPLIVE00002' }).lean();
+        assert.equal(cam.device.liveRequested, false);
+        await camos.handleMessage('camos/ESPLIVE00002/shadow/reported', { live: { supported: true, requested: false, active: true } });
+        assert.equal(iot.calls.filter(c => c.name === 'UpdateThingShadowCommand').length, 1, 'once');
+    } finally {
         aws.setClient('iotData', null);
     }
 });

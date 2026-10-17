@@ -235,6 +235,7 @@
     "an_organization_needs_at_least_one_owner": "An organization needs at least one owner.",
     "at_least_one_active_admin_is_required": "At least one active admin is required.",
     "camera_added_successfully": "Camera added successfully.",
+    "camera_added_joins_by_itself": "Camera added. It joins your account by itself when it connects.",
     "camera_location_updated_successfully": "Camera location updated successfully.",
     "camera_not_found_or_permission_denied": "Camera not found or permission denied.",
     "camera_not_found_or_you_cannot_manage_it": "Camera not found or you cannot manage it.",

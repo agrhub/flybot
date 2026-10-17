@@ -7,11 +7,16 @@
         <video ref="hlsVideo" controls autoplay playsinline class="w-full h-full object-contain hidden"></video>
         <div id="ezopen-video" ref="ezopenVideo" class="w-full h-full object-contain hidden"></div>
         <!-- CamOS cameras: Kinesis Video Streams WebRTC -->
-        <KvsViewer v-if="kvsConfig" :config="kvsConfig" class="absolute inset-0" @state="onKvsState" />
+        <KvsViewer v-if="kvsConfig" :config="kvsConfig" :quality="liveQuality" class="absolute inset-0" @state="onKvsState" @info="onKvsInfo" />
         <div v-if="!camera || (isPlaceholderVisible && !kvsConfig)" class="live-tab__scrim absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
           <el-icon :size="48" class="live-tab__scrim-icon mb-3"><VideoCamera /></el-icon>
           <p class="text-sm font-medium max-w-md">{{ placeholderText }}</p>
-          <div v-if="isCamos && camera" class="flex items-center gap-2 mt-4">
+          <!-- No cloud live view on this camera: its own page on the same Wi-Fi has a live stream -->
+          <a v-if="liveUnsupported && liveLocalUrl" :href="liveLocalUrl" target="_blank" rel="noopener" class="live-tab__local mt-2 text-sm" data-test="live-local">{{ liveLocalUrl }}</a>
+          <div v-if="isCamos && camera && liveUnsupported && camera.canManage !== false" class="flex items-center gap-2 mt-4">
+            <el-button type="primary" size="small" :icon="Camera" :loading="capturing" data-test="live-capture" @click="handleCaptureNow">{{ t('cameras.captureNow') }}</el-button>
+          </div>
+          <div v-else-if="isCamos && camera && !liveUnsupported" class="flex items-center gap-2 mt-4">
             <el-button type="primary" size="small" :icon="VideoCamera" :loading="kvsLoading" @click="playLiveStream">{{ t('cameras.live') }}</el-button>
             <el-button size="small" :icon="Clock" :loading="requestingLive" @click="requestLive">{{ t('cameras.requestLive') }}</el-button>
           </div>
@@ -39,7 +44,19 @@
           <el-tag v-if="isCamos && camera?.device?.power?.mode" type="info" effect="plain" size="small">{{ t(`cameras.power.${camera.device.power.mode}`) }}</el-tag>
           <el-tag v-if="isCamos && camera?.device?.battery?.pct != null" type="info" effect="plain" size="small">{{ camera.device.battery.pct }} %</el-tag>
           <el-tag v-if="!isCamos" type="success" effect="plain" size="small">HD</el-tag>
-          <span class="live-tab__value">{{ currentStreamType }}</span>
+          <span class="live-tab__value" data-test="live-status">{{ currentStreamType }}</span>
+          <el-select
+            v-if="isCamos && kvsConfig"
+            v-model="liveQuality"
+            size="small"
+            class="live-tab__quality"
+            :aria-label="t('cameras.kvs.quality')"
+            :title="t('cameras.kvs.qualityHint')"
+            data-test="live-quality"
+            @change="saveQualityChoice"
+          >
+            <el-option v-for="q in QUALITY_CHOICES" :key="q" :value="q" :label="t(`cameras.kvs.qualityOptions.${q}`)" />
+          </el-select>
           <el-tag v-if="health?.imageIssues?.length" type="warning" effect="light" round size="small">{{ t('cameras.imageQuality.label') }}: {{ health.imageIssues.map(i => t(`cameras.imageQuality.issues.${i}`)).join(', ') }}</el-tag>
         </div>
         <div class="flex flex-wrap items-center gap-2">
@@ -213,6 +230,7 @@ import { useBreakpoints } from '@/composables/useBreakpoints'
 import { useNotifications } from '@/composables/useNotifications'
 import { useI18n } from 'vue-i18n'
 import { requestErrorText } from '@/utils/requestError'
+import { QUALITY_CHOICES, loadQualityChoice, saveQualityChoice } from '@/utils/camosLive'
 
 const { t } = useI18n()
 
@@ -237,6 +255,12 @@ const sleepText = computed(() => {
   const at = props.camera?.device?.nextWakeAt || props.camera?.device?.wakeAt
   return at ? t('cameras.sleepingNextWake', { time: new Date(at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }) : t('cameras.sleeping')
 })
+// CamOS live quality (Auto / Low H.264 / Medium and High JPEG over the data channel), remembered per browser
+const liveQuality = ref(loadQualityChoice())
+const onKvsInfo = (info) => {
+  if (!info?.width) return
+  currentStreamType.value = t('cameras.kvs.liveInfo', { mode: info.mode === 'jpeg' ? 'JPEG' : 'H.264', width: info.width, height: info.height, fps: info.fps })
+}
 const onKvsState = (state) => {
   if (state === 'playing') {
     isPlaceholderVisible.value = false
@@ -258,14 +282,24 @@ const requestLive = async () => {
     requestingLive.value = false
   }
 }
+const liveUnsupported = ref(false)
+const liveLocalUrl = ref('')
 const playKvs = async () => {
   kvsConfig.value = null
+  liveUnsupported.value = false
+  liveLocalUrl.value = ''
   kvsLoading.value = true
   placeholderText.value = t('cameras.kvs.connecting')
   try {
     const res = await api.getCameraLive(props.camera.deviceSerial)
     const data = res.data
-    if (data?.platform === 'kinesis' && data.channelARN) {
+    if (data?.supported === false) {
+      // The camera's firmware has no cloud live view (it says so in its shadow)
+      liveUnsupported.value = true
+      liveLocalUrl.value = /^https?:\/\//.test(data.localUrl || '') ? data.localUrl : ''
+      placeholderText.value = liveLocalUrl.value ? t('cameras.kvs.notSupportedLocal') : t('cameras.kvs.notSupported')
+      currentStreamType.value = t('cameras.kvs.notSupportedShort')
+    } else if (data?.platform === 'kinesis' && data.channelARN) {
       kvsConfig.value = data
       currentStreamType.value = t('cameras.kvs.connecting')
       if (data.camera?.sleeping) placeholderText.value = sleepText.value
@@ -743,6 +777,11 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+.live-tab__local {
+  color: var(--el-color-primary-light-3);
+  text-decoration: underline;
+  word-break: break-all;
+}
 .live-tab__viewport {
   border: 1px solid var(--el-border-color);
 }
@@ -758,6 +797,9 @@ onUnmounted(() => {
   font-size: 15px;
   font-weight: 600;
   color: var(--el-text-color-primary);
+}
+.live-tab__quality {
+  width: 170px;
 }
 .live-tab__value {
   font-size: 13px;

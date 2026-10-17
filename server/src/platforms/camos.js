@@ -71,7 +71,13 @@ async function updateDesired(deviceSerial, desired) {
     }));
     const merged = deepMerge(camera?.device?.shadow?.desired || {}, desired);
     await Camera.updateMany({ deviceSerial }, { $set: { 'device.shadow.desired': merged, 'device.shadow.desiredAt': new Date() } });
-    return decode(res?.payload)?.state || { desired: merged };
+    const answer = decode(res?.payload);
+    // The camos-esp32-trap firmware reads its settings from camos/<serial>/shadow/desired (protocol 8), not from the
+    // AWS shadow: publish the whole desired document there too, retained, so a camera that sleeps gets it at connect
+    const version = Number.isInteger(answer?.version) ? answer.version : Math.floor(Date.now() / 1000);
+    await publish(deviceSerial, 'shadow/desired', { ...merged, version }, { retain: true })
+        .catch(err => console.warn(`⚠️ Desired settings not published to the camera (${deviceSerial}): ${err.message}`));
+    return answer?.state || { desired: merged };
 }
 
 function deepMerge(base, patch) {
@@ -86,11 +92,12 @@ function deepMerge(base, patch) {
 
 // ---------- RPC ----------
 
-async function publish(deviceSerial, suffix, message) {
+async function publish(deviceSerial, suffix, message, { retain = false } = {}) {
     const { PublishCommand } = require('@aws-sdk/client-iot-data-plane');
     await aws.getClient('iotData').send(new PublishCommand({
         topic: topic(deviceSerial, suffix),
         qos: 1,
+        ...(retain ? { retain: true } : {}),
         payload: Buffer.from(JSON.stringify(message))
     }));
 }
@@ -171,9 +178,63 @@ function snapshotArrived(deviceSerial, doc) {
  */
 async function liveSession(deviceSerial, { user, minutes = 5 } = {}) {
     const kinesis = require('./kinesis');
-    const [session, status] = await Promise.all([kinesis.liveSession(deviceSerial, { user }), getStatus(deviceSerial)]);
+    const status = await getStatus(deviceSerial);
+    // A camera whose firmware has no cloud live view says so in its shadow (live.supported false): no
+    // viewer session and no live request, the page offers a capture and the camera's local page instead
+    if (status && status.liveSupported === false) {
+        return { platform: PLATFORM, supported: false, camera: status, localUrl: status.localUrl };
+    }
+    const session = await kinesis.liveSession(deviceSerial, { user });
     const live = await requestLive(deviceSerial, { minutes, status }).catch(err => ({ requested: false, error: err.message }));
-    return { ...session, camera: status, live };
+    return { ...session, supported: true, camera: status, live };
+}
+
+/**
+ * The camera's own web page on its local network: camos-esp32-trap firmware 0.4.1 and later answers
+ * flybot-<last 6 letters/digits of the serial>.local over mDNS. Null for other cameras (AMB82, older firmware).
+ */
+/** The credential provider host and role alias a camera needs for live view, or null when this server has none. */
+function liveCredentials() {
+    return env.IOT_CREDENTIALS_ENDPOINT && env.IOT_ROLE_ALIAS
+        ? { credentialsEndpoint: env.IOT_CREDENTIALS_ENDPOINT, roleAlias: env.IOT_ROLE_ALIAS }
+        : null;
+}
+
+/**
+ * A camera that registered before this server had live credentials reports live.supported false: give it the
+ * credential provider and role alias through the shadow (desired kvs.*), once per alias.
+ */
+async function offerLiveCredentials(deviceSerial, reported) {
+    const creds = liveCredentials();
+    if (!creds || reported?.live?.supported !== false) return false;
+    const camera = await Camera.findOne({ deviceSerial, platform: PLATFORM }).select('device.liveCredsAlias device.kvsChannelName').lean();
+    if (!camera || camera.device?.liveCredsAlias === creds.roleAlias) return false;
+    const channelName = camera.device?.kvsChannelName || require('./kinesis').channelNameOf(deviceSerial);
+    await updateDesired(deviceSerial, { kvs: { region: env.AWS_REGION, channelName, ...creds } });
+    await Camera.updateMany({ deviceSerial, platform: PLATFORM }, { $set: { 'device.liveCredsAlias': creds.roleAlias } });
+    return true;
+}
+
+/**
+ * A live request is taken once the camera reports it (live.requested true: it applied the desired document and starts
+ * the session) or a session (live.active): reset desired live.requested, or the retained desired document would
+ * start a new session at every connect of the camera.
+ */
+async function settleLiveRequest(deviceSerial, reported) {
+    if (reported?.live?.requested !== true && reported?.live?.active !== true) return false;
+    const camera = await Camera.findOne({ deviceSerial, platform: PLATFORM }).select('device.shadow.desired.live').lean();
+    if (camera?.device?.shadow?.desired?.live?.requested !== true) return false;
+    await updateDesired(deviceSerial, { live: { requested: false } });
+    await Camera.updateMany({ deviceSerial, platform: PLATFORM }, { $set: { 'device.liveRequested': false } });
+    return true;
+}
+
+function localConsoleUrl(deviceSerial, fw) {
+    if (!/^ESP/i.test(String(deviceSerial || ''))) return null;
+    const v = String(fw || '').match(/(\d+)\.(\d+)\.(\d+)/);
+    if (!v || Number(v[1]) * 1e6 + Number(v[2]) * 1e3 + Number(v[3]) < 4001) return null;
+    const tail = String(deviceSerial).replace(/[^A-Za-z0-9]/g, '').slice(-6).toLowerCase();
+    return `http://flybot-${tail}.local/`;
 }
 
 /**
@@ -259,6 +320,9 @@ async function getStatus(deviceSerial, now = new Date()) {
         location: d.location || null,
         fw: d.fw || null,
         liveRequested: !!d.liveRequested,
+        // false only when the camera reports it (shadow live.supported); cameras that do not report it keep live view
+        liveSupported: d.shadow?.reported?.live?.supported !== false,
+        localUrl: localConsoleUrl(deviceSerial, d.fw),
         paired: !!d.tokenHash,
         kvsChannelName: d.kvsChannelName || null
     };
@@ -348,6 +412,8 @@ async function handleMessage(topicName, payload, { now = new Date() } = {}) {
             const fields = deviceFieldsOf(doc);
             const set = { ...fields, 'device.lastSeenAt': now };
             if (kind === 'shadow/reported') Object.assign(set, { 'device.shadow.reported': doc, 'device.shadow.reportedAt': now });
+            if (kind === 'shadow/reported') await offerLiveCredentials(deviceSerial, doc).catch(err => console.warn(`⚠️ Live credentials not offered (${deviceSerial}): ${err.message}`));
+            if (kind === 'shadow/reported') await settleLiveRequest(deviceSerial, doc).catch(err => console.warn(`⚠️ Live request not reset (${deviceSerial}): ${err.message}`));
             await Camera.updateMany({ deviceSerial, platform: PLATFORM }, { $set: set });
             return { deviceSerial, kind };
         }
@@ -383,6 +449,8 @@ async function handleMessage(topicName, payload, { now = new Date() } = {}) {
         const set = { ...deviceFieldsOf(reported), 'device.lastSeenAt': now, 'device.shadow.reported': reported, 'device.shadow.reportedAt': now };
         if (reported.live && typeof reported.live === 'object' && reported.live.requested === false) set['device.liveRequested'] = false;
         await Camera.updateMany({ deviceSerial: camera.deviceSerial }, { $set: set });
+        await offerLiveCredentials(camera.deviceSerial, reported).catch(err => console.warn(`⚠️ Live credentials not offered (${camera.deviceSerial}): ${err.message}`));
+        await settleLiveRequest(camera.deviceSerial, reported).catch(err => console.warn(`⚠️ Live request not reset (${camera.deviceSerial}): ${err.message}`));
         return { deviceSerial: camera.deviceSerial, kind: 'shadow' };
     }
     return null;
@@ -408,6 +476,9 @@ module.exports = {
     snapshot,
     snapshotArrived,
     liveSession,
+    localConsoleUrl,
+    liveCredentials,
+    offerLiveCredentials,
     requestLive,
     playback,
     setCaptureSchedule,

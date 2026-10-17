@@ -171,6 +171,10 @@ const config = {
     // IAM role the browser assumes (through FlyBot, STS AssumeRole, 15 min) to join a KVS signaling
     // channel as VIEWER. Empty = live view of CamOS cameras answers 503
     KVS_VIEWER_ROLE_ARN: (process.env.KVS_VIEWER_ROLE_ARN || "").trim(),
+    // The cameras' own live-view keys: IoT credential provider host (describe-endpoint iot:CredentialProvider) and
+    // the role alias their certificate may assume (KVS master on cam-<thing>). Both empty = cameras cannot stream
+    IOT_CREDENTIALS_ENDPOINT: (process.env.IOT_CREDENTIALS_ENDPOINT || "").replace(/^https?:\/\//, "").trim(),
+    IOT_ROLE_ALIAS: (process.env.IOT_ROLE_ALIAS || "").trim(),
     // Public base URL the cameras call (device API). Default: APP_BASE_URL
     DEVICE_API_BASE_URL: (process.env.DEVICE_API_BASE_URL || process.env.APP_BASE_URL || "").replace(/\/+$/, ""),
     // Firmware offered to the cameras by GET /api/device/ota (all three set = offered)

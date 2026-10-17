@@ -36,6 +36,16 @@
         </el-radio-group>
       </el-form-item>
 
+      <!-- CamOS: scan the label QR (CAMOS:1;SN:...;VC:...;;) instead of typing -->
+      <div v-if="newCameraForm.platform === 'camos'" class="flex flex-col gap-2 mb-4" data-test="camos-scan">
+        <div v-if="scanning" class="add-scanner">
+          <video ref="videoRef" autoplay playsinline muted class="w-full h-full object-cover"></video>
+          <el-button class="add-scanner__stop" size="small" @click="stopScan">{{ t('common.cancel') }}</el-button>
+        </div>
+        <el-button v-else-if="canScan" :icon="Camera" class="w-full" data-test="scan" @click="startScan">{{ t('claim.scan') }}</el-button>
+        <el-alert v-if="scanError" type="warning" :closable="false" show-icon :title="scanError" />
+      </div>
+
       <el-form-item :label="t('cameras.serialNumber')">
         <el-input
           v-model="newCameraForm.deviceSerial"
@@ -45,7 +55,7 @@
         />
       </el-form-item>
 
-      <el-form-item :label="t('cameras.validateCode')">
+      <el-form-item :label="newCameraForm.platform === 'camos' ? t('claim.code') : t('cameras.validateCode')">
         <el-input
           v-model="newCameraForm.validateCode"
           :placeholder="t('cameras.codeDialogInputPlaceholder')"
@@ -89,13 +99,23 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { Plus, Lock, VideoCamera, Check, DocumentCopy } from '@element-plus/icons-vue';
+import { Plus, Lock, VideoCamera, Check, DocumentCopy, Camera } from '@element-plus/icons-vue';
 import { useCameras } from '@/composables/useCameras';
+import { useClaimQrScan } from '@/composables/useClaimQrScan';
 
 const { t } = useI18n();
 const { isAddCameraOpen, addingCamera, newCameraForm, provisioning, closeAddCameraModal, submitAddCamera } = useCameras();
+
+// A CamOS label QR fills the serial and the code; a camera that registered itself is then claimed on submit
+const { canScan, scanning, scanError, videoRef, startScan, stopScan } = useClaimQrScan((parsed) => {
+  if (parsed?.serial) newCameraForm.deviceSerial = parsed.serial;
+  if (parsed?.verifyCode) newCameraForm.validateCode = parsed.verifyCode;
+}, { failedText: t('claim.scanFailed') });
+watch(() => [isAddCameraOpen.value, newCameraForm.platform], ([open, platform]) => {
+  if (!open || platform !== 'camos') stopScan();
+});
 
 const provisioningRows = computed(() => {
   const p = provisioning.value || {};
@@ -120,6 +140,21 @@ const copy = async (key, value) => {
 </script>
 
 <style scoped>
+.add-scanner {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  max-height: 50vh;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #000;
+}
+.add-scanner__stop {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+}
 .prov-value {
   font-size: 12px;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
