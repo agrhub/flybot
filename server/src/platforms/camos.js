@@ -71,7 +71,13 @@ async function updateDesired(deviceSerial, desired) {
     }));
     const merged = deepMerge(camera?.device?.shadow?.desired || {}, desired);
     await Camera.updateMany({ deviceSerial }, { $set: { 'device.shadow.desired': merged, 'device.shadow.desiredAt': new Date() } });
-    return decode(res?.payload)?.state || { desired: merged };
+    const answer = decode(res?.payload);
+    // The camos-esp32-trap firmware reads its settings from camos/<serial>/shadow/desired (protocol 8), not from the
+    // AWS shadow: publish the whole desired document there too, retained, so a camera that sleeps gets it at connect
+    const version = Number.isInteger(answer?.version) ? answer.version : Math.floor(Date.now() / 1000);
+    await publish(deviceSerial, 'shadow/desired', { ...merged, version }, { retain: true })
+        .catch(err => console.warn(`⚠️ Desired settings not published to the camera (${deviceSerial}): ${err.message}`));
+    return answer?.state || { desired: merged };
 }
 
 function deepMerge(base, patch) {
@@ -86,11 +92,12 @@ function deepMerge(base, patch) {
 
 // ---------- RPC ----------
 
-async function publish(deviceSerial, suffix, message) {
+async function publish(deviceSerial, suffix, message, { retain = false } = {}) {
     const { PublishCommand } = require('@aws-sdk/client-iot-data-plane');
     await aws.getClient('iotData').send(new PublishCommand({
         topic: topic(deviceSerial, suffix),
         qos: 1,
+        ...(retain ? { retain: true } : {}),
         payload: Buffer.from(JSON.stringify(message))
     }));
 }

@@ -96,11 +96,17 @@ test('camos: shadow and RPC go through the IoT data plane; snapshot waits for th
         const cam = await models.Camera.findOne({ deviceSerial: 'ESP1' }).lean();
         assert.equal(cam.captureIntervalMinutes, 60);
         assert.deepEqual(cam.device.shadow.desired, { capture: { intervalMin: 60 } });
+        // The firmware reads camos/<serial>/shadow/desired: the whole desired document, retained, with a version
+        const toCamera = iot.calls.find(c => c.name === 'PublishCommand' && c.input.topic === 'camos/ESP1/shadow/desired');
+        assert.equal(toCamera.input.retain, true);
+        const desiredDoc = JSON.parse(toCamera.input.payload.toString());
+        assert.deepEqual(desiredDoc.capture, { intervalMin: 60 });
+        assert.ok(Number.isInteger(desiredDoc.version));
 
         // RPC without waiting: published on camos/<serial>/rpc/req
         const sent = await camos.rpc('ESP1', 'reboot');
         assert.equal(sent.sent, true);
-        const publish = iot.calls.find(c => c.name === 'PublishCommand');
+        const publish = iot.calls.find(c => c.name === 'PublishCommand' && c.input.topic.endsWith('/rpc/req'));
         assert.equal(publish.input.topic, 'camos/ESP1/rpc/req');
         const body = JSON.parse(publish.input.payload.toString());
         assert.equal(body.method, 'reboot');
@@ -134,9 +140,9 @@ test('camos: shadow and RPC go through the IoT data plane; snapshot waits for th
         await models.Camera.updateOne({ deviceSerial: 'ESP1' }, { $set: { 'device.sleeping': true, 'device.wakeAt': new Date(Date.now() + 3600 * 1000) } });
         const before = iot.calls.length;
         assert.equal(await camos.snapshot('ESP1', { timeoutMs: 50 }), null);
-        const desired = JSON.parse(iot.calls.at(-1).input.payload.toString()).state.desired;
+        const desired = JSON.parse(iot.calls.filter(c => c.name === 'UpdateThingShadowCommand').at(-1).input.payload.toString()).state.desired;
         assert.ok(desired.capture.requestNow > 0);
-        assert.equal(iot.calls.slice(before).some(c => c.name === 'PublishCommand'), false);
+        assert.equal(iot.calls.slice(before).some(c => c.name === 'PublishCommand' && c.input.topic.endsWith('/rpc/req')), false, 'no RPC to a sleeping camera');
         const status = await camos.getStatus('ESP1');
         assert.equal(status.online, false);
         assert.equal(status.sleeping, true);
@@ -249,7 +255,7 @@ test('kinesis: one channel per camera, viewer config with 15-minute credentials 
         assert.match(assume.input.Policy, /cam-ESP4/);
         // The camera is awake and powered: live.start was sent and live.requested written to the shadow
         assert.equal(session.live.sent, true);
-        assert.equal(JSON.parse(iot.calls.find(c => c.name === 'PublishCommand').input.payload.toString()).method, 'live.start');
+        assert.equal(JSON.parse(iot.calls.find(c => c.name === 'PublishCommand' && c.input.topic.endsWith('/rpc/req')).input.payload.toString()).method, 'live.start');
         assert.deepEqual(JSON.parse(iot.calls.find(c => c.name === 'UpdateThingShadowCommand').input.payload.toString()).state.desired.live, { requested: true, minutes: 5 });
         assert.equal((await models.Camera.findOne({ deviceSerial: 'ESP4' }).lean()).device.liveRequested, true);
 
