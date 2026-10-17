@@ -323,7 +323,10 @@
       "disconnected": "The camera disconnected.",
       "badConfig": "The live view configuration is incomplete.",
       "notConfigured": "Live view of CamOS cameras is not set up on this server.",
-      "liveOnRequest": "Live view starts when you open the camera."
+      "liveOnRequest": "Live view starts when you open the camera.",
+      "notSupported": "This camera has no live view over the internet yet. Use Capture now for a fresh photo.",
+      "notSupportedLocal": "This camera has no live view over the internet yet. Use Capture now for a fresh photo, or watch it live from a phone or computer on the same Wi-Fi:",
+      "notSupportedShort": "No live view over the internet"
     },
     "provisioning": {
       "title": "Camera {serial} added. Set it up now.",

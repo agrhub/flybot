@@ -265,6 +265,39 @@ test('kinesis: one channel per camera, viewer config with 15-minute credentials 
     }
 });
 
+test('camos: a camera that reports no cloud live view gets no viewer session, and its local page when it has one', async () => {
+    const owner = await createUser({ role: 'manager' });
+    await createCamera(owner, {
+        deviceSerial: 'ESPF85B1000001', platform: 'camos', status: 1,
+        device: { lastSeenAt: new Date(), fw: '0.4.2', power: { mode: 'powered' }, shadow: { reported: { live: { supported: false, requested: false } } } }
+    });
+    const kv = fakeClient({});
+    const iot = fakeClient({});
+    aws.setClient('kinesisVideo', kv);
+    aws.setClient('iotData', iot);
+    try {
+        const session = await camos.liveSession('ESPF85B1000001', { user: { id: String(owner._id) }, minutes: 5 });
+        assert.equal(session.supported, false);
+        assert.equal(session.localUrl, 'http://flybot-000001.local/');
+        assert.equal(session.credentials, undefined, 'no viewer credentials');
+        assert.equal(kv.calls.length, 0, 'KVS not asked');
+        assert.equal(iot.calls.length, 0, 'no live request to the camera');
+        assert.equal((await camos.getStatus('ESPF85B1000001')).liveSupported, false);
+    } finally {
+        aws.setClient('kinesisVideo', null);
+        aws.setClient('iotData', null);
+    }
+
+    // Cameras that never report live.supported keep live view (AMB82), and only ESP firmware 0.4.1+ has a local name
+    await createCamera(owner, { deviceSerial: 'AIC54F2000001', platform: 'camos', status: 1, device: { fw: '1.2.0' } });
+    assert.equal((await camos.getStatus('AIC54F2000001')).liveSupported, true);
+    assert.equal(camos.localConsoleUrl('AIC54F2000001', '1.2.0'), null);
+    assert.equal(camos.localConsoleUrl('ESP32S3-0A1B2C', '0.4.0'), null);
+    assert.equal(camos.localConsoleUrl('ESP32S3-0A1B2C', '0.4.1'), 'http://flybot-0a1b2c.local/');
+    assert.equal(camos.localConsoleUrl('ESP32S3-0A1B2C', '0.10.0'), 'http://flybot-0a1b2c.local/');
+    assert.equal(camos.localConsoleUrl('ESP32S3-0A1B2C', null), null);
+});
+
 test('iotEvents: the WebSocket URL is SigV4-signed for iotdevicegateway, with the session token after the signature', async () => {
     const iotEvents = require('../src/platforms/iotEvents');
     const url = await iotEvents.presignUrl({

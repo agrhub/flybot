@@ -171,9 +171,27 @@ function snapshotArrived(deviceSerial, doc) {
  */
 async function liveSession(deviceSerial, { user, minutes = 5 } = {}) {
     const kinesis = require('./kinesis');
-    const [session, status] = await Promise.all([kinesis.liveSession(deviceSerial, { user }), getStatus(deviceSerial)]);
+    const status = await getStatus(deviceSerial);
+    // A camera whose firmware has no cloud live view says so in its shadow (live.supported false): no
+    // viewer session and no live request, the page offers a capture and the camera's local page instead
+    if (status && status.liveSupported === false) {
+        return { platform: PLATFORM, supported: false, camera: status, localUrl: status.localUrl };
+    }
+    const session = await kinesis.liveSession(deviceSerial, { user });
     const live = await requestLive(deviceSerial, { minutes, status }).catch(err => ({ requested: false, error: err.message }));
-    return { ...session, camera: status, live };
+    return { ...session, supported: true, camera: status, live };
+}
+
+/**
+ * The camera's own web page on its local network: camos-esp32-trap firmware 0.4.1 and later answers
+ * flybot-<last 6 letters/digits of the serial>.local over mDNS. Null for other cameras (AMB82, older firmware).
+ */
+function localConsoleUrl(deviceSerial, fw) {
+    if (!/^ESP/i.test(String(deviceSerial || ''))) return null;
+    const v = String(fw || '').match(/(\d+)\.(\d+)\.(\d+)/);
+    if (!v || Number(v[1]) * 1e6 + Number(v[2]) * 1e3 + Number(v[3]) < 4001) return null;
+    const tail = String(deviceSerial).replace(/[^A-Za-z0-9]/g, '').slice(-6).toLowerCase();
+    return `http://flybot-${tail}.local/`;
 }
 
 /**
@@ -259,6 +277,9 @@ async function getStatus(deviceSerial, now = new Date()) {
         location: d.location || null,
         fw: d.fw || null,
         liveRequested: !!d.liveRequested,
+        // false only when the camera reports it (shadow live.supported); cameras that do not report it keep live view
+        liveSupported: d.shadow?.reported?.live?.supported !== false,
+        localUrl: localConsoleUrl(deviceSerial, d.fw),
         paired: !!d.tokenHash,
         kvsChannelName: d.kvsChannelName || null
     };
@@ -408,6 +429,7 @@ module.exports = {
     snapshot,
     snapshotArrived,
     liveSession,
+    localConsoleUrl,
     requestLive,
     playback,
     setCaptureSchedule,

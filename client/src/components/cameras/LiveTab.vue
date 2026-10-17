@@ -11,7 +11,12 @@
         <div v-if="!camera || (isPlaceholderVisible && !kvsConfig)" class="live-tab__scrim absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
           <el-icon :size="48" class="live-tab__scrim-icon mb-3"><VideoCamera /></el-icon>
           <p class="text-sm font-medium max-w-md">{{ placeholderText }}</p>
-          <div v-if="isCamos && camera" class="flex items-center gap-2 mt-4">
+          <!-- No cloud live view on this camera: its own page on the same Wi-Fi has a live stream -->
+          <a v-if="liveUnsupported && liveLocalUrl" :href="liveLocalUrl" target="_blank" rel="noopener" class="live-tab__local mt-2 text-sm" data-test="live-local">{{ liveLocalUrl }}</a>
+          <div v-if="isCamos && camera && liveUnsupported && camera.canManage !== false" class="flex items-center gap-2 mt-4">
+            <el-button type="primary" size="small" :icon="Camera" :loading="capturing" data-test="live-capture" @click="handleCaptureNow">{{ t('cameras.captureNow') }}</el-button>
+          </div>
+          <div v-else-if="isCamos && camera && !liveUnsupported" class="flex items-center gap-2 mt-4">
             <el-button type="primary" size="small" :icon="VideoCamera" :loading="kvsLoading" @click="playLiveStream">{{ t('cameras.live') }}</el-button>
             <el-button size="small" :icon="Clock" :loading="requestingLive" @click="requestLive">{{ t('cameras.requestLive') }}</el-button>
           </div>
@@ -258,14 +263,24 @@ const requestLive = async () => {
     requestingLive.value = false
   }
 }
+const liveUnsupported = ref(false)
+const liveLocalUrl = ref('')
 const playKvs = async () => {
   kvsConfig.value = null
+  liveUnsupported.value = false
+  liveLocalUrl.value = ''
   kvsLoading.value = true
   placeholderText.value = t('cameras.kvs.connecting')
   try {
     const res = await api.getCameraLive(props.camera.deviceSerial)
     const data = res.data
-    if (data?.platform === 'kinesis' && data.channelARN) {
+    if (data?.supported === false) {
+      // The camera's firmware has no cloud live view (it says so in its shadow)
+      liveUnsupported.value = true
+      liveLocalUrl.value = /^https?:\/\//.test(data.localUrl || '') ? data.localUrl : ''
+      placeholderText.value = liveLocalUrl.value ? t('cameras.kvs.notSupportedLocal') : t('cameras.kvs.notSupported')
+      currentStreamType.value = t('cameras.kvs.notSupportedShort')
+    } else if (data?.platform === 'kinesis' && data.channelARN) {
       kvsConfig.value = data
       currentStreamType.value = t('cameras.kvs.connecting')
       if (data.camera?.sleeping) placeholderText.value = sleepText.value
@@ -743,6 +758,11 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+.live-tab__local {
+  color: var(--el-color-primary-light-3);
+  text-decoration: underline;
+  word-break: break-all;
+}
 .live-tab__viewport {
   border: 1px solid var(--el-border-color);
 }

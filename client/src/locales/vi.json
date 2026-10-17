@@ -323,7 +323,10 @@
       "disconnected": "Camera đã ngắt kết nối.",
       "badConfig": "Cấu hình xem trực tiếp chưa đầy đủ.",
       "notConfigured": "Máy chủ này chưa bật xem trực tiếp cho camera CamOS.",
-      "liveOnRequest": "Xem trực tiếp bắt đầu khi bạn mở camera."
+      "liveOnRequest": "Xem trực tiếp bắt đầu khi bạn mở camera.",
+      "notSupported": "Camera này chưa xem trực tiếp được qua Internet. Bấm Chụp ngay để lấy ảnh mới.",
+      "notSupportedLocal": "Camera này chưa xem trực tiếp được qua Internet. Bấm Chụp ngay để lấy ảnh mới, hoặc xem trực tiếp từ điện thoại hay máy tính cùng mạng Wi-Fi:",
+      "notSupportedShort": "Không xem trực tiếp qua Internet"
     },
     "provisioning": {
       "title": "Đã thêm camera {serial}. Cài đặt ngay.",
