@@ -91,10 +91,19 @@ async function connect() {
       const offer = await pc.createOffer({ offerToReceiveVideo: true, offerToReceiveAudio: true });
       await pc.setLocalDescription(offer);
       signaling.sendSdpOffer(pc.localDescription);
-      // No answer for a while: the camera is not on the channel (asleep, or not yet started)
-      waitTimer = setTimeout(() => {
+      // No answer for a while: the camera is not on the channel yet (asleep, or joining after live.start, which
+      // takes a few seconds on battery). KVS only delivers an offer to a MASTER that is connected, so offer again
+      // every 8 s for up to 2 minutes; the SDP already carries the gathered ICE candidates.
+      let offers = 1;
+      const reoffer = () => {
+        if (state.value === 'playing' || state.value === 'error' || !pc || !signaling) return;
         if (state.value === 'connecting') setState('waiting');
-      }, 8000);
+        if (offers >= 15) return;
+        offers++;
+        try { signaling.sendSdpOffer(pc.localDescription); } catch { /* closed: the close handler reports it */ }
+        waitTimer = setTimeout(reoffer, 8000);
+      };
+      waitTimer = setTimeout(reoffer, 8000);
     });
     signaling.on('sdpAnswer', async (answer) => {
       await pc.setRemoteDescription(answer);
