@@ -338,6 +338,30 @@ test('camos: a camera without live credentials gets the credential provider and 
     }
 });
 
+test('camos: a live request is reset in the desired settings once the camera has taken it', async () => {
+    const owner = await createUser({ role: 'manager' });
+    await createCamera(owner, { deviceSerial: 'ESPLIVE00002', platform: 'camos', status: 1, device: { thingName: 'ESPLIVE00002', liveRequested: true, shadow: { desired: { live: { requested: true, minutes: 5 } } } } });
+    const iot = fakeClient({ UpdateThingShadowCommand: shadowPayload({ desired: {} }) });
+    aws.setClient('iotData', iot);
+    try {
+        await camos.handleMessage('camos/ESPLIVE00002/shadow/reported', { live: { supported: true, requested: false, active: false } });
+        assert.equal(iot.calls.filter(c => c.name === 'UpdateThingShadowCommand').length, 0, 'not taken yet');
+        // The camera applied the retained desired document at connect: it reports the request and starts the session
+        await camos.handleMessage('camos/ESPLIVE00002/shadow/reported', { live: { supported: true, requested: true, active: false } });
+        const updates = iot.calls.filter(c => c.name === 'UpdateThingShadowCommand');
+        assert.equal(updates.length, 1);
+        assert.deepEqual(JSON.parse(updates[0].input.payload.toString()).state.desired, { live: { requested: false } });
+        const toCamera = iot.calls.filter(c => c.name === 'PublishCommand' && c.input.topic === 'camos/ESPLIVE00002/shadow/desired').at(-1);
+        assert.equal(JSON.parse(toCamera.input.payload.toString()).live.requested, false, 'the retained document no longer asks');
+        const cam = await models.Camera.findOne({ deviceSerial: 'ESPLIVE00002' }).lean();
+        assert.equal(cam.device.liveRequested, false);
+        await camos.handleMessage('camos/ESPLIVE00002/shadow/reported', { live: { supported: true, requested: false, active: true } });
+        assert.equal(iot.calls.filter(c => c.name === 'UpdateThingShadowCommand').length, 1, 'once');
+    } finally {
+        aws.setClient('iotData', null);
+    }
+});
+
 test('iotEvents: the WebSocket URL is SigV4-signed for iotdevicegateway, with the session token after the signature', async () => {
     const iotEvents = require('../src/platforms/iotEvents');
     const url = await iotEvents.presignUrl({

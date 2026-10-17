@@ -215,6 +215,20 @@ async function offerLiveCredentials(deviceSerial, reported) {
     return true;
 }
 
+/**
+ * A live request is taken once the camera reports it (live.requested true: it applied the desired document and starts
+ * the session) or a session (live.active): reset desired live.requested, or the retained desired document would
+ * start a new session at every connect of the camera.
+ */
+async function settleLiveRequest(deviceSerial, reported) {
+    if (reported?.live?.requested !== true && reported?.live?.active !== true) return false;
+    const camera = await Camera.findOne({ deviceSerial, platform: PLATFORM }).select('device.shadow.desired.live').lean();
+    if (camera?.device?.shadow?.desired?.live?.requested !== true) return false;
+    await updateDesired(deviceSerial, { live: { requested: false } });
+    await Camera.updateMany({ deviceSerial, platform: PLATFORM }, { $set: { 'device.liveRequested': false } });
+    return true;
+}
+
 function localConsoleUrl(deviceSerial, fw) {
     if (!/^ESP/i.test(String(deviceSerial || ''))) return null;
     const v = String(fw || '').match(/(\d+)\.(\d+)\.(\d+)/);
@@ -399,6 +413,7 @@ async function handleMessage(topicName, payload, { now = new Date() } = {}) {
             const set = { ...fields, 'device.lastSeenAt': now };
             if (kind === 'shadow/reported') Object.assign(set, { 'device.shadow.reported': doc, 'device.shadow.reportedAt': now });
             if (kind === 'shadow/reported') await offerLiveCredentials(deviceSerial, doc).catch(err => console.warn(`⚠️ Live credentials not offered (${deviceSerial}): ${err.message}`));
+            if (kind === 'shadow/reported') await settleLiveRequest(deviceSerial, doc).catch(err => console.warn(`⚠️ Live request not reset (${deviceSerial}): ${err.message}`));
             await Camera.updateMany({ deviceSerial, platform: PLATFORM }, { $set: set });
             return { deviceSerial, kind };
         }
@@ -435,6 +450,7 @@ async function handleMessage(topicName, payload, { now = new Date() } = {}) {
         if (reported.live && typeof reported.live === 'object' && reported.live.requested === false) set['device.liveRequested'] = false;
         await Camera.updateMany({ deviceSerial: camera.deviceSerial }, { $set: set });
         await offerLiveCredentials(camera.deviceSerial, reported).catch(err => console.warn(`⚠️ Live credentials not offered (${camera.deviceSerial}): ${err.message}`));
+        await settleLiveRequest(camera.deviceSerial, reported).catch(err => console.warn(`⚠️ Live request not reset (${camera.deviceSerial}): ${err.message}`));
         return { deviceSerial: camera.deviceSerial, kind: 'shadow' };
     }
     return null;
