@@ -5,9 +5,9 @@
       <div class="live-tab__stage" :class="{ 'has-aside': !!$slots.aside }">
         <div class="min-w-0">
           <!-- Video player -->
-          <!-- CamOS cameras send 4:3 pictures: a 4:3 box, as wide as fits the screen height, without side bars -->
+          <!-- CamOS cameras send 4:3 pictures: a 4:3 box as wide as the column, without side bars -->
           <div class="live-tab__viewport bg-black rounded-lg overflow-hidden w-full relative group flex items-center justify-center"
-            :class="isCamos ? 'live-tab__viewport--43 aspect-[4/3] mx-auto' : 'aspect-video max-h-[65vh]'">
+            :class="isCamos ? 'live-tab__viewport--43 aspect-[4/3]' : 'aspect-video max-h-[65vh]'">
             <div id="hls-video" ref="hlsContainer" class="w-full h-full object-contain hidden"></div>
             <video ref="hlsVideo" controls autoplay playsinline class="w-full h-full object-contain hidden"></video>
             <div id="ezopen-video" ref="ezopenVideo" class="w-full h-full object-contain hidden"></div>
@@ -824,15 +824,9 @@ onUnmounted(() => {
   background: var(--el-bg-color);
   overflow: hidden;
 }
+/* CamOS: the 4:3 picture takes the full width of its column (no side bars, no shrinking on short screens) */
 .live-tab__viewport--43 {
-  max-width: min(100%, calc(72vh * 4 / 3));
-}
-@media (max-width: 639px) {
-  /* Phones: edge to edge, the status row and buttons wrap below */
-  .live-tab__viewport--43 {
-    max-width: 100%;
-    border-radius: 8px;
-  }
+  max-width: 100%;
 }
 /* Placeholder sits on top of the black video area, so it uses a dark scrim with light text in both themes */
 .live-tab__scrim {
