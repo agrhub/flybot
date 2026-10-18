@@ -32,6 +32,8 @@ function deviceView(camera, now = new Date()) {
         nextWakeAt: sleeping || Number(camera.status) !== 1 ? camosPlatform.nextWakeOf(camera, now) : null,
         lastSeenAt: d.lastSeenAt || null,
         liveRequested: !!d.liveRequested,
+        // false only when the camera reports no cloud live view (shadow live.supported)
+        liveSupported: d.shadow?.reported?.live?.supported !== false,
         kvsChannelName: d.kvsChannelName || null,
         thingName: d.thingName || null,
         provisionExpiresAt: d.tokenHash ? null : d.provisionExpiresAt || null
@@ -409,6 +411,49 @@ async function getPlayback(req, res) {
         res.json({ success: true, ...result });
     } catch (err) {
         sendServerError(res, err, { context: 'Playback' });
+    }
+}
+
+/** A camos-esp32-trap camera (serial ESP + MAC): the one whose remote settings services/camosSettings.js lists. */
+const isEsp32Trap = (camera) => platforms.platformOf(camera) === 'camos' && /^ESP[0-9A-F]{12}$/.test(String(camera.deviceSerial || ''));
+
+/** GET /api/cameras/:serial/device-settings: the camera's settings, applied (reported) and asked for (desired). */
+async function getDeviceSettings(req, res) {
+    const deviceSerial = String(req.params.serial || '');
+    try {
+        const camera = await findManageableCamera(req.user, deviceSerial);
+        if (!camera) return res.status(404).json({ success: false, code: 'NOT_FOUND', message: "Camera not found or permission denied." });
+        if (!isEsp32Trap(camera)) return res.status(400).json({ success: false, code: 'NOT_SUPPORTED', message: "This camera has no remote settings." });
+        res.setHeader('Cache-Control', 'no-store');
+        res.json({ success: true, ...require('../services/camosSettings').view(camera) });
+    } catch (err) {
+        sendServerError(res, err, { context: 'Camera settings' });
+    }
+}
+
+/**
+ * PUT /api/cameras/:serial/device-settings { changes: { "capture.intervalMin": 30, ... } }: checked against the
+ * firmware's key list, then sent as desired settings (the camera applies them now or at its next connect).
+ */
+async function updateDeviceSettings(req, res) {
+    const deviceSerial = String(req.params.serial || '');
+    try {
+        const camera = await findManageableCamera(req.user, deviceSerial);
+        if (!camera) return res.status(404).json({ success: false, code: 'NOT_FOUND', message: "Camera not found or permission denied." });
+        if (!isEsp32Trap(camera)) return res.status(400).json({ success: false, code: 'NOT_SUPPORTED', message: "This camera has no remote settings." });
+        const settings = require('../services/camosSettings');
+        const { errors, desired } = settings.toDesired(req.body?.changes);
+        if (errors.length) return res.status(400).json({ success: false, code: 'BAD_SETTINGS', message: "Some settings are not valid.", errors });
+        await require('../platforms/camos').updateDesired(deviceSerial, desired);
+        // The capture interval is also FlyBot's own schedule field
+        if (Number.isInteger(desired.capture?.intervalMin)) {
+            await Camera.updateMany({ deviceSerial }, { $set: { captureIntervalMinutes: desired.capture.intervalMin } });
+        }
+        recordAudit(req, { action: 'camera.updated', target: cameraTarget(camera), details: { settings: Object.keys(req.body.changes) } });
+        const fresh = await Camera.findOne({ deviceSerial }).lean();
+        res.json({ success: true, ...settings.view(fresh) });
+    } catch (err) {
+        sendServerError(res, err, { context: 'Camera settings' });
     }
 }
 
@@ -878,6 +923,8 @@ module.exports = {
     getLive,
     requestLive,
     claimCamera,
+    getDeviceSettings,
+    updateDeviceSettings,
     getPlayback,
     getCameraStatus,
     deviceView

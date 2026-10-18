@@ -45,6 +45,9 @@ router.get('/cameras/:serial/live', cameraController.getLive);
 router.post('/cameras/:serial/live/request', cameraController.requestLive);
 router.get('/cameras/:serial/playback', cameraController.getPlayback);
 router.get('/cameras/:serial/status', cameraController.getCameraStatus);
+// camos-esp32-trap cameras: the web console's settings, from FlyBot (services/camosSettings.js)
+router.get('/cameras/:serial/device-settings', cameraController.getDeviceSettings);
+router.put('/cameras/:serial/device-settings', express.json({ limit: '16kb' }), cameraController.updateDeviceSettings);
 
 // Stream & playback routes
 router.post('/live', cameraController.getLiveStream);

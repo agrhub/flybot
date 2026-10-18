@@ -10,7 +10,14 @@
       <el-alert type="success" :closable="false" show-icon :title="t('cameras.provisioning.title', { serial: provisioning.deviceSerial })" :description="t('cameras.provisioning.intro')" />
       <el-descriptions :column="1" size="small" border>
         <el-descriptions-item v-for="row in provisioningRows" :key="row.key" :label="t(`cameras.provisioning.${row.key}`)">
-          <div class="flex items-center justify-between gap-2 min-w-0">
+          <!-- The QR the camera's setup portal scans: an image, with the text still copyable -->
+          <div v-if="row.key === 'qr' && row.value" class="flex items-center gap-3" data-test="provisioning-qr">
+            <QrCode :text="row.value" :size="168" :label="t('cameras.provisioning.qr')" />
+            <el-button link size="small" :type="copied === row.key ? 'success' : 'primary'" :icon="copied === row.key ? Check : DocumentCopy" @click="copy(row.key, row.value)">
+              {{ t('cameras.provisioning.copyQr') }}
+            </el-button>
+          </div>
+          <div v-else class="flex items-center justify-between gap-2 min-w-0">
             <code class="prov-value truncate" :title="row.value">{{ row.value || '--' }}</code>
             <el-button v-if="row.value" link size="small" :type="copied === row.key ? 'success' : 'primary'" :icon="copied === row.key ? Check : DocumentCopy" @click="copy(row.key, row.value)" />
           </div>
@@ -104,6 +111,7 @@ import { useI18n } from 'vue-i18n';
 import { Plus, Lock, VideoCamera, Check, DocumentCopy, Camera } from '@element-plus/icons-vue';
 import { useCameras } from '@/composables/useCameras';
 import { useClaimQrScan } from '@/composables/useClaimQrScan';
+import QrCode from '@/components/common/QrCode.vue';
 
 const { t } = useI18n();
 const { isAddCameraOpen, addingCamera, newCameraForm, provisioning, closeAddCameraModal, submitAddCamera } = useCameras();

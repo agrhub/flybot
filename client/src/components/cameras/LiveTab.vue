@@ -1,38 +1,57 @@
 <template>
   <div class="flex flex-col gap-4 w-full pb-4">
     <div class="flex flex-col gap-3">
-      <!-- Video player -->
-      <div class="live-tab__viewport bg-black rounded-lg overflow-hidden aspect-video max-h-[65vh] w-full relative group flex items-center justify-center">
-        <div id="hls-video" ref="hlsContainer" class="w-full h-full object-contain hidden"></div>
-        <video ref="hlsVideo" controls autoplay playsinline class="w-full h-full object-contain hidden"></video>
-        <div id="ezopen-video" ref="ezopenVideo" class="w-full h-full object-contain hidden"></div>
-        <!-- CamOS cameras: Kinesis Video Streams WebRTC -->
-        <KvsViewer v-if="kvsConfig" :config="kvsConfig" :quality="liveQuality" class="absolute inset-0" @state="onKvsState" @info="onKvsInfo" />
-        <div v-if="!camera || (isPlaceholderVisible && !kvsConfig)" class="live-tab__scrim absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
-          <el-icon :size="48" class="live-tab__scrim-icon mb-3"><VideoCamera /></el-icon>
-          <p class="text-sm font-medium max-w-md">{{ placeholderText }}</p>
-          <!-- No cloud live view on this camera: its own page on the same Wi-Fi has a live stream -->
-          <a v-if="liveUnsupported && liveLocalUrl" :href="liveLocalUrl" target="_blank" rel="noopener" class="live-tab__local mt-2 text-sm" data-test="live-local">{{ liveLocalUrl }}</a>
-          <div v-if="isCamos && camera && liveUnsupported && camera.canManage !== false" class="flex items-center gap-2 mt-4">
-            <el-button type="primary" size="small" :icon="Camera" :loading="capturing" data-test="live-capture" @click="handleCaptureNow">{{ t('cameras.captureNow') }}</el-button>
+      <!-- The video, and beside it (wide screens) whatever the page puts in the aside slot, as tall as the video -->
+      <div class="live-tab__stage" :class="{ 'has-aside': !!$slots.aside }">
+        <div class="min-w-0">
+          <!-- Video player -->
+          <!-- CamOS cameras send 4:3 pictures: a 4:3 box, as wide as fits the screen height, without side bars -->
+          <div class="live-tab__viewport bg-black rounded-lg overflow-hidden w-full relative group flex items-center justify-center"
+            :class="isCamos ? 'live-tab__viewport--43 aspect-[4/3] mx-auto' : 'aspect-video max-h-[65vh]'">
+            <div id="hls-video" ref="hlsContainer" class="w-full h-full object-contain hidden"></div>
+            <video ref="hlsVideo" controls autoplay playsinline class="w-full h-full object-contain hidden"></video>
+            <div id="ezopen-video" ref="ezopenVideo" class="w-full h-full object-contain hidden"></div>
+            <!-- CamOS cameras: Kinesis Video Streams WebRTC -->
+            <div v-if="kvsConfig" class="absolute inset-0">
+              <KvsViewer
+                v-model:quality="liveQuality"
+                :config="kvsConfig"
+                :name="camera?.deviceSerial || 'camera'"
+                controls
+                show-quality
+                @state="onKvsState"
+                @info="onKvsInfo"
+              />
+            </div>
+            <div v-if="!camera || (isPlaceholderVisible && !kvsConfig)" class="live-tab__scrim absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
+              <el-icon :size="48" class="live-tab__scrim-icon mb-3"><VideoCamera /></el-icon>
+              <p class="text-sm font-medium max-w-md">{{ placeholderText }}</p>
+              <!-- No cloud live view on this camera: its own page on the same Wi-Fi has a live stream -->
+              <a v-if="liveUnsupported && liveLocalUrl" :href="liveLocalUrl" target="_blank" rel="noopener" class="live-tab__local mt-2 text-sm" data-test="live-local">{{ liveLocalUrl }}</a>
+              <div v-if="isCamos && camera && liveUnsupported && camera.canManage !== false" class="flex items-center gap-2 mt-4">
+                <el-button type="primary" size="small" :icon="Camera" :loading="capturing" data-test="live-capture" @click="handleCaptureNow">{{ t('cameras.captureNow') }}</el-button>
+              </div>
+              <div v-else-if="isCamos && camera && !liveUnsupported" class="flex items-center gap-2 mt-4">
+                <el-button type="primary" size="small" :icon="VideoCamera" :loading="kvsLoading" @click="playLiveStream">{{ t('cameras.live') }}</el-button>
+                <el-button size="small" :icon="Clock" :loading="requestingLive" @click="requestLive">{{ t('cameras.requestLive') }}</el-button>
+              </div>
+              <el-button
+                v-else-if="camera && camera.canManage !== false"
+                @click="openValidateCodeDialog"
+                type="primary"
+                size="small"
+                :icon="Key"
+                class="mt-4"
+              >
+                {{ camera.validateCode ? t('cameras.changeCode') : t('cameras.enterCode') }}
+              </el-button>
+            </div>
           </div>
-          <div v-else-if="isCamos && camera && !liveUnsupported" class="flex items-center gap-2 mt-4">
-            <el-button type="primary" size="small" :icon="VideoCamera" :loading="kvsLoading" @click="playLiveStream">{{ t('cameras.live') }}</el-button>
-            <el-button size="small" :icon="Clock" :loading="requestingLive" @click="requestLive">{{ t('cameras.requestLive') }}</el-button>
-          </div>
-          <el-button
-            v-else-if="camera && camera.canManage !== false"
-            @click="openValidateCodeDialog"
-            type="primary"
-            size="small"
-            :icon="Key"
-            class="mt-4"
-          >
-            {{ camera.validateCode ? t('cameras.changeCode') : t('cameras.enterCode') }}
-          </el-button>
         </div>
+        <aside v-if="$slots.aside" class="live-tab__aside">
+          <div class="live-tab__aside-inner"><slot name="aside" /></div>
+        </aside>
       </div>
-
 
       <!-- Under the video: what is playing, and the camera actions -->
       <div class="flex flex-wrap items-center justify-between gap-2">
@@ -45,18 +64,6 @@
           <el-tag v-if="isCamos && camera?.device?.battery?.pct != null" type="info" effect="plain" size="small">{{ camera.device.battery.pct }} %</el-tag>
           <el-tag v-if="!isCamos" type="success" effect="plain" size="small">HD</el-tag>
           <span class="live-tab__value" data-test="live-status">{{ currentStreamType }}</span>
-          <el-select
-            v-if="isCamos && kvsConfig"
-            v-model="liveQuality"
-            size="small"
-            class="live-tab__quality"
-            :aria-label="t('cameras.kvs.quality')"
-            :title="t('cameras.kvs.qualityHint')"
-            data-test="live-quality"
-            @change="saveQualityChoice"
-          >
-            <el-option v-for="q in QUALITY_CHOICES" :key="q" :value="q" :label="t(`cameras.kvs.qualityOptions.${q}`)" />
-          </el-select>
           <el-tag v-if="health?.imageIssues?.length" type="warning" effect="light" round size="small">{{ t('cameras.imageQuality.label') }}: {{ health.imageIssues.map(i => t(`cameras.imageQuality.issues.${i}`)).join(', ') }}</el-tag>
         </div>
         <div class="flex flex-wrap items-center gap-2">
@@ -71,12 +78,14 @@
           >
             {{ t('cameras.captureNow') }}
           </el-button>
+          <el-button v-if="hasRemoteSettings" size="small" :icon="Setting" data-test="camos-settings-open" @click="settingsVisible = true">{{ t('camosSettings.open') }}</el-button>
           <el-button size="small" :icon="InfoFilled" :disabled="!camera" @click="infoVisible = true">{{ t('cameras.quickInfo') }}</el-button>
         </div>
       </div>
     </div>
 
     <!-- Camera details, on demand -->
+    <CamosSettingsDialog v-if="hasRemoteSettings" v-model="settingsVisible" :camera="camera" />
     <el-dialog v-model="infoVisible" :title="`${t('cameras.quickInfo')}: ${camera?.deviceName || ''}`" width="min(720px, 94vw)" append-to-body>
       <el-descriptions :column="isMobile ? 1 : 2" size="small" border>
         <el-descriptions-item :label="t('cameras.status')">
@@ -224,13 +233,14 @@ import api from '@/services/api'
 import PlaybackControls from './PlaybackControls.vue'
 import TrapMaintenanceCard from './TrapMaintenanceCard.vue'
 import KvsViewer from './KvsViewer.vue'
+import CamosSettingsDialog from './CamosSettingsDialog.vue'
 import { ElNotification } from 'element-plus'
-import { VideoCamera, Key, Lock, EditPen, Camera, InfoFilled, Clock } from '@element-plus/icons-vue'
+import { VideoCamera, Key, Lock, EditPen, Camera, InfoFilled, Clock, Setting } from '@element-plus/icons-vue'
 import { useBreakpoints } from '@/composables/useBreakpoints'
 import { useNotifications } from '@/composables/useNotifications'
 import { useI18n } from 'vue-i18n'
 import { requestErrorText } from '@/utils/requestError'
-import { QUALITY_CHOICES, loadQualityChoice, saveQualityChoice } from '@/utils/camosLive'
+import { loadQualityChoice, saveQualityChoice } from '@/utils/camosLive'
 
 const { t } = useI18n()
 
@@ -257,6 +267,11 @@ const sleepText = computed(() => {
 })
 // CamOS live quality (Auto / Low H.264 / Medium and High JPEG over the data channel), remembered per browser
 const liveQuality = ref(loadQualityChoice())
+// camos-esp32-trap cameras (serial ESP + MAC): the web console's settings from FlyBot, for those who manage it
+const settingsVisible = ref(false)
+const hasRemoteSettings = computed(() => isCamos.value && /^ESP[0-9A-F]{12}$/.test(props.camera?.deviceSerial || '') && props.camera?.canManage !== false)
+// The quality menu sits in the player's control bar (KvsViewer)
+watch(liveQuality, (q) => saveQualityChoice(q))
 const onKvsInfo = (info) => {
   if (!info?.width) return
   currentStreamType.value = t('cameras.kvs.liveInfo', { mode: info.mode === 'jpeg' ? 'JPEG' : 'H.264', width: info.width, height: info.height, fps: info.fps })
@@ -784,6 +799,40 @@ onUnmounted(() => {
 }
 .live-tab__viewport {
   border: 1px solid var(--el-border-color);
+}
+.live-tab__stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+.live-tab__stage.has-aside {
+  grid-template-columns: minmax(0, 1fr) 280px;
+}
+.live-tab__aside {
+  position: relative;
+  min-height: 240px;
+}
+/* As tall as the video next to it: the list scrolls inside */
+.live-tab__aside-inner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  border: 1px solid var(--el-border-color);
+  border-radius: 8px;
+  background: var(--el-bg-color);
+  overflow: hidden;
+}
+.live-tab__viewport--43 {
+  max-width: min(100%, calc(72vh * 4 / 3));
+}
+@media (max-width: 639px) {
+  /* Phones: edge to edge, the status row and buttons wrap below */
+  .live-tab__viewport--43 {
+    max-width: 100%;
+    border-radius: 8px;
+  }
 }
 /* Placeholder sits on top of the black video area, so it uses a dark scrim with light text in both themes */
 .live-tab__scrim {

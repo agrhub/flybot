@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   HEADER_LENGTH, JpegAssembler, RateMeter, QUALITY_PRESETS, ackMessage, loadQualityChoice, parseChunk, parseControl,
-  presetFor, qualityMessage, saveQualityChoice,
+  presetFor, qualityChoices, qualityMessage, saveQualityChoice, sizeOf,
 } from '@/utils/camosLive';
 
 // One binary message as the camera sends it: 'C' 'J' 1 20 | seq | total | offset | ts, then the bytes
@@ -79,10 +79,10 @@ describe('control messages', () => {
   it('maps a choice to a preset only when the data channel is open', () => {
     expect(presetFor('auto', false)).toBeNull();
     expect(presetFor('auto', true)).toBe(QUALITY_PRESETS.medium);
-    expect(presetFor('high', true)).toBe(QUALITY_PRESETS.high);
+    expect(presetFor('high', true)).toEqual(QUALITY_PRESETS.high);
     expect(presetFor('low', true)).toBe(QUALITY_PRESETS.low);
     expect(presetFor('medium', true)).toBe(QUALITY_PRESETS.medium);
-    expect(presetFor('high', true)).toBe(QUALITY_PRESETS.high);
+    expect(presetFor('high', true)).toEqual(QUALITY_PRESETS.high);
   });
 });
 
@@ -110,5 +110,33 @@ describe('RateMeter', () => {
     for (let t = 0; t <= 2000; t += 100) r.tick(t);
     expect(r.fps(2000)).toBe(10);
     expect(r.fps(9000)).toBe(0);
+  });
+});
+
+describe('quality from the camera sizes', () => {
+  const sizes = [[320, 240], [640, 480], [800, 600], [1024, 768], [1280, 720]];
+  it('lists auto, low and every JPEG size above 320x240, small first', () => {
+    expect(qualityChoices(sizes)).toEqual(['auto', 'low', 'jpeg-640x480', 'jpeg-800x600', 'jpeg-1024x768', 'jpeg-1280x720']);
+    expect(qualityChoices(null)).toEqual(['auto', 'low', 'medium', 'high']);
+  });
+  it('auto takes 640x480, or the size closest to it', () => {
+    expect(presetFor('auto', true, sizes)).toEqual({ mode: 'jpeg', w: 640, h: 480, q: 12, fps: 15 });
+    expect(presetFor('auto', true, [[800, 600], [1600, 1200]])).toEqual({ mode: 'jpeg', w: 800, h: 600, q: 12, fps: 10 });
+    expect(presetFor('auto', true, null)).toBe(QUALITY_PRESETS.medium);
+    expect(presetFor('auto', false, sizes)).toBeNull();
+  });
+  it('a chosen size the camera does not stream falls back to its closest size; low stays H.264', () => {
+    expect(presetFor('jpeg-1024x768', true, sizes)).toEqual({ mode: 'jpeg', w: 1024, h: 768, q: 12, fps: 10 });
+    expect(presetFor('jpeg-1600x1200', true, sizes)).toEqual({ mode: 'jpeg', w: 1280, h: 720, q: 12, fps: 10 });
+    expect(presetFor('high', true, sizes).w).toBe(1024);
+    expect(presetFor('low', true, sizes)).toBe(QUALITY_PRESETS.low);
+    expect(sizeOf('jpeg-800x600')).toEqual([800, 600]);
+    expect(sizeOf('auto')).toBeNull();
+  });
+  it('remembers a size choice', () => {
+    const store = new Map();
+    const storage = { getItem: (k) => store.get(k) ?? null, setItem: (k, v) => store.set(k, v) };
+    saveQualityChoice('jpeg-800x600', storage);
+    expect(loadQualityChoice(storage)).toBe('jpeg-800x600');
   });
 });

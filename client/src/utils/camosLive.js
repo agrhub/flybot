@@ -14,7 +14,12 @@ export const CAMOS_CHANNEL = 'camos';
 export const CHANNEL_OPTIONS = { ordered: false, maxPacketLifeTime: 300 };
 export const HEADER_LENGTH = 20;
 
-/** Quality choices of the live tab. `auto` takes JPEG medium (640x480, the steadiest on the board) when the data channel works, else H.264. */
+/**
+ * Quality choices of the live view. JPEG over the data channel is the normal mode (the camera's own JPEG encoder:
+ * more detail and frames than software H.264); `low` is H.264 320x240 for a weak link. The JPEG sizes come from the
+ * camera (its `hello` lists the sizes its sensor can stream), as `jpeg-<w>x<h>` choices; `auto` takes 640x480 when
+ * the camera offers it, else the size closest to it. `medium` / `high` are older saved choices (640x480, 1024x768).
+ */
 export const QUALITY_PRESETS = {
   low: { mode: 'h264', w: 320, h: 240, fps: 10 },
   medium: { mode: 'jpeg', w: 640, h: 480, q: 12, fps: 15 },
@@ -22,13 +27,50 @@ export const QUALITY_PRESETS = {
 };
 export const QUALITY_CHOICES = ['auto', 'low', 'medium', 'high'];
 const STORAGE_KEY = 'flybot.camosLiveQuality';
+const JPEG_CHOICE = /^jpeg-(\d{2,5})x(\d{2,5})$/;
+const AUTO_AREA = 640 * 480;
 
-/** The preset a choice asks the camera for (auto: medium), or null for plain H.264 without a data channel. */
-export function presetFor(choice, channelOpen) {
+/** A JPEG preset for one size: 15 fps up to VGA, 10 above (what the board sustains). */
+export function jpegPreset(w, h) {
+  return { mode: 'jpeg', w, h, q: 12, fps: w * h <= AUTO_AREA ? 15 : 10 };
+}
+
+/** The menu for a camera's live sizes ([[w, h], ...] from its hello): auto, low, then each JPEG size, small first. */
+export function qualityChoices(sizes) {
+  const jpeg = (Array.isArray(sizes) ? sizes : [])
+    .filter((s) => Array.isArray(s) && s[0] > 320 && s[1] > 0)
+    .sort((a, b) => a[0] * a[1] - b[0] * b[1])
+    .map(([w, h]) => `jpeg-${w}x${h}`);
+  return jpeg.length ? ['auto', 'low', ...jpeg] : QUALITY_CHOICES;
+}
+
+/** The [w, h] of a choice (jpeg-WxH, medium, high), or null. */
+export function sizeOf(choice) {
+  const m = JPEG_CHOICE.exec(String(choice || ''));
+  if (m) return [Number(m[1]), Number(m[2])];
+  if (choice === 'medium') return [640, 480];
+  if (choice === 'high') return [1024, 768];
+  return null;
+}
+
+/** The preset a choice asks the camera for, or null for plain H.264 without a data channel. */
+export function presetFor(choice, channelOpen, sizes = null) {
   if (!channelOpen) return null;
   if (choice === 'low') return QUALITY_PRESETS.low;
-  if (choice === 'high') return QUALITY_PRESETS.high;
-  return QUALITY_PRESETS.medium; // auto and medium
+  const offered = Array.isArray(sizes) && sizes.length ? sizes.filter((s) => Array.isArray(s) && s[0] > 320) : null;
+  const asked = sizeOf(choice);
+  if (asked && !offered && QUALITY_PRESETS[choice]) return QUALITY_PRESETS[choice]; // medium / high, sizes unknown
+  if (asked) {
+    // A size this camera does not stream falls back to the closest one it does
+    if (!offered || offered.some(([w, h]) => w === asked[0] && h === asked[1])) return jpegPreset(asked[0], asked[1]);
+    return jpegPreset(...closest(offered, asked[0] * asked[1]));
+  }
+  if (!offered) return QUALITY_PRESETS.medium; // auto with an older camera that does not list its sizes
+  return jpegPreset(...closest(offered, AUTO_AREA));
+}
+
+function closest(sizes, area) {
+  return sizes.reduce((best, s) => (Math.abs(s[0] * s[1] - area) < Math.abs(best[0] * best[1] - area) ? s : best), sizes[0]);
 }
 
 export function qualityMessage(preset) {
@@ -125,7 +167,7 @@ export class RateMeter {
 export function loadQualityChoice(storage = globalThis.localStorage) {
   try {
     const v = storage?.getItem(STORAGE_KEY);
-    return QUALITY_CHOICES.includes(v) ? v : 'auto';
+    return QUALITY_CHOICES.includes(v) || JPEG_CHOICE.test(v || '') ? v : 'auto';
   } catch {
     return 'auto';
   }

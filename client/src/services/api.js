@@ -533,6 +533,13 @@ export default {
   getCameraPlayback(deviceSerial, from, to) {
     return apiClient.get(`/cameras/${encodeURIComponent(deviceSerial)}/playback`, { params: { from, to } });
   },
+  // camos-esp32-trap remote settings (services/camosSettings.js on the server)
+  getDeviceSettings(deviceSerial) {
+    return apiClient.get(`/cameras/${encodeURIComponent(deviceSerial)}/device-settings`);
+  },
+  updateDeviceSettings(deviceSerial, changes) {
+    return apiClient.put(`/cameras/${encodeURIComponent(deviceSerial)}/device-settings`, { changes });
+  },
   getCameraStatus(deviceSerial) {
     return apiClient.get(`/cameras/${encodeURIComponent(deviceSerial)}/status`);
   },

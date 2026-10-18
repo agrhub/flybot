@@ -235,6 +235,8 @@
     "an_organization_needs_at_least_one_owner": "Tổ chức phải có ít nhất một chủ sở hữu.",
     "at_least_one_active_admin_is_required": "Hệ thống cần ít nhất một quản trị viên đang hoạt động.",
     "camera_added_successfully": "Đã thêm camera.",
+    "camera_no_remote_settings": "Camera này không có cài đặt từ xa.",
+    "camera_settings_not_valid": "Một số cài đặt không hợp lệ.",
     "camera_added_joins_by_itself": "Đã thêm camera. Camera sẽ tự vào tài khoản của bạn khi kết nối.",
     "camera_location_updated_successfully": "Đã cập nhật vị trí camera.",
     "camera_not_found_or_permission_denied": "Không tìm thấy camera hoặc bạn không có quyền.",

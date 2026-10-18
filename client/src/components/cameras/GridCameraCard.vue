@@ -13,6 +13,7 @@
             class="w-full h-full object-cover"
             @error="thumbError = true"
           />
+          <img v-else-if="isCamos" src="/images/camos-logo.png" alt="" class="w-7 h-7 object-contain" data-test="camos-logo" />
           <el-icon v-else :size="20"><VideoCamera /></el-icon>
           <!-- Status Dot -->
           <span
@@ -35,8 +36,8 @@
           </div>
 
           <!-- Serial Number with Quick Copy -->
-          <div class="flex items-center gap-1 mt-0.5">
-            <span class="grid-cam__meta font-mono whitespace-nowrap">SN: {{ camera.deviceSerial }}</span>
+          <div class="flex items-center gap-1 mt-0.5 min-w-0">
+            <span class="grid-cam__meta font-mono whitespace-nowrap truncate min-w-0" :title="camera.deviceSerial">SN: {{ camera.deviceSerial }}</span>
             <el-tooltip :content="copiedSn ? t('cameras.copied') : t('cameras.copySerial')" placement="top">
               <el-button :aria-label="copiedSn ? t('cameras.copied') : t('cameras.copySerial')"
                 link
@@ -52,16 +53,6 @@
 
       <!-- Right: Status Badges -->
       <div class="flex items-center gap-1.5 shrink-0">
-        <!-- Camera platform (EZVIZ cloud, CamOS on AWS IoT Core) -->
-        <el-tag :type="isCamos ? 'primary' : 'info'" effect="plain" size="small" class="!hidden sm:!inline-flex" data-test="platform-badge">
-          {{ t(`cameras.platform.${platform}`) }}
-        </el-tag>
-        <!-- CamOS: how the camera is powered -->
-        <el-tooltip v-if="isCamos && powerMode" :content="t(`cameras.power.hint.${powerMode}`)" placement="top">
-          <el-tag type="info" effect="plain" size="small" class="!hidden sm:!inline-flex" data-test="power-mode">{{ t(`cameras.power.${powerMode}`) }}</el-tag>
-        </el-tooltip>
-        <!-- HD Stream Quality Tag -->
-        <el-tag v-if="!isCamos" type="info" effect="plain" size="small" class="!hidden sm:!inline-flex">HD</el-tag>
 
         <!-- Live Status Pill -->
         <el-tag
@@ -119,6 +110,18 @@
           :class="isPlaying && !hasError ? 'opacity-0' : 'opacity-70'"
           @error="thumbError = true"
         />
+
+        <!-- CamOS: live view over KVS WebRTC, Low quality (H.264 320x240) to keep a grid of cameras light -->
+        <div v-if="kvsConfig" class="absolute inset-0 z-10">
+          <KvsViewer
+            :config="kvsConfig"
+            quality="low"
+            :name="camera.deviceSerial"
+            controls
+            data-test="grid-kvs"
+            @state="onKvsState"
+          />
+        </div>
 
         <!-- Player Container -->
         <div
@@ -185,7 +188,7 @@
         </div>
 
         <!-- CamOS: the camera sleeps between photos; live view is asked for its next wake -->
-        <div v-if="isCamos && !loading && !isPlaying" class="grid-cam__scrim grid-cam__scrim--strong absolute inset-0 flex flex-col items-center justify-center p-5 text-center z-20" data-test="camos-overlay">
+        <div v-if="isCamos && !loading && !isPlaying && !kvsConfig" class="grid-cam__scrim grid-cam__scrim--strong absolute inset-0 flex flex-col items-center justify-center p-5 text-center z-20" data-test="camos-overlay">
           <el-icon :size="26" class="mb-2"><Moon v-if="sleeping" /><VideoCamera v-else /></el-icon>
           <p class="text-xs font-medium max-w-xs leading-relaxed">{{ sleeping ? nextWakeText : (camera.status === 1 ? t('cameras.kvs.liveOnRequest') : t('cameras.deviceOffline')) }}</p>
           <div class="flex items-center gap-2 mt-3">
@@ -230,7 +233,18 @@
     <!-- 3. Card Footer -->
     <div class="grid-cam__footer px-4 py-2.5 flex items-center justify-between gap-2">
       <!-- Device Model / Type Badge -->
-      <div class="flex items-center gap-2 min-w-0">
+      <div class="flex items-center gap-1.5 min-w-0">
+        <!-- Platform, power and stream tags live here so the header keeps the name and serial readable -->
+        <!-- Camera platform (EZVIZ cloud, CamOS on AWS IoT Core) -->
+        <el-tag :type="isCamos ? 'primary' : 'info'" effect="plain" size="small" class="shrink-0" data-test="platform-badge">
+          {{ t(`cameras.platform.${platform}`) }}
+        </el-tag>
+        <!-- CamOS: how the camera is powered -->
+        <el-tooltip v-if="isCamos && powerMode" :content="t(`cameras.power.hint.${powerMode}`)" placement="top">
+          <el-tag type="info" effect="plain" size="small" class="shrink-0" data-test="power-mode">{{ t(`cameras.power.${powerMode}`) }}</el-tag>
+        </el-tooltip>
+        <!-- HD Stream Quality Tag -->
+        <el-tag v-if="!isCamos" type="info" effect="plain" size="small" class="shrink-0">HD</el-tag>
         <span class="grid-cam__meta font-mono truncate min-w-0" :title="camera.model || camera.deviceType">
           {{ formatModel(camera.model || camera.deviceType) }}
         </span>
@@ -293,6 +307,7 @@
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import { loadEzuikit } from '@/utils/lazyLibs';
 import api from '@/services/api';
+import KvsViewer from './KvsViewer.vue';
 import { useI18n } from 'vue-i18n';
 import { requestErrorText } from '@/utils/requestError';
 import { ElNotification } from 'element-plus';
@@ -437,9 +452,30 @@ const handleSaveCode = async () => {
   }
 };
 
+// CamOS: play right away in the grid when the camera is awake and has cloud live view; a sleeping camera keeps the
+// "request live at next wake" overlay
+const kvsConfig = ref(null);
+const liveSupported = computed(() => props.camera?.device?.liveSupported !== false);
+const onKvsState = (state) => {
+  isPlaying.value = state === 'playing';
+  if (state === 'error') kvsConfig.value = null;
+};
+const startCamosLive = async () => {
+  if (props.camera.status !== 1 || sleeping.value || !liveSupported.value) return;
+  loading.value = true;
+  try {
+    const res = await api.getCameraLive(props.camera.deviceSerial);
+    const data = res.data;
+    if (data?.platform === 'kinesis' && data.channelARN) kvsConfig.value = data;
+  } catch {
+    // the overlay offers the detail view and a live request
+  } finally {
+    loading.value = false;
+  }
+};
+
 const startLiveStream = async () => {
-  // CamOS cameras play in the detail view (KVS WebRTC); the card shows the sleep state
-  if (isCamos.value) return;
+  if (isCamos.value) return startCamosLive();
   if (props.camera.status !== 1) {
     hasError.value = true;
     errorMessage.value = t('cameras.deviceOffline');
@@ -579,6 +615,7 @@ const initPlayer = async (url, accessToken, areaDomain, code) => {
 };
 
 const stopLiveStream = () => {
+  kvsConfig.value = null;
   isPlaying.value = false;
   loading.value = false;
   if (playerInstance) {

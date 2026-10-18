@@ -317,6 +317,20 @@
     "liveRequestedNote": "Camera sẽ phát trực tiếp khi thức dậy lần tới.",
     "liveStarting": "Camera đang bắt đầu phát trực tiếp.",
     "kvs": {
+      "stopped": "Đã dừng xem trực tiếp.",
+      "controls": {
+        "play": "Phát",
+        "stop": "Dừng",
+        "screenshot": "Lưu ảnh",
+        "fullscreen": "Toàn màn hình",
+        "exitFullscreen": "Thoát toàn màn hình"
+      },
+      "qualityShort": {
+        "auto": "Tự động",
+        "low": "Thấp",
+        "medium": "Trung bình",
+        "high": "Cao"
+      },
       "connecting": "Đang kết nối camera (WebRTC)...",
       "waiting": "Đang chờ camera vào kênh. Có thể camera đang ngủ: hãy yêu cầu xem trực tiếp lần thức tới.",
       "playing": "Trực tiếp",
@@ -332,21 +346,23 @@
       "quality": "Chất lượng xem trực tiếp",
       "qualityHint": "Trung bình và Cao gửi ảnh JPEG của chính camera qua kênh dữ liệu (rõ hơn, cần đường truyền tốt); Thấp gửi H.264, camera nào cũng gửi được.",
       "qualityOptions": {
-        "auto": "Tự động",
-        "low": "Thấp · H.264 320×240",
+        "jpegSize": "JPEG {w}×{h}",
+        "auto": "Tự động (JPEG)",
+        "low": "Thấp · H.264 320×240 (mạng yếu)",
         "medium": "Trung bình · JPEG 640×480",
         "high": "Cao · JPEG 1024×768"
       },
       "liveInfo": "Trực tiếp · {mode} {width}×{height} · {fps} khung hình/giây"
     },
     "provisioning": {
+      "copyQr": "Sao chép nội dung QR",
       "title": "Đã thêm camera {serial}. Cài đặt ngay.",
       "intro": "Mở trang cài đặt của camera (Wi-Fi \"CAM-xxxx\", http://192.168.4.1) và nhập các giá trị này. Mã có hiệu lực 24 giờ và chỉ hiện một lần; bạn có thể tạo mã mới trong cài đặt camera.",
       "token": "Mã cấp phát",
       "apiBase": "Địa chỉ FlyBot",
       "iotEndpoint": "Điểm kết nối AWS IoT",
       "channel": "Kênh trực tiếp",
-      "qr": "Nội dung QR",
+      "qr": "Mã QR",
       "expires": "Mã có hiệu lực đến {time}.",
       "done": "Xong"
     },
@@ -397,6 +413,18 @@
     "stopStream": "Dừng luồng",
     "viewFull": "Phát đầy đủ",
     "viewDetails": "Xem chi tiết",
+    "back": "Quay lại",
+    "switcher": {
+      "open": "Camera",
+      "title": "Danh sách camera",
+      "search": "Tìm camera",
+      "status": "Trạng thái",
+      "type": "Loại",
+      "allStatus": "Mọi trạng thái",
+      "allTypes": "Mọi loại",
+      "count": "{shown} / {total} camera",
+      "none": "Không có camera phù hợp."
+    },
     "backToGrid": "Quay lại danh sách camera",
     "cameraDetail": "Chi tiết Camera",
     "connectingStream": "Đang kết nối luồng...",
@@ -3271,5 +3299,129 @@
       "pending": "Bạn đã có một yêu cầu đang chờ.",
       "generic": "Không gửi được yêu cầu. Hãy thử lại."
     }
+  },
+  "camosSettings": {
+    "open": "Cài đặt camera",
+    "title": "Cài đặt camera: {name}",
+    "intro": "Các cài đặt của trang web trên camera. Camera áp dụng ngay khi đang trực tuyến, nếu không thì ở lần kết nối kế tiếp; trong lúc đó ô cài đặt hiện \"Đang chờ camera\".",
+    "automatic": "Tự động",
+    "pending": "Đang chờ camera",
+    "save": "Lưu",
+    "saveCount": "Lưu {n} thay đổi",
+    "saved": "Đã gửi tới camera.",
+    "saveFailed": "Không lưu được cài đặt.",
+    "loadFailed": "Không tải được cài đặt của camera.",
+    "invalid": "Không hợp lệ: {list}",
+    "cameraErrors": "Camera không áp dụng được: {list}",
+    "reportedAt": "Lần báo gần nhất của camera: {time}",
+    "neverReported": "Camera chưa báo cài đặt của nó.",
+    "window": {
+      "between": "Trong khoảng",
+      "allDay": "Cả ngày"
+    },
+    "sections": {
+      "capture": "Chụp ảnh",
+      "image": "Hình ảnh",
+      "motion": "Chuyển động",
+      "power": "Nguồn điện",
+      "device": "Thiết bị"
+    },
+    "fields": {
+      "capture": {
+        "intervalMin": "Chụp mỗi (phút)",
+        "window": "Chụp trong khung giờ",
+        "resolution": "Kích thước ảnh",
+        "jpegQuality": "Chất lượng JPEG"
+      },
+      "video": {
+        "image": {
+          "brightness": "Độ sáng",
+          "contrast": "Độ tương phản",
+          "saturation": "Độ bão hòa",
+          "sharpness": "Độ nét",
+          "orientation": "Hướng ảnh (0-3)",
+          "whiteBalance": "Cân bằng trắng",
+          "effect": "Hiệu ứng",
+          "aeLevel": "Mức phơi sáng",
+          "exposureAuto": "Phơi sáng tự động",
+          "exposure": "Phơi sáng",
+          "gainAuto": "Độ khuếch đại tự động",
+          "gain": "Độ khuếch đại",
+          "gainCeiling": "Giới hạn khuếch đại",
+          "denoise": "Giảm nhiễu",
+          "vflip": "Lật ngược ảnh",
+          "hmirror": "Lật gương"
+        }
+      },
+      "motion": {
+        "enabled": "Phát hiện chuyển động",
+        "sensitivity": "Độ nhạy",
+        "cooldownS": "Thời gian chờ giữa hai lần (giây)",
+        "upload": "Gửi ảnh chuyển động lên FlyBot",
+        "saveSd": "Lưu ảnh chuyển động vào thẻ nhớ",
+        "area": "Vùng (x, y, rộng, cao)"
+      },
+      "power": {
+        "mode": "Chế độ nguồn",
+        "highMv": "Pin đầy khi trên (mV)",
+        "lowMv": "Pin yếu khi dưới (mV)"
+      },
+      "storage": {
+        "sdSave": "Lưu mọi ảnh vào thẻ nhớ"
+      },
+      "led": {
+        "enabled": "Đèn trạng thái"
+      },
+      "gps": {
+        "enabled": "GPS"
+      },
+      "console": {
+        "language": "Ngôn ngữ trang web của camera"
+      }
+    },
+    "values": {
+      "capture": {
+        "resolution": {
+          "max": "Lớn nhất"
+        }
+      },
+      "video": {
+        "image": {
+          "whiteBalance": {
+            "auto": "Tự động",
+            "sunny": "Nắng",
+            "cloudy": "Nhiều mây",
+            "office": "Văn phòng",
+            "home": "Trong nhà"
+          },
+          "effect": {
+            "none": "Không",
+            "negative": "Âm bản",
+            "grayscale": "Đen trắng",
+            "red": "Đỏ",
+            "green": "Xanh lá",
+            "blue": "Xanh dương",
+            "sepia": "Nâu cổ"
+          }
+        }
+      },
+      "power": {
+        "mode": {
+          "auto": "Tự động",
+          "battery": "Pin",
+          "powered": "Điện lưới"
+        }
+      },
+      "console": {
+        "language": {
+          "en": "English",
+          "vi": "Tiếng Việt"
+        }
+      }
+    },
+    "sensor": "Cảm biến {sensor}, tối đa {w}×{h}",
+    "drawHint": "hoặc vẽ trên ảnh xem trước",
+    "previewOff": "Không xem trực tiếp được (camera ngoại tuyến, đang ngủ hoặc không hỗ trợ): ảnh gần nhất.",
+    "previewLoading": "Đang mở xem trực tiếp…"
   }
 }

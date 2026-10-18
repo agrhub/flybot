@@ -317,6 +317,20 @@
     "liveRequestedNote": "The camera will start live view when it next wakes up.",
     "liveStarting": "The camera is starting live view.",
     "kvs": {
+      "stopped": "Live view stopped.",
+      "controls": {
+        "play": "Play",
+        "stop": "Stop",
+        "screenshot": "Save a picture",
+        "fullscreen": "Full screen",
+        "exitFullscreen": "Exit full screen"
+      },
+      "qualityShort": {
+        "auto": "Auto",
+        "low": "Low",
+        "medium": "Medium",
+        "high": "High"
+      },
       "connecting": "Connecting to the camera (WebRTC)...",
       "waiting": "Waiting for the camera to join. It may be asleep: request live at its next wake.",
       "playing": "Live",
@@ -332,21 +346,23 @@
       "quality": "Live quality",
       "qualityHint": "Medium and High send the camera's own JPEG pictures over a data channel (more detail, needs a good uplink); Low sends H.264, which every camera can do.",
       "qualityOptions": {
-        "auto": "Auto",
-        "low": "Low · H.264 320×240",
+        "jpegSize": "JPEG {w}×{h}",
+        "auto": "Auto (JPEG)",
+        "low": "Low · H.264 320×240 (weak network)",
         "medium": "Medium · JPEG 640×480",
         "high": "High · JPEG 1024×768"
       },
       "liveInfo": "Live · {mode} {width}×{height} · {fps} fps"
     },
     "provisioning": {
+      "copyQr": "Copy the QR text",
       "title": "Camera {serial} added. Set it up now.",
       "intro": "Open the camera's setup portal (Wi-Fi \"CAM-xxxx\", http://192.168.4.1) and enter these values. The token works for 24 hours and is shown only once; you can make a new one from the camera settings.",
       "token": "Provisioning token",
       "apiBase": "FlyBot address",
       "iotEndpoint": "AWS IoT endpoint",
       "channel": "Live channel",
-      "qr": "QR text",
+      "qr": "QR code",
       "expires": "Token valid until {time}.",
       "done": "Done"
     },
@@ -396,6 +412,18 @@
     "stopStream": "Stop Stream",
     "viewFull": "Full Player",
     "viewDetails": "Details",
+    "back": "Back",
+    "switcher": {
+      "open": "Cameras",
+      "title": "Cameras",
+      "search": "Search cameras",
+      "status": "Status",
+      "type": "Type",
+      "allStatus": "All states",
+      "allTypes": "All types",
+      "count": "{shown} of {total} cameras",
+      "none": "No camera matches."
+    },
     "backToGrid": "Back to Cameras Grid",
     "cameraDetail": "Camera Details",
     "connectingStream": "Connecting stream...",
@@ -3271,5 +3299,129 @@
       "pending": "You already have a request waiting.",
       "generic": "The request could not be sent. Try again."
     }
+  },
+  "camosSettings": {
+    "open": "Camera settings",
+    "title": "Camera settings: {name}",
+    "intro": "The settings of the camera's own web page. The camera applies a change at once when it is online, else at its next connection; until then the field shows \"Waiting for the camera\".",
+    "automatic": "Automatic",
+    "pending": "Waiting for the camera",
+    "save": "Save",
+    "saveCount": "Save {n} change(s)",
+    "saved": "Sent to the camera.",
+    "saveFailed": "The settings could not be saved.",
+    "loadFailed": "The camera settings could not be loaded.",
+    "invalid": "Not valid: {list}",
+    "cameraErrors": "The camera did not apply: {list}",
+    "reportedAt": "Last report from the camera: {time}",
+    "neverReported": "The camera has not reported its settings yet.",
+    "window": {
+      "between": "Between",
+      "allDay": "All day"
+    },
+    "sections": {
+      "capture": "Capture",
+      "image": "Picture",
+      "motion": "Motion",
+      "power": "Power",
+      "device": "Device"
+    },
+    "fields": {
+      "capture": {
+        "intervalMin": "Photo every (minutes)",
+        "window": "Photos at these hours",
+        "resolution": "Photo size",
+        "jpegQuality": "JPEG quality"
+      },
+      "video": {
+        "image": {
+          "brightness": "Brightness",
+          "contrast": "Contrast",
+          "saturation": "Saturation",
+          "sharpness": "Sharpness",
+          "orientation": "Orientation (0-3)",
+          "whiteBalance": "White balance",
+          "effect": "Effect",
+          "aeLevel": "Exposure level",
+          "exposureAuto": "Automatic exposure",
+          "exposure": "Exposure",
+          "gainAuto": "Automatic gain",
+          "gain": "Gain",
+          "gainCeiling": "Gain ceiling",
+          "denoise": "Noise reduction",
+          "vflip": "Flip upside down",
+          "hmirror": "Mirror"
+        }
+      },
+      "motion": {
+        "enabled": "Motion detection",
+        "sensitivity": "Sensitivity",
+        "cooldownS": "Wait between events (s)",
+        "upload": "Send motion photos to FlyBot",
+        "saveSd": "Save motion photos to the memory card",
+        "area": "Area (x, y, width, height)"
+      },
+      "power": {
+        "mode": "Power mode",
+        "highMv": "Battery full above (mV)",
+        "lowMv": "Battery low below (mV)"
+      },
+      "storage": {
+        "sdSave": "Save every photo to the memory card"
+      },
+      "led": {
+        "enabled": "Status LED"
+      },
+      "gps": {
+        "enabled": "GPS"
+      },
+      "console": {
+        "language": "Language of the camera's web page"
+      }
+    },
+    "values": {
+      "capture": {
+        "resolution": {
+          "max": "Largest"
+        }
+      },
+      "video": {
+        "image": {
+          "whiteBalance": {
+            "auto": "Automatic",
+            "sunny": "Sunny",
+            "cloudy": "Cloudy",
+            "office": "Office",
+            "home": "Home"
+          },
+          "effect": {
+            "none": "None",
+            "negative": "Negative",
+            "grayscale": "Black and white",
+            "red": "Red",
+            "green": "Green",
+            "blue": "Blue",
+            "sepia": "Sepia"
+          }
+        }
+      },
+      "power": {
+        "mode": {
+          "auto": "Automatic",
+          "battery": "Battery",
+          "powered": "Mains power"
+        }
+      },
+      "console": {
+        "language": {
+          "en": "English",
+          "vi": "Tiếng Việt"
+        }
+      }
+    },
+    "sensor": "Sensor {sensor}, up to {w}×{h}",
+    "drawHint": "or draw it on the preview",
+    "previewOff": "No live preview (the camera is offline, asleep or has no live view): its last photo.",
+    "previewLoading": "Starting the live preview…"
   }
 }

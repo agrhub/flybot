@@ -93,62 +93,28 @@
 
     <!-- SUB-PAGE 2: DEDICATED CAMERA DETAIL VIEW -->
     <template v-else-if="subPage === 'detail'">
-      <!-- Detail Sub-page Navigation Bar -->
-      <el-card shadow="never" class="mb-6">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <!-- Back to Grid button & Breadcrumb -->
-          <div class="flex items-center gap-3 min-w-0">
-            <el-button :icon="Back" @click="backToGrid">
-              {{ t('cameras.backToGrid') }}
-            </el-button>
-
-            <el-divider direction="vertical" />
-
-            <div class="min-w-0">
-              <div class="flex items-center gap-2 min-w-0">
-                <h3 class="cameras-detail__title truncate">
-                  {{ currentDetailCamera?.deviceName }}
-                </h3>
-                <el-tag
-                  :type="currentDetailCamera?.status === 1 ? 'success' : 'danger'"
-                  effect="light"
-                  round
-                  size="small"
-                >
-                  {{ currentDetailCamera?.status === 1 ? t('common.online') : t('common.offline') }}
-                </el-tag>
-              </div>
-              <p class="cameras-meta font-mono">
-                SN: {{ currentDetailCamera?.deviceSerial }}
-              </p>
-            </div>
+      <!-- Detail: Back, the camera's name; the camera list sits on the right (a drawer on phones) -->
+      <div class="cameras-detail__bar flex items-center gap-3 mb-3 sm:mb-4 min-w-0">
+        <el-button :icon="Back" data-test="detail-back" @click="backToGrid">{{ t('cameras.back') }}</el-button>
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center gap-2 min-w-0">
+            <h3 class="cameras-detail__title truncate">{{ currentDetailCamera?.deviceName }}</h3>
+            <el-tag :type="currentDetailCamera?.status === 1 ? 'success' : 'danger'" effect="light" round size="small" class="shrink-0">
+              {{ currentDetailCamera?.status === 1 ? t('common.online') : t('common.offline') }}
+            </el-tag>
           </div>
-
-          <!-- Fast Camera Switcher Dropdown in Detail Sub-page -->
-          <div class="flex items-center gap-2">
-            <span class="cameras-meta hidden md:inline">
-              {{ t('cameras.selectCamera') }}:
-            </span>
-            <el-select :aria-label="t('cameras.selectCamera')"
-              :model-value="currentDetailCamera?.deviceSerial"
-              @change="handleSelectDetailCamera"
-              size="default"
-              class="!w-60"
-            >
-              <el-option
-                v-for="cam in cameras"
-                :key="cam.deviceSerial"
-                :label="`${cam.deviceName} (${cam.status === 1 ? t('common.online') : t('common.offline')})`"
-                :value="cam.deviceSerial"
-              />
-            </el-select>
-          </div>
+          <p class="cameras-meta font-mono truncate">SN: {{ currentDetailCamera?.deviceSerial }}</p>
         </div>
-      </el-card>
+        <el-button v-if="!isWide" :icon="Menu" data-test="switcher-open" @click="switcherOpen = true">{{ t('cameras.switcher.open') }}</el-button>
+      </div>
 
-      <!-- Live view, recordings, trap upkeep, then this camera's detection history -->
-      <div class="flex flex-col gap-4">
-        <LiveTab :camera="currentDetailCamera" />
+      <!-- Live view (the camera list beside the video on wide screens), recordings, trap upkeep, then the history -->
+      <div class="flex flex-col gap-4 min-w-0">
+        <LiveTab :camera="currentDetailCamera">
+          <template v-if="isWide" #aside>
+            <CameraSwitcher class="h-full" :cameras="cameras" :model-value="currentDetailCamera?.deviceSerial || ''" @select="handleSelectDetailCamera" />
+          </template>
+        </LiveTab>
         <DetectionHistory
           v-if="currentDetailCamera?.deviceSerial"
           :key="currentDetailCamera.deviceSerial"
@@ -157,6 +123,9 @@
           :title="t('history.cameraTitle')"
         />
       </div>
+      <el-drawer v-if="!isWide" v-model="switcherOpen" :title="t('cameras.switcher.title')" direction="rtl" size="min(360px, 92vw)" append-to-body>
+        <CameraSwitcher :cameras="cameras" :model-value="currentDetailCamera?.deviceSerial || ''" @select="(serial) => { handleSelectDetailCamera(serial); switcherOpen = false; }" />
+      </el-drawer>
     </template>
   </div>
 </template>
@@ -165,13 +134,14 @@
 import { ref, computed, watch, onUnmounted, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
-import { Plus, Back, ArrowLeft, ArrowRight, VideoCamera, Connection } from '@element-plus/icons-vue';
+import { Plus, Back, ArrowLeft, ArrowRight, VideoCamera, Connection, Menu } from '@element-plus/icons-vue';
 import { useCameras } from '@/composables/useCameras';
 import { useAuth } from '@/composables/useAuth';
 import { useBreakpoints } from '@/composables/useBreakpoints';
 import PageHeader from '@/components/common/PageHeader.vue';
 import LiveTab from '@/components/cameras/LiveTab.vue';
 import GridCameraCard from '@/components/cameras/GridCameraCard.vue';
+import CameraSwitcher from '@/components/cameras/CameraSwitcher.vue';
 import DetectionHistory from '@/components/history/DetectionHistory.vue';
 
 const { t } = useI18n();
@@ -180,6 +150,13 @@ const router = useRouter();
 const { canManageCameras } = useAuth();
 // One camera per row on phones: the 2x2/3x3 switch does not apply
 const { isMobile } = useBreakpoints();
+// The camera list beside the detail view on wide screens, in a drawer below 1280 px
+const switcherOpen = ref(false);
+const viewportWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1440);
+const onResize = () => { viewportWidth.value = window.innerWidth; };
+if (typeof window !== 'undefined') window.addEventListener('resize', onResize, { passive: true });
+onUnmounted(() => { if (typeof window !== 'undefined') window.removeEventListener('resize', onResize); });
+const isWide = computed(() => viewportWidth.value >= 1280);
 
 // Sub-page state: 'grid' (default: all cameras grid) or 'detail' (single camera sub-page)
 const subPage = ref('grid');
