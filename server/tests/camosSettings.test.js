@@ -33,6 +33,9 @@ test('camosSettings: values are checked against the firmware key list', () => {
         'motion.enabled:not_boolean', 'net.ssid:unknown_setting', 'video.image.effect:not_allowed'
     ]);
     assert.equal(settings.toDesired({}).errors[0].error, 'empty');
+    // Night mode for live view (firmware 0.6.3, off by default): a boolean like the other switches
+    assert.deepEqual(settings.toDesired({ 'video.image.nightMode': true }).desired, { video: { image: { nightMode: true } } });
+    assert.equal(settings.toDesired({ 'video.image.nightMode': 'on' }).errors[0].error, 'not_boolean');
 });
 
 test('device settings: the owner reads applied and pending values and changes them; others and other cameras cannot', async () => {

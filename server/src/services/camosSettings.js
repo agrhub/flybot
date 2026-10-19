@@ -33,6 +33,8 @@ const FIELDS = [
     { path: 'video.image.gain', section: 'image', type: 'int', min: 0, max: 30 },
     { path: 'video.image.gainCeiling', section: 'image', type: 'int', min: 0, max: 6 },
     { path: 'video.image.denoise', section: 'image', type: 'int', min: 0, max: 8 },
+    // Live view only: the sensor may stretch a frame up to 4x in a very dark place (slower, smears movement)
+    { path: 'video.image.nightMode', section: 'image', type: 'bool' },
     // Motion
     { path: 'motion.enabled', section: 'motion', type: 'bool' },
     { path: 'motion.sensitivity', section: 'motion', type: 'int', min: 1, max: 100 },

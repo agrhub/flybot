@@ -3409,7 +3409,8 @@
           "gainCeiling": "Gain ceiling",
           "denoise": "Noise reduction",
           "vflip": "Flip upside down",
-          "hmirror": "Mirror"
+          "hmirror": "Mirror",
+          "nightMode": "Night mode for live view (slower, brighter in a very dark place)"
         }
       },
       "motion": {

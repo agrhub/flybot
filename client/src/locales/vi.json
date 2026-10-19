@@ -3409,7 +3409,8 @@
           "gainCeiling": "Giới hạn khuếch đại",
           "denoise": "Giảm nhiễu",
           "vflip": "Lật ngược ảnh",
-          "hmirror": "Lật gương"
+          "hmirror": "Lật gương",
+          "nightMode": "Chế độ ban đêm khi xem trực tiếp (chậm hơn, sáng hơn nơi rất tối)"
         }
       },
       "motion": {
