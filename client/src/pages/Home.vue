@@ -14,7 +14,10 @@ import {
   Sunny,
   Notebook,
   Warning,
-  MapLocation
+  MapLocation,
+  Connection,
+  Cpu,
+  Link
 } from '@element-plus/icons-vue';
 
 const { t, locale } = useI18n();
@@ -46,6 +49,14 @@ const useCases = [
   { key: 'use1', icon: Warning },
   { key: 'use2', icon: Notebook },
   { key: 'use3', icon: MapLocation }
+];
+// FlyBot on AWS: the OpenCV AI Competition 2026 entry (github.com/agrhub/flybot-aws)
+const AWS_REPO_URL = 'https://github.com/agrhub/flybot-aws';
+const awsParts = [
+  { key: 'lambda', icon: Aim },
+  { key: 'iot', icon: Connection },
+  { key: 'kvs', icon: VideoCamera },
+  { key: 'esp32', icon: Cpu }
 ];
 const audiences = [
   { key: 'audience1', features: [1, 2, 3] },
@@ -438,6 +449,48 @@ const isAuthenticated = computed(() => {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FlyBot on AWS (OpenCV AI Competition 2026) -->
+    <section id="aws" class="py-24 px-6 bg-[var(--el-bg-color)] border-y border-[var(--el-border-color)] scroll-mt-20">
+      <div class="container mx-auto max-w-[1440px] grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+        <div class="lg:col-span-5 space-y-6">
+          <span class="text-xs font-bold uppercase tracking-widest text-[var(--el-color-primary)] block">{{ t('home.aws.tag') }}</span>
+          <h2 class="text-4xl sm:text-5xl font-extrabold tracking-tighter text-[var(--el-text-color-primary)]">{{ t('home.aws.heading') }}</h2>
+          <p class="text-sm sm:text-base leading-relaxed text-[var(--el-text-color-regular)]">{{ t('home.aws.desc') }}</p>
+          <div class="flex flex-wrap items-center gap-4 pt-2">
+            <a
+              :href="AWS_REPO_URL"
+              target="_blank"
+              rel="noopener"
+              class="inline-flex items-center justify-center gap-2 border border-[var(--el-border-color)] text-[var(--el-text-color-primary)] px-6 py-3 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-[var(--el-fill-color-light)] transition-all w-fit"
+              data-test="aws-repo"
+            >
+              <el-icon><Link /></el-icon>
+              {{ t('home.aws.github') }}
+            </a>
+            <RouterLink
+              :to="isAuthenticated ? '/cameras' : '/login?mode=register'"
+              class="text-xs font-bold uppercase tracking-widest border-b border-[#3ecf8e] pb-1 text-[var(--el-color-primary)] hover:text-[var(--el-text-color-primary)] transition-colors"
+            >
+              {{ t('home.aws.tryDemo') }} &rarr;
+            </RouterLink>
+          </div>
+        </div>
+        <div class="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div
+            v-for="part in awsParts"
+            :key="part.key"
+            class="rounded-2xl bg-[var(--el-card-bg-color)] border border-[var(--el-border-color)] p-6 space-y-3 hover:border-[#3ecf8e]/50 transition-all shadow-sm"
+          >
+            <div class="w-11 h-11 rounded-2xl bg-[#3ecf8e]/15 flex items-center justify-center">
+              <el-icon class="text-xl text-[var(--el-color-primary)]"><component :is="part.icon" /></el-icon>
+            </div>
+            <h3 class="text-base font-bold text-[var(--el-text-color-primary)]">{{ t(`home.aws.${part.key}Title`) }}</h3>
+            <p class="text-sm text-[var(--el-text-color-secondary)] leading-relaxed">{{ t(`home.aws.${part.key}Desc`) }}</p>
           </div>
         </div>
       </div>

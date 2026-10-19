@@ -971,7 +971,22 @@
     "videoHeading": "See FlyBot at work in one minute",
     "videoDesc": "The trap, the AI count, the alert and the app at work, in one minute. App screens use sample data.",
     "videoCta": "Read the full guide",
-    "watchVideo": "Watch the 1-minute video"
+    "watchVideo": "Watch the 1-minute video",
+    "aws": {
+      "tag": "OpenCV AI Competition 2026",
+      "heading": "FlyBot on AWS",
+      "desc": "Our competition entry runs this very site on AWS. Every trap photo goes through an OpenCV 5 pipeline on AWS Lambda, and a small agent turns what it sees into proposals that wait for a person to approve.",
+      "github": "Source on GitHub",
+      "tryDemo": "Try the demo traps",
+      "lambdaTitle": "OpenCV 5 on AWS Lambda",
+      "lambdaDesc": "YOLO26n on the OpenCV 5 DNN engine counts the flies, checks photo quality and compares each photo with the one before.",
+      "iotTitle": "AWS IoT Core camera hub",
+      "iotDesc": "Each trap camera has its own certificate; its schedule and image settings travel through its device shadow.",
+      "kvsTitle": "Live view on Kinesis Video Streams",
+      "kvsDesc": "WebRTC live view from the trap camera, with short-lived viewer credentials for each browser session.",
+      "esp32Title": "Open ESP32-S3 trap camera",
+      "esp32Desc": "Open firmware: the camera registers itself with FlyBot, sends its photos and sleeps between them."
+    }
   },
   "manual": {
     "title": "User guide",

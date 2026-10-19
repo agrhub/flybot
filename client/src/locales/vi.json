@@ -971,7 +971,22 @@
     "videoHeading": "Xem FlyBot hoạt động trong 1 phút",
     "videoDesc": "Tấm bẫy, AI đếm ruồi, cảnh báo và ứng dụng trong một phút. Màn hình ứng dụng dùng dữ liệu minh hoạ.",
     "videoCta": "Xem hướng dẫn chi tiết",
-    "watchVideo": "Xem video 1 phút"
+    "watchVideo": "Xem video 1 phút",
+    "aws": {
+      "tag": "Cuộc thi OpenCV AI 2026",
+      "heading": "FlyBot trên AWS",
+      "desc": "Bài dự thi của chúng tôi chạy chính trang web này trên AWS. Mỗi ảnh bẫy đi qua quy trình OpenCV 5 trên AWS Lambda, rồi một tác tử nhỏ biến những gì nó thấy thành đề xuất, chờ người duyệt.",
+      "github": "Mã nguồn trên GitHub",
+      "tryDemo": "Xem bẫy trình diễn",
+      "lambdaTitle": "OpenCV 5 trên AWS Lambda",
+      "lambdaDesc": "YOLO26n chạy trên bộ máy DNN của OpenCV 5 đếm ruồi, kiểm tra chất lượng ảnh và so sánh mỗi ảnh với ảnh trước.",
+      "iotTitle": "AWS IoT Core kết nối camera",
+      "iotDesc": "Mỗi camera bẫy có chứng chỉ riêng; lịch chụp và thông số ảnh được gửi qua bản sao số của thiết bị.",
+      "kvsTitle": "Xem trực tiếp qua Kinesis Video Streams",
+      "kvsDesc": "Hình ảnh trực tiếp từ camera bẫy qua WebRTC, với quyền xem ngắn hạn cho từng phiên trình duyệt.",
+      "esp32Title": "Camera bẫy ESP32-S3 mã nguồn mở",
+      "esp32Desc": "Phần mềm mở: camera tự đăng ký với FlyBot, gửi ảnh và ngủ giữa các lần chụp."
+    }
   },
   "manual": {
     "title": "Hướng dẫn sử dụng",
