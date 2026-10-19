@@ -34,6 +34,15 @@ describe('Assistant confirm card', () => {
     expect(wrapper.text()).not.toContain('assistant.cards');
   });
 
+  it('the reason follows the language on screen when the Lambda sent both', async () => {
+    const card = { type: 'confirm', action: 'capture_now', state: 'pending', source: 'sentinel', reason: 'Có vật lớn che bẫy: ảnh không đếm, chụp lại',
+      reasonI18n: { vi: 'Có vật lớn che bẫy: ảnh không đếm, chụp lại', en: 'A large object covers the trap: photo not counted, capture again' }, summary: { trap: 'Cu Chi', params: {} } };
+    expect((await mountCard(card)).text()).toContain('A large object covers the trap');
+    // Older cards have only the stored text
+    const { reasonI18n, ...older } = card;
+    expect((await mountCard(older)).text()).toContain('Có vật lớn che bẫy');
+  });
+
   it('a review request has a title in both languages', async () => {
     const card = { type: 'confirm', action: 'review_request', state: 'pending', source: 'sentinel', summary: { trap: 'Cu Chi', params: {} } };
     expect((await mountCard(card)).find('.card-title').text()).toBe('Ask a person to check the trap');

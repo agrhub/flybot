@@ -45,7 +45,7 @@ async function orchard() {
     const latest = await models.Snapshot.create({
         deviceSerial: 'CAM1', imageUrl: 'x', s3Key: 'snapshots/CAM1/b.jpg', aiProcessed: true, aiProvider: 'opencv-lambda', aiResults: { summary: { fruit_fly: 14 } },
         meta: { battery: { pct: 72 }, rssi: -61 },
-        lambda: lambda('tr_new', 14, { privacy: { person_suspected: true, regions: [{ x: 0.7, y: 0.1, w: 0.1, h: 0.15 }], method: 'yunet' }, diff: { newCount: 9, goneCount: 0, cardMoved: false }, quality: { ok: false, flags: ['dark'], blur: 0.3, exposure: 0.2 }, proposals: [{ id: 'p1', action: 'set_interval', params: { minutes: 15 }, reason: 'Count doubled', confidence: 0.8 }] })
+        lambda: lambda('tr_new', 14, { privacy: { person_suspected: true, regions: [{ x: 0.7, y: 0.1, w: 0.1, h: 0.15 }], method: 'yunet' }, diff: { newCount: 9, goneCount: 0, cardMoved: false }, quality: { ok: false, flags: ['dark'], blur: 0.3, exposure: 0.2 }, proposals: [{ id: 'p1', action: 'set_interval', params: { minutes: 15 }, reason: 'Count doubled', reasonI18n: { vi: 'Số ruồi tăng gấp đôi', en: 'Count doubled' }, confidence: 0.8 }] })
     });
     const other = await models.Snapshot.create({ deviceSerial: 'CAM2', imageUrl: 'x', s3Key: 'snapshots/CAM2/c.jpg', aiProcessed: true, aiProvider: 'opencv-lambda', aiResults: { summary: { fruit_fly: 1 } }, lambda: lambda('tr_cam2', 1) });
     const [created] = await sentinelService.createLambdaProposals({ snapshot: latest, camera: cam1.toObject(), proposals: latest.lambda.proposals, traceId: 'tr_new' });
@@ -130,7 +130,7 @@ test('traces: analyzed photos newest first, filter by camera, cursor paging, one
     assert.deepEqual(first.counts, { opencv: 14, npu: null, production: 14 });
     assert.deepEqual(first.quality, { ok: false, issues: ['dark'] });
     assert.equal(first.outcome, 'proposed: set_interval');
-    assert.deepEqual(first.decisions[0], { rule: 'set_interval', action: 'set_interval', reasons: ['Count doubled', 'confidence 0.8'], params: { minutes: 15 } });
+    assert.deepEqual(first.decisions[0], { rule: 'set_interval', action: 'set_interval', reasons: ['Số ruồi tăng gấp đôi', 'confidence 0.8'], params: { minutes: 15 } });
     assert.deepEqual(first.approval, { approval_id: String(proposal._id), kind: 'set_interval', status: 'pending' });
     assert.equal(first.planner.name, 'rule');
     assert.equal(first.snapshot_id, String(latest._id));
@@ -169,8 +169,8 @@ test('traces: analyzed photos newest first, filter by camera, cursor paging, one
     assert.equal(obs.battery_percent, 72);
     assert.deepEqual(trace.tool_calls.map(c => [c.name, c.status, c.ms]), [['detect', 'ok', 410]]);
     assert.equal(trace.approval.approval_id, String(proposal._id));
-    assert.equal(trace.approval.payload.reason, 'Count doubled');
-    assert.equal(trace.reasoning_summary, 'Count doubled');
+    assert.equal(trace.approval.payload.reason, 'Số ruồi tăng gấp đôi');
+    assert.equal(trace.reasoning_summary, 'Số ruồi tăng gấp đôi');
     // By snapshot id too; unknown or another person's camera = 404
     assert.equal((await get(`/traces/snap_${old._id}`, judge)).status, 200);
     assert.equal((await get('/traces/tr_cam2', judge)).status, 404);
@@ -189,7 +189,7 @@ test('approvals: listed by status; the viewer cannot decide; a manager\'s decisi
     assert.equal(a.kind, 'set_interval');
     assert.equal(a.status, 'pending');
     assert.deepEqual(a.cameras, ['CAM1']);
-    assert.deepEqual(a.payload, { action: 'set_interval', params: { minutes: 15 }, reason: 'Count doubled' });
+    assert.deepEqual(a.payload, { action: 'set_interval', params: { minutes: 15 }, reason: 'Số ruồi tăng gấp đôi' }, 'no X-Language: the account language (vi by default)');
     assert.equal(a.flybot_proposal_id, String(proposal._id));
     assert.ok(a.expires_at);
     // The photo to decide on comes with it, with the boxes and the face regions the console draws
@@ -198,6 +198,15 @@ test('approvals: listed by status; the viewer cannot decide; a manager\'s decisi
     assert.deepEqual(a.overlays['snapshots/CAM1/b.jpg'].privacy.regions, [{ x: 0.7, y: 0.1, w: 0.1, h: 0.15 }]);
     const alone = (await json(await get(`/approvals/${proposal._id}`, judge))).body.approval;
     assert.deepEqual([alone.evidence, alone.overlays], [a.evidence, a.overlays]);
+    // The reason in the viewer's language (X-Language), whatever the owner's language was
+    const inVi = (path) => request(`/api/sentinel/ui${path}`, { as: judge, headers: { 'X-Language': 'vi' } }).then(json);
+    assert.equal((await inVi('/approvals?status=pending')).body.items[0].payload.reason, 'Số ruồi tăng gấp đôi');
+    assert.equal((await inVi(`/approvals/${proposal._id}`)).body.approval.payload.reason, 'Số ruồi tăng gấp đôi');
+    assert.equal((await json(await request(`/api/sentinel/ui/approvals/${proposal._id}`, { as: judge, headers: { 'X-Language': 'en' } }))).body.approval.payload.reason, 'Count doubled');
+    const traceVi = (await inVi('/traces/tr_new')).body.trace;
+    assert.equal(traceVi.reasoning_summary, 'Số ruồi tăng gấp đôi');
+    assert.equal(traceVi.decisions[0].reasons[0], 'Số ruồi tăng gấp đôi');
+    assert.deepEqual(proposal.reasonI18n, { vi: 'Số ruồi tăng gấp đôi', en: 'Count doubled' }, 'stored with the proposal');
     assert.equal((await json(await get('/approvals?status=approved', judge))).body.items.length, 0);
     assert.equal((await json(await get(`/approvals/${proposal._id}`, judge))).body.approval.status, 'pending');
 

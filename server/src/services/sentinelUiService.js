@@ -4,6 +4,8 @@ const { Camera, Snapshot, SentinelProposal, User } = require('../models');
 const { canViewSentinel, canDecideSentinel } = require('../constants/roles');
 const { trapKindOf } = require('../constants/trap');
 const { viewFilter } = require('../utils/ownership');
+const { normalizeLanguage } = require('../utils/i18n');
+const { reasonIn } = require('./sentinelService');
 
 /**
  * Server side of the Sentinel console (routes/sentinelUiRoutes.js): the pages Overview, Traces,
@@ -63,11 +65,14 @@ const PROPOSAL_STATUS = { pending: 'pending', confirmed: 'approved', rejected: '
 const traceIdOf = (snap) => snap.lambda?.traceId || `snap_${snap._id}`;
 const traceFilter = { $or: [{ 'lambda.status': { $in: ['ok', 'failed'] } }, { aiProvider: 'opencv-lambda' }] };
 
-function decisionsOf(snap) {
+/** The viewer's language: the app's X-Language when it is one we have, else the account's. */
+const languageFor = (user, lang) => normalizeLanguage(['vi', 'en'].includes(lang) ? lang : user?.language);
+
+function decisionsOf(snap, lang) {
     return (snap.lambda?.proposals || []).map(p => ({
         rule: p.action || 'proposal',
         action: p.action || 'proposal',
-        reasons: [p.reason, Number.isFinite(p.confidence) ? `confidence ${p.confidence}` : null].filter(Boolean),
+        reasons: [reasonIn(p, lang), Number.isFinite(p.confidence) ? `confidence ${p.confidence}` : null].filter(Boolean),
         params: p.params || {}
     }));
 }
@@ -92,7 +97,7 @@ const overlaysOf = (...snaps) => Object.fromEntries(snaps.filter(s => s?.s3Key &
 
 const OVERLAY_FIELDS = 's3Key lambda.boxes lambda.privacy lambda.width lambda.height';
 
-function approvalOf(proposal, snap = null) {
+function approvalOf(proposal, snap = null, lang = null) {
     if (!proposal) return null;
     // The pictures a person decides on: the photo the proposal came from (boxes drawn by the console), then any other evidence
     const pictures = [snap?.s3Key, ...(proposal.evidence || []).map(e => e.url || e.ref)];
@@ -112,7 +117,7 @@ function approvalOf(proposal, snap = null) {
         payload: {
             action: proposal.payload?.action || proposal.type,
             params: proposal.payload?.params || {},
-            reason: proposal.reason || '',
+            reason: lang ? reasonIn(proposal, lang) : proposal.reason || '',
             ...(proposal.result ? { result: proposal.result } : {})
         },
         evidence: [...new Set(pictures.filter(v => typeof v === 'string' && v))],
@@ -121,7 +126,7 @@ function approvalOf(proposal, snap = null) {
 }
 
 /** The slim list item of one analyzed photo. */
-function slimTrace(snap, camera, proposal) {
+function slimTrace(snap, camera, proposal, lang) {
     const lambda = snap.lambda || {};
     const flags = lambda.quality?.flags || [];
     const planner = lambda.trace?.planner || 'rule';
@@ -139,7 +144,7 @@ function slimTrace(snap, camera, proposal) {
         outcome: lambda.status === 'failed' ? `failed: ${lambda.error?.code || 'error'}` : (actions.length ? `proposed: ${actions.join(', ')}` : 'no_op'),
         counts: { opencv: Number.isFinite(lambda.counts?.total) ? lambda.counts.total : null, npu: null, production: Number.isFinite(snap.pestCount) ? snap.pestCount : null },
         quality: { ok: lambda.quality?.ok !== false && !flags.length, issues: flags },
-        decisions: decisionsOf(snap),
+        decisions: decisionsOf(snap, lang),
         approval: proposal ? { approval_id: String(proposal._id), kind: proposal.type, status: PROPOSAL_STATUS[proposal.state] || proposal.state } : null,
         planner: { name: planner, fallback: false, model: lambda.model?.name || null },
         image: snap.s3Key,
@@ -148,9 +153,9 @@ function slimTrace(snap, camera, proposal) {
 }
 
 /** The full trace: Perception (opencv_outputs) -> Decision (decisions, planner) -> Action (tool_calls, approval). */
-async function fullTrace(snap, camera, proposals) {
+async function fullTrace(snap, camera, proposals, lang) {
     const lambda = snap.lambda || {};
-    const slim = slimTrace(snap, camera, proposals[0]);
+    const slim = slimTrace(snap, camera, proposals[0], lang);
     const previous = await Snapshot.findOne({ deviceSerial: snap.deviceSerial, aiProcessed: true, createdAt: { $lt: snap.createdAt } }).sort({ createdAt: -1 }).select(OVERLAY_FIELDS).lean();
     // The Lambda stores no picture: the photos are FlyBot's, the console draws the boxes (overlays)
     const evidence = [];
@@ -195,7 +200,7 @@ async function fullTrace(snap, camera, proposals) {
             llm_turns: steps.filter(s => s.tool === 'llm' || s.tool === 'planner').length,
             tokens: lambda.trace?.tokens || null
         },
-        reasoning_summary: deep.length ? deep.at(-1).answer : (lambda.proposals || []).map(p => p.reason).filter(Boolean).join(' ') || null,
+        reasoning_summary: deep.length ? deep.at(-1).answer : (lambda.proposals || []).map(p => reasonIn(p, lang)).filter(Boolean).join(' ') || null,
         tool_calls: steps.map((s, index) => ({
             index,
             name: s.tool || s.name || `step ${index + 1}`,
@@ -208,8 +213,8 @@ async function fullTrace(snap, camera, proposals) {
         })),
         device_ack: [],
         events: lambda.status === 'failed' ? [{ kind: 'analysis_failed', at: iso(lambda.error?.at || snap.createdAt), detail: { reason: lambda.error?.message || lambda.error?.code } }] : [],
-        approval: proposals[0] ? approvalOf(proposals[0], snap) : null,
-        approvals: proposals.map(p => approvalOf(p, snap)),
+        approval: proposals[0] ? approvalOf(proposals[0], snap, lang) : null,
+        approvals: proposals.map(p => approvalOf(p, snap, lang)),
         deep: deep.map(d => ({ at: iso(d.at), question: d.question, answer: d.answer, trace_id: d.traceId })),
         timings: lambda.timings || null,
         model: lambda.model || null,
@@ -219,7 +224,7 @@ async function fullTrace(snap, camera, proposals) {
 }
 
 /** GET traces: newest first, filtered by camera and time, paged by a createdAt cursor. */
-async function traces({ user, camera, since, until, limit, cursor }) {
+async function traces({ user, camera, since, until, limit, cursor, lang }) {
     const cameras = await visibleCameras(user);
     const serials = camera ? (cameras.has(camera) ? [camera] : []) : [...cameras.keys()];
     if (!serials.length) return { items: [], next: null };
@@ -237,13 +242,13 @@ async function traces({ user, camera, since, until, limit, cursor }) {
     const bySnapshot = new Map();
     for (const p of proposals) if (!bySnapshot.has(String(p.snapshotId))) bySnapshot.set(String(p.snapshotId), p);
     return {
-        items: page.map(snap => slimTrace(snap, cameras.get(snap.deviceSerial), bySnapshot.get(String(snap._id)))),
+        items: page.map(snap => slimTrace(snap, cameras.get(snap.deviceSerial), bySnapshot.get(String(snap._id)), languageFor(user, lang))),
         next: rows.length > size ? iso(page.at(-1).createdAt) : null
     };
 }
 
 /** GET traces/:id — by trace id (tr_...) or snapshot id (snap_<id> or the id itself). */
-async function trace({ user, id }) {
+async function trace({ user, id, lang }) {
     const cameras = await visibleCameras(user);
     const raw = String(id || '');
     const snapId = raw.startsWith('snap_') ? raw.slice(5) : raw;
@@ -251,7 +256,7 @@ async function trace({ user, id }) {
     const snap = await Snapshot.findOne(query).lean();
     if (!snap || !cameras.has(snap.deviceSerial)) return null;
     const proposals = await SentinelProposal.find({ snapshotId: snap._id }).sort({ createdAt: -1 }).lean();
-    return { trace: await fullTrace(snap, cameras.get(snap.deviceSerial), proposals), media: {} };
+    return { trace: await fullTrace(snap, cameras.get(snap.deviceSerial), proposals, languageFor(user, lang)), media: {} };
 }
 
 // ---------- Summary ----------
@@ -305,7 +310,7 @@ async function summary({ user, hours = 24 }) {
 
 const STATE_OF_STATUS = { pending: ['pending'], approved: ['confirmed'], rejected: ['rejected', 'failed'], expired: ['expired'] };
 
-async function approvals({ user, status, limit }) {
+async function approvals({ user, status, limit, lang }) {
     const cameras = await visibleCameras(user);
     const serials = [...cameras.keys()];
     const size = Math.min(Math.max(parseInt(limit, 10) || DEFAULT_LIMIT, 1), MAX_LIMIT);
@@ -315,18 +320,18 @@ async function approvals({ user, status, limit }) {
     const rows = await SentinelProposal.find(filter).sort({ createdAt: -1 }).limit(size).lean();
     const snaps = await photosOf(rows);
     const now = new Date();
-    const items = rows.map(p => approvalOf(p.state === 'pending' && p.expiresAt <= now ? { ...p, state: 'expired' } : p, snaps.get(String(p.snapshotId))));
+    const items = rows.map(p => approvalOf(p.state === 'pending' && p.expiresAt <= now ? { ...p, state: 'expired' } : p, snaps.get(String(p.snapshotId)), languageFor(user, lang)));
     return { items: status === 'pending' ? items.filter(a => a.status === 'pending') : items, next: null };
 }
 
-async function approval({ user, id }) {
+async function approval({ user, id, lang }) {
     if (!mongoose.isValidObjectId(id)) return null;
     const cameras = await visibleCameras(user);
     const p = await SentinelProposal.findById(id).lean();
     if (!p || !p.deviceSerials.some(s => cameras.has(s))) return null;
     const snaps = await photosOf([p]);
     const now = new Date();
-    return { approval: approvalOf(p.state === 'pending' && p.expiresAt <= now ? { ...p, state: 'expired' } : p, snaps.get(String(p.snapshotId))), media: {} };
+    return { approval: approvalOf(p.state === 'pending' && p.expiresAt <= now ? { ...p, state: 'expired' } : p, snaps.get(String(p.snapshotId)), languageFor(user, lang)), media: {} };
 }
 
 /** The photos proposals came from, by id (only their picture keys). */

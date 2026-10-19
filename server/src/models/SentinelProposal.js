@@ -21,6 +21,8 @@ const sentinelProposalSchema = new mongoose.Schema({
     messageId: { type: String, required: true, unique: true },
     cardIndex: { type: Number, default: 0 },
     reason: { type: String, default: '' },
+    // Lambda proposals: the reason in each language ({ vi, en }), so every viewer reads their own
+    reasonI18n: { type: mongoose.Schema.Types.Mixed, default: undefined },
     // Lambda proposals: the action parameters, the photo and the trace they came from
     payload: { type: mongoose.Schema.Types.Mixed, default: undefined },
     snapshotId: { type: mongoose.Schema.Types.ObjectId, ref: 'Snapshot', default: undefined },

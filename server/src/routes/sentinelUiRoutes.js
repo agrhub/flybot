@@ -88,15 +88,15 @@ const SERIAL = /^[A-Za-z0-9_-]{1,64}$/;
 const segment = (value, pattern) => (typeof value === 'string' && pattern.test(value) ? value : null);
 
 router.get('/summary', readLimiter, page(['hours'], (q, req) => sentinelUi.summary({ user: req.user, hours: q.hours })));
-router.get('/traces', readLimiter, page(['camera', 'since', 'until', 'loop', 'limit', 'cursor'], (q, req) => sentinelUi.traces({ user: req.user, ...q })));
+router.get('/traces', readLimiter, page(['camera', 'since', 'until', 'loop', 'limit', 'cursor'], (q, req) => sentinelUi.traces({ user: req.user, ...q, lang: req.get('X-Language') })));
 router.get('/traces/:id', readLimiter, page([], (q, req) => {
     const id = segment(req.params.id, EVENT_ID);
-    return id ? sentinelUi.trace({ user: req.user, id }) : null;
+    return id ? sentinelUi.trace({ user: req.user, id, lang: req.get('X-Language') }) : null;
 }));
-router.get('/approvals', readLimiter, page(['status', 'limit', 'cursor'], (q, req) => sentinelUi.approvals({ user: req.user, ...q })));
+router.get('/approvals', readLimiter, page(['status', 'limit', 'cursor'], (q, req) => sentinelUi.approvals({ user: req.user, ...q, lang: req.get('X-Language') })));
 router.get('/approvals/:id', readLimiter, page([], (q, req) => {
     const id = segment(req.params.id, APPROVAL_ID);
-    return id ? sentinelUi.approval({ user: req.user, id }) : null;
+    return id ? sentinelUi.approval({ user: req.user, id, lang: req.get('X-Language') }) : null;
 }));
 router.get('/devices', readLimiter, page([], (q, req) => sentinelUi.devices({ user: req.user })));
 router.get('/devices/:serial', readLimiter, page([], (q, req) => {

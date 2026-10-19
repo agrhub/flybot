@@ -434,6 +434,19 @@ function actionCard({ action, params, camera, reason, snapshot = null, confidenc
     };
 }
 
+/** The Lambda's reason in each language ({ vi, en }, plain strings), or null when it sent none. */
+function reasonsByLanguage(value) {
+    if (!isPlainObject(value)) return null;
+    const out = {};
+    for (const lang of ['vi', 'en']) {
+        if (typeof value[lang] === 'string' && value[lang].trim()) out[lang] = clip(value[lang].trim(), MAX_REASON);
+    }
+    return Object.keys(out).length ? out : null;
+}
+
+/** A proposal's reason in `lang` when the Lambda gave one, else the stored text. */
+const reasonIn = (item, lang) => (item?.reasonI18n && item.reasonI18n[lang]) || item?.reason || '';
+
 /**
  * The vision Lambda proposed actions for a photo (response.proposals): one confirm card each in
  * the owner's "sentinel" conversation, a SentinelProposal row, and the Telegram message. Nothing
@@ -452,18 +465,19 @@ async function createLambdaProposals({ snapshot, camera, proposals, traceId = nu
             continue;
         }
         const reason = clip(String(proposal.reason || '').trim() || `Sentinel: ${checked.action}`, MAX_REASON);
+        const reasonI18n = reasonsByLanguage(proposal.reasonI18n);
         const confidence = Number.isFinite(proposal.confidence) ? Math.max(0, Math.min(1, Number(proposal.confidence))) : null;
         const card = actionCard({ ...checked, camera, reason, snapshot, confidence });
         const stored = await storeProposalCard({
             owner,
             user,
-            card: { ...card, traceId: traceId || undefined },
+            card: { ...card, traceId: traceId || undefined, ...(reasonI18n ? { reasonI18n } : {}) },
             type: checked.action,
             serials: [camera.deviceSerial],
             reason,
             evidence: [],
             photos: snapshot ? [{ snap: snapshot, caption: '' }] : [],
-            extra: { payload: { action: checked.action, params: checked.params, proposalId: typeof proposal.id === 'string' ? proposal.id.slice(0, 40) : undefined, evidence: evidence || undefined }, snapshotId: snapshot?._id, traceId: traceId || undefined, confidence: confidence ?? undefined, source: 'lambda' },
+            extra: { ...(reasonI18n ? { reasonI18n } : {}), payload: { action: checked.action, params: checked.params, proposalId: typeof proposal.id === 'string' ? proposal.id.slice(0, 40) : undefined, evidence: evidence || undefined }, snapshotId: snapshot?._id, traceId: traceId || undefined, confidence: confidence ?? undefined, source: 'lambda' },
             now
         });
         created.push(stored);
@@ -503,7 +517,7 @@ async function storeProposalCard({ owner, user, card, type, serials, reason, evi
             }))
         });
     }
-    const content = translate(user.language, 'sentinel.message', { reason: fullCard.reason });
+    const content = translate(user.language, 'sentinel.message', { reason: reasonIn(fullCard, normalizeLanguage(user.language)) });
     await ChatSession.updateOne(
         { userId: owner._id, sessionId: SENTINEL_SESSION },
         {
@@ -561,7 +575,7 @@ async function sendProposalToTelegram(proposal, owner, card, evidence) {
                 trap: escapeHtml(summary.trap || ''),
                 params: escapeHtml(Object.entries(summary.params || {}).map(([k, v]) => `${k}=${v}`).join(', ') || '-')
             })];
-    lines.push(t('reason', { reason: escapeHtml(card.reason) }));
+    lines.push(t('reason', { reason: escapeHtml(reasonIn(card, lang)) }));
     const captions = evidence.map(e => e.caption).filter(Boolean);
     if (captions.length) lines.push(escapeHtml(captions.join(' · ')));
     lines.push(t('expires', { at: formatAt(proposal.expiresAt) }));
@@ -852,6 +866,7 @@ module.exports = {
     ACTIONS,
     checkAction,
     actionCard,
+    reasonIn,
     createLambdaProposals,
     storeProposalCard,
     recordDecision,

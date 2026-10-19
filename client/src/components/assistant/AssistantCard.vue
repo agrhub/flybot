@@ -53,7 +53,7 @@
     <!-- Proposed by FlyBot Sentinel: why, and the pictures it relies on -->
     <div v-if="card.source === 'sentinel'" class="confirm-lines mb-2">
       <div class="card-meta">{{ t('assistant.cards.confirm.sentinel.source') }}</div>
-      <div v-if="card.reason"><span class="card-meta">{{ t('assistant.cards.confirm.sentinel.reason') }}</span> {{ card.reason }}</div>
+      <div v-if="card.reason"><span class="card-meta">{{ t('assistant.cards.confirm.sentinel.reason') }}</span> {{ card.reasonI18n?.[locale] || card.reason }}</div>
       <div v-if="card.evidence && card.evidence.length" class="photo-grid" :class="{ 'photo-grid--single': card.evidence.length === 1 }">
         <div v-for="(item, i) in card.evidence" :key="i" class="photo-item">
           <el-image
@@ -133,7 +133,7 @@ const props = defineProps({
 });
 const emit = defineEmits(['open', 'decide']);
 
-const { t, te } = useI18n();
+const { t, te, locale } = useI18n();
 const router = useRouter();
 
 const previewList = computed(() => (props.card.items || []).map(item => api.getImageUrl(item.imageKey)));
