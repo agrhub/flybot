@@ -178,6 +178,14 @@ test('traces: analyzed photos newest first, filter by camera, cursor paging, one
     assert.equal((await get('/traces/nope', owner)).status, 404);
 });
 
+test('system info names the OpenCV Lambda detector from its latest answer, not the chatbot model', async () => {
+    await orchard();
+    const admin = await createUser({ role: 'admin' });
+    const info = (await json(await request('/api/system/info', { as: admin }))).body.info;
+    assert.equal(info.ai.provider, 'opencv-lambda');
+    assert.equal(info.ai.model, 'yolo26n 2026-10-18 · opencv-5.0.0-dnn-new');
+});
+
 test('approvals: listed by status; the viewer cannot decide; a manager\'s decision runs the card once', async () => {
     const { owner, judge, proposal } = await orchard();
     const pending = await json(await get('/approvals?status=pending', judge));

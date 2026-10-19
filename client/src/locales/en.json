@@ -50,7 +50,7 @@
     "contact": "Contact",
     "signIn": "Sign In",
     "getStarted": "Get Started",
-    "launchStudio": "Launch Studio",
+    "launchStudio": "Open the app",
     "capabilities": "Features",
     "showcase": "Use cases",
     "about": "About",
@@ -82,7 +82,7 @@
     "tagline": "Smart insect traps with AI counting",
     "accountEmail": "Account Email",
     "password": "Password",
-    "loginBtn": "Sign In to Studio",
+    "loginBtn": "Sign in",
     "noAccount": "Don't have an account?",
     "registerNow": "Register now",
     "newEmail": "New Email",
@@ -91,7 +91,7 @@
     "hasAccount": "Already have an account?",
     "backToLogin": "Back to Sign In",
     "loginSuccess": "Signed in successfully",
-    "welcomeBack": "Welcome back to FlyBot Studio",
+    "welcomeBack": "Welcome back to FlyBot",
     "registerSuccess": "Registration successful",
     "registerSuccessMsg": "Your account is ready! Please sign in.",
     "loginFailed": "Sign in failed",
@@ -733,7 +733,7 @@
     "darkTheme": "Dark Mode",
     "lightTheme": "Light Mode",
     "langSub": "Application interface language",
-    "storageSub": "MinIO S3 storage infrastructure and Google Vertex AI model",
+    "storageSub": "Where photos are stored and the model that analyzes them",
     "storageModel": "Vision AI Model",
     "storageRetention": "Auto Retention Cycle",
     "termsSub": "Surveillance usage terms and agricultural data security",
@@ -778,7 +778,8 @@
       "vertex": "Google Vertex AI (Gemini)",
       "roboflow": "Roboflow detection workflow",
       "both": "Vertex AI + Roboflow",
-      "sentinel": "FlyBot Sentinel (OpenCV 5)"
+      "sentinel": "FlyBot Sentinel (OpenCV 5)",
+      "opencv-lambda": "OpenCV 5 on AWS Lambda"
     },
     "usageSnapshots": "Your snapshots",
     "usageSnapshotsValue": "{snapshots} snapshots ({analyzed} analyzed) from {cameras} cameras",
@@ -3223,7 +3224,11 @@
       "request_human_review": "Human review",
       "schedule_followup": "Follow-up",
       "neighbour_check": "Neighbour check",
-      "keep": "Kept the settings"
+      "keep": "Kept the settings",
+      "capture_now": "Extra photo",
+      "set_interval": "Capture interval",
+      "review_request": "Review request",
+      "notify": "Notification"
     },
     "loops": {
       "per_photo": "Every photo",
@@ -3239,7 +3244,8 @@
       "dirty": "Dirty lens",
       "ir": "Night infrared",
       "occluded": "Blocked view",
-      "camera_moved": "Camera moved"
+      "camera_moved": "Camera moved",
+      "trap_missing": "No trap in view"
     },
     "traces": {
       "title": "Traces",
@@ -3462,6 +3468,25 @@
       "perOp": "Per step (ms)",
       "op": "Step",
       "raw": "Raw data"
+    },
+    "tools": {
+      "load": "Load the photos",
+      "analyze_trap_photo": "OpenCV 5 analysis",
+      "compare_with_previous": "Compare with the previous photo",
+      "get_trap_history": "Trap history",
+      "get_neighbors": "Neighbouring traps",
+      "get_degree_day_outlook": "Degree-day outlook",
+      "get_weather": "Weather",
+      "capture": "Extra photo",
+      "set_image": "Camera image settings",
+      "set_detection_roi": "Detection area",
+      "set_capture_schedule": "Capture schedule",
+      "propose_card_change": "Card change proposal",
+      "propose_treatment": "Treatment proposal",
+      "request_human_review": "Ask a person to review",
+      "schedule_followup": "Follow-up",
+      "llm": "AI planner",
+      "planner": "Planner"
     }
   },
   "claim": {

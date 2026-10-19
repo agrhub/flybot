@@ -102,7 +102,7 @@
             @keydown.enter.prevent="openApproval(a)"
           >
             <div class="flex items-center justify-between gap-2">
-              <span class="count-text truncate">{{ kindName(a.kind) }}: {{ proposalTitle(a) }}</span>
+              <span class="count-text truncate">{{ kindName(a.kind) }}<template v-if="describeProposal(a).title !== a.kind">: {{ proposalTitle(a) }}</template></span>
               <el-tag type="warning" effect="light" size="small" round>{{ t('sentinel.approvals.status.pending') }}</el-tag>
             </div>
             <div class="meta-text truncate">{{ (a.cameras || []).join(', ') }} · {{ t('sentinel.approvals.expiresAt', { time: relative(a.expires_at, locale) }) }}</div>

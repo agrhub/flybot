@@ -70,7 +70,7 @@ const languageFor = (user, lang) => normalizeLanguage(['vi', 'en'].includes(lang
 
 function decisionsOf(snap, lang) {
     return (snap.lambda?.proposals || []).map(p => ({
-        rule: p.action || 'proposal',
+        rule: p.rule || p.action || 'proposal',
         action: p.action || 'proposal',
         reasons: [reasonIn(p, lang), Number.isFinite(p.confidence) ? `confidence ${p.confidence}` : null].filter(Boolean),
         params: p.params || {}

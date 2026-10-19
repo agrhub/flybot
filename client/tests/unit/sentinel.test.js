@@ -140,6 +140,9 @@ describe('Sentinel traces', () => {
     expect(wrapper.find('[data-test="count-opencv"]').text()).not.toBe('');
     expect(wrapper.findAll('[data-test="decision-item"]').some((d) => d.text().includes('card.full'))).toBe(true);
     expect(wrapper.findAll('[data-test="tool-call"]').some((c) => c.text().includes('propose_card_change'))).toBe(true);
+    // Each step reads in words, its tool name kept beside it
+    expect(wrapper.findAll('[data-test="tool-call"]').some((c) => c.text().includes('OpenCV 5 analysis') && c.text().includes('analyze_trap_photo'))).toBe(true);
+    expect(wrapper.findAll('[data-test="tool-call"]').some((c) => c.text().includes('Card change proposal'))).toBe(true);
     expect(wrapper.find('[data-test="approval-box"]').text()).toContain('Waiting');
     // Every picture comes from /api/sentinel/ui/evidence, never a presigned S3 URL
     const html = wrapper.html();

@@ -82,7 +82,7 @@
           <li v-for="(d, i) in trace.decisions || []" :key="i" data-test="decision-item">
             <div class="flex flex-wrap items-center gap-1.5">
               <el-tag type="info" effect="plain" size="small" class="font-mono">{{ d.rule }}</el-tag>
-              <span class="body-text font-semibold">{{ d.action }}</span>
+              <span class="body-text font-semibold">{{ actionName(d.action) }}</span>
             </div>
             <ul v-if="d.reasons?.length" class="meta-text trace-reasons">
               <li v-for="(r, j) in d.reasons" :key="j">{{ r }}</li>
@@ -119,7 +119,8 @@
             data-test="tool-call"
           >
             <div class="flex flex-wrap items-center gap-1.5">
-              <span class="body-text font-semibold font-mono">{{ c.name }}</span>
+              <span class="body-text font-semibold">{{ toolName(c.name) }}</span>
+              <span v-if="toolName(c.name) !== c.name" class="meta-text font-mono">{{ c.name }}</span>
               <el-tag :type="TOOL_TAG[c.status] || 'info'" effect="light" size="small" round>{{ toolStatus(c.status) }}</el-tag>
               <el-tag v-if="c.by === 'guardrail'" type="info" effect="plain" size="small" round>{{ t('sentinel.traces.byGuardrail') }}</el-tag>
             </div>
@@ -234,6 +235,8 @@ const issueLabel = (i) => (te(`sentinel.issue.${i}`) ? t(`sentinel.issue.${i}`) 
 const toolStatus = (s) => (te(`sentinel.traces.toolStatus.${s}`) ? t(`sentinel.traces.toolStatus.${s}`) : s);
 const approvalStatus = (s) => (te(`sentinel.approvals.status.${s}`) ? t(`sentinel.approvals.status.${s}`) : s);
 const kindName = (k) => (te(`sentinel.approvals.kind.${k}`) ? t(`sentinel.approvals.kind.${k}`) : k);
+const toolName = (n) => (te(`sentinel.tools.${n}`) ? t(`sentinel.tools.${n}`) : n);
+const actionName = (a) => (te(`sentinel.actions.${a}`) ? t(`sentinel.actions.${a}`) : a);
 const eventTag = (kind) => (/block|revert|fallback|expired/.test(kind) ? 'warning' : 'info');
 </script>
 

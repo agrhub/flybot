@@ -13,6 +13,18 @@ const sentinelUi = require('../services/sentinelUiService');
  */
 // Counting every snapshot is slow on a big history and the numbers change slowly
 const usageCache = createTtlCache({ ttlMs: 10 * 60 * 1000, maxEntries: 1000 });
+const modelCache = createTtlCache({ ttlMs: 10 * 60 * 1000, maxEntries: 1 });
+
+/** The OpenCV Lambda's detector as its latest answer named it ("yolo26n 2026-10-16 · opencv-5.0.0-dnn-new"), or null */
+async function visionModelName() {
+    const cached = modelCache.get('model');
+    if (cached !== undefined) return cached;
+    const snap = await Snapshot.findOne({ 'lambda.model.name': { $exists: true } }).sort({ createdAt: -1 }).select('lambda.model').lean();
+    const m = snap?.lambda?.model;
+    const name = m ? [[m.name, m.version].filter(Boolean).join(' '), m.engine].filter(Boolean).join(' · ') : null;
+    if (name) modelCache.set('model', name); // nothing analyzed yet: ask again next time
+    return name;
+}
 
 async function getSystemInfo(req, res) {
     try {
@@ -44,8 +56,8 @@ async function getSystemInfo(req, res) {
                 },
                 ai: {
                     provider,
-                    // Only meaningful for Vertex; Roboflow runs a hosted workflow
-                    model: provider === 'roboflow' || provider === 'sentinel' ? null : VERTEX_MODEL
+                    // The detector for the OpenCV Lambda (from its latest answer), the Gemini model for Vertex; Roboflow runs a hosted workflow
+                    model: provider === 'opencv-lambda' ? await visionModelName() : provider === 'roboflow' || provider === 'sentinel' ? null : VERTEX_MODEL
                 },
                 // Lets the client show or hide the Telegram option
                 telegram: {

@@ -733,7 +733,7 @@
     "darkTheme": "Chế độ tối",
     "lightTheme": "Chế độ sáng",
     "langSub": "Ngôn ngữ giao diện ứng dụng",
-    "storageSub": "Thông tin hạ tầng lưu trữ S3 MinIO và mô hình phân tích Google Vertex AI",
+    "storageSub": "Nơi lưu ảnh và mô hình phân tích ảnh",
     "storageModel": "Mô hình AI Thị giác",
     "storageRetention": "Chu kỳ lưu trữ tự động",
     "termsSub": "Quy định sử dụng hệ thống giám sát và bảo mật dữ liệu nông nghiệp",
@@ -778,7 +778,8 @@
       "vertex": "Google Vertex AI (Gemini)",
       "roboflow": "Quy trình nhận diện Roboflow",
       "both": "Vertex AI + Roboflow",
-      "sentinel": "FlyBot Sentinel (OpenCV 5)"
+      "sentinel": "FlyBot Sentinel (OpenCV 5)",
+      "opencv-lambda": "OpenCV 5 trên AWS Lambda"
     },
     "usageSnapshots": "Ảnh của bạn",
     "usageSnapshotsValue": "{snapshots} ảnh ({analyzed} đã phân tích) từ {cameras} camera",
@@ -3223,7 +3224,11 @@
       "request_human_review": "Nhờ người xem",
       "schedule_followup": "Theo dõi tiếp",
       "neighbour_check": "Kiểm tra bẫy lân cận",
-      "keep": "Giữ cài đặt"
+      "keep": "Giữ cài đặt",
+      "capture_now": "Chụp thêm ảnh",
+      "set_interval": "Chu kỳ chụp",
+      "review_request": "Nhờ người kiểm tra",
+      "notify": "Thông báo"
     },
     "loops": {
       "per_photo": "Từng ảnh",
@@ -3239,7 +3244,8 @@
       "dirty": "Bẩn ống kính",
       "ir": "Hồng ngoại ban đêm",
       "occluded": "Bị che",
-      "camera_moved": "Camera bị xê dịch"
+      "camera_moved": "Camera bị xê dịch",
+      "trap_missing": "Không thấy bẫy"
     },
     "traces": {
       "title": "Nhật ký xử lý",
@@ -3462,6 +3468,25 @@
       "perOp": "Theo từng bước (ms)",
       "op": "Bước",
       "raw": "Dữ liệu gốc"
+    },
+    "tools": {
+      "load": "Tải ảnh",
+      "analyze_trap_photo": "Phân tích OpenCV 5",
+      "compare_with_previous": "So với ảnh trước",
+      "get_trap_history": "Lịch sử bẫy",
+      "get_neighbors": "Bẫy lân cận",
+      "get_degree_day_outlook": "Dự báo ngày-độ",
+      "get_weather": "Thời tiết",
+      "capture": "Chụp thêm ảnh",
+      "set_image": "Cài đặt ảnh camera",
+      "set_detection_roi": "Vùng nhận dạng",
+      "set_capture_schedule": "Lịch chụp",
+      "propose_card_change": "Đề xuất thay thẻ",
+      "propose_treatment": "Đề xuất xử lý",
+      "request_human_review": "Nhờ người xem lại",
+      "schedule_followup": "Theo dõi lại",
+      "llm": "Trợ lý AI lập kế hoạch",
+      "planner": "Bộ lập kế hoạch"
     }
   },
   "claim": {
