@@ -54,6 +54,12 @@ const deviceSchema = new mongoose.Schema({
     net: { type: String, default: undefined }, // wifi | 4g
     rssi: { type: Number, default: undefined },
     battery: { type: mongoose.Schema.Types.Mixed, default: undefined }, // { mv, pct, charging, solarMv }
+    // 4G modem (state net.cell), kept when the camera is on Wi-Fi again; hardware revision (firmware 0.7.0+)
+    imei: { type: String, default: undefined },
+    iccid: { type: String, default: undefined },
+    operator: { type: String, default: undefined },
+    hw: { type: String, default: undefined },
+    mac: { type: String, default: undefined },
     location: { type: mongoose.Schema.Types.Mixed, default: undefined }, // { lat, lng, fixAt }
     power: { type: mongoose.Schema.Types.Mixed, default: undefined }, // { mode: auto | battery | powered }
     sleeping: { type: Boolean, default: undefined },
@@ -87,6 +93,24 @@ const cameraSchema = new mongoose.Schema({
     unclaimed: { type: Boolean, default: undefined },
     claimedAt: { type: Date, default: undefined },
     sharedWith: { type: [shareSchema], default: [] },
+    // Paused by an admin (services/fleetService.js): no captures, uploads, live view or Sentinel actions;
+    // the owner sees the reason. Unset = in service
+    adminDisabled: {
+        type: new mongoose.Schema({
+            at: { type: Date, required: true },
+            by: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: undefined },
+            reason: { type: String, default: '' }
+        }, { _id: false }),
+        default: undefined
+    },
+    // The owner's firmware choices (services/firmwareService.js)
+    firmware: {
+        // Install a new current release by itself, around autoHour (farm time)
+        autoUpdate: { type: Boolean, default: undefined },
+        autoHour: { type: Number, min: 0, max: 23, default: undefined },
+        // The newest release the owner was told about (one notice per release)
+        notifiedVersion: { type: String, default: undefined }
+    },
     validateCode: { type: String, default: '' },
     deviceName: { type: String, default: 'Camera' },
     deviceType: { type: String, default: '' },

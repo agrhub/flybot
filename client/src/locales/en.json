@@ -537,6 +537,12 @@
       "tag": "Demo",
       "hint": "A demo camera: you can look at its photos, counts and analysis, but not change it.",
       "liveClosed": "Live view of this demo camera is not open to visitors. Its photos and analysis are in the detail view."
+    },
+    "paused": {
+      "tag": "Paused",
+      "title": "This camera is paused by an administrator",
+      "desc": "It takes no photos and live view is closed until it is resumed. Its photos and history stay available.",
+      "reason": "Reason: {reason}. It takes no photos and live view is closed until it is resumed."
     }
   },
   "analytics": {
@@ -1489,6 +1495,26 @@
       "upgrade_decided": {
         "title": "Your upgrade request",
         "desc": "Your request for {plan} was {outcome}. {note}"
+      },
+      "firmware_available": {
+        "title": "New firmware",
+        "desc": "Firmware {version} is ready for {camera} (now {current})."
+      },
+      "firmware_updated": {
+        "title": "Firmware updated",
+        "desc": "{camera} now runs firmware {version}."
+      },
+      "firmware_failed": {
+        "title": "Firmware update failed",
+        "desc": "{camera} could not install {version} and keeps running {from}."
+      },
+      "camera_disabled": {
+        "title": "Camera paused",
+        "desc": "An administrator paused {camera}. {reason}"
+      },
+      "camera_enabled": {
+        "title": "Camera resumed",
+        "desc": "{camera} is back in service."
       }
     }
   },
@@ -1575,7 +1601,7 @@
       "deleted": "Account deleted."
     },
     "cameras": {
-      "tab": "All cameras",
+      "tab": "Camera fleet",
       "title": "All cameras",
       "subtitle": "Every camera registered in FlyBot, with its owner. Each device can be registered only once.",
       "search": "Search by name, serial or owner email",
@@ -1685,7 +1711,8 @@
         "vietgapMonthly": "Monthly VietGAP record",
         "harvestReminders": "Harvest reminders",
         "weatherAlerts": "Weather warnings",
-        "orgDigests": "Members to visit"
+        "orgDigests": "Members to visit",
+        "firmware": "Firmware updates"
       },
       "jobSchedules": {
         "capture": "Every 5 minutes",
@@ -1702,7 +1729,8 @@
         "vietgapMonthly": "Monthly, the 1st at 7:00",
         "harvestReminders": "Daily at 6:00",
         "weatherAlerts": "Daily at 17:00",
-        "orgDigests": "Monday, 7:00"
+        "orgDigests": "Monday, 7:00",
+        "firmware": "Every 5 minutes"
       },
       "results": {
         "cameras": "{n} camera(s)",
@@ -1830,6 +1858,189 @@
       "guest": "Guest access",
       "guestDesc": "Shows a Guest access button on the sign-in page. It opens one shared, read-only account for 2 hours that sees the demo cameras and, if shown, the simulated farm, so customer accounts need not see the demo.",
       "audienceGuest": "Only the guest account"
+    },
+    "fleet": {
+      "title": "Camera fleet",
+      "subtitle": "Every camera in FlyBot: owner, state, place, model, firmware and the 4G modem. Pause a camera, move it to another owner or update its firmware.",
+      "search": "Search by name, serial, IMEI, place or owner email",
+      "platform": "Platform",
+      "state": "State",
+      "model": "Model",
+      "outdatedOnly": "Older firmware only",
+      "states": {
+        "online": "Online",
+        "offline": "Offline",
+        "sleeping": "Sleeping",
+        "disabled": "Paused",
+        "unclaimed": "Not claimed"
+      },
+      "imei": "IMEI",
+      "iccid": "ICCID (SIM)",
+      "operator": "Mobile operator",
+      "network": "Network",
+      "battery": "Battery",
+      "mac": "MAC",
+      "registry": "Serial registry",
+      "inRegistry": "Registered",
+      "notInRegistry": "Not in the registry",
+      "lastCapture": "Last photo",
+      "added": "Added",
+      "pausedReason": "Paused",
+      "paused": "Paused",
+      "location": "Place",
+      "hardware": "Model / hardware",
+      "hwVersion": "HW {v}",
+      "firmware": "Firmware",
+      "newer": "{v} available",
+      "verifyCode": "Verify code",
+      "reveal": "Show the code",
+      "revealConfirm": "Show the verify code of {name}? Anyone with the serial and this code can add the camera to an account. This is recorded in the audit log.",
+      "codeOf": "Verify code of {serial}",
+      "updateFirmware": "Update firmware",
+      "updateSelected": "Update firmware ({n})",
+      "pause": "Pause camera",
+      "resume": "Resume camera",
+      "pauseTitle": "Pause {name}",
+      "pauseHint": "A paused camera takes no photos, uploads nothing and opens no live view until it is resumed. Its owner is told, with your reason. Photos and history stay.",
+      "pauseReason": "Reason (shown to the owner)",
+      "pauseReasonHint": "For example: the subscription has ended",
+      "pausedDone": "Camera paused.",
+      "resumeConfirm": "Resume {name}? It takes photos on its schedule again.",
+      "resumedDone": "Camera resumed.",
+      "charging": "charging",
+      "powered": "mains power"
+    },
+    "registry": {
+      "tab": "Serial registry",
+      "title": "Serial registry",
+      "subtitle": "Cameras made or bought for sale, with the verify code on their label. A customer adds one with its serial and code.",
+      "strict": "Only registered serials",
+      "strictOn": "Customers can only add cameras whose serial is in this registry.",
+      "strictOff": "A registered serial needs its code and must not be blocked; other serials (self-built cameras) can still be added.",
+      "strictConfirm": "Only serials in the registry can then be added to an account. Put the cameras already in use into the registry first (\"Add existing cameras\"). Turn it on?",
+      "countTotal": "{n} serials",
+      "countAvailable": "{n} not sold",
+      "countClaimed": "{n} in use",
+      "countDisabled": "{n} blocked",
+      "backfill": "Add existing cameras",
+      "backfilled": "{n} cameras added to the registry.",
+      "search": "Search serial, batch, model or note",
+      "status": "Status",
+      "statuses": {
+        "available": "Not sold",
+        "claimed": "In use",
+        "disabled": "Blocked"
+      },
+      "batch": "Batch",
+      "empty": "No serials yet. Add them one by one or import a CSV file.",
+      "camera": "Camera",
+      "notConnected": "Not connected yet",
+      "add": "Add serial",
+      "editTitle": "Edit {serial}",
+      "keepCode": "Leave empty to keep the code",
+      "hwVersion": "Hardware version",
+      "note": "Note",
+      "labelHint": "The verify code is printed on the camera's label and shown by its console. Customers type both to add the camera.",
+      "block": "Block serial",
+      "unblock": "Unblock serial",
+      "blockHint": "A blocked serial cannot be added to an account or register itself (lost, stolen or returned stock).",
+      "deleteConfirm": "Remove {serial} from the registry?",
+      "import": "Import",
+      "importHint": "One camera per line: serial, verifyCode, model, hwVersion, batch, note (a header line is optional), or the label QR text CAMOS:1;SN:...;VC:...;M:...;;",
+      "pickFile": "Choose a CSV file",
+      "fileTooLarge": "The file is larger than 1 MB.",
+      "batchForAll": "Batch for rows without one",
+      "overwrite": "Update serials already in the registry",
+      "check": "Check",
+      "importNow": "Import",
+      "previewResult": "Ready: {created} new, {updated} updated, {skipped} already there, {errors} errors.",
+      "importResult": "Imported: {created} new, {updated} updated, {skipped} skipped, {errors} errors.",
+      "line": "Line",
+      "rowErrors": {
+        "bad_serial": "Serial is not valid",
+        "bad_code": "Verify code does not fit the serial",
+        "bad_model": "Model is not valid",
+        "too_long": "A field is too long",
+        "duplicate": "Same serial twice in the file",
+        "claimed": "In use: its code cannot change"
+      }
+    },
+    "firmware": {
+      "tab": "Firmware",
+      "title": "Firmware",
+      "subtitle": "Firmware builds for CamOS cameras, the current release of each model, and the updates of each camera.",
+      "add": "Add firmware",
+      "addNow": "Add",
+      "releases": "Releases",
+      "noReleases": "No firmware yet. Import a camos-esp32-trap release from GitHub or upload an update image.",
+      "version": "Version",
+      "current": "Current",
+      "file": "File",
+      "sources": {
+        "upload": "Uploaded",
+        "url": "From a link",
+        "github": "GitHub"
+      },
+      "cameras": "Cameras on it",
+      "added": "Added",
+      "makeCurrent": "Make current",
+      "makeCurrentConfirm": "Make {model} {version} the current release? Owners of cameras on older firmware are told, and cameras with automatic updates install it.",
+      "announced": "Current release set: {notified} owners told, {scheduled} automatic updates scheduled.",
+      "rolloutModel": "Update cameras",
+      "editNotes": "Release notes",
+      "notesVi": "Release notes (Vietnamese)",
+      "notesEn": "Release notes (English)",
+      "minBattery": "Minimum battery to install (%)",
+      "deleteConfirm": "Delete {model} {version}?",
+      "fromGithub": "GitHub release",
+      "githubTag": "Release tag",
+      "repo": "Repository",
+      "githubHint": "FlyBot downloads the update image of each board and checks it against the release's SHA256SUMS.",
+      "fromFile": "Upload a file",
+      "pickFile": "Choose the -update.bin file",
+      "shaOptional": "Optional: the SHA-256 to check against",
+      "fromUrl": "From a link",
+      "url": "Link to the image",
+      "board": "Board",
+      "importStatus": {
+        "added": "Added",
+        "exists": "Already there",
+        "failed": "Failed"
+      },
+      "updates": "Updates",
+      "batch": "Rollout",
+      "openOnly": "In progress",
+      "batchCounts": "{ok} done, {failed} failed, {open} in progress, of {total}",
+      "noUpdates": "No firmware updates yet.",
+      "source": "Asked by",
+      "updatedAt": "Last change",
+      "retry": "Try again",
+      "retried": "The update will be sent again.",
+      "rolloutTitle": "Update firmware",
+      "release": "Firmware",
+      "pickRelease": "Choose a build",
+      "targets": "Cameras",
+      "allOfModel": "Every {model} camera",
+      "selectedCameras": "{n} selected cameras",
+      "outdatedOnly": "Skip cameras already on this version or newer",
+      "mixedModels": "The selection has several models: cameras of another model than this build are skipped.",
+      "noReleaseForModel": "There is no firmware for the model of these cameras yet.",
+      "rolloutHint": "Each camera installs when it is awake and has enough battery (or is on mains power), then restarts. If the new firmware fails to connect, the camera goes back to its old version by itself.",
+      "rolloutConfirm": "Update {n} cameras to {version}? They restart after the install.",
+      "rolloutConfirmModel": "Update every {model} camera to {version}? They restart after the install.",
+      "startRollout": "Start update",
+      "rolloutStarted": "{n} cameras will be updated",
+      "rolloutSkipped": "{n} left out",
+      "reason": "Why",
+      "skip": {
+        "up_to_date": "Already on this version or newer",
+        "model_mismatch": "Another model",
+        "not_camos": "Not a CamOS camera",
+        "simulated": "Simulated camera",
+        "busy": "Another update is in progress",
+        "not_found": "No such camera",
+        "already_queued": "Already waiting for this update"
+      }
     }
   },
   "dashboards": {
@@ -3517,5 +3728,66 @@
   "guest": {
     "banner": "Guest access: a read-only demo. This session ends at {time}.",
     "bannerNoTime": "Guest access: a read-only demo. This session ends after 2 hours."
+  },
+  "firmware": {
+    "title": "Firmware",
+    "available": "Update available",
+    "upToDate": "Up to date",
+    "check": "Check for update",
+    "foundNew": "Firmware {v} is available.",
+    "noNew": "The camera runs the latest firmware.",
+    "install": "Install {v}",
+    "installNow": "Install",
+    "running": "Running",
+    "latest": "Latest",
+    "none": "No firmware information yet.",
+    "ezvizHint": "EZVIZ cameras get their firmware from EZVIZ: update them in the EZVIZ app.",
+    "whatsNew": "What is new in {v}",
+    "auto": "Install updates automatically",
+    "autoAround": "around",
+    "autoOn": "Automatic updates are on.",
+    "autoOff": "Automatic updates are off.",
+    "autoQueued": "Automatic updates are on: the new firmware installs at the chosen hour.",
+    "batteryHint": "A camera on battery installs only while awake with at least {pct}% charge (or while charging). It restarts after the install.",
+    "confirmTitle": "Install firmware",
+    "confirmText": "Install firmware {to} on {name} (now {from})? The camera downloads it, restarts and is back in 2 to 5 minutes.",
+    "confirmBattery": "On battery it waits until it is awake with enough charge.",
+    "queued": "The update waits for the camera to wake up.",
+    "started": "The camera is installing the update.",
+    "states": {
+      "pending": "Waiting",
+      "sent": "Sent",
+      "installing": "Installing",
+      "rebooting": "Restarting",
+      "succeeded": "Updated",
+      "failed": "Failed",
+      "rolled_back": "Rolled back",
+      "cancelled": "Cancelled"
+    },
+    "wait": {
+      "offline": "until the camera is online",
+      "sleeping": "until the camera wakes up",
+      "battery_low": "for more battery",
+      "outside_hour": "for the chosen hour",
+      "disabled": "while the camera is paused"
+    },
+    "sources": {
+      "admin": "Administrator",
+      "owner": "Owner",
+      "auto": "Automatic"
+    },
+    "errors": {
+      "DOWNLOAD_FAILED": "The download failed",
+      "SIGNATURE_INVALID": "The image did not match its checksum",
+      "ROLLED_BACK": "The new firmware did not start; the camera went back to its old version",
+      "TIMEOUT": "No report from the camera after the install",
+      "NO_ANSWER": "The camera did not answer",
+      "SEND_FAILED": "The request could not be sent",
+      "NOT_FOUND": "The camera found no update to install",
+      "NOT_SUPPORTED": "This camera cannot update remotely",
+      "LOW_BATTERY": "Battery too low",
+      "GONE": "The camera or the firmware was removed",
+      "ERROR": "The camera reported an error"
+    }
   }
 }

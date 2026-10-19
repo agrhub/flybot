@@ -144,6 +144,8 @@ async function finishSnapshot(savedDoc, buffer, { picUrl = null } = {}) {
 async function captureAndSaveSnapshot(deviceSerial, { trigger } = {}) {
     try {
         // Record the attempt first, so an offline camera is retried on its normal cadence, not every tick
+        // A camera an admin paused takes no photo (cron, "Capture now", Sentinel)
+        if (await require('../services/fleetService').serialDisabled(deviceSerial)) return null;
         if (trigger !== 'sentinel') await Camera.updateMany({ deviceSerial }, { $set: { lastCaptureAt: new Date() } });
 
         const platform = await platforms.forSerial(deviceSerial);
@@ -207,7 +209,7 @@ async function autoCaptureDueCameras() {
     try {
         // CamOS cameras take their photos by their own schedule (shadow capture.intervalMin) and
         // upload them to the device API: only EZVIZ cameras are polled here
-        const cameras = await Camera.find({ $or: [{ platform: 'ezviz' }, { platform: { $exists: false } }] })
+        const cameras = await Camera.find({ $or: [{ platform: 'ezviz' }, { platform: { $exists: false } }], 'adminDisabled.at': { $exists: false } })
             .select('deviceSerial captureIntervalMinutes captureDaytimeOnly lastCaptureAt sentinelInterval');
         let due = dueSerials(cameras, new Date());
         // Each workspace plan allows so many photos per camera a day (services/entitlements.js)

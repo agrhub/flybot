@@ -87,6 +87,26 @@
       "upgrade_outcome": {
         "approved": "chấp thuận",
         "rejected": "từ chối"
+      },
+      "firmware_available": {
+        "subject": "⬆️ Có firmware mới {version} cho {camera}",
+        "body": "Firmware {version} đã sẵn sàng cho camera {camera} ({deviceSerial}), camera đang chạy bản {current}. Mở phần cài đặt camera trong FlyBot để xem thay đổi và cài đặt, hoặc bật tự động cập nhật."
+      },
+      "firmware_updated": {
+        "subject": "✅ {camera} đã chạy firmware {version}",
+        "body": "Camera {camera} ({deviceSerial}) đã cài firmware {version} và khởi động lại."
+      },
+      "firmware_failed": {
+        "subject": "⚠️ Cập nhật firmware cho {camera} chưa hoàn tất",
+        "body": "Camera {camera} ({deviceSerial}) chưa cài được firmware {version} ({error}). Camera vẫn chạy bản {from}. Bạn có thể thử lại trong phần cài đặt camera."
+      },
+      "camera_disabled": {
+        "subject": "⏸️ Camera {camera} đã bị quản trị viên tạm dừng",
+        "body": "Quản trị viên đã tạm dừng camera {camera} ({deviceSerial}): camera không chụp ảnh và không xem trực tiếp được cho tới khi được bật lại. Ảnh và lịch sử của bạn vẫn còn nguyên. {reason}"
+      },
+      "camera_enabled": {
+        "subject": "▶️ Camera {camera} đã hoạt động trở lại",
+        "body": "Quản trị viên đã bật lại camera {camera} ({deviceSerial}). Camera chụp ảnh theo lịch như trước."
       }
     },
     "cameraShared": {
@@ -517,7 +537,58 @@
     "guest_read_only": "Tài khoản khách chỉ được xem.",
     "guest_access_off": "Chức năng truy cập cho khách đang tắt.",
     "guest_too_many_here": "Có quá nhiều phiên khách từ địa chỉ này. Vui lòng thử lại sau.",
-    "guest_too_many": "Có quá nhiều phiên khách. Vui lòng thử lại sau."
+    "guest_too_many": "Có quá nhiều phiên khách. Vui lòng thử lại sau.",
+    "registry_not_registered": "Số serial này chưa được đăng ký. Hãy kiểm tra nhãn hoặc hỏi người bán.",
+    "registry_serial_blocked": "Số serial camera này đã bị khoá. Hãy liên hệ người bán.",
+    "registry_device_blocked": "Số serial này đã bị khoá.",
+    "registry_device_taken": "Số serial này đã được đăng ký.",
+    "registry_bad_serial": "Số serial phải gồm 3 đến 64 chữ cái, chữ số, - hoặc _.",
+    "registry_bad_code": "Mã xác minh không hợp với số serial này (serial ESP: 6 ký tự Crockford base32).",
+    "registry_bad_model": "Mẫu máy không hợp lệ.",
+    "registry_too_long": "Phiên bản phần cứng, lô hoặc ghi chú quá dài.",
+    "registry_exists": "Số serial này đã có trong sổ.",
+    "registry_not_found": "Số serial này không có trong sổ.",
+    "registry_code_locked": "Không đổi được mã của camera đã nằm trong một tài khoản.",
+    "registry_in_account": "Camera này đã nằm trong một tài khoản: hãy khoá số serial thay vì xoá.",
+    "registry_csv_required": "Cần nội dung CSV.",
+    "registry_too_many_rows": "Mỗi lần nhập tối đa {n} dòng.",
+    "fleet_simulated_pause": "Không tạm dừng được camera mô phỏng.",
+    "fleet_camera_paused": "Camera này đang bị quản trị viên tạm dừng.",
+    "firmware_confirm_first": "Hãy xác nhận cập nhật trước.",
+    "firmware_bad_version": "Phiên bản phải có dạng 0.7.0.",
+    "firmware_too_small": "Tệp quá nhỏ, không phải ảnh firmware.",
+    "firmware_too_large": "Tệp lớn hơn vùng firmware của mẫu máy này.",
+    "firmware_not_esp": "Tệp không phải ảnh ứng dụng ESP32 (hãy dùng tệp -update.bin).",
+    "firmware_sha_mismatch": "Tệp không khớp mã SHA-256 đã nhập.",
+    "firmware_exists": "Mẫu máy này đã có phiên bản này.",
+    "firmware_bad_url": "Địa chỉ phải là http(s).",
+    "firmware_bad_sha": "SHA-256 phải gồm 64 chữ số hex.",
+    "firmware_download_failed": "Không tải được firmware.",
+    "firmware_bad_tag": "Nhãn phiên bản GitHub phải có dạng v0.7.0.",
+    "firmware_bad_repo": "Kho mã phải có dạng chủ/tên.",
+    "firmware_release_unreadable": "Không đọc được bản phát hành hoặc tệp SHA256SUMS của nó.",
+    "firmware_no_images": "Bản phát hành không có ảnh cập nhật nào trong SHA256SUMS.",
+    "firmware_not_found": "Không tìm thấy firmware.",
+    "firmware_bad_current": "Giá trị \"hiện hành\" phải là đúng hoặc sai.",
+    "firmware_bad_notes": "Ghi chú phải có dạng { en, vi }.",
+    "firmware_bad_battery": "Mức pin tối thiểu phải từ 0 đến 100.",
+    "firmware_delete_current": "Hãy đặt bản khác làm hiện hành trước khi xoá bản này.",
+    "firmware_in_use": "Vẫn còn camera đang cập nhật lên bản này.",
+    "firmware_rollout_targets": "Hãy chọn camera (tối đa 1000) hoặc tất cả camera của mẫu máy.",
+    "firmware_update_not_found": "Không tìm thấy lần cập nhật.",
+    "firmware_not_cancellable": "Chỉ huỷ được lần cập nhật chưa bắt đầu cài.",
+    "firmware_not_retryable": "Chỉ thử lại được lần cập nhật đã lỗi hoặc đã huỷ.",
+    "firmware_busy": "Camera này đang có một lần cập nhật chưa xong.",
+    "firmware_camos_only": "Chỉ camera CamOS được cập nhật qua FlyBot.",
+    "firmware_simulated": "Camera mô phỏng không có firmware.",
+    "firmware_no_release": "Chưa có bản firmware nào cho camera này.",
+    "firmware_up_to_date": "Camera đã chạy firmware mới nhất.",
+    "firmware_incompatible": "Camera này không nhận được firmware này.",
+    "firmware_bad_enabled": "Giá trị bật/tắt phải là đúng hoặc sai.",
+    "firmware_bad_hour": "Giờ phải từ 0 đến 23.",
+    "firmware_bad_multipart": "Dữ liệu tải lên không hợp lệ.",
+    "firmware_file_required": "Cần chọn tệp firmware.",
+    "firmware_source_required": "Hãy tải tệp lên, hoặc nhập địa chỉ hay tag GitHub."
   },
   "reportPdf": {
     "range": "Khoảng thời gian: {from} - {to} ({days} ngày)",

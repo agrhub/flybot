@@ -537,6 +537,12 @@
       "tag": "Trình diễn",
       "hint": "Camera trình diễn: bạn xem được ảnh, số đếm và phân tích, nhưng không thay đổi được.",
       "liveClosed": "Camera trình diễn này chưa mở xem trực tiếp cho khách. Ảnh và phân tích có trong phần chi tiết."
+    },
+    "paused": {
+      "tag": "Tạm dừng",
+      "title": "Camera này đang bị quản trị viên tạm dừng",
+      "desc": "Camera không chụp ảnh và không xem trực tiếp được cho tới khi được bật lại. Ảnh và lịch sử vẫn còn nguyên.",
+      "reason": "Lý do: {reason}. Camera không chụp ảnh và không xem trực tiếp được cho tới khi được bật lại."
     }
   },
   "analytics": {
@@ -1489,6 +1495,26 @@
       "upgrade_decided": {
         "title": "Yêu cầu nâng cấp của bạn",
         "desc": "Yêu cầu gói {plan} của bạn đã được {outcome}. {note}"
+      },
+      "firmware_available": {
+        "title": "Có firmware mới",
+        "desc": "Firmware {version} đã sẵn sàng cho {camera} (đang chạy {current})."
+      },
+      "firmware_updated": {
+        "title": "Đã cập nhật firmware",
+        "desc": "{camera} đã chạy firmware {version}."
+      },
+      "firmware_failed": {
+        "title": "Cập nhật firmware không thành công",
+        "desc": "{camera} chưa cài được {version} và vẫn chạy {from}."
+      },
+      "camera_disabled": {
+        "title": "Camera bị tạm dừng",
+        "desc": "Quản trị viên đã tạm dừng {camera}. {reason}"
+      },
+      "camera_enabled": {
+        "title": "Camera hoạt động trở lại",
+        "desc": "{camera} đã hoạt động trở lại."
       }
     }
   },
@@ -1575,7 +1601,7 @@
       "deleted": "Đã xóa tài khoản."
     },
     "cameras": {
-      "tab": "Tất cả camera",
+      "tab": "Đội camera",
       "title": "Tất cả camera",
       "subtitle": "Mọi camera đã đăng ký trên FlyBot cùng chủ sở hữu. Mỗi thiết bị chỉ được đăng ký một lần.",
       "search": "Tìm theo tên, số serial hoặc email chủ sở hữu",
@@ -1685,7 +1711,8 @@
         "vietgapMonthly": "Sổ VietGAP hằng tháng",
         "harvestReminders": "Nhắc hết cách ly",
         "weatherAlerts": "Cảnh báo thời tiết",
-        "orgDigests": "Hộ cần thăm vườn"
+        "orgDigests": "Hộ cần thăm vườn",
+        "firmware": "Cập nhật firmware"
       },
       "jobSchedules": {
         "capture": "Mỗi 5 phút",
@@ -1702,7 +1729,8 @@
         "vietgapMonthly": "Hằng tháng, ngày 1 lúc 7:00",
         "harvestReminders": "Hằng ngày lúc 6:00",
         "weatherAlerts": "Hằng ngày lúc 17:00",
-        "orgDigests": "Thứ Hai, 7:00"
+        "orgDigests": "Thứ Hai, 7:00",
+        "firmware": "5 phút một lần"
       },
       "results": {
         "cameras": "{n} camera",
@@ -1830,6 +1858,189 @@
       "guest": "Truy cập cho khách",
       "guestDesc": "Hiện nút \"Vào xem với tư cách khách\" ở trang đăng nhập. Nút này mở một tài khoản dùng chung, chỉ xem, trong 2 giờ; tài khoản đó thấy camera trình diễn và (nếu bật) vườn mô phỏng, nên tài khoản khách hàng không cần thấy phần trình diễn.",
       "audienceGuest": "Chỉ tài khoản khách"
+    },
+    "fleet": {
+      "title": "Đội camera",
+      "subtitle": "Mọi camera trên FlyBot: chủ sở hữu, trạng thái, vị trí, mẫu máy, firmware và modem 4G. Tạm dừng camera, chuyển cho chủ khác hoặc cập nhật firmware.",
+      "search": "Tìm theo tên, số serial, IMEI, vị trí hoặc email chủ sở hữu",
+      "platform": "Nền tảng",
+      "state": "Trạng thái",
+      "model": "Mẫu máy",
+      "outdatedOnly": "Chỉ firmware cũ",
+      "states": {
+        "online": "Trực tuyến",
+        "offline": "Mất kết nối",
+        "sleeping": "Đang ngủ",
+        "disabled": "Tạm dừng",
+        "unclaimed": "Chưa có chủ"
+      },
+      "imei": "IMEI",
+      "iccid": "ICCID (SIM)",
+      "operator": "Nhà mạng",
+      "network": "Mạng",
+      "battery": "Pin",
+      "mac": "MAC",
+      "registry": "Sổ serial",
+      "inRegistry": "Đã đăng ký",
+      "notInRegistry": "Không có trong sổ",
+      "lastCapture": "Ảnh gần nhất",
+      "added": "Ngày thêm",
+      "pausedReason": "Tạm dừng",
+      "paused": "Tạm dừng",
+      "location": "Vị trí",
+      "hardware": "Mẫu máy / phần cứng",
+      "hwVersion": "Phần cứng {v}",
+      "firmware": "Firmware",
+      "newer": "Có bản {v}",
+      "verifyCode": "Mã xác minh",
+      "reveal": "Hiện mã",
+      "revealConfirm": "Hiện mã xác minh của {name}? Ai có số serial và mã này đều thêm được camera vào tài khoản. Thao tác này được ghi vào nhật ký kiểm toán.",
+      "codeOf": "Mã xác minh của {serial}",
+      "updateFirmware": "Cập nhật firmware",
+      "updateSelected": "Cập nhật firmware ({n})",
+      "pause": "Tạm dừng camera",
+      "resume": "Bật lại camera",
+      "pauseTitle": "Tạm dừng {name}",
+      "pauseHint": "Camera bị tạm dừng sẽ không chụp, không tải ảnh lên và không xem trực tiếp được cho tới khi bật lại. Chủ camera được báo kèm lý do của bạn. Ảnh và lịch sử vẫn giữ nguyên.",
+      "pauseReason": "Lý do (chủ camera sẽ thấy)",
+      "pauseReasonHint": "Ví dụ: gói dịch vụ đã hết hạn",
+      "pausedDone": "Đã tạm dừng camera.",
+      "resumeConfirm": "Bật lại {name}? Camera sẽ chụp theo lịch như trước.",
+      "resumedDone": "Đã bật lại camera.",
+      "charging": "đang sạc",
+      "powered": "nguồn điện lưới"
+    },
+    "registry": {
+      "tab": "Sổ serial",
+      "title": "Sổ serial",
+      "subtitle": "Các camera sản xuất hoặc nhập về để bán, kèm mã xác minh in trên nhãn. Khách hàng thêm camera bằng số serial và mã này.",
+      "strict": "Chỉ nhận serial đã đăng ký",
+      "strictOn": "Khách hàng chỉ thêm được camera có số serial trong sổ này.",
+      "strictOff": "Serial có trong sổ phải đúng mã và không bị khoá; serial khác (camera tự lắp) vẫn thêm được.",
+      "strictConfirm": "Khi bật, chỉ serial có trong sổ mới thêm được vào tài khoản. Hãy đưa các camera đang dùng vào sổ trước (\"Thêm camera hiện có\"). Bật chế độ này?",
+      "countTotal": "{n} serial",
+      "countAvailable": "{n} chưa bán",
+      "countClaimed": "{n} đang dùng",
+      "countDisabled": "{n} bị khoá",
+      "backfill": "Thêm camera hiện có",
+      "backfilled": "Đã đưa {n} camera vào sổ.",
+      "search": "Tìm serial, lô, mẫu máy hoặc ghi chú",
+      "status": "Tình trạng",
+      "statuses": {
+        "available": "Chưa bán",
+        "claimed": "Đang dùng",
+        "disabled": "Bị khoá"
+      },
+      "batch": "Lô",
+      "empty": "Chưa có serial nào. Thêm từng cái hoặc nhập tệp CSV.",
+      "camera": "Camera",
+      "notConnected": "Chưa kết nối",
+      "add": "Thêm serial",
+      "editTitle": "Sửa {serial}",
+      "keepCode": "Để trống để giữ mã cũ",
+      "hwVersion": "Phiên bản phần cứng",
+      "note": "Ghi chú",
+      "labelHint": "Mã xác minh in trên nhãn camera và hiện trong console của camera. Khách hàng nhập cả hai để thêm camera.",
+      "block": "Khoá serial",
+      "unblock": "Mở khoá serial",
+      "blockHint": "Serial bị khoá không thêm được vào tài khoản và không tự đăng ký được (hàng thất lạc, bị mất cắp hoặc bị trả lại).",
+      "deleteConfirm": "Xoá {serial} khỏi sổ?",
+      "import": "Nhập",
+      "importHint": "Mỗi dòng một camera: các cột serial, verifyCode, model, hwVersion, batch, note (dòng tiêu đề có hoặc không đều được), hoặc chuỗi QR trên nhãn CAMOS:1;SN:...;VC:...;M:...;;",
+      "pickFile": "Chọn tệp CSV",
+      "fileTooLarge": "Tệp lớn hơn 1 MB.",
+      "batchForAll": "Lô cho các dòng chưa ghi lô",
+      "overwrite": "Cập nhật serial đã có trong sổ",
+      "check": "Kiểm tra",
+      "importNow": "Nhập",
+      "previewResult": "Sẵn sàng: {created} mới, {updated} cập nhật, {skipped} đã có, {errors} lỗi.",
+      "importResult": "Đã nhập: {created} mới, {updated} cập nhật, {skipped} bỏ qua, {errors} lỗi.",
+      "line": "Dòng",
+      "rowErrors": {
+        "bad_serial": "Số serial không hợp lệ",
+        "bad_code": "Mã xác minh không hợp với số serial",
+        "bad_model": "Mẫu máy không hợp lệ",
+        "too_long": "Có trường quá dài",
+        "duplicate": "Số serial lặp lại trong tệp",
+        "claimed": "Đang dùng: không đổi được mã"
+      }
+    },
+    "firmware": {
+      "tab": "Firmware",
+      "title": "Firmware",
+      "subtitle": "Các bản firmware cho camera CamOS, bản hiện hành của từng mẫu máy, và các lần cập nhật của từng camera.",
+      "add": "Thêm firmware",
+      "addNow": "Thêm",
+      "releases": "Các bản phát hành",
+      "noReleases": "Chưa có firmware. Hãy nhập một bản phát hành camos-esp32-trap từ GitHub hoặc tải lên ảnh cập nhật.",
+      "version": "Phiên bản",
+      "current": "Hiện hành",
+      "file": "Tệp",
+      "sources": {
+        "upload": "Tải lên",
+        "url": "Từ đường dẫn",
+        "github": "GitHub"
+      },
+      "cameras": "Số camera đang chạy",
+      "added": "Ngày thêm",
+      "makeCurrent": "Đặt làm hiện hành",
+      "makeCurrentConfirm": "Đặt {model} {version} làm bản hiện hành? Chủ các camera đang chạy firmware cũ sẽ được báo, và camera bật tự động cập nhật sẽ tự cài.",
+      "announced": "Đã đặt bản hiện hành: báo cho {notified} chủ camera, lên lịch {scheduled} lần tự cập nhật.",
+      "rolloutModel": "Cập nhật camera",
+      "editNotes": "Ghi chú phát hành",
+      "notesVi": "Ghi chú phát hành (tiếng Việt)",
+      "notesEn": "Ghi chú phát hành (tiếng Anh)",
+      "minBattery": "Pin tối thiểu để cài (%)",
+      "deleteConfirm": "Xoá {model} {version}?",
+      "fromGithub": "Bản phát hành GitHub",
+      "githubTag": "Nhãn phiên bản",
+      "repo": "Kho mã",
+      "githubHint": "FlyBot tải ảnh cập nhật của từng board và đối chiếu với tệp SHA256SUMS của bản phát hành.",
+      "fromFile": "Tải tệp lên",
+      "pickFile": "Chọn tệp -update.bin",
+      "shaOptional": "Không bắt buộc: mã SHA-256 để đối chiếu",
+      "fromUrl": "Từ đường dẫn",
+      "url": "Đường dẫn tới ảnh firmware",
+      "board": "Bo mạch",
+      "importStatus": {
+        "added": "Đã thêm",
+        "exists": "Đã có",
+        "failed": "Lỗi"
+      },
+      "updates": "Các lần cập nhật",
+      "batch": "Đợt cập nhật",
+      "openOnly": "Đang thực hiện",
+      "batchCounts": "{ok} xong, {failed} lỗi, {open} đang chạy, trên tổng {total}",
+      "noUpdates": "Chưa có lần cập nhật firmware nào.",
+      "source": "Người yêu cầu",
+      "updatedAt": "Thay đổi gần nhất",
+      "retry": "Thử lại",
+      "retried": "Lần cập nhật sẽ được gửi lại.",
+      "rolloutTitle": "Cập nhật firmware",
+      "release": "Firmware",
+      "pickRelease": "Chọn bản firmware",
+      "targets": "Camera",
+      "allOfModel": "Tất cả camera {model}",
+      "selectedCameras": "{n} camera đã chọn",
+      "outdatedOnly": "Bỏ qua camera đã chạy bản này hoặc mới hơn",
+      "mixedModels": "Các camera đã chọn thuộc nhiều mẫu máy: camera khác mẫu máy với bản firmware này sẽ được bỏ qua.",
+      "noReleaseForModel": "Chưa có firmware cho mẫu máy của các camera này.",
+      "rolloutHint": "Mỗi camera cài khi đang thức và đủ pin (hoặc cắm điện), rồi khởi động lại. Nếu firmware mới không kết nối được, camera tự quay về bản cũ.",
+      "rolloutConfirm": "Cập nhật {n} camera lên {version}? Camera sẽ khởi động lại sau khi cài.",
+      "rolloutConfirmModel": "Cập nhật mọi camera {model} lên {version}? Camera sẽ khởi động lại sau khi cài.",
+      "startRollout": "Bắt đầu cập nhật",
+      "rolloutStarted": "{n} camera sẽ được cập nhật",
+      "rolloutSkipped": "{n} camera bỏ qua",
+      "reason": "Lý do",
+      "skip": {
+        "up_to_date": "Đã chạy bản này hoặc mới hơn",
+        "model_mismatch": "Khác mẫu máy",
+        "not_camos": "Không phải camera CamOS",
+        "simulated": "Camera mô phỏng",
+        "busy": "Đang có lần cập nhật khác",
+        "not_found": "Không có camera này",
+        "already_queued": "Đã chờ đúng lần cập nhật này"
+      }
     }
   },
   "dashboards": {
@@ -3517,5 +3728,66 @@
   "guest": {
     "banner": "Bạn đang xem với tư cách khách: chỉ xem, phiên kết thúc lúc {time}.",
     "bannerNoTime": "Bạn đang xem với tư cách khách: chỉ xem, phiên kết thúc sau 2 giờ."
+  },
+  "firmware": {
+    "title": "Firmware",
+    "available": "Có bản cập nhật",
+    "upToDate": "Mới nhất",
+    "check": "Kiểm tra cập nhật",
+    "foundNew": "Đã có firmware {v}.",
+    "noNew": "Camera đang chạy firmware mới nhất.",
+    "install": "Cài {v}",
+    "installNow": "Cài đặt",
+    "running": "Đang chạy",
+    "latest": "Mới nhất",
+    "none": "Chưa có thông tin firmware.",
+    "ezvizHint": "Camera EZVIZ nhận firmware từ EZVIZ: hãy cập nhật trong ứng dụng EZVIZ.",
+    "whatsNew": "Điểm mới trong {v}",
+    "auto": "Tự động cài bản mới",
+    "autoAround": "vào khoảng",
+    "autoOn": "Đã bật tự động cập nhật.",
+    "autoOff": "Đã tắt tự động cập nhật.",
+    "autoQueued": "Đã bật tự động cập nhật: firmware mới sẽ được cài vào giờ đã chọn.",
+    "batteryHint": "Camera chạy pin chỉ cài khi đang thức và còn ít nhất {pct}% pin (hoặc đang sạc). Camera khởi động lại sau khi cài.",
+    "confirmTitle": "Cài firmware",
+    "confirmText": "Cài firmware {to} cho {name} (đang chạy {from})? Camera sẽ tải về, khởi động lại và hoạt động trở lại sau 2 đến 5 phút.",
+    "confirmBattery": "Khi chạy pin, camera chờ tới lúc thức và đủ pin mới cài.",
+    "queued": "Lần cập nhật đang chờ camera thức dậy.",
+    "started": "Camera đang cài bản cập nhật.",
+    "states": {
+      "pending": "Đang chờ",
+      "sent": "Đã gửi",
+      "installing": "Đang cài",
+      "rebooting": "Đang khởi động lại",
+      "succeeded": "Đã cập nhật",
+      "failed": "Lỗi",
+      "rolled_back": "Đã quay về bản cũ",
+      "cancelled": "Đã huỷ"
+    },
+    "wait": {
+      "offline": "chờ camera trực tuyến",
+      "sleeping": "chờ camera thức dậy",
+      "battery_low": "chờ đủ pin",
+      "outside_hour": "chờ tới giờ đã chọn",
+      "disabled": "trong lúc camera bị tạm dừng"
+    },
+    "sources": {
+      "admin": "Quản trị viên",
+      "owner": "Chủ camera",
+      "auto": "Tự động"
+    },
+    "errors": {
+      "DOWNLOAD_FAILED": "Tải về không thành công",
+      "SIGNATURE_INVALID": "Ảnh firmware không khớp mã kiểm tra",
+      "ROLLED_BACK": "Firmware mới không khởi động được; camera đã quay về bản cũ",
+      "TIMEOUT": "Camera không báo lại sau khi cài",
+      "NO_ANSWER": "Camera không trả lời",
+      "SEND_FAILED": "Không gửi được yêu cầu",
+      "NOT_FOUND": "Camera không thấy bản cập nhật nào để cài",
+      "NOT_SUPPORTED": "Camera này không cập nhật từ xa được",
+      "LOW_BATTERY": "Pin quá yếu",
+      "GONE": "Camera hoặc firmware đã bị xoá",
+      "ERROR": "Camera báo lỗi"
+    }
   }
 }

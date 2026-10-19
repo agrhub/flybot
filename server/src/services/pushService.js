@@ -20,6 +20,10 @@ const TEXT_KEYS = {
     weather_risk: 'email.alerts.weather_risk',
     log_reminder: 'email.alerts.log_reminder',
     org_digest: 'email.alerts.org_digest',
+    firmware_available: 'email.alerts.firmware_available',
+    firmware_updated: 'email.alerts.firmware_updated',
+    firmware_failed: 'email.alerts.firmware_failed',
+    camera_disabled: 'email.alerts.camera_disabled',
     farm_shared: 'email.farmShared',
     org_joined: 'email.orgShared',
     camera_shared: 'email.cameraShared',
@@ -40,6 +44,10 @@ const TARGET_PATH = {
     log_reminder: '/logbook',
     org_digest: '/farms',
     camera_shared: '/cameras',
+    firmware_available: '/cameras',
+    firmware_updated: '/cameras',
+    firmware_failed: '/cameras',
+    camera_disabled: '/cameras',
     org_joined: '/settings?tab=organizations'
 };
 const URGENT_TYPES = new Set(['pest_threshold', 'camera_offline']);

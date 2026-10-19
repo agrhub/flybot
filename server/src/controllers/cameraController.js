@@ -46,7 +46,9 @@ const { viewFilter, viewableCameras, findViewableCamera, findManageableCamera, f
 // through demo access while demoViewLive is off
 const DEMO_LIVE_CLOSED = { success: false, code: 'DEMO_READ_ONLY', message: 'Live view of this demo camera is not open to visitors.' };
 const SIMULATED_NO_LIVE = { success: false, code: 'SIMULATED_CAMERA', message: 'A simulated camera has no live view.' };
-const liveClosed = (camera) => (camera?.simulated ? SIMULATED_NO_LIVE : DEMO_LIVE_CLOSED);
+// ...or a camera an admin paused (services/fleetService.js)
+const CAMERA_DISABLED = { success: false, code: 'CAMERA_DISABLED', message: 'This camera is paused by an administrator.' };
+const liveClosed = (camera) => (camera?.adminDisabled?.at ? CAMERA_DISABLED : camera?.simulated ? SIMULATED_NO_LIVE : DEMO_LIVE_CLOSED);
 
 /**
  * Camera as returned to a given user: viewers never see the verification code or the
@@ -71,6 +73,8 @@ function toClientCamera(camera, user) {
     obj.platform = platforms.platformOf(obj);
     // CamOS cameras: what the device reported, never its token hashes or raw shadow
     obj.device = obj.device ? deviceView(obj) : undefined;
+    // Paused by an admin: when and why (never who)
+    obj.adminDisabled = obj.adminDisabled?.at ? { at: obj.adminDisabled.at, reason: obj.adminDisabled.reason || '' } : undefined;
     if (canManage) {
         obj.sharedWith = (obj.sharedWith || []).map(sh => ({
             email: sh.email,
@@ -267,6 +271,18 @@ async function addCamosCamera(req, res, { deviceSerial, validateCode, customName
     if (existing && String(existing.userId) !== String(userId)) {
         return res.status(409).json({ success: false, code: 'CAMERA_TAKEN', message: "This camera is already registered to another account. Ask its owner to share it with you." });
     }
+    // The serial registry: a registered serial needs its label code, a blocked one is refused, and in strict
+    // mode an unregistered serial joins no account (wrong codes count toward the same lock as /claim)
+    const registration = require('../services/registrationService');
+    const registryKey = String(deviceSerial).trim().toUpperCase();
+    if (registration.claimLocked(registryKey)) {
+        return res.status(429).json({ success: false, code: 'LOCKED', message: 'Too many wrong codes for this serial. Try again later.' });
+    }
+    const refused = await require('../services/registryService').checkClaim(registryKey, validateCode);
+    if (refused) {
+        if (refused.wrongCode) registration.recordClaimFailure(registryKey);
+        return res.status(refused.status).json(refused.body);
+    }
     let camera = existing;
     if (camera) {
         if (camera.platform !== 'camos') return res.status(409).json({ success: false, message: "This serial is registered as an EZVIZ camera." });
@@ -290,6 +306,7 @@ async function addCamosCamera(req, res, { deviceSerial, validateCode, customName
         await require('../services/orgService').adoptCamera(req.user, camera)
             .catch(err => console.warn('⚠️ Camera not added to an organization:', err.message));
         recordAudit(req, { action: 'camera.added', target: cameraTarget(camera), details: { platform: 'camos' } });
+        await require('../services/registryService').markClaimed(registryKey, userId);
     }
     // camos-esp32-trap cameras (serial ESP + MAC) register themselves: no token to type in, the camera joins this
     // account when it registers with the same verify code (registrationService.registerForOwner)
@@ -839,6 +856,68 @@ async function disableStream(req, res) {
     }
 }
 
+// ---------- Firmware (services/firmwareService.js) ----------
+
+const languageOf = (req) => (String(req.get('X-Language') || req.user?.language || 'en').toLowerCase().startsWith('vi') ? 'vi' : 'en');
+
+/** GET /api/cameras/:serial/firmware: running and latest version, release notes, the last update. */
+async function getFirmware(req, res) {
+    try {
+        const camera = await findViewableCamera(req.user, String(req.params.serial || '')).lean();
+        if (!camera) return res.status(404).json({ success: false, code: 'NOT_FOUND', message: "Camera not found or permission denied." });
+        const canManage = canManageCamera(req.user, camera) && !isDemoOnly(req.user, camera);
+        res.json(await require('../services/firmwareService').statusFor(camera, { canManage, language: languageOf(req) }));
+    } catch (err) {
+        sendServerError(res, err, { context: 'Firmware status' });
+    }
+}
+
+/** POST /api/cameras/:serial/firmware/check: read the version again (EZVIZ: from the EZVIZ cloud). */
+async function checkFirmware(req, res) {
+    try {
+        const serial = String(req.params.serial || '');
+        let camera = await findViewableCamera(req.user, serial).lean();
+        if (!camera) return res.status(404).json({ success: false, code: 'NOT_FOUND', message: "Camera not found or permission denied." });
+        if (platforms.platformOf(camera) === 'ezviz' && !camera.simulated) {
+            await ezvizService.syncCameraStatus(serial).catch(err => console.warn(`⚠️ EZVIZ version check ${serial}: ${err.message}`));
+            camera = await findViewableCamera(req.user, serial).lean();
+        }
+        const canManage = canManageCamera(req.user, camera) && !isDemoOnly(req.user, camera);
+        res.json({ ...(await require('../services/firmwareService').statusFor(camera, { canManage, language: languageOf(req) })), checkedAt: new Date() });
+    } catch (err) {
+        sendServerError(res, err, { context: 'Firmware check' });
+    }
+}
+
+/** POST /api/cameras/:serial/firmware/update { confirm: true }: install the current release (owners and managers). */
+async function updateFirmware(req, res) {
+    try {
+        if (req.body?.confirm !== true) return res.status(400).json({ success: false, code: 'CONFIRM', message: 'Confirm the update first.' });
+        const camera = await findManageableCamera(req.user, String(req.params.serial || ''));
+        if (!camera) return res.status(404).json({ success: false, code: 'NOT_FOUND', message: "Camera not found or permission denied." });
+        const result = await require('../services/firmwareService').requestByOwner(camera.toObject ? camera.toObject() : camera, req.user.id);
+        if (result.status === 200) {
+            recordAudit(req, { action: 'firmware.update_requested', target: cameraTarget(camera), details: { to: result.body.update.toVersion, from: result.body.update.fromVersion } });
+        }
+        res.status(result.status).json(result.body);
+    } catch (err) {
+        sendServerError(res, err, { context: 'Firmware update' });
+    }
+}
+
+/** PUT /api/cameras/:serial/firmware/auto { enabled, hour? } */
+async function setFirmwareAuto(req, res) {
+    try {
+        const camera = await findManageableCamera(req.user, String(req.params.serial || ''));
+        if (!camera) return res.status(404).json({ success: false, code: 'NOT_FOUND', message: "Camera not found or permission denied." });
+        const result = await require('../services/firmwareService').setAuto(camera.toObject ? camera.toObject() : camera, req.body || {}, req.user.id);
+        if (result.status === 200) recordAudit(req, { action: 'firmware.auto_changed', target: cameraTarget(camera), details: { enabled: result.body.autoUpdate, hour: result.body.autoHour } });
+        res.status(result.status).json(result.body);
+    } catch (err) {
+        sendServerError(res, err, { context: 'Firmware auto update' });
+    }
+}
+
 /**
  * Take a snapshot right now (capture, store, AI analysis, alerts) and return the result
  */
@@ -852,6 +931,7 @@ async function captureNow(req, res) {
             return res.status(404).json({ success: false, message: "Camera not found or permission denied." });
         }
         if (camera.simulated) return res.status(409).json({ success: false, code: 'SIMULATED_CAMERA', message: 'A simulated camera takes no photos on request.' });
+        if (camera.adminDisabled?.at) return res.status(403).json(CAMERA_DISABLED);
         // Lazy require: captureJob pulls in the AI and S3 services
         const { captureAndSaveSnapshot } = require('../cron/captureJob');
         const saved = await captureAndSaveSnapshot(deviceSerial);
@@ -932,6 +1012,10 @@ async function getThresholdSuggestions(req, res) {
 
 module.exports = {
     getThresholdSuggestions,
+    getFirmware,
+    checkFirmware,
+    updateFirmware,
+    setFirmwareAuto,
     captureNow,
     getCamerasHealth,
     getUserCameras,

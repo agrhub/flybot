@@ -79,6 +79,14 @@
                 <el-icon><Camera /></el-icon>
                 <span>{{ t('admin.cameras.tab') }}</span>
               </el-menu-item>
+              <el-menu-item index="adminRegistry">
+                <el-icon><Postcard /></el-icon>
+                <span>{{ t('admin.registry.tab') }}</span>
+              </el-menu-item>
+              <el-menu-item index="adminFirmware">
+                <el-icon><Cpu /></el-icon>
+                <span>{{ t('admin.firmware.tab') }}</span>
+              </el-menu-item>
               <el-menu-item index="adminSystem">
                 <el-icon><Tools /></el-icon>
                 <span>{{ t('admin.system.tab') }}</span>
@@ -243,6 +251,7 @@
                       {{ row.access === 'admin' ? t('share.accessAdmin') : row.access === 'demo' ? t('share.accessDemo') : t('share.accessShared') }}
                     </el-tag>
                     <el-tag v-if="row.simulated" type="warning" effect="dark" round size="small">{{ t('simulated.tag') }}</el-tag>
+                    <el-tag v-if="row.adminDisabled" type="danger" effect="dark" round size="small" :title="row.adminDisabled.reason">{{ t('cameras.paused.tag') }}</el-tag>
                     <el-tag v-if="row.canManage && row.sharedWith?.length" type="info" effect="plain" size="small">
                       {{ t('share.sharedCount', { count: row.sharedWith.length }) }}
                     </el-tag>
@@ -306,6 +315,7 @@
                       </el-tag>
                     </el-tooltip>
                     <el-tag v-if="row.simulated" type="warning" effect="dark" round size="small">{{ t('simulated.tag') }}</el-tag>
+                    <el-tag v-if="row.adminDisabled" type="danger" effect="dark" round size="small" :title="row.adminDisabled.reason">{{ t('cameras.paused.tag') }}</el-tag>
                     <el-tag
                       v-if="row.canManage && row.sharedWith?.length"
                       type="info"
@@ -672,8 +682,14 @@
         <div v-else-if="activeTab === 'adminUsers' && isAdmin" class="max-w-6xl">
           <AdminUsersPanel />
         </div>
-        <div v-else-if="activeTab === 'adminCameras' && isAdmin" class="max-w-6xl">
+        <div v-else-if="activeTab === 'adminCameras' && isAdmin" class="max-w-7xl">
           <AdminCamerasPanel />
+        </div>
+        <div v-else-if="activeTab === 'adminRegistry' && isAdmin" class="max-w-6xl">
+          <AdminRegistryPanel />
+        </div>
+        <div v-else-if="activeTab === 'adminFirmware' && isAdmin" class="max-w-6xl">
+          <AdminFirmwarePanel />
         </div>
         <div v-else-if="activeTab === 'adminSystem' && isAdmin" class="max-w-3xl">
           <SystemSettingsPanel />
@@ -783,6 +799,8 @@ import OrganizationsPanel from '@/components/settings/OrganizationsPanel.vue';
 import IntegrationsPanel from '@/components/settings/IntegrationsPanel.vue';
 import AdminUsersPanel from '@/components/admin/AdminUsersPanel.vue';
 import AdminCamerasPanel from '@/components/admin/AdminCamerasPanel.vue';
+import AdminRegistryPanel from '@/components/admin/AdminRegistryPanel.vue';
+import AdminFirmwarePanel from '@/components/admin/AdminFirmwarePanel.vue';
 import SystemSettingsPanel from '@/components/admin/SystemSettingsPanel.vue';
 import AuditLogPanel from '@/components/admin/AuditLogPanel.vue';
 import PipelineMonitorPanel from '@/components/admin/PipelineMonitorPanel.vue';
@@ -819,7 +837,7 @@ import {
   Tools,
   Tickets,
   DataLine,
-  Upload, TrendCharts, Medal } from '@element-plus/icons-vue';
+  Upload, TrendCharts, Medal, Postcard, Cpu } from '@element-plus/icons-vue';
 import { AVATAR_MAX_BYTES, AVATAR_TYPES, toAvatarBlob } from '@/utils/avatarImage';
 import { useNotifications } from '@/composables/useNotifications';
 
@@ -849,6 +867,8 @@ const mobileSections = computed(() => [
   ...(isAdmin.value ? [{ label: t('admin.group'), items: [
     { value: 'adminUsers', label: t('admin.users.tab') },
     { value: 'adminCameras', label: t('admin.cameras.tab') },
+    { value: 'adminRegistry', label: t('admin.registry.tab') },
+    { value: 'adminFirmware', label: t('admin.firmware.tab') },
     { value: 'adminSystem', label: t('admin.system.tab') },
     { value: 'adminPipeline', label: t('admin.pipeline.tab') },
     { value: 'adminUsage', label: t('admin.usage.tab') },

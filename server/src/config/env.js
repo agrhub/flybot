@@ -220,6 +220,10 @@ const config = {
     // visitors; DEMO_SIM_ENABLED=true adds each day's simulated photos until DEMO_SIM_UNTIL (YYYY-MM-DD)
     DEMO_VIEW_SIMULATED: process.env.DEMO_VIEW_SIMULATED === 'true',
     DEMO_SIM_ENABLED: process.env.DEMO_SIM_ENABLED === 'true',
+    // Serial registry (services/registryService.js): open (default) or strict (only registered serials are added)
+    REGISTRY_MODE: (process.env.REGISTRY_MODE || '').trim() === 'strict' ? 'strict' : 'open',
+    // Firmware images uploaded by admins (bytes)
+    FIRMWARE_MAX_BYTES: Math.min(Math.max(parseInt(process.env.FIRMWARE_MAX_BYTES || '4194304', 10) || 4194304, 65536), 16777216),
     DEMO_SIM_UNTIL: /^\d{4}-\d{2}-\d{2}$/.test((process.env.DEMO_SIM_UNTIL || '').trim()) ? new Date(`${process.env.DEMO_SIM_UNTIL.trim()}T23:59:59+07:00`).toISOString() : null,
     // Registrations per client IP per hour, and in total per hour
     REGISTER_MAX_PER_IP_HOUR: Math.min(Math.max(parseInt(process.env.REGISTER_MAX_PER_IP_HOUR || '5', 10) || 5, 1), 1000),

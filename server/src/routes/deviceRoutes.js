@@ -84,6 +84,31 @@ router.post('/events', express.json({ limit: '64kb' }), async (req, res) => {
     }
 });
 
+/**
+ * GET /firmware/:id?sn&exp&sig: a firmware image, for the signed link GET /ota handed the camera (or a camera that
+ * sends its own token), while it has an open update to that build (services/firmwareService.js).
+ */
+router.get('/firmware/:id', rateLimit({ windowMs: 60 * 1000, max: 20, keyFn: () => 'firmware', message: 'Too many requests.' }), async (req, res) => {
+    try {
+        const firmware = require('../services/firmwareService');
+        const camera = req.get('X-Device-Token') ? await deviceService.authenticate(req.get('X-Device-Serial'), req.get('X-Device-Token')) : null;
+        const q = req.query || {};
+        const access = await firmware.authorizeDownload(req.params.id, { sn: q.sn, exp: q.exp, sig: q.sig }, camera);
+        if (access.status !== 200) return res.status(access.status).json({ ok: false, error: access.status === 401 ? 'unauthorized' : 'not_found' });
+        const object = await require('../services/s3Service').getS3Object(access.firmware.s3Key);
+        res.setHeader('Content-Type', 'application/octet-stream');
+        res.setHeader('Content-Length', String(access.firmware.size));
+        res.setHeader('Cache-Control', 'no-store');
+        res.setHeader('X-Fw-Sha256', access.firmware.sha256);
+        const body = object.Body;
+        if (body?.pipe) return body.pipe(res);
+        if (body?.transformToByteArray) return res.end(Buffer.from(await body.transformToByteArray()));
+        res.end(Buffer.from(body || []));
+    } catch (err) {
+        sendServerError(res, err, { context: 'Firmware download' });
+    }
+});
+
 // Every other route: the paired camera
 router.use(async (req, res, next) => {
     try {
@@ -98,10 +123,18 @@ router.use(async (req, res, next) => {
 // Per camera: a photo a minute on schedule, a few more on demand
 router.use(rateLimit({ windowMs: 60 * 1000, max: 30, includeIp: false, keyFn: serialKey, message: 'Too many requests for this camera.' }));
 
-router.get('/ota', (req, res) => {
-    const manifest = deviceService.otaManifest(req.camera);
-    if (!manifest) return res.status(204).end();
-    res.json(manifest);
+// The build of this camera's open firmware update (or the env offer); 204 when there is none. Never 401 for a
+// known camera: the firmware takes a 401 here as "my registration is gone"
+router.get('/ota', async (req, res) => {
+    try {
+        const manifest = await require('../services/firmwareService').offerFor(req.camera);
+        if (!manifest) return res.status(204).end();
+        res.setHeader('Cache-Control', 'no-store');
+        res.json(manifest);
+    } catch (err) {
+        console.error(`❌ OTA offer (${req.camera?.deviceSerial}):`, err.message);
+        res.status(204).end();
+    }
 });
 
 /**

@@ -15,6 +15,8 @@ const PROVISION_TTL_MS = 24 * 60 * 60 * 1000;
 // Photo size limit (CONTRACTS: 2 MB)
 const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
 const MAX_META_BYTES = 8 * 1024;
+// A paused camera is told to come back this much later
+const DISABLED_RETRY_MS = 6 * 60 * 60 * 1000;
 
 const sha256 = (value) => crypto.createHash('sha256').update(String(value)).digest('hex');
 const newToken = () => crypto.randomBytes(32).toString('base64url');
@@ -159,6 +161,13 @@ async function storeDeviceSnapshot(camera, { image, meta: rawMeta, imageType }, 
     const meta = readMeta(rawMeta);
     if (meta.error) return { status: 400, body: { ok: false, error: 'bad_request', message: meta.error } };
     const m = meta.value;
+    // Paused by an admin: 403 (never 401, which would make the camera drop its registration), next try in 6 h
+    if (camera.adminDisabled?.at) {
+        // Still awake and reachable: a firmware update may go
+        await Camera.updateMany({ deviceSerial: camera.deviceSerial }, { $set: strip({ status: 1, 'device.lastSeenAt': now, 'device.sleeping': false, 'device.fw': m.fw, 'device.battery': m.battery }) });
+        require('./firmwareService').cameraAwake(camera.deviceSerial);
+        return { status: 403, body: { ok: false, error: 'disabled', message: 'This camera is paused by an administrator.', nextWakeAt: new Date(now.getTime() + DISABLED_RETRY_MS).toISOString() } };
+    }
     // Self-registered cameras: 1 photo an hour while unclaimed, the demo's daily cap after
     const registration = require('./registrationService');
     const limited = await registration.uploadLimit(camera, now);
@@ -181,6 +190,11 @@ async function storeDeviceSnapshot(camera, { image, meta: rawMeta, imageType }, 
         'device.location': m.location
     });
     await Camera.updateMany({ deviceSerial: camera.deviceSerial }, { $set: set });
+    // Awake: a reported version may finish a firmware update, and a pending one can go now
+    const firmware = require('./firmwareService');
+    Promise.resolve(m.fw ? firmware.versionReported(camera.deviceSerial, m.fw, now) : null)
+        .then(() => firmware.cameraAwake(camera.deviceSerial))
+        .catch(err => console.warn(`⚠️ Firmware check ${camera.deviceSerial}: ${err.message}`));
     if (m.location && (camera.latitude === null || camera.latitude === undefined)) {
         await Camera.updateMany({ deviceSerial: camera.deviceSerial, latitude: null }, { $set: { latitude: m.location.lat, longitude: m.location.lng } }).catch(() => {});
     }

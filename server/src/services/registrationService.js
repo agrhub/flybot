@@ -148,6 +148,9 @@ async function register(body, now = new Date()) {
     if (!checkCsr(b.csr)) return fail(400, 'bad_csr', 'csr must be a PEM PKCS#10 certificate request (no private key).');
     const csr = b.csr.trim() + '\n';
     const csrHash = sha256(csr);
+    // A serial in the registry (cameras for sale) comes with its label code and must not be blocked
+    const refused = await require('./registryService').checkRegister(serial, verifyCode);
+    if (refused) return refused;
 
     const existing = await Camera.findOne({ deviceSerial: serial }).lean();
     // Added by its owner (serial + verify code, Add camera) before it registered, or added again after the owner
@@ -260,6 +263,7 @@ async function registerForOwner(camera, { serial, csr, csrHash, fw, now }) {
             },
             $unset: { 'device.provisionTokenHash': 1, 'device.provisionExpiresAt': 1 }
         });
+        await require('./registryService').markClaimed(serial, camera.userId, now);
         console.log(`📟 Camera ${serial} registered into its owner's account`);
         const answer = created(serial, cert.certificatePem, deviceToken, kvs.channelName);
         answer.body.claimed = true;
@@ -388,6 +392,15 @@ async function claim(user, body, now = new Date()) {
         if (String(camera.userId) === userId) return { status: 200, body: { success: true, alreadyClaimed: true, camera: claimedView(camera), preview: await previewOf(serial) } };
         return notFoundAnswer;
     }
+    // The serial registry: a blocked serial, or (strict mode) one that was never registered, joins no account
+    const refused = await require('./registryService').checkClaim(serial, verifyCode);
+    if (refused) {
+        if (refused.wrongCode) {
+            recordClaimFailure(serial, now.getTime());
+            return notFoundAnswer;
+        }
+        return refused;
+    }
 
     const actor = await User.findById(userId).select('role email name').lean();
     // The camera goes into the person's current workspace, within its plan's camera limit
@@ -419,6 +432,7 @@ async function claim(user, body, now = new Date()) {
     ).lean();
     if (!updated) return notFoundAnswer;
     claimFailures.delete(serial);
+    await require('./registryService').markClaimed(serial, userId, now);
     // Members of an organization workspace see it too
     if (workspace?.kind === 'organization') {
         const { Organization } = require('../models');
@@ -536,6 +550,8 @@ module.exports = {
     markUnclaimedPhoto,
     unclaimedNextWake,
     claim,
+    claimLocked,
+    recordClaimFailure,
     resetClaimLocks,
     previewOf,
     liveMinutes,

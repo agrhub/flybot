@@ -172,6 +172,63 @@ export default {
   adminTransferCamera(deviceSerial, email, keepPreviousOwnerAccess = true) {
     return apiClient.put(`/admin/cameras/${encodeURIComponent(deviceSerial)}/owner`, { email, keepPreviousOwnerAccess });
   },
+  // Camera fleet, serial registry and firmware (admin)
+  adminFleet(params = {}) {
+    return apiClient.get('/admin/fleet', { params });
+  },
+  adminRevealCameraCode(deviceSerial) {
+    return apiClient.post(`/admin/fleet/${encodeURIComponent(deviceSerial)}/reveal-code`);
+  },
+  adminSetCameraDisabled(deviceSerial, disabled, reason = '') {
+    return apiClient.put(`/admin/fleet/${encodeURIComponent(deviceSerial)}/disabled`, { disabled, reason });
+  },
+  adminRegistry(params = {}) {
+    return apiClient.get('/admin/registry', { params });
+  },
+  adminAddRegistry(data) {
+    return apiClient.post('/admin/registry', data);
+  },
+  adminUpdateRegistry(serial, data) {
+    return apiClient.put(`/admin/registry/${encodeURIComponent(serial)}`, data);
+  },
+  adminDeleteRegistry(serial) {
+    return apiClient.delete(`/admin/registry/${encodeURIComponent(serial)}`);
+  },
+  adminRevealRegistryCode(serial) {
+    return apiClient.post(`/admin/registry/${encodeURIComponent(serial)}/reveal-code`);
+  },
+  adminImportRegistry(data) {
+    return apiClient.post('/admin/registry/import', data);
+  },
+  adminBackfillRegistry() {
+    return apiClient.post('/admin/registry/backfill');
+  },
+  adminFirmware() {
+    return apiClient.get('/admin/firmware');
+  },
+  // FormData (file upload) or { url, model, version, sha256 } or { githubTag }
+  adminAddFirmware(data) {
+    const headers = typeof FormData !== 'undefined' && data instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : {};
+    return apiClient.post('/admin/firmware', data, { timeout: 180000, headers });
+  },
+  adminUpdateFirmware(id, data) {
+    return apiClient.put(`/admin/firmware/${id}`, data);
+  },
+  adminDeleteFirmware(id) {
+    return apiClient.delete(`/admin/firmware/${id}`);
+  },
+  adminRolloutFirmware(id, data) {
+    return apiClient.post(`/admin/firmware/${id}/rollout`, data);
+  },
+  adminFirmwareUpdates(params = {}) {
+    return apiClient.get('/admin/firmware/updates', { params });
+  },
+  adminCancelFirmwareUpdate(id) {
+    return apiClient.post(`/admin/firmware/updates/${id}/cancel`);
+  },
+  adminRetryFirmwareUpdate(id) {
+    return apiClient.post(`/admin/firmware/updates/${id}/retry`);
+  },
   adminAuditLog(params = {}) {
     return apiClient.get('/admin/audit', { params });
   },
@@ -547,6 +604,19 @@ export default {
   },
   updateDeviceSettings(deviceSerial, changes) {
     return apiClient.put(`/cameras/${encodeURIComponent(deviceSerial)}/device-settings`, { changes });
+  },
+  // Firmware: running and latest version, check, confirmed install, automatic updates
+  getCameraFirmware(deviceSerial) {
+    return apiClient.get(`/cameras/${encodeURIComponent(deviceSerial)}/firmware`);
+  },
+  checkCameraFirmware(deviceSerial) {
+    return apiClient.post(`/cameras/${encodeURIComponent(deviceSerial)}/firmware/check`);
+  },
+  updateCameraFirmware(deviceSerial) {
+    return apiClient.post(`/cameras/${encodeURIComponent(deviceSerial)}/firmware/update`, { confirm: true });
+  },
+  setCameraFirmwareAuto(deviceSerial, enabled, hour) {
+    return apiClient.put(`/cameras/${encodeURIComponent(deviceSerial)}/firmware/auto`, { enabled, ...(hour !== undefined ? { hour } : {}) });
   },
   getCameraStatus(deviceSerial) {
     return apiClient.get(`/cameras/${encodeURIComponent(deviceSerial)}/status`);

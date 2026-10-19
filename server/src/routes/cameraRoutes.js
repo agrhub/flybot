@@ -45,6 +45,11 @@ router.get('/cameras/:serial/live', cameraController.getLive);
 router.post('/cameras/:serial/live/request', cameraController.requestLive);
 router.get('/cameras/:serial/playback', cameraController.getPlayback);
 router.get('/cameras/:serial/status', cameraController.getCameraStatus);
+// Firmware: status, check, install now (confirmed), automatic updates
+router.get('/cameras/:serial/firmware', cameraController.getFirmware);
+router.post('/cameras/:serial/firmware/check', rateLimit({ windowMs: 60 * 1000, max: 10, keyFn: (req) => String(req.user?.id || ''), message: 'Too many attempts.' }), cameraController.checkFirmware);
+router.post('/cameras/:serial/firmware/update', cameraController.updateFirmware);
+router.put('/cameras/:serial/firmware/auto', cameraController.setFirmwareAuto);
 // camos-esp32-trap cameras: the web console's settings, from FlyBot (services/camosSettings.js)
 router.get('/cameras/:serial/device-settings', cameraController.getDeviceSettings);
 router.put('/cameras/:serial/device-settings', express.json({ limit: '16kb' }), cameraController.updateDeviceSettings);

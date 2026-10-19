@@ -42,7 +42,13 @@ const COOLDOWN_MINUTES = {
     review_requested: 60,
     // Every request and every answer is its own event
     upgrade_requested: 0,
-    upgrade_decided: 0
+    upgrade_decided: 0,
+    // One notice per new release and camera (the camera remembers the version it was told about)
+    firmware_available: 0,
+    firmware_updated: 0,
+    firmware_failed: 0,
+    camera_disabled: 0,
+    camera_enabled: 0
 };
 
 const SEVERITY = {
@@ -66,13 +72,18 @@ const SEVERITY = {
     org_digest: 'info',
     review_requested: 'info',
     upgrade_requested: 'info',
-    upgrade_decided: 'info'
+    upgrade_decided: 'info',
+    firmware_available: 'info',
+    firmware_updated: 'info',
+    firmware_failed: 'warning',
+    camera_disabled: 'warning',
+    camera_enabled: 'info'
 };
 
 // "Back online" is good news: in-app only
-const EMAIL_TYPES = new Set(['pest_threshold', 'camera_offline', 'ai_failure', 'card_due', 'plot_threshold', 'pest_surge', 'image_quality', 'harvest_ready', 'weather_risk', 'log_reminder', 'org_digest', 'upgrade_requested', 'upgrade_decided']);
-// Phone/browser push: the alerts, plus something new shared with you
-const PUSH_TYPES = new Set([...EMAIL_TYPES, 'camera_shared', 'dashboard_shared', 'farm_shared', 'org_joined']);
+const EMAIL_TYPES = new Set(['pest_threshold', 'camera_offline', 'ai_failure', 'card_due', 'plot_threshold', 'pest_surge', 'image_quality', 'harvest_ready', 'weather_risk', 'log_reminder', 'org_digest', 'upgrade_requested', 'upgrade_decided', 'firmware_available', 'firmware_failed', 'camera_disabled']);
+// Phone/browser push: the alerts, plus something new shared with you, and a finished firmware update
+const PUSH_TYPES = new Set([...EMAIL_TYPES, 'camera_shared', 'dashboard_shared', 'farm_shared', 'org_joined', 'firmware_updated']);
 
 // Consecutive failed AI analyses before alerting
 const AI_FAILURE_THRESHOLD = 3;

@@ -347,7 +347,16 @@ function deviceFieldsOf(doc) {
     const net = typeof doc.net === 'string' ? doc.net : (doc.net && typeof doc.net === 'object' ? doc.net.type : undefined);
     const rssi = num(doc.rssi ?? doc.net?.rssi);
     const power = doc.power && typeof doc.power === 'object' && ['auto', 'battery', 'powered'].includes(doc.power.mode) ? { mode: doc.power.mode } : undefined;
+    // 4G modem (state net.cell, protocol 4; firmware 0.7.0+ also top-level modem.*): kept while on Wi-Fi again
+    const cell = (doc.net && typeof doc.net === 'object' && doc.net.cell && typeof doc.net.cell === 'object') ? doc.net.cell : (doc.modem && typeof doc.modem === 'object' ? doc.modem : {});
+    const ident = (v, re) => (typeof v === 'string' && re.test(v.trim()) ? v.trim() : undefined);
     return strip({
+        model: ident(doc.model, /^[A-Za-z0-9._-]{1,64}$/),
+        'device.imei': ident(cell.imei, /^[0-9]{14,17}$/),
+        'device.iccid': ident(cell.iccid, /^[0-9A-Fa-f]{18,22}$/),
+        'device.operator': typeof cell.operator === 'string' && cell.operator.trim() ? cell.operator.trim().slice(0, 40) : undefined,
+        'device.hw': ident(doc.hw, /^[A-Za-z0-9._-]{1,32}$/),
+        'device.mac': ident(doc.mac, /^[0-9A-Fa-f]{2}(:[0-9A-Fa-f]{2}){5}$/),
         'device.fw': typeof doc.fw === 'string' ? doc.fw.slice(0, 40) : undefined,
         'device.net': net && ['wifi', '4g'].includes(net) ? net : undefined,
         'device.rssi': rssi,
@@ -357,6 +366,17 @@ function deviceFieldsOf(doc) {
         'device.kvsChannelName': typeof doc.kvs?.channelName === 'string' ? doc.kvs.channelName.slice(0, 256) : undefined,
         ...(Number.isInteger(doc.capture?.intervalMin) && CAPTURE_INTERVALS.includes(doc.capture.intervalMin) ? { captureIntervalMinutes: doc.capture.intervalMin } : {})
     });
+}
+
+/**
+ * The camera is awake and talking: a reported version may finish its firmware update, and a pending one is sent
+ * now (services/firmwareService.js). In the background; never throws.
+ */
+function firmwareAware(deviceSerial, fw, now = new Date()) {
+    const firmware = require('../services/firmwareService');
+    Promise.resolve(fw ? firmware.versionReported(deviceSerial, fw, now) : null)
+        .then(() => firmware.cameraAwake(deviceSerial))
+        .catch(err => console.warn(`⚠️ Firmware check ${deviceSerial}: ${err.message}`));
 }
 
 /**
@@ -406,6 +426,7 @@ async function handleMessage(topicName, payload, { now = new Date() } = {}) {
             const fields = deviceFieldsOf(doc);
             if (online) await setOnline(deviceSerial, true, now, fields);
             else await setOnline(deviceSerial, false, now, { ...fields, ...(doc.sleeping ? { 'device.sleeping': true, 'device.wakeAt': dateOf(doc.wakeAt) } : {}) });
+            if (online) firmwareAware(deviceSerial, fields['device.fw'], now);
             return { deviceSerial, kind, online };
         }
         if (kind === 'telemetry' || kind === 'shadow/reported') {
@@ -415,6 +436,7 @@ async function handleMessage(topicName, payload, { now = new Date() } = {}) {
             if (kind === 'shadow/reported') await offerLiveCredentials(deviceSerial, doc).catch(err => console.warn(`⚠️ Live credentials not offered (${deviceSerial}): ${err.message}`));
             if (kind === 'shadow/reported') await settleLiveRequest(deviceSerial, doc).catch(err => console.warn(`⚠️ Live request not reset (${deviceSerial}): ${err.message}`));
             await Camera.updateMany({ deviceSerial, platform: PLATFORM }, { $set: set });
+            firmwareAware(deviceSerial, fields['device.fw'], now);
             return { deviceSerial, kind };
         }
         // event
@@ -427,7 +449,10 @@ async function handleMessage(topicName, payload, { now = new Date() } = {}) {
         }
         if (type === 'boot') await setOnline(deviceSerial, true, now, set);
         else await Camera.updateMany({ deviceSerial, platform: PLATFORM }, { $set: set });
-        return { deviceSerial, kind, type };
+        // Firmware updates: progress, result, and the boot that confirms (or rolls back) the new version
+        const ota = await require('../services/firmwareService').handleEvent(deviceSerial, doc, now)
+            .catch(err => { console.warn(`⚠️ OTA event ${deviceSerial}: ${err.message}`); return null; });
+        return { deviceSerial, kind, type, ...(ota ? { ota } : {}) };
     }
     const presence = String(topicName || '').match(/^\$aws\/events\/presence\/(connected|disconnected)\/([A-Za-z0-9_-]{1,64})$/);
     if (presence) {

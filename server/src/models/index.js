@@ -21,6 +21,9 @@ const SentinelProposal = require('./SentinelProposal');
 const Plan = require('./Plan');
 const UpgradeRequest = require('./UpgradeRequest');
 const UsageCounter = require('./UsageCounter');
+const DeviceRegistry = require('./DeviceRegistry');
+const Firmware = require('./Firmware');
+const FirmwareUpdate = require('./FirmwareUpdate');
 
 module.exports = {
     User,
@@ -45,5 +48,8 @@ module.exports = {
     SentinelProposal,
     Plan,
     UpgradeRequest,
-    UsageCounter
+    UsageCounter,
+    DeviceRegistry,
+    Firmware,
+    FirmwareUpdate
 };

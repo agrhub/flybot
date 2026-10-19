@@ -13,6 +13,12 @@
 - **Simulated demo farm** for visitors: 114 sticky and lure traps on 47 farms, in every province of Vietnam and in a dozen fruit regions abroad (each with its main fruit fly and local photo times), English names, with plots, a field log and a month of history, built from labeled synthetic trap photos that the real OpenCV 5 pipeline counts; the flies drawn on each photo are shown beside the AI's count. Labeled "Simulated" everywhere and never in emailed reports or alerts; a daily simulation keeps it current until an end date, and one command removes it.
 - The home page has a short **FlyBot on AWS** section (OpenCV 5 on AWS Lambda, AWS IoT Core, Kinesis Video Streams, the open ESP32-S3 trap camera) with a link to the source.
 
+### Camera fleet and firmware
+- **Camera fleet** (Admin → Camera fleet): every camera with its owner, state, place, model and hardware, firmware version, the 4G modem's IMEI and SIM, battery and last contact; search and filters. The label code is masked and shown only on request (recorded in the audit log). An administrator can **pause** a camera: it stops taking and uploading photos and live view closes, and its owner sees why.
+- **Serial registry** (Admin → Serial registry): cameras for sale are entered with their label code, one by one, from a CSV file or from the label QR text. A customer adds a camera with its serial and code as before; a blocked serial is refused, and an optional strict mode accepts only registered serials.
+- **Firmware updates** for CamOS cameras (Admin → Firmware): import a camos-esp32-trap release from GitHub (checked against its SHA256SUMS) or upload an update image, mark the current release per model, and update one camera, a selection or every camera of a model, with each camera's progress and result. A camera on battery updates only when awake and charged; if the new firmware cannot connect, the camera goes back to its old version by itself.
+- Owners are told when a newer firmware exists (in the app, and by email, Telegram or phone notification by their alert settings), can check for an update and install it after a confirmation, or let each camera install updates automatically at a chosen hour.
+
 ### New cameras
 - **CamOS trap cameras** (ESP32-S3, AMB82) on AWS IoT Core: Wi-Fi or 4G, solar and battery, GPS. They take photos on their own schedule and sleep in between; the camera card shows the battery, the signal and "sleeping, next wake 14:30".
 - **Live view over Kinesis Video Streams**, also for cameras asleep: "Request live at next wake".

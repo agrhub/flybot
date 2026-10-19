@@ -248,6 +248,10 @@
         <el-tooltip v-if="camera.simulated" :content="t('simulated.cameraHint')" placement="top">
           <el-tag type="warning" effect="dark" size="small" class="shrink-0" data-test="simulated-badge">{{ t('simulated.tag') }}</el-tag>
         </el-tooltip>
+        <!-- Paused by an administrator -->
+        <el-tooltip v-if="camera.adminDisabled" :content="camera.adminDisabled.reason || t('cameras.paused.desc')" placement="top">
+          <el-tag type="danger" effect="dark" size="small" class="shrink-0" data-test="paused-badge">{{ t('cameras.paused.tag') }}</el-tag>
+        </el-tooltip>
         <!-- A read-only demo camera (Settings > System > Demo access) -->
         <el-tooltip v-if="camera.access === 'demo'" :content="t('cameras.demo.hint')" placement="top">
           <el-tag type="success" effect="light" size="small" class="shrink-0" data-test="demo-badge">{{ t('cameras.demo.tag') }}</el-tag>

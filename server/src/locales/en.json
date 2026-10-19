@@ -87,6 +87,26 @@
       "upgrade_outcome": {
         "approved": "approved",
         "rejected": "turned down"
+      },
+      "firmware_available": {
+        "subject": "⬆️ New firmware {version} for {camera}",
+        "body": "Firmware {version} is ready for camera {camera} ({deviceSerial}), which runs {current}. Open the camera's settings in FlyBot to read what changed and install it, or turn on automatic updates."
+      },
+      "firmware_updated": {
+        "subject": "✅ {camera} now runs firmware {version}",
+        "body": "Camera {camera} ({deviceSerial}) installed firmware {version} and restarted."
+      },
+      "firmware_failed": {
+        "subject": "⚠️ Firmware update of {camera} did not finish",
+        "body": "Camera {camera} ({deviceSerial}) could not install firmware {version} ({error}). It keeps running {from}. You can try again from the camera's settings."
+      },
+      "camera_disabled": {
+        "subject": "⏸️ Camera {camera} paused by an administrator",
+        "body": "An administrator paused camera {camera} ({deviceSerial}): it takes no photos and live view is closed until it is resumed. Your photos and history stay available. {reason}"
+      },
+      "camera_enabled": {
+        "subject": "▶️ Camera {camera} is back in service",
+        "body": "An administrator resumed camera {camera} ({deviceSerial}). It takes photos on its schedule again."
       }
     },
     "cameraShared": {
@@ -517,7 +537,58 @@
     "guest_read_only": "Guest access is read-only.",
     "guest_access_off": "Guest access is turned off.",
     "guest_too_many_here": "Too many guest sessions from here. Please try again later.",
-    "guest_too_many": "Too many guest sessions. Please try again later."
+    "guest_too_many": "Too many guest sessions. Please try again later.",
+    "registry_not_registered": "This serial is not registered. Check the label or ask the seller.",
+    "registry_serial_blocked": "This camera serial is blocked. Ask the seller.",
+    "registry_device_blocked": "This serial is blocked.",
+    "registry_device_taken": "This serial is already registered.",
+    "registry_bad_serial": "serial must be 3 to 64 letters, digits, - or _.",
+    "registry_bad_code": "verifyCode does not fit this serial (ESP serials: 6 Crockford base32 characters).",
+    "registry_bad_model": "model is not valid.",
+    "registry_too_long": "hwVersion, batch or note is too long.",
+    "registry_exists": "This serial is already in the registry.",
+    "registry_not_found": "This serial is not in the registry.",
+    "registry_code_locked": "The code of a camera that is already in an account cannot change.",
+    "registry_in_account": "This camera is in an account: block the serial instead.",
+    "registry_csv_required": "csv is required.",
+    "registry_too_many_rows": "At most {n} rows per import.",
+    "fleet_simulated_pause": "A simulated camera cannot be paused.",
+    "fleet_camera_paused": "This camera is paused by an administrator.",
+    "firmware_confirm_first": "Confirm the update first.",
+    "firmware_bad_version": "version must look like 0.7.0.",
+    "firmware_too_small": "The file is too small to be a firmware image.",
+    "firmware_too_large": "The file is larger than this model's firmware slot.",
+    "firmware_not_esp": "The file is not an ESP32 application image (use the -update.bin file).",
+    "firmware_sha_mismatch": "The file does not match the SHA-256 given.",
+    "firmware_exists": "This model already has this version.",
+    "firmware_bad_url": "url must be an http(s) address.",
+    "firmware_bad_sha": "sha256 must be 64 hex digits.",
+    "firmware_download_failed": "The firmware could not be downloaded.",
+    "firmware_bad_tag": "githubTag must look like v0.7.0.",
+    "firmware_bad_repo": "repo must be owner/name.",
+    "firmware_release_unreadable": "The release or its SHA256SUMS could not be read.",
+    "firmware_no_images": "The release has no update images listed in SHA256SUMS.",
+    "firmware_not_found": "Firmware not found.",
+    "firmware_bad_current": "current must be true or false.",
+    "firmware_bad_notes": "notes must be { en, vi }.",
+    "firmware_bad_battery": "minBatteryPct must be 0 to 100.",
+    "firmware_delete_current": "Make another build current before deleting this one.",
+    "firmware_in_use": "Cameras are still updating to this build.",
+    "firmware_rollout_targets": "Give serials (up to 1000) or allOfModel.",
+    "firmware_update_not_found": "Update not found.",
+    "firmware_not_cancellable": "Only an update that has not started installing can be cancelled.",
+    "firmware_not_retryable": "Only a failed or cancelled update can be tried again.",
+    "firmware_busy": "This camera already has an update in progress.",
+    "firmware_camos_only": "Only CamOS cameras are updated through FlyBot.",
+    "firmware_simulated": "A simulated camera has no firmware.",
+    "firmware_no_release": "There is no firmware release for this camera yet.",
+    "firmware_up_to_date": "The camera already runs the latest firmware.",
+    "firmware_incompatible": "This camera cannot take this firmware.",
+    "firmware_bad_enabled": "enabled must be true or false.",
+    "firmware_bad_hour": "hour must be 0 to 23.",
+    "firmware_bad_multipart": "The upload is not valid multipart data.",
+    "firmware_file_required": "A firmware file is required.",
+    "firmware_source_required": "Upload a file, or give url or githubTag."
   },
   "reportPdf": {
     "range": "Period: {from} - {to} ({days} days)",

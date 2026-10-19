@@ -61,6 +61,8 @@ const demoSimJob = exclusive('Demo simulation', async () => {
     const result = await require('../services/demoSim').runDaily();
     return result ? { released: result.released || 0, failed: result.failed || 0 } : { released: 0 };
 }, 'demoSim');
+// Firmware updates: send pending ones to awake cameras, settle stale ones, automatic updates
+const firmwareJob = exclusive('Firmware updates', () => require('../services/firmwareService').sweep(), 'firmware');
 const ezvizPolicyJob = exclusive('EZVIZ sub-account policies', async () => ({ changed: await resyncEzvizPolicies() }), 'ezvizPolicies');
 
 /**
@@ -151,6 +153,11 @@ function startCronJobs() {
     // Self-registered cameras: unclaimed photos after 24 h, never-claimed cameras after 7 days
     cron.schedule('41 * * * *', () => {
         selfRegisteredJob();
+    });
+
+    // Firmware updates (services/firmwareService.js): every 5 minutes, off the capture minute
+    cron.schedule('3,8,13,18,23,28,33,38,43,48,53,58 * * * *', () => {
+        firmwareJob();
     });
 
     // Removed camera access leaves the EZVIZ sub-accounts within the hour (no-op unless EZVIZ_RAM_TOKENS)

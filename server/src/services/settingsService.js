@@ -1,5 +1,5 @@
 const { SystemSetting } = require('../models');
-const { ALLOW_REGISTRATION, RETENTION_CYCLE, DEMO_VIEW_ENABLED, DEMO_VIEW_CAMERAS, DEMO_VIEW_SINCE, DEMO_VIEW_LIVE, DEMO_VIEW_SIMULATED, DEMO_SIM_ENABLED, DEMO_SIM_UNTIL, DEMO_VIEW_AUDIENCE, GUEST_ACCESS } = require('../config/env');
+const { ALLOW_REGISTRATION, RETENTION_CYCLE, DEMO_VIEW_ENABLED, DEMO_VIEW_CAMERAS, DEMO_VIEW_SINCE, DEMO_VIEW_LIVE, DEMO_VIEW_SIMULATED, DEMO_SIM_ENABLED, DEMO_SIM_UNTIL, DEMO_VIEW_AUDIENCE, GUEST_ACCESS, REGISTRY_MODE } = require('../config/env');
 const { DEFAULT_ALERT_THRESHOLD } = require('../constants/risk');
 
 // Short cache: settings are read on every registration/cleanup but change rarely
@@ -23,7 +23,9 @@ const defaults = () => ({
     // The simulated demo farm (scripts/demo_sim.js): shown to visitors, and its daily simulation
     demoViewSimulated: DEMO_VIEW_SIMULATED,
     demoSimEnabled: DEMO_SIM_ENABLED,
-    demoSimUntil: DEMO_SIM_UNTIL
+    demoSimUntil: DEMO_SIM_UNTIL,
+    // Serial registry: open | strict (services/registryService.js)
+    registryMode: REGISTRY_MODE
 });
 // Saved as null on purpose ("every account"): null does not fall back to the environment
 const NULLABLE = new Set(['demoViewSince', 'demoSimUntil']);
@@ -60,7 +62,8 @@ const SETTING_RULES = {
     guestAccessEnabled: (v) => typeof v === 'boolean',
     demoSimEnabled: (v) => typeof v === 'boolean',
     // The last day the daily simulation adds data (null: no end)
-    demoSimUntil: (v) => v === null || (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}/.test(v) && !Number.isNaN(Date.parse(v)))
+    demoSimUntil: (v) => v === null || (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}/.test(v) && !Number.isNaN(Date.parse(v))),
+    registryMode: (v) => v === 'open' || v === 'strict'
 };
 const normalize = (key, value) => {
     if (key === 'demoViewCameras') return [...new Set(value)];

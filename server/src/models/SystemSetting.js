@@ -23,6 +23,8 @@ const systemSettingSchema = new mongoose.Schema({
     // The simulated demo farm's daily simulation (services/demoSim.js)
     demoSimEnabled: { type: Boolean, default: undefined },
     demoSimUntil: { type: Date, default: undefined },
+    // Serial registry (services/registryService.js): 'open' checks registered serials only, 'strict' refuses the rest
+    registryMode: { type: String, enum: ['open', 'strict'], default: undefined },
     // Names of one-time data migrations already applied (services/migrations.js)
     migrations: { type: [String], default: undefined },
     updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: undefined },

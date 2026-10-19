@@ -60,7 +60,7 @@ function isDemoOnly(user, camera) {
  * May this person open live view / SD playback of the camera? Never for a simulated camera (there is
  * no device); demo viewers only when demoLive is on.
  */
-const canWatchLive = (user, camera) => !camera?.simulated && (!isDemoOnly(user, camera) || !!user?.demoLive);
+const canWatchLive = (user, camera) => !camera?.simulated && !camera?.adminDisabled?.at && (!isDemoOnly(user, camera) || !!user?.demoLive);
 
 function viewableCameras(user, extra = {}) {
     return Camera.find({ ...extra, ...viewFilter(user) });

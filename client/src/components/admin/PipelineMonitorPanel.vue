@@ -139,7 +139,7 @@ const loading = ref(false);
 const problemsOnly = ref(true);
 
 // Jobs listed even before their first run, in this order
-const JOB_ORDER = ['capture', 'aiRetry', 'cleanup', 'pestCount', 'statusSync', 'scheduledReports', 'weeklyReports', 'morningBriefs', 'cardReminders', 'trainingSync', 'ezvizPolicies'];
+const JOB_ORDER = ['capture', 'aiRetry', 'cleanup', 'pestCount', 'statusSync', 'scheduledReports', 'weeklyReports', 'morningBriefs', 'cardReminders', 'trainingSync', 'ezvizPolicies', 'firmware'];
 
 const load = async () => {
   loading.value = true;

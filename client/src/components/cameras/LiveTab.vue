@@ -1,5 +1,9 @@
 <template>
   <div class="flex flex-col gap-4 w-full pb-4">
+    <!-- Paused by an administrator: no photos, no live view; history stays readable -->
+    <el-alert v-if="camera?.adminDisabled" type="error" :closable="false" show-icon data-test="camera-paused"
+      :title="t('cameras.paused.title')"
+      :description="camera.adminDisabled.reason ? t('cameras.paused.reason', { reason: camera.adminDisabled.reason }) : t('cameras.paused.desc')" />
     <div class="flex flex-col gap-3">
       <!-- The video, and beside it (wide screens) whatever the page puts in the aside slot, as tall as the video -->
       <div class="live-tab__stage" :class="{ 'has-aside': !!$slots.aside }">
@@ -186,6 +190,9 @@
     <!-- Sticky card and other field work -->
     <TrapMaintenanceCard v-if="camera" :camera="camera" />
 
+    <!-- Firmware: version, check, install, automatic updates -->
+    <CameraFirmwareCard v-if="camera && !camera.simulated" :camera="camera" />
+
     <!-- Verification Code Dialog -->
     <el-dialog
       v-model="validateCodeDialogVisible"
@@ -232,6 +239,7 @@ import { loadEzuikit, loadHlsPlayers } from '@/utils/lazyLibs'
 import api from '@/services/api'
 import PlaybackControls from './PlaybackControls.vue'
 import TrapMaintenanceCard from './TrapMaintenanceCard.vue'
+import CameraFirmwareCard from './CameraFirmwareCard.vue'
 import KvsViewer from './KvsViewer.vue'
 import CamosSettingsDialog from './CamosSettingsDialog.vue'
 import { ElNotification } from 'element-plus'
