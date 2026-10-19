@@ -14,6 +14,8 @@ const farmShareSchema = new mongoose.Schema({
 const farmSchema = new mongoose.Schema({
     // Simulated demo data (scripts/demo_sim.js): labeled wherever it is shown, never mixed with real data
     simulated: { type: Boolean, default: undefined },
+    // The simulated farm's stable key (services/demoSimWorld.js), so its names can change in place
+    simKey: { type: String, default: undefined },
     ownerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     name: { type: String, required: true, trim: true },
     description: { type: String, default: '' },

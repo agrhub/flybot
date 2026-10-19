@@ -20,10 +20,11 @@ const world = require('./demoSimWorld');
  * server needs no local files: simulate() and the daily job (runDaily) read it from there.
  */
 const SYSTEM_EMAIL = 'simulated-demo@flybot.invalid';
-const ORG_NAME = 'Vườn mô phỏng FlyBot (simulated data)';
+const ORG_NAME = 'FlyBot demo farm (simulated data)';
+const SYSTEM_NAME = 'FlyBot simulation';
 const POOL_PREFIX = 'simulated/pool/';
 const POOL_INDEX = 'simulated/pool.json';
-const NOTE = 'Dữ liệu mô phỏng (simulated data)';
+const NOTE = 'Simulated data';
 const LURE_REFILL_DAYS = 21;
 
 const s3 = () => require('./s3Service');
@@ -151,7 +152,7 @@ async function systemUser({ dryRun }) {
         email: SYSTEM_EMAIL,
         // Nobody signs in to it: a random password nobody knows, an address that receives no mail
         password: await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 10),
-        name: 'FlyBot mô phỏng (simulated)',
+        name: SYSTEM_NAME,
         role: 'user',
         emailVerified: false,
         language: 'vi',
@@ -163,15 +164,36 @@ async function findOrg() {
     return Organization.findOne({ simulated: true });
 }
 
-/** Create what is missing of the world (organization, farms, plots, cameras). Returns the plan. */
+const farmDocName = (farm) => `${farm.name} (simulated)`;
+const placeOf = (farm) => (farm.country && farm.country !== 'Vietnam' ? `${farm.province}, ${farm.country}` : farm.province);
+const farmDescription = (farm) => `${farm.crop}, ${placeOf(farm)}. Main fruit fly: ${farm.pest || 'Bactrocera dorsalis'}. ${NOTE}.`;
+
+/**
+ * Create what is missing of the world (organization, farms, plots, cameras) and bring the names of
+ * what exists up to date (English names, a farm's place and pest), by stable keys (Farm.simKey,
+ * Plot.simKey, the camera serial); farms and plots of the first seed are found by their Vietnamese
+ * names once. Returns the plan with what was created and renamed.
+ */
 async function ensureWorld({ dryRun = true } = {}) {
     const pool = await loadPool({ fresh: true });
     const farms = world.buildWorld(pool.traps || []);
     const traps = world.trapsOf(farms);
     const owner = await systemUser({ dryRun });
     let org = await findOrg();
-    const plan = { farms: farms.length, plots: farms.reduce((n, f) => n + f.plots.length, 0), cameras: traps.length, created: { org: 0, farms: 0, plots: 0, cameras: 0 } };
-    if (dryRun) return { ...plan, farmsList: farms, traps };
+    const plan = {
+        farms: farms.length,
+        plots: farms.reduce((n, f) => n + f.plots.length, 0),
+        cameras: traps.length,
+        created: { org: 0, farms: 0, plots: 0, cameras: 0 },
+        renamed: { org: 0, farms: 0, plots: 0, cameras: 0 }
+    };
+    if (dryRun) {
+        if (org) {
+            const known = new Set((await Camera.find({ simulated: true }).select('deviceSerial').lean()).map(c => c.deviceSerial));
+            plan.created.cameras = traps.filter(t => !known.has(t.serial)).length;
+        }
+        return { ...plan, farmsList: farms, traps };
+    }
     if (!org) {
         org = await Organization.create({
             simulated: true,
@@ -181,23 +203,44 @@ async function ensureWorld({ dryRun = true } = {}) {
             plan: { code: 'pro', note: 'Simulated demo farm (scripts/demo_sim.js)' }
         });
         plan.created.org = 1;
+    } else if (org.name !== ORG_NAME) {
+        await Organization.updateOne({ _id: org._id }, { $set: { name: ORG_NAME } });
+        plan.renamed.org = 1;
     }
+    if (owner.name !== SYSTEM_NAME) await User.updateOne({ _id: owner._id }, { $set: { name: SYSTEM_NAME } });
     const start = world.at(world.START_DAY, '06:00');
     for (const farm of farms) {
-        const name = `${farm.name} (mô phỏng)`;
-        let farmDoc = await Farm.findOne({ orgId: org._id, simulated: true, name });
+        const fields = { name: farmDocName(farm), description: farmDescription(farm), timezone: farm.tz || 'Asia/Ho_Chi_Minh', simKey: farm.key };
+        let farmDoc = await Farm.findOne({ orgId: org._id, simulated: true, simKey: farm.key })
+            || (farm.legacyName ? await Farm.findOne({ orgId: org._id, simulated: true, simKey: { $exists: false }, name: `${farm.legacyName} (mô phỏng)` }) : null);
         if (!farmDoc) {
-            farmDoc = await Farm.create({ simulated: true, ownerId: owner._id, orgId: org._id, name, description: `${farm.crop}, ${farm.province}. ${NOTE}`, timezone: 'Asia/Ho_Chi_Minh' });
+            farmDoc = await Farm.create({ simulated: true, ownerId: owner._id, orgId: org._id, ...fields });
             plan.created.farms += 1;
+        } else if (Object.entries(fields).some(([k, v]) => farmDoc[k] !== v)) {
+            await Farm.updateOne({ _id: farmDoc._id }, { $set: fields });
+            plan.renamed.farms += 1;
         }
         for (const plot of farm.plots) {
-            let plotDoc = await Plot.findOne({ farmId: farmDoc._id, name: plot.name });
+            const plotFields = { name: plot.name, crop: plot.crop, simKey: plot.key };
+            let plotDoc = await Plot.findOne({ farmId: farmDoc._id, simKey: plot.key })
+                || (plot.legacyName ? await Plot.findOne({ farmId: farmDoc._id, simKey: { $exists: false }, name: plot.legacyName }) : null);
             if (!plotDoc) {
-                plotDoc = await Plot.create({ simulated: true, farmId: farmDoc._id, name: plot.name, crop: plot.crop, areaHa: 1, boundary: plot.boundary });
+                plotDoc = await Plot.create({ simulated: true, farmId: farmDoc._id, areaHa: 1, boundary: plot.boundary, ...plotFields });
                 plan.created.plots += 1;
+            } else if (Object.entries(plotFields).some(([k, v]) => plotDoc[k] !== v)) {
+                await Plot.updateOne({ _id: plotDoc._id }, { $set: plotFields });
+                plan.renamed.plots += 1;
             }
             for (const trap of plot.traps) {
-                if (await Camera.exists({ deviceSerial: trap.serial })) continue;
+                const cameraFields = { deviceName: trap.name, locationAddress: `${placeOf(farm)} (${NOTE.toLowerCase()})` };
+                const existing = await Camera.findOne({ deviceSerial: trap.serial }).select('simulated deviceName locationAddress').lean();
+                if (existing) {
+                    if (existing.simulated && (existing.deviceName !== cameraFields.deviceName || existing.locationAddress !== cameraFields.locationAddress)) {
+                        await Camera.updateOne({ deviceSerial: trap.serial, simulated: true }, { $set: cameraFields });
+                        plan.renamed.cameras += 1;
+                    }
+                    continue;
+                }
                 await Camera.create({
                     simulated: true,
                     userId: owner._id,
@@ -205,16 +248,15 @@ async function ensureWorld({ dryRun = true } = {}) {
                     farmId: farmDoc._id,
                     plotId: plotDoc._id,
                     deviceSerial: trap.serial,
-                    deviceName: trap.name,
                     platform: 'simulated',
                     trapKind: trap.kind,
                     status: 1,
                     latitude: trap.lat,
                     longitude: trap.lng,
-                    locationAddress: `${farm.province} (${NOTE})`,
                     alertThreshold: trap.kind === 'sticky' ? 60 : 15,
                     captureIntervalMinutes: 120,
-                    addedAt: start
+                    addedAt: start,
+                    ...cameraFields
                 });
                 plan.created.cameras += 1;
             }
@@ -243,13 +285,13 @@ async function duePhotos({ traps, pool, until, from = world.START_DAY }) {
         if (!logs.has(trap.farm.key)) logs.set(trap.farm.key, world.fieldLogOf(trap.farm, world.dayKeyOf(until)));
         const treatments = logs.get(trap.farm.key);
         const own = trap.setTrap ? pool.photos.filter(p => p.setTrap === trap.setTrap) : [];
-        const slots = trap.farm.showcase ? world.SHOWCASE_SLOTS : world.NATIONAL_SLOTS;
+        const slots = trap.farm.slots || world.NATIONAL_SLOTS;
         for (const day of days) {
             slots.forEach((hhmm, slot) => {
                 const photoId = `sim:${trap.serial}:${day}:${slot}`;
                 if (existing.has(photoId)) return;
                 const exact = own.find(p => p.localDate === day && p.slot === slot);
-                const when = exact?.capturedAt ? new Date(exact.capturedAt) : new Date(world.at(day, hhmm).getTime() + Math.floor(world.rand(`jitter:${photoId}`) * 9) * 60000);
+                const when = exact?.capturedAt ? new Date(exact.capturedAt) : new Date(world.at(day, hhmm, trap.farm.offset).getTime() + Math.floor(world.rand(`jitter:${photoId}`) * 9) * 60000);
                 if (when > until) return;
                 let photo = exact;
                 if (!photo) {
@@ -298,10 +340,21 @@ async function ensureFieldLog({ farms, owner, until, dryRun }) {
     const lastDay = world.dayKeyOf(until);
     let treatments = 0;
     let events = 0;
+    let renamed = 0;
     for (const farm of farms) {
         const serials = farm.plots.flatMap(p => p.traps.map(t => t.serial));
+        // Entries of the first seed: the same entries in English (by their client ids)
+        if (!dryRun && owner) {
+            for (const type of Object.keys(world.PRODUCTS)) {
+                const res = await Treatment.updateMany(
+                    { createdBy: owner._id, simulated: true, type, clientId: { $regex: `^sim:${farm.key}:` }, $or: [{ note: { $ne: NOTE } }, { product: { $ne: world.PRODUCTS[type].product } }] },
+                    { $set: { ...world.PRODUCTS[type], area: farm.plots.map(p => p.name).join(', '), operator: 'Simulation', note: NOTE } }
+                );
+                renamed += res.modifiedCount || 0;
+            }
+        }
         for (const t of world.fieldLogOf(farm, lastDay)) {
-            const at = world.at(t.day, t.hhmm);
+            const at = world.at(t.day, t.hhmm, farm.offset);
             if (at > until) continue;
             const clientId = `sim:${farm.key}:${t.day}:${t.type}`;
             if (dryRun) { treatments += 1; continue; }
@@ -313,7 +366,7 @@ async function ensureFieldLog({ farms, owner, until, dryRun }) {
                 at,
                 ...world.PRODUCTS[t.type],
                 area: farm.plots.map(p => p.name).join(', '),
-                operator: 'Mô phỏng',
+                operator: 'Simulation',
                 note: NOTE,
                 clientId,
                 createdBy: owner._id,
@@ -332,7 +385,7 @@ async function ensureFieldLog({ farms, owner, until, dryRun }) {
                     if (trap.kind === 'lure' && index % LURE_REFILL_DAYS === 0) dates.push([day, 'lure_replaced', '06:20']);
                 }
                 for (const [day, type, hhmm] of dates) {
-                    const at = world.at(day, hhmm);
+                    const at = world.at(day, hhmm, farm.offset);
                     if (at > until) continue;
                     const clientId = `sim:${trap.serial}:${day}:${type}`;
                     if (dryRun) { events += 1; continue; }
@@ -344,7 +397,11 @@ async function ensureFieldLog({ farms, owner, until, dryRun }) {
             }
         }
     }
-    return { treatments, events };
+    if (!dryRun && owner) {
+        const res = await MaintenanceEvent.updateMany({ userId: owner._id, simulated: true, note: { $ne: NOTE } }, { $set: { note: NOTE } });
+        renamed += res.modifiedCount || 0;
+    }
+    return { treatments, events, renamed };
 }
 
 /**
@@ -391,6 +448,7 @@ async function simulate({ until = new Date(), from = world.START_DAY, dryRun = t
         farms: ensured.farms,
         cameras: ensured.cameras,
         created: ensured.created,
+        renamed: ensured.renamed,
         photosDue: due.length,
         byKind: { lure: due.filter(d => d.trap.kind === 'lure').length, sticky: due.filter(d => d.trap.kind === 'sticky').length },
         lambdaCalls: analyze ? due.length : 0,

@@ -139,11 +139,19 @@ after(async () => {
 
 // ---------- The world (pure) ----------
 
-test('the world: farms across five regions, sticky and lure traps, a showcase farm from the set', () => {
+test('the world: every province of Vietnam, a dozen countries, sticky and lure traps, English names', () => {
     const farms = world.buildWorld([{ id: 'a', trapKind: 'lure' }, { id: 'd', trapKind: 'sticky' }]);
     const traps = world.trapsOf(farms);
-    assert.equal(farms.length, world.FARMS.length + 1);
+    assert.equal(farms.length, world.FARMS.length + world.COMPACT_FARMS.length + 1);
     assert.deepEqual([...new Set(world.FARMS.map(f => f.region))].sort(), ['central', 'highlands', 'mekong', 'north', 'southeast']);
+    const vietnam = farms.filter(f => (f.country || 'Vietnam') === 'Vietnam');
+    assert.equal(new Set(vietnam.map(f => f.province)).size, 34, 'the 34 provinces and cities of the 2025 map');
+    assert.equal(new Set(farms.map(f => f.country)).size, 13, 'Vietnam and 12 countries');
+    assert.ok(farms.every(f => f.tz && /^[+-]\d{2}:\d{2}$/.test(f.offset) && f.pest), 'time zone, offset and main fruit fly on every farm');
+    // English names (place names keep their spelling): no Vietnamese words of the first seed
+    assert.ok(farms.every(f => !/\b(Vườn|Lô|xoài|bưởi|nhãn|vải)\b/.test(f.name + f.plots.map(p => p.name).join(' ') + f.crop)));
+    assert.ok(world.COMPACT_FARMS.every(f => f.slots === undefined) && farms.filter(f => !f.showcase && world.COMPACT_FARMS.some(c => c.key === f.key)).every(f => f.plots.length === 1 && f.plots[0].traps.length === 2 && f.slots.length === 1));
+    assert.ok(Object.values(world.PRODUCTS).every(p => /^[\x20-\x7E²]+$/.test(p.product + p.dose)), 'products in English');
     assert.ok(traps.every(t => /^SIM-[A-Z]+-[0-9A-Z]+$/.test(t.serial) && t.name.startsWith('SIM · ')));
     assert.ok(traps.some(t => t.kind === 'sticky') && traps.some(t => t.kind === 'lure'));
     assert.equal(new Set(traps.map(t => t.serial)).size, traps.length, 'serials are unique');
@@ -198,10 +206,13 @@ test('pool, dry run, apply: everything labeled simulated, analyzed by the pipeli
     assert.ok(bucket.has(demoSim.POOL_INDEX));
 
     const plan = await demoSim.simulate({ until: UNTIL, dryRun: true });
-    assert.equal(plan.cameras, world.FARMS.length * 4 + 4);
-    // Showcase: 4 traps x 7 slots (19th: 5, 20th: 06:30 and 09:00; slots the set lacks come from
-    // the pool); nationwide: 36 traps x 3 slots (19th: 2, 20th: 07:00)
-    assert.equal(plan.photosDue, 4 * 7 + 36 * 3);
+    assert.equal(plan.cameras, world.FARMS.length * 4 + world.COMPACT_FARMS.length * 2 + 4);
+    // Until 20 Sep 10:00 in Vietnam: showcase 4 traps x 7 slots (19th: 5, 20th: 06:30 and 09:00;
+    // slots the set lacks come from the pool); 36 detailed traps x 3 (19th: 2, 20th: 07:00); 50
+    // compact traps in Vietnam x 2 (07:30 both days); abroad, 07:30 local on both days east of
+    // 10:00 Vietnam time (Thailand, Philippines, India, China, Taiwan, Australia: 12 traps x 2)
+    // and on the 19th only west of it (Kenya, South Africa, Spain, Mexico, Brazil, USA: 12 x 1)
+    assert.equal(plan.photosDue, 4 * 7 + 36 * 3 + 50 * 2 + 12 * 2 + 12 * 1);
     assert.equal(await models.Camera.countDocuments(), 0, 'a dry run writes nothing');
 
     const real = await createUser({ role: 'manager', email: 'grower@example.test' });
@@ -217,7 +228,12 @@ test('pool, dry run, apply: everything labeled simulated, analyzed by the pipeli
     const cameras = await models.Camera.find({ simulated: true }).lean();
     assert.equal(cameras.length, plan.cameras);
     assert.ok(cameras.every(c => c.platform === 'simulated' && String(c.orgId) === String(org._id) && c.farmId && c.plotId));
-    assert.ok((await models.Farm.find({ simulated: true }).lean()).every(f => / \(mô phỏng\)$/.test(f.name)));
+    assert.ok((await models.Farm.find({ simulated: true }).lean()).every(f => / \(simulated\)$/.test(f.name) && f.simKey));
+    // A farm abroad takes its photos at local daylight times, at a fixed UTC offset (summer time is
+    // not modelled): 07:30 in Texas at -06:00 is 13:30 UTC
+    const texas = await models.Snapshot.findOne({ deviceSerial: 'SIM-US-2' }).lean();
+    assert.equal(new Date(texas.createdAt).getUTCHours(), 13);
+    assert.ok((await models.Treatment.find({ simulated: true }).lean()).every(t => t.note === 'Simulated data' && t.operator === 'Simulation'));
     const snaps = await models.Snapshot.find({ simulated: true }).lean();
     assert.equal(snaps.length, plan.photosDue);
     assert.ok(snaps.every(s => s.aiProcessed && s.lambda.status === 'ok' && Number.isFinite(s.simulation.truth) && /^snapshots\/SIM-[^/]+\/SYNTH_/.test(s.s3Key)));
@@ -249,14 +265,14 @@ test('visitors see the simulated farm read-only when it is shown; background job
     await settingsService.updateSettings({ demoViewEnabled: true, demoViewAudience: 'all', demoViewCameras: [], demoViewSimulated: true }, null);
     require('../src/services/demoView').clearCache();
     const seen = await cameras(visitor);
-    assert.equal(seen.length, world.FARMS.length * 4 + 4);
+    assert.equal(seen.length, world.FARMS.length * 4 + world.COMPACT_FARMS.length * 2 + 4);
     assert.ok(seen.every(c => c.simulated && c.access === 'demo' && !c.canManage && c.liveOpen === false && c.owner === null));
     const farms = (await json(await request('/api/farms', { as: visitor }))).body.farms;
     assert.ok(farms.length > 0 && farms.every(f => f.simulated && !f.canEdit));
     // The dashboard's density card filters by farm: each trap carries its farm's name and the label
     const overview = (await json(await request('/api/ai/overview', { as: visitor }))).body;
     const realtime = overview.overview.cameraRealtimeList;
-    assert.ok(realtime.length > 0 && realtime.every(c => c.simulated && c.farmId && / \(mô phỏng\)$/.test(c.farmName)));
+    assert.ok(realtime.length > 0 && realtime.every(c => c.simulated && c.farmId && / \(simulated\)$/.test(c.farmName)));
     const me = (await json(await request('/api/auth/me', { as: visitor }))).body.user;
     assert.equal(me.simulatedData, true);
     assert.equal(me.demoView.simulated, true);
@@ -295,8 +311,9 @@ test('the daily simulation runs only when turned on, until its end date, and add
     assert.equal(await demoSim.runDaily(later), null, 'off by default');
     await settingsService.updateSettings({ demoSimEnabled: true, demoSimUntil: '2026-11-10T23:59:59+07:00' }, null);
     const first = await demoSim.runDaily(later);
-    // The 15:30 slot of the 36 nationwide traps, the 11:30 and 14:00 slots of the 4 showcase traps
-    assert.equal(first.released, 36 + 4 * 2);
+    // The 15:30 slot of the 36 detailed traps, the 11:30 and 14:00 slots of the 4 showcase traps,
+    // and the 20th's 07:30 of Kenya, South Africa and Spain (before 16:00 in Vietnam)
+    assert.equal(first.released, 36 + 4 * 2 + 3 * 2);
     assert.equal((await demoSim.runDaily(later)).released, 0);
     await settingsService.updateSettings({ demoSimUntil: '2026-09-20T12:00:00+07:00' }, null);
     assert.equal((await demoSim.runDaily(new Date('2026-09-21T16:00:00+07:00'))).released, 0, 'nothing after the end date');
@@ -314,4 +331,33 @@ test('remove: every simulated document and photo goes, real data stays', async (
     assert.equal(await models.User.countDocuments({ email: demoSim.SYSTEM_EMAIL }), 0);
     assert.ok(await models.Camera.exists({ deviceSerial: 'REAL1' }));
     assert.ok([...bucket.keys()].every(k => !k.startsWith('snapshots/SIM-')), 'photo copies deleted');
+});
+
+// ---------- English names in place ----------
+
+test('a farm of the first seed (Vietnamese names) is renamed in place, not duplicated', async () => {
+    const owner = await models.User.create({ email: demoSim.SYSTEM_EMAIL, password: 'x', name: 'FlyBot mô phỏng (simulated)' });
+    const org = await models.Organization.create({ simulated: true, name: 'Vườn mô phỏng FlyBot (simulated data)', kind: 'organization', members: [{ userId: owner._id, email: owner.email, role: 'owner' }], plan: { code: 'pro' } });
+    const farm = await models.Farm.create({ simulated: true, ownerId: owner._id, orgId: org._id, name: 'Vườn xoài Cái Bè (mô phỏng)', description: 'Xoài cát Hòa Lộc, Tiền Giang. Dữ liệu mô phỏng (simulated data)' });
+    const plot = await models.Plot.create({ simulated: true, farmId: farm._id, name: 'Lô A', crop: 'Xoài cát Hòa Lộc' });
+    await models.Camera.create({ simulated: true, userId: owner._id, orgId: org._id, farmId: farm._id, plotId: plot._id, deviceSerial: 'SIM-CAIBE-1', deviceName: 'SIM · xoài Cái Bè 1', platform: 'simulated', trapKind: 'sticky', locationAddress: 'Tiền Giang (Dữ liệu mô phỏng (simulated data))' });
+    await models.Treatment.create({ simulated: true, cameraSerials: ['SIM-CAIBE-1'], type: 'spray', at: new Date('2026-09-19T06:00:00+07:00'), product: 'Abamectin 3.6EC + bả protein', note: 'Dữ liệu mô phỏng (simulated data)', operator: 'Mô phỏng', clientId: 'sim:CAIBE:2026-09-19:spray', createdBy: owner._id });
+
+    const result = await demoSim.simulate({ until: new Date('2026-09-19T08:00:00+07:00'), from: '2026-09-19', dryRun: false, concurrency: 8 });
+    assert.equal(result.renamed.org, 1);
+    assert.ok(result.renamed.farms >= 1 && result.renamed.plots >= 1 && result.renamed.cameras >= 1);
+    const after = await models.Farm.findById(farm._id).lean();
+    assert.equal(after.name, 'Cái Bè mango orchard (simulated)');
+    assert.equal(after.simKey, 'CAIBE');
+    assert.match(after.description, /Hòa Lộc mango, Đồng Tháp\. Main fruit fly: Bactrocera dorsalis\. Simulated data\./);
+    assert.equal(await models.Farm.countDocuments({ simKey: 'CAIBE' }), 1, 'not duplicated');
+    assert.equal((await models.Plot.findById(plot._id).lean()).name, 'Plot A');
+    const cam = await models.Camera.findOne({ deviceSerial: 'SIM-CAIBE-1' }).lean();
+    assert.equal(cam.deviceName, 'SIM · Cái Bè mango 1');
+    assert.equal(cam.locationAddress, 'Đồng Tháp (simulated data)');
+    const t = await models.Treatment.findOne({ clientId: 'sim:CAIBE:2026-09-19:spray' }).lean();
+    assert.equal(t.product, 'Abamectin 3.6EC + protein bait');
+    assert.equal(t.note, 'Simulated data');
+    assert.equal((await models.Organization.findById(org._id).lean()).name, demoSim.ORG_NAME);
+    await demoSim.remove({ dryRun: false });
 });

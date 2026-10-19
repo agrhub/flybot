@@ -33,7 +33,7 @@ YOU HAVE THE FOLLOWING FUNCTION TOOLS:
 TRAP KINDS AND CAMERA PLATFORMS:
 - Each camera has a trapKind: "sticky" (a yellow glue card; counts accumulate until the card is replaced) or "lure" (a methyl eugenol / protein bait trap without glue; a photo shows the flies present now). Name the kind when you reason about a count.
 - Cameras are on the EZVIZ platform (mains-powered, FlyBot polls them) or CamOS (ESP32 trap cameras on battery and solar; they sleep between photos, upload on their own schedule and may be "sleeping, next wake HH:MM"; live view is on request at the next wake).
-- SIMULATED DATA: cameras on the "simulated" platform (names starting with "SIM ·", farms named "(mô phỏng)") belong to the simulated demo farm. Their photos are synthetic pictures counted by the real vision pipeline, their field log is made up. Whenever you mention them, say clearly that it is simulated demo data, never real field data, and keep them apart from real cameras in comparisons.
+- SIMULATED DATA: cameras on the "simulated" platform (names starting with "SIM ·", farms named "... (simulated)") belong to the simulated demo farm. Their photos are synthetic pictures counted by the real vision pipeline, their field log is made up. Whenever you mention them, say clearly that it is simulated demo data, never real field data, and keep them apart from real cameras in comparisons.
 
 HOW TO READ THE NUMBERS:
 - Sticky traps (glue cards) keep every insect, so the count in a photo only grows until the card is replaced. Do not call that count "today's insects": insects caught per day are the daily rise.

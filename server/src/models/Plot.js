@@ -7,6 +7,8 @@ const mongoose = require('mongoose');
 const plotSchema = new mongoose.Schema({
     // Simulated demo data (scripts/demo_sim.js): labeled wherever it is shown, never mixed with real data
     simulated: { type: Boolean, default: undefined },
+    // The simulated plot's stable key (services/demoSimWorld.js)
+    simKey: { type: String, default: undefined },
     farmId: { type: mongoose.Schema.Types.ObjectId, ref: 'Farm', required: true, index: true },
     name: { type: String, required: true, trim: true },
     crop: { type: String, default: '' },

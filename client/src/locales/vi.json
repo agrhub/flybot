@@ -1823,7 +1823,7 @@
       "simStatus": "{farms} vườn, {cameras} bẫy, {photos} ảnh; ảnh mới nhất lúc {time}.",
       "simMissing": "Chưa tạo. Trên máy chủ chạy: node dist/demo_sim.js apply --yes (xem DEPLOY.md).",
       "simShow": "Cho khách xem vườn mô phỏng",
-      "simShowDesc": "Khách có quyền xem trình diễn thấy thêm các vườn mô phỏng trên khắp Việt Nam, luôn gắn nhãn Mô phỏng.",
+      "simShowDesc": "Khách có quyền xem trình diễn thấy thêm các vườn mô phỏng ở mọi tỉnh, thành của Việt Nam và ở các vùng trồng cây ăn trái nước ngoài, luôn gắn nhãn Mô phỏng.",
       "simDaily": "Mô phỏng hằng ngày",
       "simDailyDesc": "Thêm ảnh mô phỏng của từng ngày (được quy trình nhận diện phân tích) và nhật ký đồng ruộng cho đến ngày kết thúc. Chỉ vườn mô phỏng thay đổi.",
       "simUntil": "Đến ngày",
@@ -3508,7 +3508,7 @@
   "simulated": {
     "tag": "Mô phỏng",
     "bannerTitle": "Màn hình này có dữ liệu mô phỏng",
-    "bannerDesc": "Các bẫy gắn nhãn Mô phỏng (tên bắt đầu bằng “SIM ·”) và các vườn ghi “(mô phỏng)” dùng ảnh bẫy tổng hợp, được quy trình OpenCV 5 thật đếm, cùng nhật ký đồng ruộng giả lập. Đây không phải số liệu đo ngoài vườn.",
+    "bannerDesc": "Các bẫy gắn nhãn Mô phỏng (tên bắt đầu bằng “SIM ·”) và các vườn ghi “(simulated)” dùng ảnh bẫy tổng hợp, được quy trình OpenCV 5 thật đếm, cùng nhật ký đồng ruộng giả lập. Đây không phải số liệu đo ngoài vườn.",
     "cameraHint": "Bẫy mô phỏng: ảnh tổng hợp được AI thật đếm, không phải số liệu thực địa.",
     "noLive": "Bẫy mô phỏng không có camera nên không xem trực tiếp được. Ảnh và phân tích có trong phần chi tiết.",
     "truth": "Vẽ sẵn: {n}",

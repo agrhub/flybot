@@ -1823,7 +1823,7 @@
       "simStatus": "{farms} farms, {cameras} traps, {photos} photos; latest photo {time}.",
       "simMissing": "Not created yet. On the server run: node dist/demo_sim.js apply --yes (see DEPLOY.md).",
       "simShow": "Show the simulated demo farm to visitors",
-      "simShowDesc": "Visitors with demo access also see the simulated farms across Vietnam, labeled Simulated everywhere.",
+      "simShowDesc": "Visitors with demo access also see the simulated farms in every province of Vietnam and in fruit regions abroad, labeled Simulated everywhere.",
       "simDaily": "Daily simulation",
       "simDailyDesc": "Adds each day's simulated photos (analyzed by the vision pipeline) and field-log entries until the end date. Only the simulated farm changes.",
       "simUntil": "Until",
@@ -3508,7 +3508,7 @@
   "simulated": {
     "tag": "Simulated",
     "bannerTitle": "This view includes simulated demo data",
-    "bannerDesc": "Traps marked Simulated (named “SIM ·”) and farms marked “(mô phỏng)” use synthetic trap photos, counted by the real OpenCV 5 pipeline, and a made-up field log. They are not field measurements.",
+    "bannerDesc": "Traps marked Simulated (named “SIM ·”) and farms marked “(simulated)” use synthetic trap photos, counted by the real OpenCV 5 pipeline, and a made-up field log. They are not field measurements.",
     "cameraHint": "Simulated demo trap: synthetic photos counted by the real AI; not field data.",
     "noLive": "A simulated trap has no camera, so no live view. Its photos and analysis are in the detail view.",
     "truth": "Drawn: {n}",
