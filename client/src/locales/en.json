@@ -290,7 +290,22 @@
       "open": "Open field log"
     },
     "levelOf": "Flies against the threshold: {name}",
-    "openPhoto": "Open the analyzed photo: {name}"
+    "openPhoto": "Open the analyzed photo: {name}",
+    "density": {
+      "search": "Search by name or serial",
+      "farm": "Farm",
+      "allFarms": "All farms",
+      "status": "Status",
+      "allStatuses": "All statuses",
+      "kind": "Trap kind",
+      "allKinds": "All trap kinds",
+      "kindSticky": "Sticky card",
+      "kindLure": "Lure trap",
+      "view": "View",
+      "viewList": "List",
+      "viewGrid": "Grid",
+      "noMatch": "No camera matches these filters."
+    }
   },
   "cameras": {
     "platformLabel": "Camera platform",

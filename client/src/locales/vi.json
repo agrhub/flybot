@@ -290,7 +290,22 @@
       "open": "Mở nhật ký vườn"
     },
     "levelOf": "Mức ruồi so với ngưỡng: {name}",
-    "openPhoto": "Xem ảnh phân tích: {name}"
+    "openPhoto": "Xem ảnh phân tích: {name}",
+    "density": {
+      "search": "Tìm theo tên hoặc số sê-ri",
+      "farm": "Vườn",
+      "allFarms": "Tất cả vườn",
+      "status": "Trạng thái",
+      "allStatuses": "Mọi trạng thái",
+      "kind": "Loại bẫy",
+      "allKinds": "Mọi loại bẫy",
+      "kindSticky": "Bẫy dính",
+      "kindLure": "Bẫy mồi",
+      "view": "Cách xem",
+      "viewList": "Danh sách",
+      "viewGrid": "Lưới",
+      "noMatch": "Không có camera nào khớp bộ lọc."
+    }
   },
   "cameras": {
     "platformLabel": "Nền tảng camera",

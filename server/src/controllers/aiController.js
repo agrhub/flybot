@@ -471,6 +471,11 @@ async function getAiOverview(req, res) {
 
         // 1. Compute realtime insect count per camera from its latest processed snapshot
         const cameraRealtimeList = [];
+        // Farm names, for the dashboard card's farm filter
+        const farmIds = [...new Set(dedupedCameras.map(c => c.farmId).filter(Boolean).map(String))];
+        const farmNames = new Map(farmIds.length
+            ? (await require('../models').Farm.find({ _id: { $in: farmIds } }).select('name').lean()).map(f => [String(f._id), f.name])
+            : []);
         let peakRealtimeInsects = 0;
         let peakCamera = null;
         let totalRealtimeInsects = 0;
@@ -533,6 +538,9 @@ async function getAiOverview(req, res) {
                 deviceSerial: cam.deviceSerial,
                 deviceName: cam.deviceName || cam.deviceSerial,
                 locationAddress: cam.locationAddress || '',
+                farmId: cam.farmId ? String(cam.farmId) : null,
+                farmName: cam.farmId ? farmNames.get(String(cam.farmId)) || null : null,
+                ...(cam.simulated ? { simulated: true } : {}),
                 // null when the trap has no GPS position yet (never a made-up default)
                 latitude: Number.isFinite(cam.latitude) ? cam.latitude : null,
                 longitude: Number.isFinite(cam.longitude) ? cam.longitude : null,

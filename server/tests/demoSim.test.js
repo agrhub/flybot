@@ -253,6 +253,10 @@ test('visitors see the simulated farm read-only when it is shown; background job
     assert.ok(seen.every(c => c.simulated && c.access === 'demo' && !c.canManage && c.liveOpen === false && c.owner === null));
     const farms = (await json(await request('/api/farms', { as: visitor }))).body.farms;
     assert.ok(farms.length > 0 && farms.every(f => f.simulated && !f.canEdit));
+    // The dashboard's density card filters by farm: each trap carries its farm's name and the label
+    const overview = (await json(await request('/api/ai/overview', { as: visitor }))).body;
+    const realtime = overview.overview.cameraRealtimeList;
+    assert.ok(realtime.length > 0 && realtime.every(c => c.simulated && c.farmId && / \(mô phỏng\)$/.test(c.farmName)));
     const me = (await json(await request('/api/auth/me', { as: visitor }))).body.user;
     assert.equal(me.simulatedData, true);
     assert.equal(me.demoView.simulated, true);

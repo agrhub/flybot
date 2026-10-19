@@ -81,9 +81,29 @@
           </div>
         </template>
 
-        <div class="space-y-3">
+        <!-- Many traps: search, filters, list or grid, pages -->
+        <div v-if="(overviewData.cameraRealtimeList || []).length > 1" class="density-toolbar flex flex-wrap items-center gap-2 mb-3" data-test="density-toolbar">
+          <el-input v-model="density.search" :prefix-icon="Search" :placeholder="t('dashboard.density.search')" clearable size="small" class="density-toolbar__search" :aria-label="t('dashboard.density.search')" />
+          <el-select v-if="densityFarms.length > 1" v-model="density.farm" :placeholder="t('dashboard.density.allFarms')" clearable filterable size="small" class="density-toolbar__select" :aria-label="t('dashboard.density.farm')">
+            <el-option v-for="f in densityFarms" :key="f.id" :label="f.name" :value="f.id" />
+          </el-select>
+          <el-select v-model="density.status" :placeholder="t('dashboard.density.allStatuses')" clearable size="small" class="density-toolbar__select" :aria-label="t('dashboard.density.status')">
+            <el-option :label="t('common.online')" value="online" />
+            <el-option :label="t('common.offline')" value="offline" />
+          </el-select>
+          <el-select v-model="density.kind" :placeholder="t('dashboard.density.allKinds')" clearable size="small" class="density-toolbar__select" :aria-label="t('dashboard.density.kind')">
+            <el-option :label="t('dashboard.density.kindSticky')" value="sticky" />
+            <el-option :label="t('dashboard.density.kindLure')" value="lure" />
+          </el-select>
+          <el-radio-group v-model="density.view" size="small" class="ml-auto" :aria-label="t('dashboard.density.view')">
+            <el-radio-button value="list"><el-icon><List /></el-icon><span class="sr-only">{{ t('dashboard.density.viewList') }}</span></el-radio-button>
+            <el-radio-button value="grid"><el-icon><Grid /></el-icon><span class="sr-only">{{ t('dashboard.density.viewGrid') }}</span></el-radio-button>
+          </el-radio-group>
+        </div>
+
+        <div :class="density.view === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 gap-3' : 'space-y-3'" data-test="density-items">
           <div
-            v-for="cam in (overviewData.cameraRealtimeList || [])"
+            v-for="cam in densityPaged"
             :key="cam.deviceSerial"
             @click="selectCameraAndGoToLive(cam)"
             @keydown.enter.prevent="selectCameraAndGoToLive(cam)"
@@ -96,7 +116,8 @@
               <div class="flex items-center gap-2 min-w-0">
                 <span class="status-dot" :class="cam.status ? 'is-online' : 'is-idle'"></span>
                 <span class="item-name truncate">{{ cam.deviceName || cam.deviceSerial }}</span>
-                <span class="meta-text font-mono truncate">({{ cam.deviceSerial }})</span>
+                <span v-if="density.view === 'list'" class="meta-text font-mono truncate">({{ cam.deviceSerial }})</span>
+                <el-tag v-if="cam.simulated" type="warning" effect="plain" size="small" class="shrink-0">{{ t('simulated.tag') }}</el-tag>
               </div>
               <div class="shrink-0 text-right">
                 <span class="meta-text mr-1">{{ cam.riskBasis === 'dailyAverage' ? t('dashboard.averageToday') : t('dashboard.onTrapNow') }}</span>
@@ -134,7 +155,24 @@
             :description="t('dashboard.noRealtimeData')"
             :image-size="80"
           />
+          <el-empty
+            v-else-if="!densityFiltered.length"
+            :description="t('dashboard.density.noMatch')"
+            :image-size="60"
+          />
         </div>
+        <el-pagination
+          v-if="densityFiltered.length > density.pageSize"
+          v-model:current-page="density.page"
+          v-model:page-size="density.pageSize"
+          :page-sizes="[8, 16, 32]"
+          :total="densityFiltered.length"
+          layout="total, prev, pager, next, sizes"
+          size="small"
+          background
+          class="mt-3 justify-end flex-wrap"
+          data-test="density-pages"
+        />
       </el-card>
 
       <!-- Min / Max / Avg statistics -->
@@ -416,12 +454,13 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, reactive, computed, watch, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { requestErrorText } from '@/utils/requestError';
 import { useCameras } from '@/composables/useCameras';
 import api from '@/services/api';
+import { farmsOf, filterDensity, pageOf } from '@/utils/densityList';
 import { ElNotification } from 'element-plus';
 import AnnotatedSnapshot from '@/components/common/AnnotatedSnapshot.vue';
 import DetectionModal from '@/components/modals/DetectionModal.vue';
@@ -436,7 +475,10 @@ import {
   ArrowRight,
   Right,
   Setting,
-  Sunny
+  Sunny,
+  Search,
+  List,
+  Grid
 } from '@element-plus/icons-vue';
 import PageHeader from '@/components/common/PageHeader.vue';
 import StatCard from '@/components/common/StatCard.vue';
@@ -518,6 +560,29 @@ const overviewData = ref({
 });
 
 // Overview entry of a camera card (latest snapshot with its detections)
+// "Realtime density by camera": search, farm, status and trap kind filters, list or grid, pages;
+// the view and the page size are remembered in this browser
+const DENSITY_PREFS = 'flybot_density_view';
+const savedDensity = (() => {
+  try { return JSON.parse(localStorage.getItem(DENSITY_PREFS) || '{}') || {}; } catch { return {}; }
+})();
+const density = reactive({
+  search: '',
+  farm: '',
+  status: '',
+  kind: '',
+  view: savedDensity.view === 'grid' ? 'grid' : 'list',
+  page: 1,
+  pageSize: [8, 16, 32].includes(savedDensity.pageSize) ? savedDensity.pageSize : 8
+});
+const densityFarms = computed(() => farmsOf(overviewData.value.cameraRealtimeList || []));
+const densityFiltered = computed(() => filterDensity(overviewData.value.cameraRealtimeList || [], density));
+const densityPaged = computed(() => pageOf(densityFiltered.value, density.page, density.pageSize));
+watch(() => [density.search, density.farm, density.status, density.kind, density.pageSize], () => { density.page = 1; });
+watch(() => [density.view, density.pageSize], () => {
+  try { localStorage.setItem(DENSITY_PREFS, JSON.stringify({ view: density.view, pageSize: density.pageSize })); } catch {}
+});
+
 const realtimeBySerial = computed(() => new Map((overviewData.value.cameraRealtimeList || []).map(c => [c.deviceSerial, c])));
 const latestOf = (cam) => realtimeBySerial.value.get(cam.deviceSerial);
 const snapshotVisible = ref(false);
@@ -635,6 +700,13 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.density-toolbar__search {
+  width: 200px;
+  max-width: 100%;
+}
+.density-toolbar__select {
+  width: 150px;
+}
 .withholding-list {
   margin: 4px 0 2px;
   padding: 0;
