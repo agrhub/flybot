@@ -447,10 +447,15 @@ function reasonsByLanguage(value) {
 /** A proposal's reason in `lang` when the Lambda gave one, else the stored text. */
 const reasonIn = (item, lang) => (item?.reasonI18n && item.reasonI18n[lang]) || item?.reason || '';
 
+// The Lambda keeps no state between photos, so a quality or motion flag proposes the same action on
+// every photo: one card per camera and action within this window is enough (pending or decided)
+const LAMBDA_PROPOSAL_DEDUPE_MS = 24 * 3600 * 1000;
+
 /**
  * The vision Lambda proposed actions for a photo (response.proposals): one confirm card each in
- * the owner's "sentinel" conversation, a SentinelProposal row, and the Telegram message. Nothing
- * runs until the owner confirms. Returns the proposals created.
+ * the owner's "sentinel" conversation, a SentinelProposal row, and the Telegram message, unless the
+ * camera already got the same action in the last 24 hours. Nothing runs until the owner confirms.
+ * Returns the proposals created.
  */
 async function createLambdaProposals({ snapshot, camera, proposals, traceId = null, evidence = null, now = new Date() }) {
     const owner = camera?.userId ? await User.findById(camera.userId) : null;
@@ -464,6 +469,13 @@ async function createLambdaProposals({ snapshot, camera, proposals, traceId = nu
             console.warn(`⚠️ Lambda proposal skipped (${camera.deviceSerial}): ${checked.error}`);
             continue;
         }
+        const repeated = await SentinelProposal.exists({
+            deviceSerials: camera.deviceSerial,
+            type: checked.action,
+            source: 'lambda',
+            createdAt: { $gt: new Date(now.getTime() - LAMBDA_PROPOSAL_DEDUPE_MS), $lte: now }
+        });
+        if (repeated) continue;
         const reason = clip(String(proposal.reason || '').trim() || `Sentinel: ${checked.action}`, MAX_REASON);
         const reasonI18n = reasonsByLanguage(proposal.reasonI18n);
         const confidence = Number.isFinite(proposal.confidence) ? Math.max(0, Math.min(1, Number(proposal.confidence))) : null;

@@ -2944,7 +2944,7 @@
       "actions": "Hành động của tác tử (24 giờ)",
       "actionsDesc": "{count} ảnh không cần làm gì",
       "pending": "Chờ phê duyệt",
-      "pendingDesc": "Xử lý và thay thẻ",
+      "pendingDesc": "Đề xuất của tác tử chờ người duyệt",
       "devices": "Camera trực tuyến",
       "devicesDesc": "Đang trực tuyến / đang theo dõi",
       "latest": "Ảnh mới nhất",

@@ -2944,7 +2944,7 @@
       "actions": "Agent actions (24 h)",
       "actionsDesc": "{count} photos needed nothing",
       "pending": "Waiting for approval",
-      "pendingDesc": "Treatments and card changes",
+      "pendingDesc": "Agent proposals waiting for a person",
       "devices": "Cameras online",
       "devicesDesc": "Online now / watched",
       "latest": "Latest photos",

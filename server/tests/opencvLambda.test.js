@@ -206,6 +206,40 @@ test('proposals become confirm cards in the owner\'s Sentinel conversation; snap
     }
 });
 
+test('the same proposal on every photo of a camera makes one card a day (a lure trap with a quality flag)', async () => {
+    const owner = await createUser({ role: 'manager' });
+    await createCamera(owner, { deviceSerial: 'LURE1', deviceName: 'Bẫy mồi', trapKind: 'lure' });
+    await createCamera(owner, { deviceSerial: 'LURE2', deviceName: 'Bẫy mồi 2', trapKind: 'lure' });
+    answer = (req) => okResponse(req, {
+        counts: { total: 0, byClass: {} },
+        proposals: [{ id: 'q1', action: 'capture_now', params: {}, reason: 'Photo too dark', confidence: 0.6, requiresApproval: false }]
+    });
+    const original = snapshotEvents.emitAnalyzed;
+    snapshotEvents.emitAnalyzed = async () => 0;
+    try {
+        for (let i = 0; i < 3; i++) {
+            captureWith(PHOTO);
+            assert.ok(await captureAndSaveSnapshot('LURE1'));
+        }
+        captureWith(PHOTO);
+        assert.ok(await captureAndSaveSnapshot('LURE2'));
+        const rows = await models.SentinelProposal.find().lean();
+        assert.deepEqual(rows.map(p => p.deviceSerials[0]).sort(), ['LURE1', 'LURE2'], 'one per camera');
+        // Another action still gets its card; a day later the same one comes back
+        answer = (req) => okResponse(req, { counts: { total: 0, byClass: {} }, proposals: [{ id: 'q2', action: 'review_request', params: {}, reason: 'Camera moved' }] });
+        captureWith(PHOTO);
+        await captureAndSaveSnapshot('LURE1');
+        assert.equal(await models.SentinelProposal.countDocuments({ deviceSerials: 'LURE1' }), 2);
+        await models.SentinelProposal.updateMany({}, { $set: { createdAt: new Date(Date.now() - 25 * 3600 * 1000) } });
+        answer = (req) => okResponse(req, { counts: { total: 0, byClass: {} }, proposals: [{ id: 'q3', action: 'capture_now', params: {}, reason: 'Photo too dark' }] });
+        captureWith(PHOTO);
+        await captureAndSaveSnapshot('LURE1');
+        assert.equal(await models.SentinelProposal.countDocuments({ deviceSerials: 'LURE1', type: 'capture_now' }), 2);
+    } finally {
+        snapshotEvents.emitAnalyzed = original;
+    }
+});
+
 test('an error keeps the photo, marks the analysis failed and retries once after the delay', async () => {
     const owner = await createUser({ role: 'manager' });
     await createCamera(owner, { deviceSerial: 'RETRY1' });
