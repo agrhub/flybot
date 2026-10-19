@@ -188,6 +188,29 @@ describe('Sentinel approvals', () => {
     expect(wrapper.find('[data-test="status-pill"]').text()).toBe('Waiting');
   });
 
+  it('a camera action reads in words, shows its photos, and opens its trace in place', async () => {
+    const action = {
+      ...pendingCard,
+      kind: 'capture_now',
+      event_id: cardTrace.event_id,
+      on_timeout: 'no_op',
+      payload: { action: 'capture_now', params: {}, reason: 'Something covers the trap' },
+      evidence: ['evidence/ESP1234567890AB/a_annotated.jpg', 'snapshots/ESP1234567890AB/a.jpg'],
+    };
+    const { wrapper, router } = await mountWith(ApprovalCard, { props: { approval: action, canDecide: true } });
+    expect(wrapper.find('.section-title').text()).toBe('Extra photo');
+    expect(wrapper.text()).toContain('Nothing is done');
+    expect(wrapper.text()).not.toContain('no_op');
+    expect(wrapper.findAll('[data-test="evidence-item"]').length + wrapper.findAll('[data-test="side-by-side"]').length).toBeGreaterThan(0);
+
+    const before = router.currentRoute.value.fullPath;
+    await wrapper.find('[data-test="view-trace"]').trigger('click');
+    await flushPromises();
+    expect(api.sentinelGet.mock.calls.map((c) => c[0])).toContain(`traces/${encodeURIComponent(cardTrace.event_id)}`);
+    expect(document.body.querySelector('[data-test="trace-dialog"]')).not.toBeNull();
+    expect(router.currentRoute.value.fullPath).toBe(before);
+  });
+
   it('a 403 from the proxy is shown, and nothing is polled', async () => {
     api.sentinelDecide.mockRejectedValueOnce(httpError(403, { success: false, code: 'FORBIDDEN' }));
     const { wrapper } = await mountWith(ApprovalCard, { props: { approval: pendingCard, canDecide: true, intervalMs: 0 } });

@@ -72,8 +72,11 @@ function decisionsOf(snap) {
     }));
 }
 
-function approvalOf(proposal) {
+function approvalOf(proposal, snap = null) {
     if (!proposal) return null;
+    // The pictures a person decides on: the Lambda's annotated evidence, then the photo itself
+    const lambdaEvidence = snap?.lambda?.evidence || {};
+    const pictures = [lambdaEvidence.annotatedS3Key, snap?.s3Key, ...(proposal.evidence || []).map(e => e.url || e.ref)];
     return {
         approval_id: String(proposal._id),
         event_id: proposal.traceId || null,
@@ -93,7 +96,7 @@ function approvalOf(proposal) {
             reason: proposal.reason || '',
             ...(proposal.result ? { result: proposal.result } : {})
         },
-        evidence: (proposal.evidence || []).map(e => e.url || e.ref).filter(Boolean)
+        evidence: [...new Set(pictures.filter(v => typeof v === 'string' && v))]
     };
 }
 
@@ -184,8 +187,8 @@ async function fullTrace(snap, camera, proposals) {
         })),
         device_ack: [],
         events: lambda.status === 'failed' ? [{ kind: 'analysis_failed', at: iso(lambda.error?.at || snap.createdAt), detail: { reason: lambda.error?.message || lambda.error?.code } }] : [],
-        approval: proposals[0] ? approvalOf(proposals[0]) : null,
-        approvals: proposals.map(approvalOf),
+        approval: proposals[0] ? approvalOf(proposals[0], snap) : null,
+        approvals: proposals.map(p => approvalOf(p, snap)),
         deep: deep.map(d => ({ at: iso(d.at), question: d.question, answer: d.answer, trace_id: d.traceId })),
         timings: lambda.timings || null,
         model: lambda.model || null,
@@ -288,8 +291,9 @@ async function approvals({ user, status, limit }) {
     if (status && STATE_OF_STATUS[status]) filter.state = { $in: STATE_OF_STATUS[status] };
     // Pending ones past their time read as expired
     const rows = await SentinelProposal.find(filter).sort({ createdAt: -1 }).limit(size).lean();
+    const snaps = await photosOf(rows);
     const now = new Date();
-    const items = rows.map(p => approvalOf(p.state === 'pending' && p.expiresAt <= now ? { ...p, state: 'expired' } : p));
+    const items = rows.map(p => approvalOf(p.state === 'pending' && p.expiresAt <= now ? { ...p, state: 'expired' } : p, snaps.get(String(p.snapshotId))));
     return { items: status === 'pending' ? items.filter(a => a.status === 'pending') : items, next: null };
 }
 
@@ -298,8 +302,17 @@ async function approval({ user, id }) {
     const cameras = await visibleCameras(user);
     const p = await SentinelProposal.findById(id).lean();
     if (!p || !p.deviceSerials.some(s => cameras.has(s))) return null;
+    const snaps = await photosOf([p]);
     const now = new Date();
-    return { approval: approvalOf(p.state === 'pending' && p.expiresAt <= now ? { ...p, state: 'expired' } : p), media: {} };
+    return { approval: approvalOf(p.state === 'pending' && p.expiresAt <= now ? { ...p, state: 'expired' } : p, snaps.get(String(p.snapshotId))), media: {} };
+}
+
+/** The photos proposals came from, by id (only their picture keys). */
+async function photosOf(proposals) {
+    const ids = [...new Set(proposals.map(p => p.snapshotId).filter(Boolean).map(String))];
+    if (!ids.length) return new Map();
+    const snaps = await Snapshot.find({ _id: { $in: ids } }).select('s3Key lambda.evidence').lean();
+    return new Map(snaps.map(s => [String(s._id), s]));
 }
 
 /**

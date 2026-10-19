@@ -861,7 +861,13 @@
           "reason": "Lý do:",
           "evidence": "Bằng chứng",
           "expires": "Hết hạn {time}"
-        }
+        },
+        "capture_now": "Chụp thêm một ảnh ngay",
+        "set_interval": "Đổi chu kỳ chụp",
+        "set_isp": "Đổi cài đặt ảnh của camera",
+        "review_request": "Nhờ người kiểm tra bẫy",
+        "notify": "Gửi thông báo",
+        "params": "Thông số:"
       }
     },
     "askAboutPhoto": "Hỏi trợ lý về ảnh này",
@@ -3052,7 +3058,12 @@
       "noHistory": "Chưa có đề xuất nào được quyết định.",
       "kind": {
         "treatment": "Xử lý",
-        "card_change": "Thay thẻ"
+        "card_change": "Thay thẻ",
+        "capture_now": "Chụp thêm ảnh",
+        "set_interval": "Chu kỳ chụp",
+        "set_isp": "Cài đặt ảnh camera",
+        "review_request": "Nhờ người kiểm tra",
+        "notify": "Thông báo"
       },
       "action": {
         "treat_now": "Xử lý ngay",
@@ -3085,7 +3096,10 @@
       "done": "Xong: {status}.",
       "stillQueued": "Đã gửi. Tác tử chưa thực hiện: làm mới sau vài giây.",
       "openInAssistant": "Mở trong trợ lý",
-      "viewTrace": "Xem lượt xử lý"
+      "viewTrace": "Xem lượt xử lý",
+      "onTimeout": {
+        "no_op": "Không làm gì"
+      }
     },
     "density": {
       "title": "Mật độ ruồi đục quả",

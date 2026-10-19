@@ -49,7 +49,7 @@
 
   <!-- A change the assistant proposed: recorded only on Confirm -->
   <div v-else-if="card.type === 'confirm'" class="card-block card-block--confirm">
-    <div class="card-title">{{ t(`assistant.cards.confirm.${card.action}`) }}</div>
+    <div class="card-title">{{ te(`assistant.cards.confirm.${card.action}`) ? t(`assistant.cards.confirm.${card.action}`) : card.action }}</div>
     <!-- Proposed by FlyBot Sentinel: why, and the pictures it relies on -->
     <div v-if="card.source === 'sentinel'" class="confirm-lines mb-2">
       <div class="card-meta">{{ t('assistant.cards.confirm.sentinel.source') }}</div>
@@ -74,13 +74,18 @@
       <div><span class="card-meta">{{ t('assistant.cards.confirm.trap') }}</span> {{ card.summary.trap }}</div>
       <div><span class="card-meta">{{ t('assistant.cards.confirm.when') }}</span> {{ formatTime(card.summary.at) }}</div>
     </div>
-    <div v-else class="confirm-lines">
+    <div v-else-if="card.action === 'treatment'" class="confirm-lines">
       <div><span class="card-meta">{{ t('assistant.cards.confirm.kind') }}</span> {{ te(`logbook.types.${card.summary.type}`) ? t(`logbook.types.${card.summary.type}`) : card.summary.type }}</div>
       <div v-if="card.summary.product"><span class="card-meta">{{ t('assistant.cards.confirm.product') }}</span> {{ card.summary.product }}</div>
       <div><span class="card-meta">{{ t('assistant.cards.confirm.when') }}</span> {{ formatTime(card.summary.at) }}</div>
       <div><span class="card-meta">{{ t('assistant.cards.confirm.traps') }}</span> {{ (card.summary.traps || []).join(', ') }}</div>
       <div v-if="card.summary.area"><span class="card-meta">{{ t('assistant.cards.confirm.area') }}</span> {{ card.summary.area }}</div>
       <div v-if="card.summary.preHarvestDays !== null && card.summary.preHarvestDays !== undefined"><span class="card-meta">{{ t('assistant.cards.confirm.preHarvest') }}</span> {{ t('assistant.cards.confirm.days', { count: card.summary.preHarvestDays }) }}</div>
+    </div>
+    <!-- A camera action (extra photo, interval, image settings, review, notification) -->
+    <div v-else class="confirm-lines">
+      <div v-if="card.summary?.trap"><span class="card-meta">{{ t('assistant.cards.confirm.trap') }}</span> {{ card.summary.trap }}</div>
+      <div v-if="actionParams"><span class="card-meta">{{ t('assistant.cards.confirm.params') }}</span> {{ actionParams }}</div>
     </div>
     <div v-if="isOpen" class="flex items-center gap-2 mt-2">
       <el-button size="small" type="primary" :icon="Check" :loading="busy" @click="emit('decide', 'confirm')">{{ t('assistant.cards.confirm.ok') }}</el-button>
@@ -133,6 +138,8 @@ const router = useRouter();
 
 const previewList = computed(() => (props.card.items || []).map(item => api.getImageUrl(item.imageKey)));
 const evidenceList = computed(() => (props.card.evidence || []).map(item => item.url));
+// A camera action's parameters (interval minutes, image settings, message), as "key=value"
+const actionParams = computed(() => Object.entries(props.card.summary?.params || {}).map(([k, v]) => `${k}=${v}`).join(', '));
 // A pending Sentinel proposal past its expiry shows as expired (the server refuses it too)
 const expired = computed(() => !!props.card.expiresAt && new Date(props.card.expiresAt) <= new Date());
 const shownState = computed(() => ((props.card.state === 'pending' || !props.card.state) && expired.value ? 'expired' : props.card.state));

@@ -861,7 +861,13 @@
           "reason": "Why:",
           "evidence": "Evidence",
           "expires": "Expires {time}"
-        }
+        },
+        "capture_now": "Take another photo now",
+        "set_interval": "Change the capture interval",
+        "set_isp": "Change the camera's image settings",
+        "review_request": "Ask a person to check the trap",
+        "notify": "Send a notification",
+        "params": "Settings:"
       }
     },
     "askAboutPhoto": "Ask the assistant about this photo",
@@ -3052,7 +3058,12 @@
       "noHistory": "No decided proposals yet.",
       "kind": {
         "treatment": "Treatment",
-        "card_change": "Card change"
+        "card_change": "Card change",
+        "capture_now": "Extra photo",
+        "set_interval": "Capture interval",
+        "set_isp": "Camera image settings",
+        "review_request": "Review request",
+        "notify": "Notification"
       },
       "action": {
         "treat_now": "Treat now",
@@ -3085,7 +3096,10 @@
       "done": "Done: {status}.",
       "stillQueued": "Sent. The agent has not applied it yet: refresh in a few seconds.",
       "openInAssistant": "Open in the assistant",
-      "viewTrace": "View the trace"
+      "viewTrace": "View the trace",
+      "onTimeout": {
+        "no_op": "Nothing is done"
+      }
     },
     "density": {
       "title": "Fruit-fly density",

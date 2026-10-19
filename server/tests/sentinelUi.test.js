@@ -182,6 +182,9 @@ test('approvals: listed by status; the viewer cannot decide; a manager\'s decisi
     assert.deepEqual(a.payload, { action: 'set_interval', params: { minutes: 15 }, reason: 'Count doubled' });
     assert.equal(a.flybot_proposal_id, String(proposal._id));
     assert.ok(a.expires_at);
+    // The pictures to decide on come with it: the annotated evidence, then the photo
+    assert.deepEqual(a.evidence, ['evidence/CAM1/a.annotated.jpg', 'snapshots/CAM1/b.jpg']);
+    assert.deepEqual((await json(await get(`/approvals/${proposal._id}`, judge))).body.approval.evidence, a.evidence);
     assert.equal((await json(await get('/approvals?status=approved', judge))).body.items.length, 0);
     assert.equal((await json(await get(`/approvals/${proposal._id}`, judge))).body.approval.status, 'pending');
 

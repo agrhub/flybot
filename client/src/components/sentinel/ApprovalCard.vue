@@ -3,7 +3,7 @@
     <template #header>
       <div class="flex flex-wrap items-start justify-between gap-3">
         <div class="min-w-0">
-          <div class="section-title">{{ kindName(a.kind) }}: {{ actionLabel }}</div>
+          <div class="section-title">{{ kindName(a.kind) }}<template v-if="info.title !== a.kind">: {{ actionLabel }}</template></div>
           <div class="section-subtitle">
             <span class="font-mono">{{ (a.cameras || []).join(', ') }}</span>
             · {{ t('sentinel.approvals.createdAt', { time: dateTime(a.created_at, locale) }) }}
@@ -22,7 +22,7 @@
           <span class="meta-text">({{ left !== null && left < 0 ? statusName('expired') : relative(a.expires_at, locale) }})</span>
         </span>
       </el-descriptions-item>
-      <el-descriptions-item v-if="pending" :label="t('sentinel.approvals.onTimeoutLabel')">{{ a.on_timeout || 'no_op' }}</el-descriptions-item>
+      <el-descriptions-item v-if="pending" :label="t('sentinel.approvals.onTimeoutLabel')">{{ onTimeoutName(a.on_timeout || 'no_op') }}</el-descriptions-item>
       <el-descriptions-item v-if="!pending && a.decided_at" :label="t('sentinel.approvals.decided')">
         <span data-test="decided">
           <template v-if="a.decided_by">{{ t('sentinel.approvals.decidedBy', { by: a.decided_by }) }} · </template>{{ dateTime(a.decided_at, locale) }}
@@ -54,26 +54,33 @@
       <el-button v-if="a.flybot_proposal_id" :icon="ChatDotRound" data-test="open-assistant" @click="showProposalInAssistant(a.flybot_proposal_id)">
         {{ t('sentinel.approvals.openInAssistant') }}
       </el-button>
-      <el-button link type="primary" :icon="View" @click="router.push({ name: 'sentinel-traces', query: { id: a.event_id } })">
+      <el-button v-if="a.event_id" link type="primary" :icon="View" data-test="view-trace" @click="openTrace">
         {{ t('sentinel.approvals.viewTrace') }}
       </el-button>
     </div>
     <p v-if="pending && !canDecide" class="meta-text mt-2" data-test="read-only">{{ t('sentinel.approvals.readOnly') }}</p>
     <el-alert v-if="message" :type="message.type" :title="message.text" :closable="false" show-icon class="mt-3" data-test="message" />
+
+    <!-- The trace in place: the approvals list stays where it was -->
+    <el-dialog v-model="traceOpen" :title="t('sentinel.traces.opened')" width="min(1100px, 96vw)" append-to-body destroy-on-close data-test="trace-dialog">
+      <el-skeleton v-if="trace.loading" :rows="5" animated />
+      <el-alert v-else-if="trace.error" type="error" :closable="false" show-icon :title="trace.error" />
+      <TraceDetail v-else-if="trace.data" :trace="trace.data" />
+    </el-dialog>
   </el-card>
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, reactive, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useRouter } from 'vue-router';
 import { ElMessageBox, ElNotification } from 'element-plus';
 import { Check, Close, ChatDotRound, View } from '@element-plus/icons-vue';
 import api from '@/services/api';
 import { useTheme } from '@/utils/theme';
 import { useBreakpoints } from '@/composables/useBreakpoints';
-import { sentinelGet, noteSentinelError } from '@/composables/useSentinel';
+import { sentinelGet, noteSentinelError, sentinelErrorKind } from '@/composables/useSentinel';
 import EvidenceGallery from './EvidenceGallery.vue';
+import TraceDetail from './TraceDetail.vue';
 import { submitDecision, DecisionError, describeProposal, secondsLeft, STATUS_TAG } from '@/utils/sentinel/approvals';
 import { collectImages } from '@/utils/sentinel/trace';
 import { dateTime, relative } from '@/utils/sentinel/time';
@@ -92,7 +99,6 @@ const props = defineProps({
 const emit = defineEmits(['decided', 'refresh']);
 
 const { t, te, locale } = useI18n();
-const router = useRouter();
 const { isMobile } = useBreakpoints();
 const { showProposalInAssistant } = useTheme();
 
@@ -105,6 +111,22 @@ const busy = ref('');
 const message = ref(null);
 
 const statusName = (s) => (te(`sentinel.approvals.status.${s}`) ? t(`sentinel.approvals.status.${s}`) : s);
+// The trace behind the proposal, loaded when its dialog opens
+const traceOpen = ref(false);
+const trace = reactive({ loading: false, data: null, error: '' });
+async function openTrace() {
+  traceOpen.value = true;
+  if (trace.data || trace.loading) return;
+  Object.assign(trace, { loading: true, error: '' });
+  try {
+    const res = await sentinelGet(`traces/${encodeURIComponent(a.value.event_id)}`);
+    Object.assign(trace, { loading: false, data: res?.trace || res });
+  } catch (err) {
+    Object.assign(trace, { loading: false, error: t(`sentinel.errors.${sentinelErrorKind(err)}`) });
+  }
+}
+
+const onTimeoutName = (k) => (te(`sentinel.approvals.onTimeout.${k}`) ? t(`sentinel.approvals.onTimeout.${k}`) : k);
 const kindName = (k) => (te(`sentinel.approvals.kind.${k}`) ? t(`sentinel.approvals.kind.${k}`) : k);
 const actionLabel = computed(() => {
   const k = info.value.title;
@@ -114,7 +136,7 @@ const actionLabel = computed(() => {
 async function decide(decision) {
   try {
     await ElMessageBox.confirm(
-      t(decision === 'approve' ? 'sentinel.approvals.confirmApprove' : 'sentinel.approvals.confirmReject', { what: `${kindName(a.value.kind)}: ${actionLabel.value}` }),
+      t(decision === 'approve' ? 'sentinel.approvals.confirmApprove' : 'sentinel.approvals.confirmReject', { what: info.value.title !== a.value.kind ? `${kindName(a.value.kind)}: ${actionLabel.value}` : kindName(a.value.kind) }),
       t(decision === 'approve' ? 'sentinel.approvals.approve' : 'sentinel.approvals.reject'),
       {
         type: decision === 'approve' ? 'info' : 'warning',
