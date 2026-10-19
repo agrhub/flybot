@@ -19,7 +19,7 @@
     "@ezuikit/player-hls": "^2.0.0",
     "axios": "^1.13.2",
     "chart.js": "^4.5.1",
-    "element-plus": "^2.13.0",
+    "element-plus": "^2.14.7",
     "ezuikit-js": "^9.0.23",
     "flag-icons": "^7.5.0",
     "hls.js": "^1.6.15",
