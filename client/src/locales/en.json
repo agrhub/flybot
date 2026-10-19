@@ -1313,8 +1313,6 @@
     "orchardAddressPlaceholder": "e.g. Lot A - Cat Chu Mango Orchard, Cu Chi",
     "latitude": "Latitude",
     "longitude": "Longitude",
-    "trapType": "Trap Type",
-    "trapTypePlaceholder": "Smart Pheromone Sticky Trap",
     "cropType": "Crop Type",
     "cropTypePlaceholder": "Cat Chu Mango",
     "popupTraps": "Trap",

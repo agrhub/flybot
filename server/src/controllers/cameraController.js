@@ -570,9 +570,12 @@ async function updateCamera(req, res) {
  */
 async function updateCameraLocation(req, res) {
     const userId = req.user.id;
-    const { deviceSerial, latitude, longitude, locationAddress, trapType, cropType } = req.body;
+    const { deviceSerial, latitude, longitude, locationAddress, trapType, trapKind, cropType } = req.body;
     if (!deviceSerial) {
         return res.status(400).json({ success: false, message: "Missing deviceSerial." });
+    }
+    if (trapKind !== undefined && !TRAP_KINDS.includes(trapKind)) {
+        return res.status(400).json({ success: false, message: `trapKind must be one of ${TRAP_KINDS.join(', ')}.` });
     }
 
     try {
@@ -581,13 +584,18 @@ async function updateCameraLocation(req, res) {
             return res.status(404).json({ success: false, message: "Camera not found or permission denied." });
         }
 
+        const kindBefore = camera.trapKind;
         if (latitude !== undefined) camera.latitude = Number(latitude);
         if (longitude !== undefined) camera.longitude = Number(longitude);
         if (locationAddress !== undefined) camera.locationAddress = locationAddress;
         if (trapType !== undefined) camera.trapType = trapType;
+        if (trapKind !== undefined) camera.trapKind = trapKind;
         if (cropType !== undefined) camera.cropType = cropType;
 
         await camera.save();
+        if (camera.trapKind !== kindBefore) {
+            recordAudit(req, { action: 'camera.updated', target: cameraTarget(camera), details: { fields: ['trapKind'], trapKind: camera.trapKind } });
+        }
         res.json({ success: true, message: "Camera location updated successfully.", camera: toClientCamera(camera, req.user) });
     } catch (err) {
         sendServerError(res, err);

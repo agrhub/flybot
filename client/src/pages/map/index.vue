@@ -200,13 +200,16 @@
         </div>
 
         <div class="grid grid-cols-2 gap-3">
-          <el-form-item :label="t('map.trapType')">
-            <el-input v-model="editForm.trapType" :placeholder="t('map.trapTypePlaceholder')" />
+          <el-form-item :label="t('trapKind.label')">
+            <el-select v-model="editForm.trapKind" class="w-full" data-test="map-trap-kind">
+              <el-option v-for="kind in TRAP_KINDS" :key="kind" :value="kind" :label="t(`trapKind.${kind}.name`)" />
+            </el-select>
           </el-form-item>
           <el-form-item :label="t('map.cropType')">
             <el-input v-model="editForm.cropType" :placeholder="t('map.cropTypePlaceholder')" />
           </el-form-item>
         </div>
+        <p class="text-xs -mt-2" style="color: var(--el-text-color-secondary)">{{ t(`trapKind.${editForm.trapKind}.hint`) }}</p>
       </el-form>
 
       <template #footer>
@@ -298,14 +301,14 @@ const editingCam = ref(null);
 const savingLocation = ref(false);
 
 // Same defaults as the Camera model on the server
-const DEFAULT_TRAP_TYPE = 'Yellow Sticky Trap';
+const TRAP_KINDS = ['sticky', 'lure'];
 const DEFAULT_CROP_TYPE = 'Mango Orchard';
 
 const editForm = ref({
   locationAddress: '',
   latitude: null,
   longitude: null,
-  trapType: DEFAULT_TRAP_TYPE,
+  trapKind: 'sticky',
   cropType: DEFAULT_CROP_TYPE
 });
 
@@ -323,11 +326,10 @@ const enrichedCameras = computed(() => {
       riskBasis: live?.riskBasis || 'latest',
       today: live?.today ?? null,
       ftd7: live?.ftd7 ?? null,
-      trapKind: live?.trapKind || cam.trapKind || 'sticky',
+      trapKind: cam.trapKind || live?.trapKind || 'sticky',
       // Computed by the API against each camera's own alert threshold
       riskLevel: live?.riskLevel || 'low',
       alertThreshold: live?.alertThreshold,
-      trapType: cam.trapType || live?.trapType || DEFAULT_TRAP_TYPE,
       cropType: cam.cropType || live?.cropType || DEFAULT_CROP_TYPE
     };
   }).map(cam => ({ ...cam, hasLocation: hasLocation(cam) }));
@@ -908,7 +910,7 @@ const openEditModal = (cam) => {
     locationAddress: cam.locationAddress || '',
     latitude: cam.hasLocation ? Number(cam.latitude) : Number((map?.getCenter().lat ?? FALLBACK_CENTER[0]).toFixed(6)),
     longitude: cam.hasLocation ? Number(cam.longitude) : Number((map?.getCenter().lng ?? FALLBACK_CENTER[1]).toFixed(6)),
-    trapType: cam.trapType || DEFAULT_TRAP_TYPE,
+    trapKind: cam.trapKind || 'sticky',
     cropType: cam.cropType || DEFAULT_CROP_TYPE
   };
   editDialogVisible.value = true;
@@ -923,7 +925,7 @@ const handleSaveLocation = async () => {
       latitude: Number(editForm.value.latitude),
       longitude: Number(editForm.value.longitude),
       locationAddress: editForm.value.locationAddress,
-      trapType: editForm.value.trapType,
+      trapKind: editForm.value.trapKind,
       cropType: editForm.value.cropType
     });
 
@@ -931,7 +933,9 @@ const handleSaveLocation = async () => {
       editingCam.value.latitude = Number(editForm.value.latitude);
       editingCam.value.longitude = Number(editForm.value.longitude);
       editingCam.value.locationAddress = editForm.value.locationAddress;
-      editingCam.value.trapType = editForm.value.trapType;
+      editingCam.value.trapKind = editForm.value.trapKind;
+      const source = cameras.value.find(c => c.deviceSerial === editingCam.value.deviceSerial);
+      if (source) source.trapKind = editForm.value.trapKind;
       editingCam.value.cropType = editForm.value.cropType;
 
       renderMarkers();

@@ -84,4 +84,12 @@ test('trap kind: chosen when adding, validated, and lure traps skip card feature
     const changed = await request('/api/user/camera', { method: 'PUT', as: owner, body: { deviceSerial: 'NEWLURE', trapKind: 'sticky' } });
     assert.equal(changed.status, 200);
     assert.equal((await models.Camera.findOne({ deviceSerial: 'NEWLURE' })).trapKind, 'sticky');
+
+    // The field map's location dialog sets the same trap kind, checked the same way
+    const located = await json(await request('/api/user/camera/location', { method: 'PUT', as: owner, body: { deviceSerial: 'NEWLURE', latitude: 10.19, longitude: 106.01, trapKind: 'lure' } }));
+    assert.equal(located.status, 200);
+    assert.equal(located.body.camera.trapKind, 'lure');
+    assert.equal((await models.Camera.findOne({ deviceSerial: 'NEWLURE' })).latitude, 10.19);
+    assert.equal((await request('/api/user/camera/location', { method: 'PUT', as: owner, body: { deviceSerial: 'NEWLURE', trapKind: 'Yellow Sticky Trap' } })).status, 400);
+    assert.equal((await models.Camera.findOne({ deviceSerial: 'NEWLURE' })).trapKind, 'lure');
 });
