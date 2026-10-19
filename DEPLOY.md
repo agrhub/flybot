@@ -52,14 +52,15 @@ Check the plan numbers under **Settings → Plans** before inviting people: the 
 
 Its photos are the labeled synthetic trap pictures of flybot-aws `eval/synth` (SYNTH_ file names, EXIF/XMP label, a visible SIMULATED stamp). Each one is analyzed by the real vision Lambda, so the counts, boxes, quality flags, traces and proposals come from the pipeline; the number of flies drawn on a photo is kept beside it ("Drawn: N") to compare the detector on sticky and lure traps.
 
-1. On your computer, from `server/`: `node scripts/demo_sim.js pool <flybot-aws>/data/synth/demo-30d <flybot-aws>/data/synth/demo-ahead <flybot-aws>/data/synth/pool` writes the pool index (`sim-pool.json`) and prints the `aws s3` commands that upload the pictures and the index to the photo bucket (`simulated/pool/`). The showcase sets give the four showcase traps their own photos day by day; the pool set (no times, about 6 % deliberately damaged photos so quality flags and recapture proposals show) feeds the other traps.
-2. On the instance (SSM session), with the server's environment:
+1. On your computer, from `server/`: `node scripts/demo_sim.js pool <flybot-aws>/data/synth/demo-30d <flybot-aws>/data/synth/demo-ahead <flybot-aws>/data/synth/pool` writes the pool index (`sim-pool.json`) and prints the `aws s3` commands that upload the pictures and the index to the photo bucket (`simulated/pool/`). With S3-compatible storage (`S3_ENDPOINT`), add `--endpoint-url <S3_ENDPOINT>` and that storage's keys (in the environment of that command only). The showcase sets give the four showcase traps their own photos day by day; the pool set (no times, about 6 % deliberately damaged photos so quality flags and recapture proposals show) feeds the other traps.
+2. On the instance (SSM, as root), with the server's environment: `/etc/flybot/env` is readable by root only, so load it first and run the script as the `flybot` user with that environment. The real run takes about an hour (2,852 photos, about 45 a minute), so start it detached and follow its log:
    ```bash
-   cd /opt/flybot/current && sudo -u flybot bash -c 'set -a; . /etc/flybot/env; set +a; node server/dist/demo_sim.js apply'        # dry run: what it would create, Lambda calls
-   cd /opt/flybot/current && sudo -u flybot bash -c 'set -a; . /etc/flybot/env; set +a; node server/dist/demo_sim.js apply --yes'  # about 2,800 Lambda calls, a few minutes
+   cd /opt/flybot/current && set -a && . /etc/flybot/env && set +a && sudo -E -u flybot node server/dist/demo_sim.js apply   # dry run: what it would create, Lambda calls
+   cd /opt/flybot/current && set -a && . /etc/flybot/env && set +a && setsid nohup sudo -E -u flybot node server/dist/demo_sim.js apply --yes > /var/log/flybot-demo-sim.log 2>&1 < /dev/null &
+   tail -f /var/log/flybot-demo-sim.log
    ```
 3. In **Admin → System → Demo access**: turn on *Show the simulated demo farm to visitors*, and *Daily simulation* with an end date to add each day's photos (every 30 minutes, only the simulated farm changes).
-4. When the demo is over: turn both off, then `node server/dist/demo_sim.js remove` (dry run) and `remove --yes`: it deletes every simulated document and photo, and nothing else.
+4. When the demo is over: turn both off, then `node server/dist/demo_sim.js remove` (dry run) and `remove --yes`, with the environment loaded as in step 2: it deletes every simulated document and photo copy, and nothing else (the pool under `simulated/` stays until you delete it).
 
 `apply` and the daily job are idempotent. To try it on your computer first: `tools/media/sim-demo.js` runs it with an in-memory database and the vision handler running locally.
 
