@@ -38,7 +38,7 @@
     "@vitejs/plugin-vue": "^6.0.9",
     "@vue/test-utils": "^2.5.1",
     "axe-core": "^4.13.0",
-    "happy-dom": "20.14.5",
+    "happy-dom": "21.0.1",
     "unplugin-vue-components": "^32.1.0",
     "vite": "^7.3.0",
     "vite-plugin-vue-devtools": "^8.2.1",
