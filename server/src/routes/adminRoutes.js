@@ -14,6 +14,7 @@ router.get('/cameras', adminController.listCameras);
 router.put('/cameras/:deviceSerial/owner', adminController.transferCamera);
 router.get('/settings', adminController.getSystemSettings);
 router.put('/settings', adminController.updateSystemSettings);
+router.get('/demo-sim', adminController.getDemoSim);
 router.get('/audit', adminController.listAuditLog);
 router.get('/pipeline', adminController.getPipeline);
 router.get('/usage', adminController.getUsage);

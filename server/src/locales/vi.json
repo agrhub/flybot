@@ -510,7 +510,10 @@
     "orgSettingOnly": "Chỉ tổ chức mới có cài đặt này.",
     "orgsOffB2c": "Chế độ này không dùng tổ chức (APP_MODE=b2c).",
     "allowPersonalBool": "allowMemberPersonalWorkspaces phải là true hoặc false.",
-    "demo_live_closed": "Camera trình diễn này chưa mở xem trực tiếp cho khách."
+    "demo_live_closed": "Camera trình diễn này chưa mở xem trực tiếp cho khách.",
+    "simulated_no_live": "Camera mô phỏng không có hình trực tiếp.",
+    "simulated_no_capture": "Camera mô phỏng không chụp ảnh theo yêu cầu.",
+    "simulated_decided": "Đề xuất mô phỏng do chương trình mô phỏng tự quyết định."
   },
   "reportPdf": {
     "range": "Khoảng thời gian: {from} - {to} ({days} ngày)",

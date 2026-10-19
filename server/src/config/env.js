@@ -210,6 +210,11 @@ const config = {
     DEMO_VIEW_SINCE: /^\d{4}-\d{2}-\d{2}/.test((process.env.DEMO_VIEW_SINCE || '').trim()) && !Number.isNaN(Date.parse(process.env.DEMO_VIEW_SINCE.trim()))
         ? new Date(process.env.DEMO_VIEW_SINCE.trim()).toISOString() : null,
     DEMO_VIEW_LIVE: process.env.DEMO_VIEW_LIVE === 'true',
+    // The simulated demo farm (scripts/demo_sim.js): DEMO_VIEW_SIMULATED=true shows it to the same
+    // visitors; DEMO_SIM_ENABLED=true adds each day's simulated photos until DEMO_SIM_UNTIL (YYYY-MM-DD)
+    DEMO_VIEW_SIMULATED: process.env.DEMO_VIEW_SIMULATED === 'true',
+    DEMO_SIM_ENABLED: process.env.DEMO_SIM_ENABLED === 'true',
+    DEMO_SIM_UNTIL: /^\d{4}-\d{2}-\d{2}$/.test((process.env.DEMO_SIM_UNTIL || '').trim()) ? new Date(`${process.env.DEMO_SIM_UNTIL.trim()}T23:59:59+07:00`).toISOString() : null,
     // Registrations per client IP per hour, and in total per hour
     REGISTER_MAX_PER_IP_HOUR: Math.min(Math.max(parseInt(process.env.REGISTER_MAX_PER_IP_HOUR || '5', 10) || 5, 1), 1000),
     REGISTER_MAX_PER_HOUR: Math.min(Math.max(parseInt(process.env.REGISTER_MAX_PER_HOUR || '60', 10) || 60, 1), 100000),

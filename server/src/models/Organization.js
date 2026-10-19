@@ -34,6 +34,8 @@ const workspacePlanSchema = new mongoose.Schema({
 }, { _id: false });
 
 const organizationSchema = new mongoose.Schema({
+    // Simulated demo data (scripts/demo_sim.js): labeled wherever it is shown, never mixed with real data
+    simulated: { type: Boolean, default: undefined },
     name: { type: String, required: true, trim: true },
     // personal: one owner, made with the account; organization: made by the admin
     kind: { type: String, enum: ['personal', 'organization'], default: 'organization' },

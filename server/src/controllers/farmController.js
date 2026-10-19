@@ -127,7 +127,8 @@ async function listFarms(req, res) {
                 owner: ownerOf(f),
                 canEdit: farmService.canEditFarm(req.user, f),
                 plotCount: plotCount.get(String(f._id)) || 0,
-                cameraCount: cameraCount.get(String(f._id)) || 0
+                cameraCount: cameraCount.get(String(f._id)) || 0,
+                ...(f.simulated ? { simulated: true } : {})
             }))
         });
     } catch (err) {

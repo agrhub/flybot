@@ -190,7 +190,7 @@
         <!-- CamOS: the camera sleeps between photos; live view is asked for its next wake -->
         <div v-if="isCamos && !loading && !isPlaying && !kvsConfig" class="grid-cam__scrim grid-cam__scrim--strong absolute inset-0 flex flex-col items-center justify-center p-5 text-center z-20" data-test="camos-overlay">
           <el-icon :size="26" class="mb-2"><Moon v-if="sleeping" /><VideoCamera v-else /></el-icon>
-          <p class="text-xs font-medium max-w-xs leading-relaxed">{{ liveClosed ? t('cameras.demo.liveClosed') : sleeping ? nextWakeText : (camera.status === 1 ? t('cameras.kvs.liveOnRequest') : t('cameras.deviceOffline')) }}</p>
+          <p class="text-xs font-medium max-w-xs leading-relaxed">{{ liveClosed ? liveClosedText : sleeping ? nextWakeText : (camera.status === 1 ? t('cameras.kvs.liveOnRequest') : t('cameras.deviceOffline')) }}</p>
           <div v-if="!liveClosed" class="flex items-center gap-2 mt-3">
             <el-button v-if="camera.status === 1 && !sleeping" type="primary" size="small" :icon="VideoCamera" @click.stop="emit('expand', camera)">{{ t('cameras.live') }}</el-button>
             <el-button size="small" :icon="Clock" :loading="requestingLive" :disabled="liveRequested" @click.stop="requestLive">
@@ -244,12 +244,16 @@
         <el-tooltip v-if="isCamos && powerMode" :content="t(`cameras.power.hint.${powerMode}`)" placement="top">
           <el-tag type="info" effect="plain" size="small" class="shrink-0" data-test="power-mode">{{ t(`cameras.power.${powerMode}`) }}</el-tag>
         </el-tooltip>
+        <!-- A simulated demo camera: synthetic photos, not field data -->
+        <el-tooltip v-if="camera.simulated" :content="t('simulated.cameraHint')" placement="top">
+          <el-tag type="warning" effect="dark" size="small" class="shrink-0" data-test="simulated-badge">{{ t('simulated.tag') }}</el-tag>
+        </el-tooltip>
         <!-- A read-only demo camera (Settings > System > Demo access) -->
         <el-tooltip v-if="camera.access === 'demo'" :content="t('cameras.demo.hint')" placement="top">
           <el-tag type="success" effect="light" size="small" class="shrink-0" data-test="demo-badge">{{ t('cameras.demo.tag') }}</el-tag>
         </el-tooltip>
         <!-- HD Stream Quality Tag -->
-        <el-tag v-if="!isCamos" type="info" effect="plain" size="small" class="shrink-0">HD</el-tag>
+        <el-tag v-if="!isCamos && !camera.simulated" type="info" effect="plain" size="small" class="shrink-0">HD</el-tag>
         <span class="grid-cam__meta font-mono truncate min-w-0" :title="camera.model || camera.deviceType">
           {{ formatModel(camera.model || camera.deviceType) }}
         </span>
@@ -461,8 +465,10 @@ const handleSaveCode = async () => {
 // "request live at next wake" overlay
 const kvsConfig = ref(null);
 const liveSupported = computed(() => props.camera?.device?.liveSupported !== false);
-// A read-only demo camera whose live view the administrator has not opened to visitors
+// A read-only demo camera whose live view the administrator has not opened to visitors, or a
+// simulated demo camera (no device at all)
 const liveClosed = computed(() => props.camera?.liveOpen === false);
+const liveClosedText = computed(() => (props.camera?.simulated ? t('simulated.noLive') : t('cameras.demo.liveClosed')));
 const onKvsState = (state) => {
   isPlaying.value = state === 'playing';
   if (state === 'error') kvsConfig.value = null;
@@ -485,7 +491,7 @@ const startLiveStream = async () => {
   if (isCamos.value) return startCamosLive();
   if (liveClosed.value) {
     hasError.value = true;
-    errorMessage.value = t('cameras.demo.liveClosed');
+    errorMessage.value = liveClosedText.value;
     return;
   }
   if (props.camera.status !== 1) {

@@ -17,20 +17,30 @@ const ownerIdOf = (farm) => String(farm.ownerId?._id ?? farm.ownerId);
 // orgId -> role, put on req.user by orgService.attachOrgRoles
 const orgRoleIn = (user, farm) => (farm.orgId && user?.orgRoles?.get(String(farm.orgId))) || null;
 
+// Simulated demo farms follow the camera rules of utils/ownership.js viewFilter: signed-in requests
+// only (a User document in a background job never sees them), and the demo organization's farms
+// for visitors with demo access (req.user.demoOrgId)
+const isRequestUser = (user) => Array.isArray(user?.demoSerials);
+const realOnly = (filter) => ({ $and: [filter, { simulated: { $ne: true } }] });
+
 function farmViewFilter(user) {
-    if (isAdmin(user)) return {};
+    if (isAdmin(user)) return isRequestUser(user) ? {} : realOnly({});
     const id = idOf(user);
     if (!id) return { _id: null };
     const orgIds = [...(user.orgRoles?.keys() || [])];
     const base = { $or: [{ ownerId: id }, { 'sharedWith.userId': id }, ...(orgIds.length ? [{ orgId: { $in: orgIds } }] : [])] };
     const scope = require('./workspaceService').scopeFilter(user, { ownerField: 'ownerId' });
-    return scope ? { $and: [base, scope] } : base;
+    const own = scope ? { $and: [base, scope] } : base;
+    if (!isRequestUser(user)) return realOnly(own);
+    return user.demoOrgId ? { $or: [own, { orgId: String(user.demoOrgId), simulated: true }] } : own;
 }
 
 function canViewFarm(user, farm) {
     if (!farm) return false;
     if (isAdmin(user)) return true;
     const id = idOf(user);
+    // The simulated demo farm, for visitors with demo access (read-only: canEditFarm stays false)
+    if (farm.simulated && user.demoOrgId && String(farm.orgId?._id ?? farm.orgId ?? '') === String(user.demoOrgId)) return true;
     return ownerIdOf(farm) === id || !!orgRoleIn(user, farm) || (farm.sharedWith || []).some(sh => sh.userId && String(sh.userId) === id);
 }
 

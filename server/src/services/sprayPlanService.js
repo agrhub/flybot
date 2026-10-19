@@ -79,7 +79,7 @@ function suggest({ atThreshold, lastTreatment, sprays, wave, outlook, today, now
 
 /** Suggestions for every plot (and farm without plots) the user sees, the most urgent first. */
 async function planFor(user, now = new Date()) {
-    const withRoles = user.orgRoles ? user : { _id: user._id, id: user.id, role: user.role, orgRoles: await orgRolesOf(user) };
+    const withRoles = user.orgRoles ? user : { _id: user._id, id: user.id, role: user.role, demoSerials: user.demoSerials, demoOrgId: user.demoOrgId, orgRoles: await orgRolesOf(user) };
     const [farms, cameras] = await Promise.all([
         Farm.find(farmService.farmViewFilter(withRoles)).select('name').lean(),
         viewableCameras(user).select('deviceSerial deviceName farmId plotId latitude longitude trapKind alertThreshold').lean()

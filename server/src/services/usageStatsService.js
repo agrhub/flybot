@@ -56,8 +56,8 @@ async function usageStats(now = new Date()) {
         AuditLog.countDocuments({ action: 'auth.data_exported', createdAt: { $gte: d30 } }),
         auditSum('org.log_reminded', 'count', d30),
         AuditLog.countDocuments({ action: 'org.report_sent', createdAt: { $gte: d30 } }),
-        Camera.countDocuments({ unclaimed: { $ne: true } }),
-        Camera.countDocuments({ status: 1 }),
+        Camera.countDocuments({ unclaimed: { $ne: true }, simulated: { $ne: true } }),
+        Camera.countDocuments({ status: 1, simulated: { $ne: true } }),
         Snapshot.distinct('deviceSerial', { createdAt: { $gte: d1 } }).then(list => list.length),
         DailyStat.aggregate([
             { $match: { day: { $gte: dailyStats.dayKeyOf(d30) } } },

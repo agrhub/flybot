@@ -40,7 +40,9 @@ const camerasOf = async (user) => (await json(await request('/api/user/cameras',
 test('accessFor: off, empty, admins and accounts older than the date get nothing', () => {
     const user = { role: 'user', createdAt: new Date('2026-10-25T00:00:00Z') };
     const on = { demoViewEnabled: true, demoViewCameras: ['A'], demoViewSince: null, demoViewLive: false };
-    assert.deepEqual(accessFor(user, on), { serials: ['A'], live: false });
+    assert.deepEqual(accessFor(user, on), { serials: ['A'], orgId: null, live: false });
+    assert.deepEqual(accessFor(user, { ...on, demoViewCameras: [], demoViewSimulated: true }, 'org1'), { serials: [], orgId: 'org1', live: false });
+    assert.equal(accessFor(user, { ...on, demoViewSimulated: true }, null).orgId, null, 'no simulated farm yet');
     assert.deepEqual(accessFor(user, { ...on, demoViewEnabled: false }).serials, []);
     assert.deepEqual(accessFor(user, { ...on, demoViewCameras: [] }).serials, []);
     assert.deepEqual(accessFor({ ...user, role: 'admin' }, on).serials, []);
@@ -75,7 +77,8 @@ test('on: a new account views the demo cameras read-only, without the owner, and
     const config = await json(await request('/api/auth/config'));
     assert.equal(config.body.demoView, true);
     const me = await json(await request('/api/auth/me', { as: visitor }));
-    assert.deepEqual(me.body.user.demoView, { cameras: 2, live: false });
+    assert.deepEqual(me.body.user.demoView, { cameras: 2, simulated: false, live: false });
+    assert.equal(me.body.user.simulatedData, false);
 });
 
 test('on: photos of demo cameras load, other cameras stay private', async () => {

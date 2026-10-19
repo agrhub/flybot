@@ -312,12 +312,12 @@ async function getDashboard(req, res) {
         // Names of the cameras this viewer gets data for (for legends and pickers)
         const serials = await dashboardService.effectiveSerials(dashboard, req.user);
         const cameras = serials.length
-            ? await Camera.find({ deviceSerial: { $in: serials } }).select('deviceSerial deviceName status')
+            ? await Camera.find({ deviceSerial: { $in: serials } }).select('deviceSerial deviceName status simulated')
             : [];
         res.json({
             success: true,
             dashboard: await toDetailWithShares(dashboard, req.user),
-            cameras: cameras.map(c => ({ deviceSerial: c.deviceSerial, deviceName: c.deviceName, status: c.status }))
+            cameras: cameras.map(c => ({ deviceSerial: c.deviceSerial, deviceName: c.deviceName, status: c.status, ...(c.simulated ? { simulated: true } : {}) }))
         });
     } catch (err) {
         sendServerError(res, err, { context: 'Get dashboard' });
@@ -613,7 +613,7 @@ async function getPublicDashboard(req, res) {
             const base = `/api/public/dashboards/${encodeURIComponent(req.params.token)}/images/`;
             const [computed, cameraDocs] = await Promise.all([
                 dashboardService.computeWidgetData(dashboard, serials, { imageUrl: (key) => base + key, range: wanted.range }),
-                serials.length ? Camera.find({ deviceSerial: { $in: serials } }).select('deviceSerial deviceName status').lean() : []
+                serials.length ? Camera.find({ deviceSerial: { $in: serials } }).select('deviceSerial deviceName status simulated').lean() : []
             ]);
             return { ...computed, cameras: cameraDocs, generatedAt: new Date() };
         }));
@@ -632,7 +632,9 @@ async function getPublicDashboard(req, res) {
                 widgets: toDetail(dashboard, { id: null, role: 'user' }).widgets
             },
             range,
-            cameras: cameras.map(c => ({ deviceSerial: c.deviceSerial, deviceName: c.deviceName, status: c.status })),
+            cameras: cameras.map(c => ({ deviceSerial: c.deviceSerial, deviceName: c.deviceName, status: c.status, ...(c.simulated ? { simulated: true } : {}) })),
+            // Simulated demo cameras on the report: the page says so
+            simulated: cameras.some(c => c.simulated),
             widgets
         });
     } catch (err) {

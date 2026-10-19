@@ -14,11 +14,13 @@ const { Camera } = require('../models');
  *   ezviz   - EZVIZ Open Platform (the existing cameras; behaviour unchanged)
  *   camos   - CamOS cameras over AWS IoT Core + the device API; live view through kinesis
  *   kinesis - Kinesis Video Streams WebRTC live view only
+ *   simulated - simulated demo cameras (scripts/demo_sim.js): no device at all
  */
 const adapters = {
     ezviz: require('./ezviz'),
     camos: require('./camos'),
-    kinesis: require('./kinesis')
+    kinesis: require('./kinesis'),
+    simulated: require('./simulated')
 };
 const PLATFORMS = Object.keys(adapters);
 const DEFAULT_PLATFORM = 'ezviz';

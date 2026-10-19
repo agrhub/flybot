@@ -58,9 +58,11 @@ function accessOf(user, dashboard) {
 /**
  * Serials (among `serials`) the owner may publish: their own cameras, or any camera for an admin.
  */
-async function ownerPublishableSerials(owner, serials) {
+async function ownerPublishableSerials(owner, serials, { simulated = false } = {}) {
     if (!owner || owner.disabled || !serials.length) return [];
     const filter = { deviceSerial: { $in: serials } };
+    // Simulated demo cameras: on screen (labeled) only, never in emailed reports and their PDFs
+    if (!simulated) filter.simulated = { $ne: true };
     if (roleOf(owner) !== 'admin') filter.userId = owner._id;
     const cams = await Camera.find(filter).select('deviceSerial');
     return cams.map(c => c.deviceSerial);
@@ -73,7 +75,10 @@ async function effectiveSerials(dashboard, viewer) {
     const serials = dashboard.cameraSerials || [];
     if (!serials.length) return [];
     const owner = await User.findById(ownerIdOf(dashboard)).select('role disabled');
-    const allowed = new Set(await ownerPublishableSerials(owner, serials));
+    // A signed-in request (req.user) or the public link shows simulated cameras, labeled; a User
+    // document (emailed and scheduled reports) never gets them
+    const simulated = viewer === null || Array.isArray(viewer?.demoSerials);
+    const allowed = new Set(await ownerPublishableSerials(owner, serials, { simulated }));
     if (viewer) {
         const own = await Camera.find({ deviceSerial: { $in: serials }, ...viewFilter(viewer) }).select('deviceSerial');
         own.forEach(c => allowed.add(c.deviceSerial));

@@ -178,6 +178,10 @@ export default {
   getAdminSettings() {
     return apiClient.get('/admin/settings');
   },
+  // The simulated demo farm (scripts/demo_sim.js) as it stands (admin)
+  adminDemoSim() {
+    return apiClient.get('/admin/demo-sim');
+  },
   // Capture pipeline monitor (admin)
   getPipeline() {
     return apiClient.get('/admin/pipeline');

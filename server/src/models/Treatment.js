@@ -8,6 +8,8 @@ const TREATMENT_TYPES = ['spray', 'bait', 'lure', 'biological', 'sanitation', 'b
  * whether catches went down afterwards (services/treatmentService.js).
  */
 const treatmentSchema = new mongoose.Schema({
+    // Simulated demo data (scripts/demo_sim.js): labeled wherever it is shown, never mixed with real data
+    simulated: { type: Boolean, default: undefined },
     // Traps in the treated area (the effect is measured on these)
     cameraSerials: { type: [String], required: true },
     type: { type: String, enum: TREATMENT_TYPES, required: true },

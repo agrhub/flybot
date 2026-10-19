@@ -8,6 +8,7 @@
 - **Deep analysis** in the assistant: ask "why did the count jump today?" about a photo and the vision agent looks at it in detail.
 - **Sentinel screen**: for every photo, what the vision agent saw, counted and proposed, with the proposals waiting for a decision and the state of each camera.
 - **Demo access for visitors** (Admin → System): chosen cameras show up, read-only and marked Demo, in every new account, so a visitor (for example a competition judge) sees real traps, counts, traces and the assistant right after signing up. Nothing on those cameras can be changed; live view opens only if the administrator allows it; turning it off ends the access within a minute.
+- **Simulated demo farm** for visitors: about 40 sticky and lure traps on farms across Vietnam's fruit regions, with plots, a field log and a month of history, built from labeled synthetic trap photos that the real OpenCV 5 pipeline counts; the flies drawn on each photo are shown beside the AI's count. Labeled "Simulated" everywhere and never in emailed reports or alerts; a daily simulation keeps it current until an end date, and one command removes it.
 - The home page has a short **FlyBot on AWS** section (OpenCV 5 on AWS Lambda, AWS IoT Core, Kinesis Video Streams, the open ESP32-S3 trap camera) with a link to the source.
 
 ### New cameras

@@ -302,6 +302,7 @@ const exportPdf = async () => {
       widgets: [...dashboard.value.widgets].sort((a, b) => a.layout.y - b.layout.y || a.layout.x - b.layout.x),
       data: widgetData.value,
       generatedAt: generatedAt.value,
+      simulated: hasSimulatedCameras.value,
     });
   } catch (err) {
     console.error('Report PDF failed:', err);
@@ -328,6 +329,8 @@ const cameraOptions = computed(() => {
   return list;
 });
 const cameraName = (serial) => cameraOptions.value.find(c => c.deviceSerial === serial)?.deviceName || serial;
+// Simulated demo cameras on the report: the PDF says so (the app's banner does on screen)
+const hasSimulatedCameras = computed(() => dashboardCameras.value.some(c => c.simulated));
 const hasSharedCameras = computed(() => draft.cameraSerials.some(s => cameras.value.find(c => c.deviceSerial === s)?.canManage === false));
 
 const granularityOptions = computed(() => ['auto', 'day', 'week', 'month'].map(g => ({ value: g, label: t(`dashboards.granularity.${g}`) })));

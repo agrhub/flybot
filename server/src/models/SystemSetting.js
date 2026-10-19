@@ -16,6 +16,10 @@ const systemSettingSchema = new mongoose.Schema({
     demoViewCameras: { type: [String], default: undefined },
     demoViewSince: { type: Date, default: undefined },
     demoViewLive: { type: Boolean, default: undefined },
+    demoViewSimulated: { type: Boolean, default: undefined },
+    // The simulated demo farm's daily simulation (services/demoSim.js)
+    demoSimEnabled: { type: Boolean, default: undefined },
+    demoSimUntil: { type: Date, default: undefined },
     // Names of one-time data migrations already applied (services/migrations.js)
     migrations: { type: [String], default: undefined },
     updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: undefined },

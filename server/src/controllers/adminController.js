@@ -481,7 +481,28 @@ async function runTrainingSync(req, res) {
     }
 }
 
+/**
+ * GET /api/admin/demo-sim: the simulated demo farm (scripts/demo_sim.js) as it stands
+ */
+async function getDemoSim(req, res) {
+    try {
+        const { Snapshot, SentinelProposal } = require('../models');
+        const org = await Organization.findOne({ simulated: true }).select('name createdAt').lean();
+        const [cameras, farms, photos, last, proposals] = await Promise.all([
+            Camera.countDocuments({ simulated: true }),
+            Farm.countDocuments({ simulated: true }),
+            Snapshot.countDocuments({ simulated: true }),
+            Snapshot.findOne({ simulated: true }).sort({ createdAt: -1 }).select('createdAt').lean(),
+            SentinelProposal.countDocuments({ simulated: true })
+        ]);
+        res.json({ success: true, demoSim: { exists: !!org, name: org?.name || null, farms, cameras, photos, proposals, lastPhotoAt: last?.createdAt || null } });
+    } catch (err) {
+        sendServerError(res, err, { context: 'Admin demo simulation' });
+    }
+}
+
 module.exports = {
+    getDemoSim,
     getUsage,
     getPipeline,
     getTrainingSync,

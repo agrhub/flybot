@@ -9,6 +9,8 @@ const MAINTENANCE_TYPES = ['card_replaced', 'lure_replaced', 'lens_cleaned', 'ot
  * services/maintenanceService.js); people can delete it if it was wrong.
  */
 const maintenanceEventSchema = new mongoose.Schema({
+    // Simulated demo data (scripts/demo_sim.js): labeled wherever it is shown, never mixed with real data
+    simulated: { type: Boolean, default: undefined },
     deviceSerial: { type: String, required: true },
     type: { type: String, enum: MAINTENANCE_TYPES, required: true },
     at: { type: Date, required: true },

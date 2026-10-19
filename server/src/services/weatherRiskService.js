@@ -60,7 +60,8 @@ const dayMonth = (key) => `${key.slice(8, 10)}/${key.slice(5, 7)}`;
 async function sendWeatherAlerts(now = new Date()) {
     // Loaded here: degreeDayService needs this module for the outlook
     const degreeDayService = require('./degreeDayService');
-    const farms = await Farm.find({}).select('name ownerId sharedWith').lean();
+    // Simulated demo farms send nothing
+    const farms = await Farm.find({ simulated: { $ne: true } }).select('name ownerId sharedWith').lean();
     let checked = 0;
     let warned = 0;
     for (const farm of farms) {

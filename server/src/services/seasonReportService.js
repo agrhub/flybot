@@ -42,7 +42,7 @@ const ftdOf = (serials, catches, dayKeys) => catchStats.ftdOver(serials, catches
 
 /** Everything the report shows, for one person and period. */
 async function seasonData(user, period) {
-    const withRoles = user.orgRoles ? user : { _id: user._id, id: user.id, role: user.role, orgRoles: await orgRolesOf(user) };
+    const withRoles = user.orgRoles ? user : { _id: user._id, id: user.id, role: user.role, demoSerials: user.demoSerials, demoOrgId: user.demoOrgId, orgRoles: await orgRolesOf(user) };
     const farms = await Farm.find(farmService.farmViewFilter(withRoles)).select('name').sort({ name: 1 }).lean();
     const visible = new Set(await getViewableSerials(user));
     const farmIds = farms.map(f => f._id);

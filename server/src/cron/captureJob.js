@@ -165,7 +165,9 @@ async function captureAndSaveSnapshot(deviceSerial, { trigger } = {}) {
  */
 async function backfillCameraThumbnails() {
     try {
+        // Simulated demo cameras have no device to ask
         const camerasWithoutThumb = await Camera.find({
+            simulated: { $ne: true },
             $or: [
                 { thumbnailUrl: { $in: ['', null] } },
                 { picUrl: { $in: ['', null] } }

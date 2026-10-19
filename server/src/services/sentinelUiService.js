@@ -52,7 +52,7 @@ function deciderName(user) {
 
 /** The cameras this person may see (admins: all), by serial. */
 async function visibleCameras(user) {
-    const cameras = await Camera.find(viewFilter(user)).select('deviceSerial deviceName trapKind platform status device latitude longitude sentinelCaptures captureIntervalMinutes thumbnailUrl lastSync').lean();
+    const cameras = await Camera.find(viewFilter(user)).select('deviceSerial deviceName trapKind platform status device latitude longitude sentinelCaptures captureIntervalMinutes thumbnailUrl lastSync simulated').lean();
     return new Map(cameras.map(c => [c.deviceSerial, c]));
 }
 
@@ -138,6 +138,9 @@ function slimTrace(snap, camera, proposal, lang) {
         camera_name: camera?.deviceName || snap.deviceSerial,
         source: camera?.platform || 'ezviz',
         trap_kind: camera ? trapKindOf(camera) : null,
+        // Simulated demo data (scripts/demo_sim.js): the flies drawn on the photo, beside the detector's count
+        simulated: !!camera?.simulated,
+        ...(camera?.simulated ? { simulated_truth: Number.isFinite(snap.simulation?.truth) ? snap.simulation.truth : null } : {}),
         created_at: iso(lambda.analyzedAt || snap.createdAt),
         captured_at: iso(snap.createdAt),
         state: lambda.status === 'failed' ? 'failed' : 'done',
@@ -236,7 +239,7 @@ async function traces({ user, camera, since, until, limit, cursor, lang }) {
     if (Object.keys(time).length) filter.createdAt = time;
     const size = Math.min(Math.max(parseInt(limit, 10) || DEFAULT_LIMIT, 1), MAX_LIMIT);
     const rows = await Snapshot.find(filter).sort({ createdAt: -1 }).limit(size + 1)
-        .select('deviceSerial createdAt s3Key pestCount aiProvider lambda.status lambda.error lambda.traceId lambda.analyzedAt lambda.counts lambda.quality lambda.proposals lambda.trace lambda.model lambda.timings').lean();
+        .select('deviceSerial createdAt s3Key pestCount aiProvider simulation lambda.status lambda.error lambda.traceId lambda.analyzedAt lambda.counts lambda.quality lambda.proposals lambda.trace lambda.model lambda.timings').lean();
     const page = rows.slice(0, size);
     const proposals = await SentinelProposal.find({ snapshotId: { $in: page.map(r => r._id) } }).sort({ createdAt: -1 }).lean();
     const bySnapshot = new Map();
@@ -317,7 +320,7 @@ const STATE_OF_STATUS = { pending: ['pending'], approved: ['confirmed'], rejecte
 async function decidableSerials(user, serials) {
     if (!canDecideSentinel(user) || !serials.length) return new Set();
     const { canManageCamera } = require('../utils/ownership');
-    const own = await Camera.find({ deviceSerial: { $in: serials } }).select('deviceSerial userId sharedWith unclaimed').lean();
+    const own = await Camera.find({ deviceSerial: { $in: serials }, simulated: { $ne: true } }).select('deviceSerial userId sharedWith unclaimed').lean();
     return new Set(own.filter(c => canManageCamera(user, c)).map(c => c.deviceSerial));
 }
 
@@ -368,6 +371,8 @@ async function decide({ user, id, decision, req }) {
     const cameras = await visibleCameras(user);
     if (!p || !p.deviceSerials.some(s => cameras.has(s))) throw new SentinelUpstreamError(404, 'NOT_FOUND', 'Not found.');
     if (p.state !== 'pending') throw new SentinelUpstreamError(409, 'CONFLICT', 'This approval was already decided.');
+    // A simulated demo camera has no device to act on (scripts/demo_sim.js decides its proposals)
+    if (p.simulated) throw new SentinelUpstreamError(409, 'SIMULATED', 'Simulated proposals are decided by the simulation.');
     // Deciding runs the camera's action: the person must be able to manage one of its cameras
     const { canManageCamera } = require('../utils/ownership');
     const own = await Camera.find({ deviceSerial: { $in: p.deviceSerials } }).select('userId sharedWith unclaimed selfRegistered').lean();
@@ -400,6 +405,7 @@ function deviceOf(camera, lastPhoto) {
         online: Number(camera.status) === 1 && !sleeping,
         trap_kind: trapKindOf(camera),
         source: camera.platform || 'ezviz',
+        simulated: !!camera.simulated,
         fw: d.fw || null,
         net: d.net || null,
         battery_percent: d.battery?.pct ?? null,

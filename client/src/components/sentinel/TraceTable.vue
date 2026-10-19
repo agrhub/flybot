@@ -65,6 +65,10 @@
             <span v-if="!isMobile" class="meta-text"> · {{ fmt(row.counts.npu) }} · {{ fmt(row.counts.production) }}</span>
           </span>
         </el-tooltip>
+        <!-- A simulated photo: tagged, with the flies drawn on it beside the detector's count -->
+        <el-tooltip v-if="row.simulated" :content="t('simulated.truthHint')" placement="top">
+          <div><el-tag type="warning" effect="plain" size="small" data-test="simulated-trace">{{ t('simulated.tag') }} · {{ t('simulated.truth', { n: row.simulatedTruth ?? '--' }) }}</el-tag></div>
+        </el-tooltip>
       </template>
     </el-table-column>
 

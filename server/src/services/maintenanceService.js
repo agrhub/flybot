@@ -103,7 +103,7 @@ async function detectCardChange(deviceSerial, snapshot, count) {
  * Daily: remind the people who see a camera when its card is due (once a day at most).
  */
 async function sendCardReminders(now = new Date()) {
-    const cameras = await Camera.find({ cardReminderDays: { $ne: 0 }, trapKind: { $ne: 'lure' } })
+    const cameras = await Camera.find({ cardReminderDays: { $ne: 0 }, trapKind: { $ne: 'lure' }, simulated: { $ne: true } })
         .select('deviceSerial deviceName cardReplacedAt cardReminderDays addedAt trapKind').lean();
     let sent = 0;
     for (const camera of cameras) {

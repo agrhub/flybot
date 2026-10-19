@@ -56,6 +56,11 @@ const trainingSyncJob = exclusive('Training sync', () => syncTrainingData(), 'tr
 const aiRetryJob = exclusive('AI analysis retry', () => retryFailedAnalyses(), 'aiRetry');
 const planRetentionJob = exclusive('Plan retention', () => require('../services/planRetention').cleanupByPlanRetention(), 'planRetention');
 const selfRegisteredJob = exclusive('Unclaimed camera cleanup', () => require('../services/registrationService').cleanupSelfRegistered(), 'selfRegistered');
+// The simulated demo farm's new photos (no-op unless Admin > System turns it on)
+const demoSimJob = exclusive('Demo simulation', async () => {
+    const result = await require('../services/demoSim').runDaily();
+    return result ? { released: result.released || 0, failed: result.failed || 0 } : { released: 0 };
+}, 'demoSim');
 const ezvizPolicyJob = exclusive('EZVIZ sub-account policies', async () => ({ changed: await resyncEzvizPolicies() }), 'ezvizPolicies');
 
 /**
@@ -126,6 +131,11 @@ function startCronJobs() {
     // Reviewed photos to Roboflow (no-op unless configured and turned on)
     cron.schedule('*/15 * * * *', () => {
         trainingSyncJob();
+    });
+
+    // The simulated demo farm: the photos due since the last run, every 30 minutes
+    cron.schedule('12,42 * * * *', () => {
+        demoSimJob();
     });
 
     // Photos the AI failed on at capture: analyzed again, every 15 minutes (off the capture minute)

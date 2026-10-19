@@ -37,6 +37,7 @@
         <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
           <div class="flex flex-wrap items-center gap-2">
             <el-tag type="warning" effect="light" round size="small">{{ t('dashboards.public.badge') }}</el-tag>
+            <el-tag v-if="simulated" type="warning" effect="dark" round size="small" data-test="simulated-tag">{{ t('simulated.tag') }}</el-tag>
             <el-tag v-if="dashboard.expiresAt" type="info" effect="plain" round size="small">
               {{ t('dashboards.expiry.until', { time: formatDateTime(dashboard.expiresAt) }) }}
             </el-tag>
@@ -46,6 +47,7 @@
           <ReportRangePicker v-model="viewRange" />
         </div>
 
+        <el-alert v-if="simulated" type="warning" :closable="false" show-icon class="mb-4" :title="t('simulated.bannerTitle')" :description="t('simulated.bannerDesc')" data-test="simulated-banner" />
         <el-card v-if="!dashboard.widgets.length" shadow="never">
           <el-empty :description="t('dashboards.noWidgets')" />
         </el-card>
@@ -81,6 +83,8 @@ const { t, locale } = useI18n();
 const { isDark, toggleTheme, initTheme } = useTheme();
 
 const dashboard = ref(null);
+// Simulated demo cameras on this report (the server says so)
+const simulated = ref(false);
 const widgetData = ref(null);
 const generatedAt = ref(null);
 const loading = ref(false);
@@ -103,6 +107,7 @@ const load = async () => {
     const res = await api.getPublicDashboard(route.params.token, query);
     if (!isLatest()) return;
     dashboard.value = res.data.dashboard;
+    simulated.value = res.data.simulated === true;
     widgetData.value = res.data.widgets || {};
     dataRange.value = res.data.range || null;
     generatedAt.value = res.data.generatedAt;
@@ -133,6 +138,7 @@ const exportPdf = async () => {
       widgets: [...dashboard.value.widgets].sort((a, b) => a.layout.y - b.layout.y || a.layout.x - b.layout.x),
       data: widgetData.value,
       generatedAt: generatedAt.value,
+      simulated: simulated.value,
     });
   } catch (err) {
     console.error('Report PDF failed:', err);

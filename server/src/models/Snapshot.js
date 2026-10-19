@@ -11,6 +11,11 @@ function pestCountOf(summary) {
 }
 
 const snapshotSchema = new mongoose.Schema({
+    // Simulated demo data (scripts/demo_sim.js): labeled wherever it is shown, never mixed with real data
+    simulated: { type: Boolean, default: undefined },
+    // What the simulation knows about the photo: { photoId, truth } (truth = flies drawn on it, for
+    // comparing with the detector's count; never shown as a detection)
+    simulation: { type: mongoose.Schema.Types.Mixed, default: undefined },
     deviceSerial: { type: String, required: true },
     imageUrl: { type: String, required: true },
     s3Key: { type: String, required: true },

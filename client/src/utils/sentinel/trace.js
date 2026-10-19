@@ -149,6 +149,8 @@ export function summarizeTrace(trace) {
     camera: trace.camera,
     source: trace.source || null,
     trapKind: trace.trap_kind || null,
+    // Simulated demo data: the flies drawn on the photo, beside the detector's count
+    ...(trace.simulated ? { simulated: true, simulatedTruth: trace.simulated_truth ?? null } : {}),
     createdAt: trace.created_at,
     state: trace.state,
     outcome: trace.outcome,

@@ -65,7 +65,7 @@ function chartConfigOf(t, type, d) {
  * Charts are drawn again for paper and tables written from the data, so they stay sharp,
  * readable whatever the screen theme, and searchable.
  */
-export async function exportReportPdf({ t, locale, report, range, widgets, data, generatedAt }) {
+export async function exportReportPdf({ t, locale, report, range, widgets, data, generatedAt, simulated = false }) {
   const { jsPDF, autoTable, addQuicksandFonts } = await loadPdf();
   const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4', putOnlyUsedFonts: true });
   addQuicksandFonts(doc);
@@ -130,6 +130,8 @@ export async function exportReportPdf({ t, locale, report, range, widgets, data,
   // Title and range
   write(report.name, { size: 18, color: BRAND, bold: true, gap: 8 });
   if (report.description) write(report.description, { size: 10, color: TEXT });
+  // Simulated demo cameras on the report: said on the first page, never passed off as field data
+  if (simulated) write(`${t('simulated.bannerTitle')}. ${t('simulated.bannerDesc')}`, { size: 9, color: TEXT, bold: true });
   y += 1;
   write(t('dashboards.pdf.range', { range: rangeLabel(t, range), from: fullDay(range?.from), to: fullDay(range?.to) }));
   write(t('dashboards.pdf.generated', { time: new Date(generatedAt || Date.now()).toLocaleString(dateLocale) }));

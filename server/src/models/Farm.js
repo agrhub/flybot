@@ -12,6 +12,8 @@ const farmShareSchema = new mongoose.Schema({
 }, { _id: false });
 
 const farmSchema = new mongoose.Schema({
+    // Simulated demo data (scripts/demo_sim.js): labeled wherever it is shown, never mixed with real data
+    simulated: { type: Boolean, default: undefined },
     ownerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     name: { type: String, required: true, trim: true },
     description: { type: String, default: '' },

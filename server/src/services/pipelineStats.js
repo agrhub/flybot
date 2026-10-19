@@ -66,7 +66,7 @@ async function pipelineOverview(now = new Date()) {
     }
 
     const stats = new Map(facets.cameras.map(c => [c._id, c]));
-    const cameraDocs = await Camera.find({ unclaimed: { $ne: true } }).select('deviceSerial deviceName status lastCaptureAt captureIntervalMinutes').lean();
+    const cameraDocs = await Camera.find({ unclaimed: { $ne: true }, simulated: { $ne: true } }).select('deviceSerial deviceName status lastCaptureAt captureIntervalMinutes').lean();
     const seen = new Set();
     const cameras = [];
     for (const cam of cameraDocs) {

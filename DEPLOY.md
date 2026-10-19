@@ -46,6 +46,23 @@ The first start of this version migrates the data once, logs what it is about to
 
 Check the plan numbers under **Settings → Plans** before inviting people: the starting values are placeholders.
 
+### Demo access and the simulated demo farm (visitors, competition judges)
+
+**Admin → System → Demo access** lets every account (or every account created from a date) view chosen cameras read-only, without anyone sharing them. It can also show a **simulated demo farm**: about 40 traps (sticky and lure) on farms across Vietnam's fruit regions, with plots, a field log and a month of history, so reports, analytics, the field map and the Sentinel screen have something to show. It is labeled everywhere (a "Simulated" tag, a banner, "SIM ·" trap names, "(mô phỏng)" farm names, a line in exported PDFs); emailed and scheduled reports, alerts and webhooks never include it.
+
+Its photos are the labeled synthetic trap pictures of flybot-aws `eval/synth` (SYNTH_ file names, EXIF/XMP label, a visible SIMULATED stamp). Each one is analyzed by the real vision Lambda, so the counts, boxes, quality flags, traces and proposals come from the pipeline; the number of flies drawn on a photo is kept beside it ("Drawn: N") to compare the detector on sticky and lure traps.
+
+1. On your computer, from `server/`: `node scripts/demo_sim.js pool <flybot-aws>/data/synth/demo-30d <flybot-aws>/data/synth/demo-ahead <flybot-aws>/data/synth/pool` writes the pool index (`sim-pool.json`) and prints the `aws s3` commands that upload the pictures and the index to the photo bucket (`simulated/pool/`). The showcase sets give the four showcase traps their own photos day by day; the pool set (no times, about 6 % deliberately damaged photos so quality flags and recapture proposals show) feeds the other traps.
+2. On the instance (SSM session), with the server's environment:
+   ```bash
+   cd /opt/flybot/current && sudo -u flybot bash -c 'set -a; . /etc/flybot/env; set +a; node server/dist/demo_sim.js apply'        # dry run: what it would create, Lambda calls
+   cd /opt/flybot/current && sudo -u flybot bash -c 'set -a; . /etc/flybot/env; set +a; node server/dist/demo_sim.js apply --yes'  # about 2,800 Lambda calls, a few minutes
+   ```
+3. In **Admin → System → Demo access**: turn on *Show the simulated demo farm to visitors*, and *Daily simulation* with an end date to add each day's photos (every 30 minutes, only the simulated farm changes).
+4. When the demo is over: turn both off, then `node server/dist/demo_sim.js remove` (dry run) and `remove --yes`: it deletes every simulated document and photo, and nothing else.
+
+`apply` and the daily job are idempotent. To try it on your computer first: `tools/media/sim-demo.js` runs it with an in-memory database and the vision handler running locally.
+
 ## Google Cloud Run: automated deploy script
 
 The scripts below do everything in the Cloud Run sections that follow: enable APIs, create the service account, repository, permissions and secrets, generate the Cloud Run settings from `deploy/cloudrun.env.yaml` and `.env`, build, deploy and check `/health`. They are safe to re-run; anything that already exists is skipped.

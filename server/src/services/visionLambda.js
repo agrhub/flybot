@@ -91,7 +91,9 @@ async function buildRequest(snapshot, camera, { mode = 'detect', question = null
             id: camera.deviceSerial,
             name: camera.deviceName || camera.deviceSerial,
             trapKind: trapKindOf(camera),
-            platform: camera.platform || 'ezviz',
+            // The contract knows ezviz | camos | kinesis: a simulated demo camera's pictures are built on
+            // EZVIZ trap photos, and EZVIZ gets no device-only proposals (image settings)
+            platform: camera.platform === 'simulated' ? 'ezviz' : (camera.platform || 'ezviz'),
             ...(Number.isFinite(camera.latitude) && Number.isFinite(camera.longitude) ? { location: { lat: camera.latitude, lng: camera.longitude } } : {})
         },
         capturedAt: new Date(snapshot.createdAt).toISOString(),
@@ -282,7 +284,8 @@ async function analyzeSnapshot(snapshotId, { buffer = null, attempt = 1, locale 
         console.log(`🤖 OpenCV Lambda processed snapshot ${snapshotId}: ${update.pestCount} insect(s), trace ${update.lambda.traceId || '-'} (attempt ${attempt})`);
         // The agent's proposals become confirm cards for the camera's owner (none without an owner)
         if (Array.isArray(response.proposals) && response.proposals.length && !isUnclaimed(camera)) {
-            await require('./sentinelService').createLambdaProposals({ snapshot: stored, camera, proposals: response.proposals, traceId: update.lambda.traceId, evidence: response.evidence })
+            // A simulated demo photo (scripts/demo_sim.js) dates its proposals with the photo
+            await require('./sentinelService').createLambdaProposals({ snapshot: stored, camera, proposals: response.proposals, traceId: update.lambda.traceId, evidence: response.evidence, ...(stored.simulated ? { now: new Date(stored.createdAt) } : {}) })
                 .catch(err => console.error(`⚠️ Lambda proposals not stored (${snapshotId}):`, err.message));
         }
         return { ok: true, response, update };

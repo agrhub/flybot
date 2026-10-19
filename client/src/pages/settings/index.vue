@@ -242,6 +242,7 @@
                     <el-tag v-else :type="row.access === 'admin' ? 'warning' : 'info'" effect="light" round size="small">
                       {{ row.access === 'admin' ? t('share.accessAdmin') : row.access === 'demo' ? t('share.accessDemo') : t('share.accessShared') }}
                     </el-tag>
+                    <el-tag v-if="row.simulated" type="warning" effect="dark" round size="small">{{ t('simulated.tag') }}</el-tag>
                     <el-tag v-if="row.canManage && row.sharedWith?.length" type="info" effect="plain" size="small">
                       {{ t('share.sharedCount', { count: row.sharedWith.length }) }}
                     </el-tag>
@@ -304,6 +305,7 @@
                         {{ row.access === 'admin' ? t('share.accessAdmin') : row.access === 'demo' ? t('share.accessDemo') : t('share.accessShared') }}
                       </el-tag>
                     </el-tooltip>
+                    <el-tag v-if="row.simulated" type="warning" effect="dark" round size="small">{{ t('simulated.tag') }}</el-tag>
                     <el-tag
                       v-if="row.canManage && row.sharedWith?.length"
                       type="info"

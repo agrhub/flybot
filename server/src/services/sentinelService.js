@@ -489,7 +489,16 @@ async function createLambdaProposals({ snapshot, camera, proposals, traceId = nu
             reason,
             evidence: [],
             photos: snapshot ? [{ snap: snapshot, caption: '' }] : [],
-            extra: { ...(reasonI18n ? { reasonI18n } : {}), payload: { action: checked.action, params: checked.params, proposalId: typeof proposal.id === 'string' ? proposal.id.slice(0, 40) : undefined, evidence: evidence || undefined }, snapshotId: snapshot?._id, traceId: traceId || undefined, confidence: confidence ?? undefined, source: 'lambda' },
+            extra: {
+                ...(reasonI18n ? { reasonI18n } : {}),
+                payload: { action: checked.action, params: checked.params, proposalId: typeof proposal.id === 'string' ? proposal.id.slice(0, 40) : undefined, evidence: evidence || undefined },
+                snapshotId: snapshot?._id,
+                traceId: traceId || undefined,
+                confidence: confidence ?? undefined,
+                source: 'lambda',
+                // A simulated demo camera's proposal is dated with its photo (scripts/demo_sim.js)
+                ...(camera.simulated ? { simulated: true, createdAt: now } : {})
+            },
             now
         });
         created.push(stored);
@@ -551,6 +560,8 @@ async function storeProposalCard({ owner, user, card, type, serials, reason, evi
         expiresAt,
         ...extra
     });
+    // Simulated demo proposals stay out of the activity log and Telegram
+    if (extra.simulated) return { proposal, card: fullCard, messageId, telegram: null };
     recordAudit(null, {
         actor: ACTOR,
         action: 'sentinel.proposal_created',

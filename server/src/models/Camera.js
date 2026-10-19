@@ -16,7 +16,7 @@ const shareSchema = new mongoose.Schema({
     orgRole: { type: String, enum: ['owner', 'manager', 'member', null], default: null }
 }, { _id: false });
 
-const PLATFORMS = ['ezviz', 'camos', 'kinesis'];
+const PLATFORMS = ['ezviz', 'camos', 'kinesis', 'simulated'];
 
 /**
  * A CamOS camera (ESP32 trap, AMB82) reached through AWS IoT Core and the device API
@@ -71,6 +71,8 @@ const deviceSchema = new mongoose.Schema({
 }, { _id: false });
 
 const cameraSchema = new mongoose.Schema({
+    // Simulated demo data (scripts/demo_sim.js): labeled wherever it is shown, never mixed with real data
+    simulated: { type: Boolean, default: undefined },
     // Owner (the account that registered the device)
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', index: true },
     // A physical device can be registered only once; others get access through sharing

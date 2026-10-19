@@ -294,7 +294,8 @@
     "platform": {
       "ezviz": "EZVIZ",
       "camos": "CamOS",
-      "kinesis": "KVS"
+      "kinesis": "KVS",
+      "simulated": "Simulated"
     },
     "pendingNote": "Camera added. Power it on with Wi-Fi set up: it joins your account by itself within a minute.",
     "claimedNote": "Camera claimed: it is now in your account.",
@@ -1799,7 +1800,15 @@
       "audienceDesc": "Administrators always see every camera. Visitors get no alerts, emails or reports about demo cameras.",
       "live": "Open live view",
       "liveDesc": "Visitors may also watch these cameras live and play back their recordings. Off: they see photos only.",
-      "readOnly": "Visitors never change anything on a demo camera: no settings, captures, deleting, sharing, maintenance, treatments or approvals. Turn this off when the demo ends; access stops within a minute."
+      "readOnly": "Visitors never change anything on a demo camera: no settings, captures, deleting, sharing, maintenance, treatments or approvals. Turn this off when the demo ends; access stops within a minute.",
+      "simTitle": "Simulated demo farm",
+      "simStatus": "{farms} farms, {cameras} traps, {photos} photos; latest photo {time}.",
+      "simMissing": "Not created yet. On the server run: node dist/demo_sim.js apply --yes (see DEPLOY.md).",
+      "simShow": "Show the simulated demo farm to visitors",
+      "simShowDesc": "Visitors with demo access also see the simulated farms across Vietnam, labeled Simulated everywhere.",
+      "simDaily": "Daily simulation",
+      "simDailyDesc": "Adds each day's simulated photos (analyzed by the vision pipeline) and field-log entries until the end date. Only the simulated farm changes.",
+      "simUntil": "Until"
     }
   },
   "dashboards": {
@@ -3473,5 +3482,14 @@
     "drawHint": "or draw it on the preview",
     "previewOff": "No live preview (the camera is offline, asleep or has no live view): its last photo.",
     "previewLoading": "Starting the live preview…"
+  },
+  "simulated": {
+    "tag": "Simulated",
+    "bannerTitle": "This view includes simulated demo data",
+    "bannerDesc": "Traps marked Simulated (named “SIM ·”) and farms marked “(mô phỏng)” use synthetic trap photos, counted by the real OpenCV 5 pipeline, and a made-up field log. They are not field measurements.",
+    "cameraHint": "Simulated demo trap: synthetic photos counted by the real AI; not field data.",
+    "noLive": "A simulated trap has no camera, so no live view. Its photos and analysis are in the detail view.",
+    "truth": "Drawn: {n}",
+    "truthHint": "Flies drawn on this synthetic photo, to compare with the AI's count (not a detection)."
   }
 }

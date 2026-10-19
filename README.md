@@ -172,6 +172,9 @@ All settings are environment variables, read from `.env` at the repository root 
 | `DEMO_VIEW_CAMERAS` | | Comma-separated serials of the read-only demo cameras |
 | `DEMO_VIEW_SINCE` | | Only accounts created on or after this date (`YYYY-MM-DD`) see them; empty: every account |
 | `DEMO_VIEW_LIVE` | `false` | `true` also opens live view and SD playback of the demo cameras |
+| `DEMO_VIEW_SIMULATED` | `false` | `true` also shows the simulated demo farm (`server/scripts/demo_sim.js`, DEPLOY.md) to those visitors |
+| `DEMO_SIM_ENABLED` | `false` | `true` adds the simulated demo farm's photos of each day (every 30 minutes) |
+| `DEMO_SIM_UNTIL` | | Last day of the daily simulation (`YYYY-MM-DD`); empty: no end |
 
 **Photos (S3)**
 

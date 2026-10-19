@@ -1,6 +1,6 @@
 const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose');
-const { User, Session, Organization } = require('../models');
+const { User, Session, Organization, Camera } = require('../models');
 const { roleOf } = require('../constants/roles');
 
 // Lazy: shareController pulls in notification/mail services
@@ -102,7 +102,9 @@ async function publicUser(user, req = null) {
         ...base,
         ...sentinelUi.accessFor(ctx),
         // Read-only demo cameras this account sees (services/demoView.js)
-        demoView: { cameras: demo.serials.length, live: demo.live },
+        demoView: { cameras: demo.serials.length, simulated: !!demo.orgId, live: demo.live },
+        // Simulated demo cameras among those this person sees: the app shows a banner
+        simulatedData: !!(await Camera.exists({ simulated: true, ...require('../utils/ownership').viewFilter({ ...ctx, demoSerials: demo.serials, demoOrgId: demo.orgId }) })),
         appMode: mode,
         workspace,
         workspaceCount: docs.length,

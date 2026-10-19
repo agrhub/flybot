@@ -65,6 +65,20 @@ FLYBOT_TVC_PAGE=tvc-vertical.html node render-tvc.mjs vi flybot-tvc-vertical-vi.
 
 Rendering takes about ten minutes a language; `FLYBOT_TVC_KEEP=1` keeps the frames and `FLYBOT_TVC_REUSE=1` encodes them again without rendering. The MP4 needs no `remux-mp4.ps1` or `faststart-mp4.mjs`: it already has its index in front. Copy the videos and posters (`flybot-tvc-<lang>-poster.webp`) to `client/public/media/`.
 
+## Simulated demo farm, locally
+
+`sim-demo.js` runs the simulated demo farm (`server/src/services/demoSim.js`, DEPLOY.md) the way production does, with the real vision handler: an in-memory MongoDB, the photos in a folder instead of S3, and the flybot-aws vision Lambda running on this computer.
+
+```bash
+# In flybot-aws/lambda/vision: the vision handler on http://127.0.0.1:9001/invoke
+uv run python -m sentinel.lambda_local
+# Here: the last FLYBOT_SIM_DAYS (5) days of the farm, then the API on :3013
+FLYBOT_SIM_SET="<flybot-aws>/data/synth/demo-30d;<flybot-aws>/data/synth/pool" FLYBOT_SIM_STORE=<empty folder> FLYBOT_DEMO_DB=<folder> node sim-demo.js
+node demo-client.mjs
+```
+
+Sign in as `judge@flybot.test` (a visitor, password `judge-demo-1`) or `admin@flybot.test`. Delete the store and database folders afterwards.
+
 ## Files
 
 - `demo-server.js`: demo API with seeded data (users, farms, four traps, weeks of photos, a report, recordings). It writes the sign-in tokens to `demo-tokens.json` (not versioned). The assistant answers without Vertex: a stand-in model picks a real tool from the question (photos, week comparison, last 24 hours, reports, alerts, "đã thay" / "replaced" for a card change to confirm, a photo asked about from its window; otherwise the trap summary), with a canned look at photos and streams a short answer from its result, so the chat panel, its cards and ratings can be shown.

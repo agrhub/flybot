@@ -29,7 +29,8 @@
           </div>
           <div class="flex flex-wrap items-center gap-1.5 mt-3">
             <el-tag type="info" effect="plain" round size="small">{{ t('farms.counts', { plots: farm.plotCount, cameras: farm.cameraCount }) }}</el-tag>
-            <el-tag v-if="!farm.canEdit" type="info" effect="light" round size="small">{{ t('dashboards.sharedBy', { owner: farm.owner.name || farm.owner.email }) }}</el-tag>
+            <el-tag v-if="farm.simulated" type="warning" effect="dark" round size="small">{{ t('simulated.tag') }}</el-tag>
+            <el-tag v-else-if="!farm.canEdit" type="info" effect="light" round size="small">{{ t('dashboards.sharedBy', { owner: farm.owner.name || farm.owner.email }) }}</el-tag>
           </div>
         </el-card>
       </div>

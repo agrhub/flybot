@@ -1,5 +1,5 @@
 const { SystemSetting } = require('../models');
-const { ALLOW_REGISTRATION, RETENTION_CYCLE, DEMO_VIEW_ENABLED, DEMO_VIEW_CAMERAS, DEMO_VIEW_SINCE, DEMO_VIEW_LIVE } = require('../config/env');
+const { ALLOW_REGISTRATION, RETENTION_CYCLE, DEMO_VIEW_ENABLED, DEMO_VIEW_CAMERAS, DEMO_VIEW_SINCE, DEMO_VIEW_LIVE, DEMO_VIEW_SIMULATED, DEMO_SIM_ENABLED, DEMO_SIM_UNTIL } = require('../config/env');
 const { DEFAULT_ALERT_THRESHOLD } = require('../constants/risk');
 
 // Short cache: settings are read on every registration/cleanup but change rarely
@@ -16,10 +16,14 @@ const defaults = () => ({
     demoViewEnabled: DEMO_VIEW_ENABLED,
     demoViewCameras: [...DEMO_VIEW_CAMERAS],
     demoViewSince: DEMO_VIEW_SINCE,
-    demoViewLive: DEMO_VIEW_LIVE
+    demoViewLive: DEMO_VIEW_LIVE,
+    // The simulated demo farm (scripts/demo_sim.js): shown to visitors, and its daily simulation
+    demoViewSimulated: DEMO_VIEW_SIMULATED,
+    demoSimEnabled: DEMO_SIM_ENABLED,
+    demoSimUntil: DEMO_SIM_UNTIL
 });
 // Saved as null on purpose ("every account"): null does not fall back to the environment
-const NULLABLE = new Set(['demoViewSince']);
+const NULLABLE = new Set(['demoViewSince', 'demoSimUntil']);
 
 /**
  * Effective settings: the admin-saved values, falling back to the environment.
@@ -31,7 +35,7 @@ async function getSettings() {
     for (const key of Object.keys(merged)) {
         if (doc && doc[key] !== undefined && (doc[key] !== null || NULLABLE.has(key))) merged[key] = doc[key];
     }
-    merged.demoViewSince = merged.demoViewSince ? new Date(merged.demoViewSince).toISOString() : null;
+    for (const key of NULLABLE) merged[key] = merged[key] ? new Date(merged[key]).toISOString() : null;
     merged.updatedAt = doc?.updatedAt || null;
     cached = merged;
     cachedAt = Date.now();
@@ -47,11 +51,15 @@ const SETTING_RULES = {
     demoViewCameras: (v) => Array.isArray(v) && v.length <= 20 && v.every(s => typeof s === 'string' && /^[A-Za-z0-9_-]{1,64}$/.test(s)),
     // A date (accounts created on or after it) or null (every account)
     demoViewSince: (v) => v === null || (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}/.test(v) && !Number.isNaN(Date.parse(v))),
-    demoViewLive: (v) => typeof v === 'boolean'
+    demoViewLive: (v) => typeof v === 'boolean',
+    demoViewSimulated: (v) => typeof v === 'boolean',
+    demoSimEnabled: (v) => typeof v === 'boolean',
+    // The last day the daily simulation adds data (null: no end)
+    demoSimUntil: (v) => v === null || (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}/.test(v) && !Number.isNaN(Date.parse(v)))
 };
 const normalize = (key, value) => {
     if (key === 'demoViewCameras') return [...new Set(value)];
-    if (key === 'demoViewSince') return value ? new Date(value) : null;
+    if (NULLABLE.has(key)) return value ? new Date(value) : null;
     return value;
 };
 

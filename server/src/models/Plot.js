@@ -5,6 +5,8 @@ const mongoose = require('mongoose');
  * boundary: polygon vertices as [lat, lng] pairs (drawn on the map), or empty.
  */
 const plotSchema = new mongoose.Schema({
+    // Simulated demo data (scripts/demo_sim.js): labeled wherever it is shown, never mixed with real data
+    simulated: { type: Boolean, default: undefined },
     farmId: { type: mongoose.Schema.Types.ObjectId, ref: 'Farm', required: true, index: true },
     name: { type: String, required: true, trim: true },
     crop: { type: String, default: '' },

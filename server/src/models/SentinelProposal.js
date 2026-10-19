@@ -14,6 +14,8 @@ const RETENTION_DAYS = 365;
  * `state` is updated when they decide (aiController.decideCard).
  */
 const sentinelProposalSchema = new mongoose.Schema({
+    // Simulated demo data (scripts/demo_sim.js): labeled wherever it is shown, never mixed with real data
+    simulated: { type: Boolean, default: undefined },
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     type: { type: String, enum: PROPOSAL_TYPES, required: true },
     deviceSerials: { type: [String], default: [] },
@@ -34,7 +36,7 @@ const sentinelProposalSchema = new mongoose.Schema({
     state: { type: String, enum: PROPOSAL_STATES, default: 'pending' },
     result: { type: String, default: '' },
     decidedAt: { type: Date, default: null },
-    decidedVia: { type: String, enum: ['app', 'telegram', null], default: null },
+    decidedVia: { type: String, enum: ['app', 'telegram', 'simulation', null], default: null },
     expiresAt: { type: Date, required: true },
     telegram: {
         chatId: { type: String, default: undefined },

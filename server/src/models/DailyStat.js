@@ -13,6 +13,8 @@ const speciesSchema = new mongoose.Schema({
 }, { _id: false });
 
 const dailyStatSchema = new mongoose.Schema({
+    // Simulated demo data (scripts/demo_sim.js): labeled wherever it is shown, never mixed with real data
+    simulated: { type: Boolean, default: undefined },
     deviceSerial: { type: String, required: true },
     // Local calendar day (captureSchedule.TIMEZONE), "YYYY-MM-DD": sorts and compares as text
     day: { type: String, required: true },

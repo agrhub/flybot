@@ -4,26 +4,41 @@ const { isAdmin, roleOf } = require('../constants/roles');
 /**
  * Camera access rules (one place for every controller, job and agent tool):
  *  - view:   the owner, people it is shared with, admins, and (signed-in requests only) the
- *            read-only demo cameras of services/demoView.js (req.user.demoSerials)
+ *            read-only demo cameras of services/demoView.js (req.user.demoSerials, and every camera
+ *            of the simulated demo organization, req.user.demoOrgId)
  *  - manage: admins, and managers who own it or are owner/manager of its organization
  *            (role "user" never manages; demo access never manages)
  * `user` is req.user ({ id, role }) or a User document.
+ *
+ * Simulated demo cameras (Camera.simulated, scripts/demo_sim.js) are seen in signed-in requests
+ * only, always labeled: a User document (background jobs: reports, briefs, alerts, digests) never
+ * sees them, so no email, message or report ever mixes them with real cameras.
  */
 const idOf = (user) => String(user?.id ?? user?._id ?? '');
 const demoSerialsOf = (user) => (Array.isArray(user?.demoSerials) ? user.demoSerials : []);
+const demoOrgOf = (user) => (user?.demoOrgId ? String(user.demoOrgId) : null);
+// middlewares/auth.js always sets demoSerials on req.user; a User document has none
+const isRequestUser = (user) => Array.isArray(user?.demoSerials);
+const realOnly = (filter) => ({ $and: [filter, { simulated: { $ne: true } }] });
 
 function viewFilter(user) {
     // Self-registered cameras nobody claimed yet are hidden from every account (admins too)
-    if (isAdmin(user)) return { unclaimed: { $ne: true } };
+    if (isAdmin(user)) return isRequestUser(user) ? { unclaimed: { $ne: true } } : realOnly({ unclaimed: { $ne: true } });
     const id = idOf(user);
     if (!id) return { _id: null }; // matches nothing
     const base = { $or: [{ userId: id }, { 'sharedWith.userId': id }] };
     // More than one workspace: only the current one's cameras (services/workspaceService.js)
     const scope = require('../services/workspaceService').scopeFilter(user, { ownerField: 'userId' });
     const own = scope ? { $and: [base, scope] } : base;
+    if (!isRequestUser(user)) return realOnly(own);
     // Demo cameras show in every workspace
     const demo = demoSerialsOf(user);
-    return demo.length ? { $or: [own, { deviceSerial: { $in: demo }, unclaimed: { $ne: true } }] } : own;
+    const org = demoOrgOf(user);
+    const extra = [
+        ...(demo.length ? [{ deviceSerial: { $in: demo }, unclaimed: { $ne: true } }] : []),
+        ...(org ? [{ orgId: org, simulated: true }] : [])
+    ];
+    return extra.length ? { $or: [own, ...extra] } : own;
 }
 
 /**
@@ -31,15 +46,21 @@ function viewFilter(user) {
  * them, not an admin)? Such a viewer never manages it and opens live view only with demoLive.
  */
 function isDemoOnly(user, camera) {
-    if (!camera || isAdmin(user) || !demoSerialsOf(user).includes(camera.deviceSerial)) return false;
+    if (!camera || isAdmin(user)) return false;
+    const viaSerial = demoSerialsOf(user).includes(camera.deviceSerial);
+    const viaOrg = !!demoOrgOf(user) && !!camera.simulated && String(camera.orgId?._id ?? camera.orgId ?? '') === demoOrgOf(user);
+    if (!viaSerial && !viaOrg) return false;
     const id = idOf(user);
     const ownerId = String(camera.userId?._id ?? camera.userId ?? '');
     if (ownerId === id) return false;
     return !(camera.sharedWith || []).some(sh => sh.userId && String(sh.userId?._id ?? sh.userId) === id);
 }
 
-/** May this person open live view / SD playback of the camera (demo viewers: when demoLive is on)? */
-const canWatchLive = (user, camera) => !isDemoOnly(user, camera) || !!user?.demoLive;
+/**
+ * May this person open live view / SD playback of the camera? Never for a simulated camera (there is
+ * no device); demo viewers only when demoLive is on.
+ */
+const canWatchLive = (user, camera) => !camera?.simulated && (!isDemoOnly(user, camera) || !!user?.demoLive);
 
 function viewableCameras(user, extra = {}) {
     return Camera.find({ ...extra, ...viewFilter(user) });

@@ -676,8 +676,8 @@ const playLiveStream = async () => {
     return
   }
   if (liveClosed.value) {
-    placeholderText.value = t('cameras.demo.liveClosed')
-    currentStreamType.value = t('cameras.demo.tag')
+    placeholderText.value = props.camera.simulated ? t('simulated.noLive') : t('cameras.demo.liveClosed')
+    currentStreamType.value = props.camera.simulated ? t('simulated.tag') : t('cameras.demo.tag')
     return
   }
 

@@ -86,6 +86,10 @@
         <template #default="{ row }">
           <span class="count-text">{{ row.pestCount ?? 0 }}</span>
           <span class="meta-text"> / {{ row.threshold ?? '--' }}</span>
+          <!-- A simulated photo: the flies drawn on it, to compare with the AI's count (not a detection) -->
+          <el-tooltip v-if="row.simulated" :content="t('simulated.truthHint')" placement="top">
+            <div><el-tag type="warning" effect="plain" size="small" class="mt-1" data-test="simulated-truth">{{ t('simulated.truth', { n: row.simulation?.truth ?? '--' }) }}</el-tag></div>
+          </el-tooltip>
         </template>
       </el-table-column>
 

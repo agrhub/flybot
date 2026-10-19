@@ -50,6 +50,36 @@
         </div>
       </el-form-item>
 
+      <el-divider />
+
+      <!-- The simulated demo farm (scripts/demo_sim.js): labeled synthetic data across Vietnam -->
+      <div class="admin-label mb-1">{{ t('admin.demo.simTitle') }}</div>
+      <p class="admin-meta mb-3" data-test="demo-sim-status">
+        {{ sim?.exists ? t('admin.demo.simStatus', { farms: sim.farms, cameras: sim.cameras, photos: sim.photos, time: sim.lastPhotoAt ? formatDateTime(sim.lastPhotoAt) : '--' }) : t('admin.demo.simMissing') }}
+      </p>
+      <el-form-item>
+        <div class="flex items-start justify-between gap-4 w-full">
+          <div class="min-w-0">
+            <div class="admin-label">{{ t('admin.demo.simShow') }}</div>
+            <p class="admin-meta">{{ t('admin.demo.simShowDesc') }}</p>
+          </div>
+          <el-switch v-model="form.demoViewSimulated" :disabled="!sim?.exists" :aria-label="t('admin.demo.simShow')" data-test="demo-sim-show" />
+        </div>
+      </el-form-item>
+      <el-form-item>
+        <div class="flex items-start justify-between gap-4 w-full">
+          <div class="min-w-0">
+            <div class="admin-label">{{ t('admin.demo.simDaily') }}</div>
+            <p class="admin-meta">{{ t('admin.demo.simDailyDesc') }}</p>
+          </div>
+          <el-switch v-model="form.demoSimEnabled" :disabled="!sim?.exists" :aria-label="t('admin.demo.simDaily')" />
+        </div>
+        <div v-if="form.demoSimEnabled" class="flex items-center gap-2 w-full mt-2">
+          <span class="admin-meta">{{ t('admin.demo.simUntil') }}</span>
+          <el-date-picker v-model="simUntil" type="date" value-format="YYYY-MM-DD" :placeholder="t('admin.demo.sincePlaceholder')" />
+        </div>
+      </el-form-item>
+
       <el-alert class="mb-4" type="info" :closable="false" show-icon :title="t('admin.demo.readOnly')" />
 
       <el-button type="primary" :loading="saving" :icon="Check" data-test="demo-save" @click="save">{{ t('common.save') }}</el-button>
@@ -65,11 +95,14 @@ import { Check } from '@element-plus/icons-vue';
 import api from '@/services/api';
 import { adminErrorText } from './adminErrors';
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const loading = ref(false);
 const saving = ref(false);
 const cameras = ref([]);
-const form = reactive({ demoViewEnabled: false, demoViewCameras: [], demoViewLive: false });
+const form = reactive({ demoViewEnabled: false, demoViewCameras: [], demoViewLive: false, demoViewSimulated: false, demoSimEnabled: false });
+const sim = ref(null);
+const simUntil = ref('');
+const formatDateTime = (value) => new Date(value).toLocaleString(locale.value === 'vi' ? 'vi-VN' : 'en-US');
 // Who sees the demo cameras: every account, or accounts created on or after a date
 const audience = ref('all');
 const since = ref('');
@@ -78,6 +111,10 @@ const apply = (settings) => {
   form.demoViewEnabled = !!settings.demoViewEnabled;
   form.demoViewCameras = [...(settings.demoViewCameras || [])];
   form.demoViewLive = !!settings.demoViewLive;
+  form.demoViewSimulated = !!settings.demoViewSimulated;
+  form.demoSimEnabled = !!settings.demoSimEnabled;
+  // demoSimUntil is the end of that day in farm time (UTC+7)
+  simUntil.value = settings.demoSimUntil ? new Date(new Date(settings.demoSimUntil).getTime() + 7 * 3600 * 1000).toISOString().slice(0, 10) : '';
   audience.value = settings.demoViewSince ? 'since' : 'all';
   since.value = settings.demoViewSince ? String(settings.demoViewSince).slice(0, 10) : '';
 };
@@ -85,9 +122,10 @@ const apply = (settings) => {
 const load = async () => {
   loading.value = true;
   try {
-    const [settings, list] = await Promise.all([api.getAdminSettings(), api.adminListCameras({ limit: 100 })]);
+    const [settings, list, status] = await Promise.all([api.getAdminSettings(), api.adminListCameras({ limit: 100 }), api.adminDemoSim()]);
     apply(settings.data.settings);
-    cameras.value = list.data.cameras || [];
+    cameras.value = (list.data.cameras || []).filter(c => !/^SIM-/.test(c.deviceSerial));
+    sim.value = status.data.demoSim;
   } catch (err) {
     ElMessage.error(adminErrorText(t, err));
   } finally {
@@ -105,7 +143,8 @@ const save = async () => {
     const res = await api.updateAdminSettings({
       ...form,
       demoViewCameras: form.demoViewCameras.map(s => String(s).trim()).filter(Boolean),
-      demoViewSince: audience.value === 'since' ? since.value : null
+      demoViewSince: audience.value === 'since' ? since.value : null,
+      demoSimUntil: form.demoSimEnabled && simUntil.value ? `${simUntil.value}T23:59:59+07:00` : null
     });
     apply(res.data.settings);
     ElMessage.success(t('admin.saved'));

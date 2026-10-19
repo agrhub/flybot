@@ -11,8 +11,8 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 // Farm access is checked from the user's organizations, as on the Farms pages
 async function withOrgRoles(user) {
     if (user.orgRoles) return user;
-    // farmViewFilter only reads the id, the role and the organization roles
-    return { _id: user._id, id: user.id, role: user.role, orgRoles: await orgRolesOf(user) };
+    // farmViewFilter only reads the id, the role, the organization roles and the demo access
+    return { _id: user._id, id: user.id, role: user.role, demoSerials: user.demoSerials, demoOrgId: user.demoOrgId, orgRoles: await orgRolesOf(user) };
 }
 
 // ---------- Effect by active ingredient ----------

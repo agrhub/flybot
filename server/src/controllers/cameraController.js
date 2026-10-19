@@ -42,8 +42,11 @@ function deviceView(camera, now = new Date()) {
 const thresholdService = require('../services/thresholdService');
 const { viewFilter, viewableCameras, findViewableCamera, findManageableCamera, findOwnedCamera, canManageCamera, isDemoOnly, canWatchLive } = require('../utils/ownership');
 
-// Live view / SD playback of a demo camera seen only through demo access, while demoViewLive is off
+// Live view / SD playback refused: a simulated demo camera (no device), or a demo camera seen only
+// through demo access while demoViewLive is off
 const DEMO_LIVE_CLOSED = { success: false, code: 'DEMO_READ_ONLY', message: 'Live view of this demo camera is not open to visitors.' };
+const SIMULATED_NO_LIVE = { success: false, code: 'SIMULATED_CAMERA', message: 'A simulated camera has no live view.' };
+const liveClosed = (camera) => (camera?.simulated ? SIMULATED_NO_LIVE : DEMO_LIVE_CLOSED);
 
 /**
  * Camera as returned to a given user: viewers never see the verification code or the
@@ -62,7 +65,7 @@ function toClientCamera(camera, user) {
     const sharedWithMe = (obj.sharedWith || []).some(sh => String(sh.userId) === String(user.id));
     // 'admin' = visible only because the viewer is an admin; 'demo' = a read-only demo camera
     obj.access = isOwner ? 'owner' : (sharedWithMe ? 'shared' : (demoOnly ? 'demo' : 'admin'));
-    if (demoOnly) obj.liveOpen = canWatchLive(user, { ...obj, userId: ownerId });
+    if (demoOnly || obj.simulated) obj.liveOpen = canWatchLive(user, { ...obj, userId: ownerId });
     obj.canManage = canManage;
     obj.cardDueAt = cardDueAt(obj);
     obj.platform = platforms.platformOf(obj);
@@ -356,7 +359,7 @@ async function getLive(req, res) {
     try {
         const camera = await findViewableCamera(req.user, deviceSerial);
         if (!camera) return res.status(404).json({ success: false, code: 'NOT_FOUND', message: "Camera not found or permission denied." });
-        if (!canWatchLive(req.user, camera)) return res.status(403).json(DEMO_LIVE_CLOSED);
+        if (!canWatchLive(req.user, camera)) return res.status(403).json(liveClosed(camera));
         if (platforms.platformOf(camera) === 'ezviz') {
             req.body = { ...(req.body || {}), deviceSerial };
             return getLiveStream(req, res);
@@ -378,7 +381,7 @@ async function requestLive(req, res) {
     try {
         const camera = await findViewableCamera(req.user, deviceSerial);
         if (!camera) return res.status(404).json({ success: false, code: 'NOT_FOUND', message: "Camera not found or permission denied." });
-        if (!canWatchLive(req.user, camera)) return res.status(403).json(DEMO_LIVE_CLOSED);
+        if (!canWatchLive(req.user, camera)) return res.status(403).json(liveClosed(camera));
         if (platforms.platformOf(camera) !== 'camos') return res.status(400).json({ success: false, message: "Only CamOS cameras take a live request." });
         // Demo cameras: DEMO_LIVE_MINUTES (5) per request
         const minutes = await require('../services/registrationService').liveMinutes(camera, req.user, asked);
@@ -415,7 +418,7 @@ async function getPlayback(req, res) {
         const camera = await findViewableCamera(req.user, deviceSerial);
         if (!camera) return res.status(404).json({ success: false, code: 'NOT_FOUND', message: "Camera not found or permission denied." });
         // EZVIZ playback reads the camera's SD card; CamOS playback is the photo timeline
-        if (platforms.platformOf(camera) === 'ezviz' && !canWatchLive(req.user, camera)) return res.status(403).json(DEMO_LIVE_CLOSED);
+        if (platforms.platformOf(camera) === 'ezviz' && !canWatchLive(req.user, camera)) return res.status(403).json(liveClosed(camera));
         const { from, to } = req.query;
         const result = await platforms.get(camera).playback(deviceSerial, { from: from ? String(from) : undefined, to: to ? String(to) : undefined });
         res.json({ success: true, ...result });
@@ -649,7 +652,7 @@ async function getLiveStream(req, res) {
         if (!camera) {
             return res.status(403).json({ code: "403", msg: "You do not have permission to access this camera." });
         }
-        if (!canWatchLive(req.user, camera)) return res.status(403).json({ code: "403", msg: DEMO_LIVE_CLOSED.message });
+        if (!canWatchLive(req.user, camera)) return res.status(403).json({ code: "403", msg: liveClosed(camera).message });
 
         let code = (camera.validateCode || '').trim();
         // check camera setting first
@@ -762,7 +765,7 @@ async function getRecords(req, res) {
         if (!camera) {
             return res.status(403).json({ code: "403", msg: "You do not have permission to access this camera." });
         }
-        if (!canWatchLive(req.user, camera)) return res.status(403).json({ code: "403", msg: DEMO_LIVE_CLOSED.message });
+        if (!canWatchLive(req.user, camera)) return res.status(403).json({ code: "403", msg: liveClosed(camera).message });
 
         const data = await ezvizService.getLocalRecords({ deviceSerial, startTime, endTime });
         res.json(data);
@@ -784,7 +787,7 @@ async function getPlaybackStream(req, res) {
         if (!camera) {
             return res.status(403).json({ code: "403", msg: "You do not have permission to access this camera." });
         }
-        if (!canWatchLive(req.user, camera)) return res.status(403).json({ code: "403", msg: DEMO_LIVE_CLOSED.message });
+        if (!canWatchLive(req.user, camera)) return res.status(403).json({ code: "403", msg: liveClosed(camera).message });
 
         console.log("startTime: ", startTime, "stopTime: ", stopTime);
 
@@ -848,6 +851,7 @@ async function captureNow(req, res) {
         if (!camera) {
             return res.status(404).json({ success: false, message: "Camera not found or permission denied." });
         }
+        if (camera.simulated) return res.status(409).json({ success: false, code: 'SIMULATED_CAMERA', message: 'A simulated camera takes no photos on request.' });
         // Lazy require: captureJob pulls in the AI and S3 services
         const { captureAndSaveSnapshot } = require('../cron/captureJob');
         const saved = await captureAndSaveSnapshot(deviceSerial);

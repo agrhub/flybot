@@ -77,6 +77,7 @@ async function authenticate(req, res, next) {
         // Read-only demo cameras this account may view (services/demoView.js)
         const demo = await require('../services/demoView').demoAccessOf(user);
         req.user.demoSerials = demo.serials;
+        req.user.demoOrgId = demo.orgId;
         req.user.demoLive = demo.live;
         req.sessionId = sessionId;
         req.authToken = token;

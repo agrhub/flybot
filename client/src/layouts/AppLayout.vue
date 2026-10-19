@@ -47,6 +47,18 @@
         </div>
       </el-alert>
 
+      <!-- Simulated demo data in view (scripts/demo_sim.js): always said, never passed off as field data -->
+      <el-alert
+        v-if="user && user.simulatedData"
+        type="warning"
+        :closable="false"
+        show-icon
+        class="verify-banner shrink-0"
+        :title="t('simulated.bannerTitle')"
+        :description="t('simulated.bannerDesc')"
+        data-test="simulated-banner"
+      />
+
       <!-- Email confirmation reminder (alert emails need a confirmed address) -->
       <el-alert
         v-if="user && user.emailVerified === false"
