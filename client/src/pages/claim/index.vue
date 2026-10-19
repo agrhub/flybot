@@ -36,10 +36,10 @@
       <el-card shadow="never">
         <el-form label-position="top" @submit.prevent="submit">
           <el-form-item :label="t('claim.serial')">
-            <el-input v-model="form.serial" placeholder="ESPF85B1B92877C" maxlength="20" clearable autocapitalize="characters" data-test="serial" />
+            <el-input v-model="form.serial" placeholder="ESP1234567890AB" maxlength="20" clearable autocapitalize="characters" data-test="serial" />
           </el-form-item>
           <el-form-item :label="t('claim.code')">
-            <el-input v-model="form.verifyCode" placeholder="9WBYWY" maxlength="6" clearable autocapitalize="characters" data-test="code" />
+            <el-input v-model="form.verifyCode" placeholder="K7Q2MX" maxlength="6" clearable autocapitalize="characters" data-test="code" />
           </el-form-item>
           <el-form-item :label="t('trapKind.label')">
             <el-radio-group v-model="form.trapKind" class="claim-kinds">

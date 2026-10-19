@@ -20,10 +20,10 @@ const { default: ClaimPage } = await import('@/pages/claim/index.vue');
 
 describe('claim code', () => {
   it('reads the label QR and the claim link', () => {
-    expect(parseClaimCode('CAMOS:1;SN:ESPF85B1B92877C;VC:9WBYWY;M:AIC-FREENOVE-S3CAM;;')).toEqual({ serial: 'ESPF85B1B92877C', verifyCode: '9WBYWY', model: 'AIC-FREENOVE-S3CAM' });
-    expect(parseClaimCode('https://flybot.agrhub.com/claim?sn=espf85b1b92877c')).toEqual({ serial: 'ESPF85B1B92877C', verifyCode: '', model: '' });
+    expect(parseClaimCode('CAMOS:1;SN:ESP1234567890AB;VC:K7Q2MX;M:AIC-FREENOVE-S3CAM;;')).toEqual({ serial: 'ESP1234567890AB', verifyCode: 'K7Q2MX', model: 'AIC-FREENOVE-S3CAM' });
+    expect(parseClaimCode('https://flybot.agrhub.com/claim?sn=esp1234567890ab')).toEqual({ serial: 'ESP1234567890AB', verifyCode: '', model: '' });
     expect(parseClaimCode('hello')).toBeNull();
-    expect(parseClaimCode('CAMOS:1;VC:9WBYWY;;')).toBeNull();
+    expect(parseClaimCode('CAMOS:1;VC:K7Q2MX;;')).toBeNull();
   });
 });
 
@@ -43,20 +43,20 @@ describe('claim page', () => {
   };
 
   it('fills the serial from the link, claims, and shows the first photo', async () => {
-    claimCamera.mockResolvedValueOnce({ data: { success: true, camera: { deviceSerial: 'ESPF85B1B92877C', deviceName: 'CamOS 877C' }, preview: { snapshotId: 's1', imageUrl: 'snapshots/ESPF85B1B92877C/a.jpg', count: 4 } } });
-    const wrapper = await mountAt('/claim?sn=ESPF85B1B92877C');
-    expect(inputOf(wrapper, 'serial').element.value).toBe('ESPF85B1B92877C');
+    claimCamera.mockResolvedValueOnce({ data: { success: true, camera: { deviceSerial: 'ESP1234567890AB', deviceName: 'CamOS 90AB' }, preview: { snapshotId: 's1', imageUrl: 'snapshots/ESP1234567890AB/a.jpg', count: 4 } } });
+    const wrapper = await mountAt('/claim?sn=ESP1234567890AB');
+    expect(inputOf(wrapper, 'serial').element.value).toBe('ESP1234567890AB');
     expect(wrapper.find('[data-test="claim-submit"]').attributes('disabled')).toBeDefined();
-    await inputOf(wrapper, 'code').setValue('9wbywy');
+    await inputOf(wrapper, 'code').setValue('k7q2mx');
     await wrapper.find('form').trigger('submit');
     await flushPromises();
-    expect(claimCamera).toHaveBeenCalledWith(expect.objectContaining({ serial: 'ESPF85B1B92877C', verifyCode: '9WBYWY', trapKind: 'lure', captureIntervalMinutes: 30 }));
+    expect(claimCamera).toHaveBeenCalledWith(expect.objectContaining({ serial: 'ESP1234567890AB', verifyCode: 'K7Q2MX', trapKind: 'lure', captureIntervalMinutes: 30 }));
     expect(wrapper.find('[data-test="claim-done"]').exists()).toBe(true);
-    expect(wrapper.find('[data-test="claim-preview"]').attributes('src')).toBe('/api/s3/snapshots/ESPF85B1B92877C/a.jpg');
+    expect(wrapper.find('[data-test="claim-preview"]').attributes('src')).toBe('/api/s3/snapshots/ESP1234567890AB/a.jpg');
   });
 
   it('turns a wrong code and a lock into plain messages', async () => {
-    const wrapper = await mountAt('/claim?sn=ESPF85B1B92877C&vc=ZZZZZZ');
+    const wrapper = await mountAt('/claim?sn=ESP1234567890AB&vc=ZZZZZZ');
     claimCamera.mockRejectedValueOnce({ response: { status: 404, data: { code: 'NOT_FOUND' } } });
     expect(inputOf(wrapper, 'code').element.value).toBe('ZZZZZZ');
     await wrapper.find('form').trigger('submit');

@@ -294,7 +294,7 @@ Limits: 120 calls a minute per client IP, 30 a minute per camera. A photo upload
 
 Anyone may flash the public CamOS release; the camera joins FlyBot by itself and a person claims it on `/claim`. No secret is in the public image: FlyBot is the only party that talks to AWS IoT.
 
-**`POST /api/device/register`** (no auth) `{"v":1, "serial":"ESPF85B1B92877C", "verifyCode":"9WBYWY", "model":"AIC-FREENOVE-S3CAM", "fw":"0.3.0", "csr":"<PEM PKCS#10, ECDSA P-256, made on the device>"}`
+**`POST /api/device/register`** (no auth) `{"v":1, "serial":"ESP1234567890AB", "verifyCode":"K7Q2MX", "model":"AIC-FREENOVE-S3CAM", "fw":"0.3.0", "csr":"<PEM PKCS#10, ECDSA P-256, made on the device>"}`
 
 - Checks: `serial` = `ESP` + 12 hex digits (the MAC), `verifyCode` = 6 Crockford base32 characters, `csr` a PEM certificate request of at most 4 KB (a body with a private key is refused).
 - Then: AWS IoT `CreateThing` (`<serial>`, type `IOT_THING_TYPE`, attribute `flybot=self-registered`), `CreateCertificateFromCsr` (`setAsActive`), `AttachPolicy` (`IOT_POLICY_NAME`), `AttachThingPrincipal`, the KVS channel `cam-<serial>`, and the camera stored **unclaimed** with a hashed device token. A failure undoes every step.

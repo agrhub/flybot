@@ -122,7 +122,7 @@ beforeEach(async () => {
 const CSR = (seed = 'a') => `-----BEGIN CERTIFICATE REQUEST-----\n${Buffer.concat([Buffer.from([0x30, 0x82, 0x01, 0x00]), Buffer.alloc(120, seed)]).toString('base64')}\n-----END CERTIFICATE REQUEST-----`;
 let ipSeq = 0;
 const freshIp = () => `203.0.113.${++ipSeq % 250}`;
-const body = (extra = {}) => ({ v: 1, serial: 'ESPF85B1B92877C', verifyCode: '9WBYWY', model: 'AIC-FREENOVE-S3CAM', fw: '0.3.0', csr: CSR(), ...extra });
+const body = (extra = {}) => ({ v: 1, serial: 'ESP1234567890AB', verifyCode: 'K7Q2MX', model: 'AIC-FREENOVE-S3CAM', fw: '0.3.0', csr: CSR(), ...extra });
 const register = (b = body(), ip = freshIp()) => request('/api/device/register', { method: 'POST', body: b, headers: { 'X-Forwarded-For': ip } }).then(json);
 
 const JPEG = (size = 2048) => Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(size, 7), Buffer.from([0xff, 0xd9])]);
@@ -158,9 +158,9 @@ test('register: signs the CSR, makes thing + policy + principal + channel, retur
     assert.equal(b.ok, true);
     assert.match(b.certificatePem, /BEGIN CERTIFICATE/);
     assert.match(b.deviceToken, /^[A-Za-z0-9_-]{40,}$/);
-    assert.deepEqual(b.iot, { endpoint: 'a38gtest-ats.iot.ap-southeast-2.amazonaws.com', thingName: 'ESPF85B1B92877C' });
-    assert.deepEqual(b.kvs, { region: 'ap-southeast-2', channelName: 'cam-ESPF85B1B92877C' });
-    assert.equal(b.claimUrl, `${env.APP_BASE_URL}/claim?sn=ESPF85B1B92877C`);
+    assert.deepEqual(b.iot, { endpoint: 'a38gtest-ats.iot.ap-southeast-2.amazonaws.com', thingName: 'ESP1234567890AB' });
+    assert.deepEqual(b.kvs, { region: 'ap-southeast-2', channelName: 'cam-ESP1234567890AB' });
+    assert.equal(b.claimUrl, `${env.APP_BASE_URL}/claim?sn=ESP1234567890AB`);
     assert.equal(b.claimed, false);
     assert.ok(!/PRIVATE KEY/.test(JSON.stringify(b)), 'no private key ever');
 
@@ -170,9 +170,9 @@ test('register: signs the CSR, makes thing + policy + principal + channel, retur
     assert.equal(iotCalls[1].input.setAsActive, true);
     assert.equal(iotCalls[1].input.certificateSigningRequest.trim(), CSR());
     assert.equal(iotCalls[2].input.policyName, 'camos-camera');
-    assert.ok(kvsCalls.some(c => c.name === 'CreateSignalingChannelCommand' && c.input.ChannelName === 'cam-ESPF85B1B92877C'));
+    assert.ok(kvsCalls.some(c => c.name === 'CreateSignalingChannelCommand' && c.input.ChannelName === 'cam-ESP1234567890AB'));
 
-    const cam = await models.Camera.findOne({ deviceSerial: 'ESPF85B1B92877C' }).lean();
+    const cam = await models.Camera.findOne({ deviceSerial: 'ESP1234567890AB' }).lean();
     assert.equal(cam.selfRegistered, true);
     assert.equal(cam.unclaimed, true);
     assert.equal(cam.userId, null);
@@ -189,14 +189,14 @@ test('register: idempotent before the first connect (same certificate), 409 afte
     assert.equal(again.body.certificatePem, first.body.certificatePem, 'same certificate');
     assert.equal(iotCalls.filter(c => c.name === 'CreateCertificateFromCsrCommand').length, 1);
     // The newest token is the valid one
-    assert.equal((await upload('ESPF85B1B92877C', first.body.deviceToken)).status, 401);
+    assert.equal((await upload('ESP1234567890AB', first.body.deviceToken)).status, 401);
 
     const other = await register(body({ verifyCode: 'ABCDEF' }));
     assert.equal(other.status, 409);
     assert.equal(other.body.error, 'serial_taken');
 
     // First MQTT connection: no more re-registration
-    await require('../src/platforms/camos').handleMessage('$aws/events/presence/connected/ESPF85B1B92877C', { clientId: 'ESPF85B1B92877C' });
+    await require('../src/platforms/camos').handleMessage('$aws/events/presence/connected/ESP1234567890AB', { clientId: 'ESP1234567890AB' });
     const late = await register();
     assert.equal(late.status, 409);
     assert.equal(late.body.error, 'serial_taken');
@@ -249,11 +249,11 @@ test('register: rate limited per client IP', async () => {
 test('unclaimed: 1 photo an hour, rule planner only, no cards, hidden from every account; time and nextWakeAt', async () => {
     const reg = await register();
     const token = reg.body.deviceToken;
-    const first = await upload('ESPF85B1B92877C', token);
+    const first = await upload('ESP1234567890AB', token);
     assert.equal(first.status, 200, JSON.stringify(first.body));
     assert.ok(new Date(first.body.nextWakeAt) - Date.now() > 55 * 60 * 1000, 'next wake in an hour');
     await settle();
-    const second = await upload('ESPF85B1B92877C', token);
+    const second = await upload('ESP1234567890AB', token);
     assert.equal(second.status, 429);
     assert.equal(second.body.error, 'rate_limited');
     assert.ok(second.body.nextWakeAt);
@@ -263,17 +263,17 @@ test('unclaimed: 1 photo an hour, rule planner only, no cards, hidden from every
     assert.equal(lambdaCalls[0].camera.claimed, false);
     assert.deepEqual(lambdaCalls[0].options, { planner: 'rule', llm: false });
     assert.equal(await models.SentinelProposal.countDocuments({}), 0, 'no confirm cards without an owner');
-    const photo = await models.Snapshot.findOne({ deviceSerial: 'ESPF85B1B92877C' }).lean();
+    const photo = await models.Snapshot.findOne({ deviceSerial: 'ESP1234567890AB' }).lean();
     assert.equal(photo.unclaimed, true);
     assert.ok(new Date(photo.expiresAt) - Date.now() > 23 * 3600 * 1000);
 
     const admin = await createUser({ role: 'admin' });
     const list = await json(await request('/api/user/cameras', { as: admin }));
-    assert.ok(!JSON.stringify(list.body).includes('ESPF85B1B92877C'), 'not even an admin sees it');
-    assert.equal((await request('/api/cameras/ESPF85B1B92877C/status', { as: admin })).status, 404);
+    assert.ok(!JSON.stringify(list.body).includes('ESP1234567890AB'), 'not even an admin sees it');
+    assert.equal((await request('/api/cameras/ESP1234567890AB/status', { as: admin })).status, 404);
 
     // Deep analysis needs a claimed camera
-    const cam = await models.Camera.findOne({ deviceSerial: 'ESPF85B1B92877C' }).lean();
+    const cam = await models.Camera.findOne({ deviceSerial: 'ESP1234567890AB' }).lean();
     await assert.rejects(() => visionLambda.deepAnalyze(photo, cam, { question: 'why?' }), /claimed camera/);
 });
 
@@ -281,33 +281,33 @@ test('unclaimed: 1 photo an hour, rule planner only, no cards, hidden from every
 
 test('claim: moves the camera to the person, shadow claimed + interval, preview photo; 404 for anyone else after', async () => {
     const reg = await register();
-    await upload('ESPF85B1B92877C', reg.body.deviceToken);
+    await upload('ESP1234567890AB', reg.body.deviceToken);
     await waitFor(() => lambdaCalls.length >= 1);
     const person = await createUser({ role: 'user', email: 'grower@example.test' });
-    const res = await claim(person, { serial: 'espf85b1b92877c', verifyCode: '9wbywy', trapKind: 'sticky', captureIntervalMinutes: 60 });
+    const res = await claim(person, { serial: 'esp1234567890ab', verifyCode: 'k7q2mx', trapKind: 'sticky', captureIntervalMinutes: 60 });
     assert.equal(res.status, 200, JSON.stringify(res.body));
-    assert.equal(res.body.camera.deviceSerial, 'ESPF85B1B92877C');
+    assert.equal(res.body.camera.deviceSerial, 'ESP1234567890AB');
     assert.equal(res.body.camera.trapKind, 'sticky');
     assert.ok(res.body.preview?.snapshotId, 'the first preview photo');
-    assert.ok(shadowUpdates.some(u => u.thingName === 'ESPF85B1B92877C' && u.desired.claimed === true && u.desired.capture?.intervalMin === 60));
+    assert.ok(shadowUpdates.some(u => u.thingName === 'ESP1234567890AB' && u.desired.claimed === true && u.desired.capture?.intervalMin === 60));
 
-    const cam = await models.Camera.findOne({ deviceSerial: 'ESPF85B1B92877C' }).lean();
+    const cam = await models.Camera.findOne({ deviceSerial: 'ESP1234567890AB' }).lean();
     assert.equal(String(cam.userId), String(person._id));
     assert.equal(cam.unclaimed, false);
     const personal = await models.Organization.findOne({ kind: 'personal', 'members.userId': person._id }).lean();
     assert.equal(String(cam.orgId), String(personal._id), 'in the claimer\'s personal workspace');
-    const photo = await models.Snapshot.findOne({ deviceSerial: 'ESPF85B1B92877C' }).lean();
+    const photo = await models.Snapshot.findOne({ deviceSerial: 'ESP1234567890AB' }).lean();
     assert.equal(photo.unclaimed, undefined, 'the photo is kept');
     assert.equal(photo.expiresAt, undefined);
     // The claimer sees and runs it, even with the role "user"
     const mine = await json(await request('/api/user/cameras', { as: person }));
-    assert.ok(JSON.stringify(mine.body).includes('ESPF85B1B92877C'));
+    assert.ok(JSON.stringify(mine.body).includes('ESP1234567890AB'));
     const { canManageCamera } = require('../src/utils/ownership');
     assert.equal(canManageCamera({ id: String(person._id), role: 'user' }, cam), true);
 
     const other = await createUser({ role: 'manager' });
-    assert.equal((await claim(other, { serial: 'ESPF85B1B92877C', verifyCode: '9WBYWY' })).status, 404);
-    assert.equal((await claim(person, { serial: 'ESPF85B1B92877C', verifyCode: '9WBYWY' })).body.alreadyClaimed, true);
+    assert.equal((await claim(other, { serial: 'ESP1234567890AB', verifyCode: 'K7Q2MX' })).status, 404);
+    assert.equal((await claim(person, { serial: 'ESP1234567890AB', verifyCode: 'K7Q2MX' })).body.alreadyClaimed, true);
     const audit = await models.AuditLog.findOne({ action: 'camera.claimed' }).lean();
     assert.ok(audit);
 });
@@ -315,34 +315,34 @@ test('claim: moves the camera to the person, shadow claimed + interval, preview 
 test('claim: wrong code = the same 404 as an unknown serial; 5 failures lock the serial for an hour', async () => {
     await register();
     const person = await createUser({ role: 'user' });
-    const wrong = await claim(person, { serial: 'ESPF85B1B92877C', verifyCode: 'ZZZZZZ' });
+    const wrong = await claim(person, { serial: 'ESP1234567890AB', verifyCode: 'ZZZZZZ' });
     const unknown = await claim(person, { serial: 'ESP999999999999', verifyCode: 'ZZZZZZ' });
     assert.equal(wrong.status, 404);
     assert.equal(unknown.status, 404);
     assert.deepEqual(wrong.body, unknown.body, 'nothing tells them apart');
-    for (let i = 0; i < 4; i++) assert.equal((await claim(person, { serial: 'ESPF85B1B92877C', verifyCode: 'ZZZZZZ' })).status, 404);
-    const locked = await claim(person, { serial: 'ESPF85B1B92877C', verifyCode: '9WBYWY' });
+    for (let i = 0; i < 4; i++) assert.equal((await claim(person, { serial: 'ESP1234567890AB', verifyCode: 'ZZZZZZ' })).status, 404);
+    const locked = await claim(person, { serial: 'ESP1234567890AB', verifyCode: 'K7Q2MX' });
     assert.equal(locked.status, 429);
     assert.equal(locked.body.code, 'LOCKED');
     // An unknown serial locks the same way (no hint either)
     for (let i = 0; i < 4; i++) await claim(person, { serial: 'ESP999999999999', verifyCode: 'ZZZZZZ' });
     assert.equal((await claim(person, { serial: 'ESP999999999999', verifyCode: 'ZZZZZZ' })).body.code, 'LOCKED');
     registration.resetClaimLocks();
-    assert.equal((await claim(person, { serial: 'ESPF85B1B92877C', verifyCode: '9WBYWY' })).status, 200);
+    assert.equal((await claim(person, { serial: 'ESP1234567890AB', verifyCode: 'K7Q2MX' })).status, 200);
 });
 
 test('claim through "Add camera": a CamOS serial that registered itself is claimed by the same dialog', async () => {
     await register();
     const person = await createUser({ role: 'user', email: 'adder@example.test' });
     const add = (b) => request('/api/user/add-camera', { method: 'POST', as: person, body: b }).then(json);
-    const wrong = await add({ platform: 'camos', deviceSerial: 'ESPF85B1B92877C', validateCode: 'ZZZZZZ', trapKind: 'lure' });
+    const wrong = await add({ platform: 'camos', deviceSerial: 'ESP1234567890AB', validateCode: 'ZZZZZZ', trapKind: 'lure' });
     assert.equal(wrong.status, 404, 'a wrong code is the claim 404, not a new pre-provisioned camera');
-    assert.equal(await models.Camera.countDocuments({ deviceSerial: 'ESPF85B1B92877C' }), 1);
-    const res = await add({ platform: 'camos', deviceSerial: 'espf85b1b92877c', validateCode: '9wbywy', trapKind: 'sticky' });
+    assert.equal(await models.Camera.countDocuments({ deviceSerial: 'ESP1234567890AB' }), 1);
+    const res = await add({ platform: 'camos', deviceSerial: 'esp1234567890ab', validateCode: 'k7q2mx', trapKind: 'sticky' });
     assert.equal(res.status, 200, JSON.stringify(res.body));
-    assert.equal(res.body.camera.deviceSerial, 'ESPF85B1B92877C');
+    assert.equal(res.body.camera.deviceSerial, 'ESP1234567890AB');
     assert.equal(res.body.provisioning, undefined, 'no provisioning token for a self-registered camera');
-    const cam = await models.Camera.findOne({ deviceSerial: 'ESPF85B1B92877C' }).lean();
+    const cam = await models.Camera.findOne({ deviceSerial: 'ESP1234567890AB' }).lean();
     assert.equal(String(cam.userId), String(person._id));
     assert.equal(cam.unclaimed, false);
     assert.equal(cam.trapKind, 'sticky');
@@ -352,11 +352,11 @@ test('claim through "Add camera": a CamOS serial that registered itself is claim
 test('re-add: an owner adds an ESP serial before it registers; the camera then joins that account with the same code', async () => {
     const person = await createUser({ role: 'user', email: 'readd@example.test' });
     const add = (b) => request('/api/user/add-camera', { method: 'POST', as: person, body: b }).then(json);
-    const added = await add({ platform: 'camos', deviceSerial: 'espf85b1b92877c', validateCode: '9wbywy', trapKind: 'sticky' });
+    const added = await add({ platform: 'camos', deviceSerial: 'esp1234567890ab', validateCode: 'k7q2mx', trapKind: 'sticky' });
     assert.equal(added.status, 200, JSON.stringify(added.body));
     assert.equal(added.body.pending, true);
     assert.equal(added.body.provisioning, undefined, 'no token to type in for a self-registering camera');
-    let cam = await models.Camera.findOne({ deviceSerial: 'ESPF85B1B92877C' }).lean();
+    let cam = await models.Camera.findOne({ deviceSerial: 'ESP1234567890AB' }).lean();
     assert.equal(String(cam.userId), String(person._id));
 
     // Another code is still refused
@@ -366,14 +366,14 @@ test('re-add: an owner adds an ESP serial before it registers; the camera then j
     assert.equal(res.status, 201, JSON.stringify(res.body));
     assert.equal(res.body.claimed, true);
     assert.match(res.body.certificatePem, /BEGIN CERTIFICATE/);
-    cam = await models.Camera.findOne({ deviceSerial: 'ESPF85B1B92877C' }).lean();
+    cam = await models.Camera.findOne({ deviceSerial: 'ESP1234567890AB' }).lean();
     assert.equal(String(cam.userId), String(person._id), 'still the owner\'s camera');
     assert.equal(cam.unclaimed, false);
     assert.equal(cam.selfRegistered, true);
     assert.equal(cam.trapKind, 'sticky');
     assert.ok(cam.device.tokenHash);
     assert.equal(cam.device.provisionTokenHash, undefined);
-    assert.equal(await models.Camera.countDocuments({ deviceSerial: 'ESPF85B1B92877C' }), 1);
+    assert.equal(await models.Camera.countDocuments({ deviceSerial: 'ESP1234567890AB' }), 1);
     // Registered now: a second registration is the usual 409
     assert.equal((await register()).status, 409);
 });
@@ -391,14 +391,14 @@ test('plan limits: cameras per workspace, photos per day, live minutes; admins a
     const a = await register(body({ serial: 'ESP000000000001' }));
     await register(body({ serial: 'ESP000000000002' }));
     const person = await createUser({ role: 'user' });
-    assert.equal((await claim(person, { serial: 'ESP000000000001', verifyCode: '9WBYWY' })).status, 200);
-    const over = await claim(person, { serial: 'ESP000000000002', verifyCode: '9WBYWY' });
+    assert.equal((await claim(person, { serial: 'ESP000000000001', verifyCode: 'K7Q2MX' })).status, 200);
+    const over = await claim(person, { serial: 'ESP000000000002', verifyCode: 'K7Q2MX' });
     assert.equal(over.status, 403);
     assert.equal(over.body.code, 'UPGRADE_REQUIRED');
     assert.equal(over.body.limit, 'cameras');
     assert.equal(over.body.max, 1);
     const admin = await createUser({ role: 'admin' });
-    assert.equal((await claim(admin, { serial: 'ESP000000000002', verifyCode: '9WBYWY' })).status, 200);
+    assert.equal((await claim(admin, { serial: 'ESP000000000002', verifyCode: 'K7Q2MX' })).status, 200);
 
     // Photos a day (claimed camera of a non-exempt owner)
     const statuses = [];
@@ -423,7 +423,7 @@ test('cleanup: unclaimed photos after 24 h; never-claimed cameras after 7 days (
     await register(body({ serial: 'ESP0000000000BB' }));
     await settle();
     const person = await createUser({ role: 'user' });
-    assert.equal((await claim(person, { serial: 'ESP0000000000BB', verifyCode: '9WBYWY' })).status, 200);
+    assert.equal((await claim(person, { serial: 'ESP0000000000BB', verifyCode: 'K7Q2MX' })).status, 200);
 
     // A day later: the unclaimed photo goes, the camera stays
     let result = await registration.cleanupSelfRegistered({ now: new Date(Date.now() + 25 * 3600 * 1000) });
@@ -454,10 +454,10 @@ test('cleanup: unclaimed photos after 24 h; never-claimed cameras after 7 days (
 test('owner reset: deleting a claimed self-registered camera frees the serial to register again', async () => {
     await register();
     const person = await createUser({ role: 'user' });
-    await claim(person, { serial: 'ESPF85B1B92877C', verifyCode: '9WBYWY' });
-    await require('../src/platforms/camos').handleMessage('$aws/events/presence/connected/ESPF85B1B92877C', {});
+    await claim(person, { serial: 'ESP1234567890AB', verifyCode: 'K7Q2MX' });
+    await require('../src/platforms/camos').handleMessage('$aws/events/presence/connected/ESP1234567890AB', {});
     assert.equal((await register()).status, 409);
-    const del = await json(await request('/api/user/delete-camera', { method: 'DELETE', as: person, body: { deviceSerial: 'ESPF85B1B92877C' } }));
+    const del = await json(await request('/api/user/delete-camera', { method: 'DELETE', as: person, body: { deviceSerial: 'ESP1234567890AB' } }));
     assert.equal(del.status, 200, JSON.stringify(del.body));
     assert.ok(iotCalls.some(c => c.name === 'DeleteCertificateCommand'));
     assert.equal((await register()).status, 201);
@@ -468,7 +468,7 @@ test('owner reset: deleting a claimed self-registered camera frees the serial to
 test('time: farm > GPS > IP > default, POSIX string, public IP echoed; shadow tz follows farm and GPS changes', async () => {
     const reg = await register();
     const token = reg.body.deviceToken;
-    const headers = { 'X-Device-Serial': 'ESPF85B1B92877C', 'X-Device-Token': token };
+    const headers = { 'X-Device-Serial': 'ESP1234567890AB', 'X-Device-Token': token };
     const time = async (extra = {}, ip = '10.0.0.5') => json(await request('/api/device/time', { headers: { 'X-Forwarded-For': ip, ...extra } }));
 
     // default (private address, nothing known)
@@ -488,7 +488,7 @@ test('time: farm > GPS > IP > default, POSIX string, public IP echoed; shadow tz
     assert.equal(t.body.posix, '<-05>5<-04>,M3.2.0/2,M11.1.0/2');
 
     // gps: the camera reported a fix in Sydney (needs its token)
-    await upload('ESPF85B1B92877C', token, { v: 1, location: { lat: -33.87, lng: 151.21 } });
+    await upload('ESP1234567890AB', token, { v: 1, location: { lat: -33.87, lng: 151.21 } });
     await waitFor(() => shadowUpdates.some(u => u.desired.tz?.iana === 'Australia/Sydney'));
     t = await time(headers, '8.8.8.8');
     assert.equal(t.body.tzSource, 'gps');
@@ -496,13 +496,13 @@ test('time: farm > GPS > IP > default, POSIX string, public IP echoed; shadow tz
     assert.equal(t.body.posix, '<+10>-10<+11>,M10.1.0/2,M4.1.0/3');
     assert.ok(shadowUpdates.some(u => u.desired.tz?.iana === 'Australia/Sydney' && u.desired.tz.posix === t.body.posix), 'GPS fix -> shadow tz');
     // Without the token the camera is not looked up
-    assert.equal((await time({ 'X-Device-Serial': 'ESPF85B1B92877C' }, '8.8.8.8')).body.tzSource, 'ip');
+    assert.equal((await time({ 'X-Device-Serial': 'ESP1234567890AB' }, '8.8.8.8')).body.tzSource, 'ip');
 
     // farm: claimed into a farm with a timezone
     const owner = await createUser({ role: 'manager' });
     const farm = await models.Farm.create({ ownerId: owner._id, name: 'Lô Tokyo', timezone: 'Asia/Tokyo' });
     shadowUpdates = [];
-    assert.equal((await claim(owner, { serial: 'ESPF85B1B92877C', verifyCode: '9WBYWY', farmId: String(farm._id) })).status, 200);
+    assert.equal((await claim(owner, { serial: 'ESP1234567890AB', verifyCode: 'K7Q2MX', farmId: String(farm._id) })).status, 200);
     t = await time(headers, '8.8.8.8');
     assert.equal(t.body.tzSource, 'farm');
     assert.equal(t.body.timezone, 'Asia/Tokyo');
@@ -518,7 +518,7 @@ test('time: farm > GPS > IP > default, POSIX string, public IP echoed; shadow tz
     assert.equal((await json(await request(`/api/farms/${farm._id}`, { method: 'PUT', as: owner, body: { timezone: 'Mars/Olympus' } }))).status, 400);
     // No change, nothing sent
     shadowUpdates = [];
-    assert.equal((await timezoneService.syncCamera('ESPF85B1B92877C')).changed, false);
+    assert.equal((await timezoneService.syncCamera('ESP1234567890AB')).changed, false);
     assert.equal(shadowUpdates.length, 0);
 });
 
