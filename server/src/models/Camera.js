@@ -60,6 +60,22 @@ const deviceSchema = new mongoose.Schema({
     operator: { type: String, default: undefined },
     hw: { type: String, default: undefined },
     mac: { type: String, default: undefined },
+    // Remote log (services/cameraLogService.js): what FlyBot asked for and what the camera reports (reported log)
+    log: {
+        on: { type: Boolean, default: undefined },
+        level: { type: String, default: undefined },
+        until: { type: Date, default: undefined },
+        session: { type: String, default: undefined },
+        requestedLevel: { type: String, default: undefined },
+        requestedUntil: { type: Date, default: undefined },
+        lastLineAt: { type: Date, default: undefined }
+    },
+    // How the previous boot ended when it was not a normal restart (models/CameraCrash.js holds the details)
+    lastCrash: {
+        at: { type: Date, default: undefined },
+        reason: { type: String, default: undefined },
+        fw: { type: String, default: undefined }
+    },
     location: { type: mongoose.Schema.Types.Mixed, default: undefined }, // { lat, lng, fixAt }
     power: { type: mongoose.Schema.Types.Mixed, default: undefined }, // { mode: auto | battery | powered }
     sleeping: { type: Boolean, default: undefined },

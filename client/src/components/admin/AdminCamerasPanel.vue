@@ -77,6 +77,10 @@
               <el-tag effect="plain" size="small">{{ row.platform === 'camos' ? 'CamOS' : 'EZVIZ' }}</el-tag>
               <el-tag v-if="row.disabled" type="danger" effect="dark" round size="small">{{ t('admin.fleet.paused') }}</el-tag>
               <el-tag v-if="row.unclaimed" type="warning" effect="light" round size="small">{{ t('admin.fleet.states.unclaimed') }}</el-tag>
+              <el-tag v-if="row.lastCrash" type="danger" effect="plain" round size="small" class="cursor-pointer" @click="openLog(row)">
+                {{ t('admin.fleet.crashed', { reason: crashReason(row.lastCrash.reason) }) }}
+              </el-tag>
+              <el-tag v-if="row.logOn" type="success" effect="plain" round size="small">{{ t('admin.fleet.logOn') }}</el-tag>
             </div>
           </template>
         </el-table-column>
@@ -147,6 +151,7 @@
                   <el-dropdown-item command="share" :icon="Share">{{ t('share.button') }}</el-dropdown-item>
                   <el-dropdown-item command="transfer" :icon="Switch">{{ t('admin.cameras.transfer') }}</el-dropdown-item>
                   <el-dropdown-item v-if="row.platform === 'camos'" command="firmware" :icon="Upload">{{ t('admin.fleet.updateFirmware') }}</el-dropdown-item>
+                  <el-dropdown-item v-if="row.platform === 'camos'" command="log" :icon="Tickets">{{ t('cameraLog.title') }}</el-dropdown-item>
                   <el-dropdown-item v-if="!row.disabled" command="pause" :icon="VideoPause" divided>{{ t('admin.fleet.pause') }}</el-dropdown-item>
                   <el-dropdown-item v-else command="resume" :icon="VideoPlay" divided>{{ t('admin.fleet.resume') }}</el-dropdown-item>
                 </el-dropdown-menu>
@@ -205,6 +210,11 @@
       </template>
     </el-dialog>
 
+    <!-- A camera's console log -->
+    <el-dialog v-model="logVisible" :title="logCamera ? `${logCamera.deviceName} · ${logCamera.deviceSerial}` : ''" width="min(980px, 96vw)" append-to-body destroy-on-close>
+      <CameraLogCard v-if="logCamera" :camera="logCamera" />
+    </el-dialog>
+
     <FirmwareRolloutDialog v-model="rolloutVisible" :serials="rolloutSerials" :models="rolloutModels" @done="load" />
     <CameraShareDialog v-model="shareVisible" :camera="shareCamera" @changed="load" />
   </div>
@@ -214,12 +224,13 @@
 import { computed, reactive, ref, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { Search, Refresh, Share, Switch, Message, View, MoreFilled, Upload, VideoPause, VideoPlay } from '@element-plus/icons-vue';
+import { Search, Refresh, Share, Switch, Message, View, MoreFilled, Upload, VideoPause, VideoPlay, Tickets } from '@element-plus/icons-vue';
 import api from '@/services/api';
 import { useCameras } from '@/composables/useCameras';
 import PageHeader from '@/components/common/PageHeader.vue';
 import CameraShareDialog from '@/components/cameras/CameraShareDialog.vue';
 import FirmwareRolloutDialog from './FirmwareRolloutDialog.vue';
+import CameraLogCard from '@/components/cameras/CameraLogCard.vue';
 import { adminErrorText } from './adminErrors';
 import { updateTagType } from '@/utils/firmware';
 
@@ -227,7 +238,7 @@ import { updateTagType } from '@/utils/firmware';
  * Every camera (EZVIZ and CamOS): owner, state, place, model, firmware, label code (masked, revealed on request
  * and audited), the 4G modem; pausing a camera, moving it to another owner, starting a firmware update.
  */
-const { t, locale } = useI18n();
+const { t, te, locale } = useI18n();
 const { loadCameras } = useCameras();
 
 const STATES = ['online', 'offline', 'sleeping', 'disabled', 'unclaimed'];
@@ -315,6 +326,7 @@ const onCommand = (cmd, row) => {
   if (cmd === 'share') openShare(row);
   else if (cmd === 'transfer') openTransfer(row);
   else if (cmd === 'firmware') openRollout([row]);
+  else if (cmd === 'log') openLog(row);
   else if (cmd === 'pause') openPause(row);
   else if (cmd === 'resume') resume(row);
 };
@@ -356,6 +368,15 @@ const resume = async (row) => {
     ElMessage.error(adminErrorText(t, err));
   }
 };
+
+// ---------- Console log ----------
+const logVisible = ref(false);
+const logCamera = ref(null);
+const openLog = (row) => {
+  logCamera.value = row;
+  logVisible.value = true;
+};
+const crashReason = (r) => (te(`cameraLog.reasons.${r}`) ? t(`cameraLog.reasons.${r}`) : r);
 
 // ---------- Firmware ----------
 const selectedCamos = computed(() => selected.value.filter(r => r.platform === 'camos'));

@@ -193,6 +193,9 @@
     <!-- Firmware: version, check, install, automatic updates -->
     <CameraFirmwareCard v-if="camera && !camera.simulated" :camera="camera" />
 
+    <!-- Console log sent on request (CamOS), for cameras nobody can plug a cable into -->
+    <CameraLogCard v-if="camera && isCamos && !camera.simulated && camera.canManage !== false && camera.access !== 'demo'" :camera="camera" />
+
     <!-- Verification Code Dialog -->
     <el-dialog
       v-model="validateCodeDialogVisible"
@@ -240,6 +243,7 @@ import api from '@/services/api'
 import PlaybackControls from './PlaybackControls.vue'
 import TrapMaintenanceCard from './TrapMaintenanceCard.vue'
 import CameraFirmwareCard from './CameraFirmwareCard.vue'
+import CameraLogCard from './CameraLogCard.vue'
 import KvsViewer from './KvsViewer.vue'
 import CamosSettingsDialog from './CamosSettingsDialog.vue'
 import { ElNotification } from 'element-plus'

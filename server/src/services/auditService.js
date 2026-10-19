@@ -26,6 +26,9 @@ const AUDIT_ACTIONS = [
     'camera.disabled',
     'camera.enabled',
     'camera.verify_code_revealed',
+    // Remote console log of a camera
+    'camera.log_started',
+    'camera.log_stopped',
     // The serial registry (cameras for sale)
     'registry.added',
     'registry.imported',

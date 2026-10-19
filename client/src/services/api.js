@@ -618,6 +618,25 @@ export default {
   setCameraFirmwareAuto(deviceSerial, enabled, hour) {
     return apiClient.put(`/cameras/${encodeURIComponent(deviceSerial)}/firmware/auto`, { enabled, ...(hour !== undefined ? { hour } : {}) });
   },
+  // Remote console log (CamOS): lines, on / off, live lines while watching, download, crash reports
+  getCameraLog(deviceSerial, params = {}) {
+    return apiClient.get(`/cameras/${encodeURIComponent(deviceSerial)}/log`, { params });
+  },
+  startCameraLog(deviceSerial, level, minutes) {
+    return apiClient.post(`/cameras/${encodeURIComponent(deviceSerial)}/log/start`, { level, minutes });
+  },
+  stopCameraLog(deviceSerial) {
+    return apiClient.post(`/cameras/${encodeURIComponent(deviceSerial)}/log/stop`);
+  },
+  watchCameraLog(deviceSerial, watching = true) {
+    return apiClient.post(`/cameras/${encodeURIComponent(deviceSerial)}/log/watch`, { watching });
+  },
+  downloadCameraLog(deviceSerial) {
+    return apiClient.get(`/cameras/${encodeURIComponent(deviceSerial)}/log/download`, { responseType: 'blob' });
+  },
+  getCameraCrashes(deviceSerial) {
+    return apiClient.get(`/cameras/${encodeURIComponent(deviceSerial)}/crashes`);
+  },
   getCameraStatus(deviceSerial) {
     return apiClient.get(`/cameras/${encodeURIComponent(deviceSerial)}/status`);
   },

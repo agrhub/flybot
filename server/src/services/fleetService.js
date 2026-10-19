@@ -94,7 +94,7 @@ async function list(query = {}, now = new Date()) {
     const select = 'deviceSerial deviceName platform model deviceVersion status validateCode userId farmId orgId latitude longitude locationAddress '
         + 'selfRegistered unclaimed adminDisabled addedAt lastCaptureAt lastSync sharedWith firmware '
         + 'device.fw device.net device.rssi device.battery device.power device.sleeping device.wakeAt device.lastSeenAt device.location '
-        + 'device.imei device.iccid device.operator device.hw device.mac';
+        + 'device.imei device.iccid device.operator device.hw device.mac device.log device.lastCrash';
     let cameras;
     let total;
     if (postFilter) {
@@ -180,6 +180,9 @@ function rowOf(c, { userBy, farmBy, regBy, updBy, releases, now }) {
         battery: d.battery || null,
         power: d.power?.mode || null,
         registry: reg ? { disabled: !!reg.disabled, batch: reg.batch || '' } : null,
+        // Remote log on now, and how the last boot ended when it was not a normal restart
+        logOn: !!d.log?.on && !!d.log?.until && new Date(d.log.until) > now,
+        lastCrash: d.lastCrash?.at ? { at: d.lastCrash.at, reason: d.lastCrash.reason || '', fw: d.lastCrash.fw || '' } : null,
         lastSeenAt: platform === 'camos' ? d.lastSeenAt || null : c.lastSync || null,
         lastCaptureAt: c.lastCaptureAt || null,
         addedAt: c.addedAt || null

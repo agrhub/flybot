@@ -17,6 +17,32 @@ function onNotification(callback) {
 }
 let eventSource = null;
 
+// Other events of the same stream (e.g. camera_log: a camera's console lines while its log page is open)
+const streamListeners = new Map(); // event name -> Set<callback>
+
+function attachStreamEvent(name) {
+  eventSource?.addEventListener(name, (event) => {
+    let data;
+    try {
+      data = JSON.parse(event.data);
+    } catch (e) {
+      return;
+    }
+    streamListeners.get(name)?.forEach((callback) => callback(data));
+  });
+}
+
+function onStreamEvent(name, callback) {
+  let set = streamListeners.get(name);
+  if (!set) {
+    set = new Set();
+    streamListeners.set(name, set);
+    attachStreamEvent(name);
+  }
+  set.add(callback);
+  return () => set.delete(callback);
+}
+
 const PAGE_SIZE = 20;
 const TOAST_TYPE = { critical: 'error', warning: 'warning', info: 'success' };
 
@@ -102,6 +128,7 @@ async function markAllRead() {
 function connect() {
   if (eventSource || typeof EventSource === 'undefined') return;
   eventSource = new EventSource(api.notificationStreamUrl, { withCredentials: true });
+  for (const name of streamListeners.keys()) attachStreamEvent(name);
   eventSource.addEventListener('notification', (event) => {
     let notification;
     try {
@@ -147,6 +174,7 @@ export function useNotifications() {
     reset,
     format,
     onNotification,
+    onStreamEvent,
     relativeTime
   };
 }

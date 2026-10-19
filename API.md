@@ -86,6 +86,19 @@ Each camera has a `platform` (`Camera.platform`, default `ezviz`): how FlyBot re
 | `POST /api/cameras/{serial}/firmware/update` `{confirm: true}` | Owners and managers: install the model's current release. `{success, state, update}`; `400 CONFIRM`, `409 UP_TO_DATE` / `BUSY`, `404 NO_RELEASE`. Audited `firmware.update_requested` |
 | `PUT /api/cameras/{serial}/firmware/auto` `{enabled, hour?}` | Automatic updates around `hour` (0-23, farm time, default 12) when a newer release is current. `{success, autoUpdate, autoHour, queued}` |
 
+**Remote console log** (CamOS, firmware 0.8.0; admins and the camera's owners and managers, never people it is shared with or demo visitors):
+
+| Request | Answer |
+|---|---|
+| `POST /api/cameras/{serial}/log/start` `{level?: error\|warn\|info\|debug, minutes?: 1-60}` | Shadow desired `log {level, until}` (a sleeping camera starts at its next wake) and RPC `log.start {level, minutes, backlog: true}` when it is awake. `{success, level, until, sent, nextWakeAt}`. Audited `camera.log_started` |
+| `POST /api/cameras/{serial}/log/stop` | Desired `log: null` and RPC `log.stop`. Audited `camera.log_stopped` |
+| `GET /api/cameras/{serial}/log?since&before&level&q&limit` | `{state: {on, requested, level, until, lastLineAt, lastCrash}, lines: [{at, lvl (1 error ... 5 verbose), tag, msg, session}]}`, oldest first (the newest `limit`, 500 by default, or the next ones after `since`) |
+| `POST /api/cameras/{serial}/log/watch` `{watching}` | For 90 s new lines also arrive on the notification stream as SSE event `camera_log {deviceSerial, lines, dropped, end, crash?}` |
+| `GET /api/cameras/{serial}/log/download` | The last 24 h as text |
+| `GET /api/cameras/{serial}/crashes` | The last 30 days of restarts after an error: `{crashes: [{at, reason, detail, fw, logTail, coredump: {task, pc, backtrace, corrupted, elfSha256} or null, source}]}` |
+
+Lines are kept 24 h (TTL), 20,000 per camera at most; secrets are removed on the camera before they leave it.
+
 A camera an administrator paused (`adminDisabled: {at, reason}` in the camera list) takes no photo (`403 CAMERA_DISABLED` on capture), opens no live view or SD playback (`403 CAMERA_DISABLED`) and its uploads are refused; its photos and history stay readable.
 
 ### Claiming a self-registered camera
@@ -293,6 +306,7 @@ What the ESP32 / AMB82 cameras call over HTTPS. No user session: every call but 
 | `GET /time` | No auth: `{now, epoch, timezone, posix, tzSource, publicIp}` (below) |
 | `GET /ota` | The build of the camera's open firmware update: `{fw, url, sha256}`, `url` a signed link to `GET /firmware/{id}` valid an hour; else the `DEVICE_OTA_*` offer, or `204`. Never `401` for a known camera (the firmware takes a `401` here as a lost registration) |
 | `GET /firmware/{id}?sn&exp&sig` | The image (`application/octet-stream`, `X-Fw-Sha256`) for the signed link, or for a camera sending its own token, while it has an open update to that build; `401` bad link, `404` no such update |
+| `POST /logs` `{v, kind: crash \| diag, fw, uptimeMs, lines, crash}` | What a camera that cannot reach MQTT sends: its crash report, or the latest log as a diagnosis (once an hour). `{ok, stored}`; 4 a minute per camera |
 | `POST /events` `{topic, payload}` with `X-IoT-Rule-Secret` | The IoT-rule fallback for camera->cloud messages (`IOT_EVENTS=rule`); `401` bad secret, `503` when `IOT_RULE_SECRET` is empty |
 
 Limits: 120 calls a minute per client IP, 30 a minute per camera. A photo uploaded while FlyBot waits on `snapshot.now` answers that request (the "Capture now" button, a confirmed `capture_now` card, the vision agent's `POST /api/sentinel/capture`).
@@ -322,7 +336,7 @@ When a camera's zone changes (claimed into a farm, the farm's timezone edited wi
 
 ### AWS IoT Core messages
 
-Messages FlyBot handles (over its MQTT subscription, or posted by an IoT rule to `/api/device/events`): `camos/<serial>/state`, `camos/<serial>/event` (`goodbye` with `sleeping`/`wakeAt`, `boot`, `low_power`, ...), `camos/<serial>/telemetry`, `camos/<serial>/rpc/res`, the shadow's reported side (`$aws/things/<serial>/shadow/update/accepted`) and the lifecycle events (`$aws/events/presence/connected|disconnected/<clientId>`). Shadow keys written by FlyBot: `capture.intervalMin`, `capture.requestNow`, `live.requested`, `live.minutes`, `video.image` (from a confirmed `set_isp`). RPC methods sent: `snapshot.now`, `live.start {minutes}`, `live.stop`, `gps.fix`, `reboot`, `ota.apply`. Shadow `disabled: true|false` follows an administrator's pause. From `state` FlyBot keeps `model`, `fw`, `hw`, `mac` and the 4G modem's `net.cell {imei, iccid, operator}`.
+Messages FlyBot handles (over its MQTT subscription, or posted by an IoT rule to `/api/device/events`): `camos/<serial>/state`, `camos/<serial>/event` (`goodbye` with `sleeping`/`wakeAt`, `boot`, `low_power`, ...), `camos/<serial>/telemetry`, `camos/<serial>/rpc/res`, the shadow's reported side (`$aws/things/<serial>/shadow/update/accepted`) and the lifecycle events (`$aws/events/presence/connected|disconnected/<clientId>`). Shadow keys written by FlyBot: `capture.intervalMin`, `capture.requestNow`, `live.requested`, `live.minutes`, `video.image` (from a confirmed `set_isp`). RPC methods sent: `snapshot.now`, `live.start {minutes}`, `live.stop`, `gps.fix`, `reboot`, `ota.apply`. Shadow `disabled: true|false` follows an administrator's pause. From `state` FlyBot keeps `model`, `fw`, `hw`, `mac` and the 4G modem's `net.cell {imei, iccid, operator}`. `camos/<serial>/log` carries the remote log batches `{session, seq, uptimeMs, at, lines, dropped, end}` and the event `crash` a restart after an error (both stored by `services/cameraLogService.js`).
 
 **Firmware updates** (`services/firmwareService.js`). An update waits (`waitReason`) until the camera is online and awake, on mains power, charging or above the release's `minBatteryPct` (or 3.7 V), and for an automatic update within three hours after its `autoHour`. It is sent when the camera shows up (`state`, `boot`, telemetry, a photo upload) and by a 5-minute job (pipeline id `firmware`). Then: RPC `ota.apply` (rpc/res `ok` -> `installing`, `OLD_VERSION` -> `succeeded`, `LOW_BATTERY` -> waits again, other errors -> `failed`; no answer: tried again, 5 times at most), the camera downloads the signed image, event `ota_progress {pct}` (firmware 0.7.0+), `ota_result {ok, stage, error, detail}` (`rebooting` or `failed`), and `boot {fw}`: the new version -> `succeeded`, the old one after an install -> `rolled_back` (the bootloader went back). Installing or rebooting for 30 minutes without a report: `failed TIMEOUT`. The owner is told how it ended (`firmware_updated` / `firmware_failed`).
 

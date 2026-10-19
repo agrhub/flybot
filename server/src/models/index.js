@@ -24,6 +24,8 @@ const UsageCounter = require('./UsageCounter');
 const DeviceRegistry = require('./DeviceRegistry');
 const Firmware = require('./Firmware');
 const FirmwareUpdate = require('./FirmwareUpdate');
+const CameraLog = require('./CameraLog');
+const CameraCrash = require('./CameraCrash');
 
 module.exports = {
     User,
@@ -51,5 +53,7 @@ module.exports = {
     UsageCounter,
     DeviceRegistry,
     Firmware,
-    FirmwareUpdate
+    FirmwareUpdate,
+    CameraLog,
+    CameraCrash
 };

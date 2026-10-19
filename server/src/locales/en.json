@@ -588,7 +588,13 @@
     "firmware_bad_hour": "hour must be 0 to 23.",
     "firmware_bad_multipart": "The upload is not valid multipart data.",
     "firmware_file_required": "A firmware file is required.",
-    "firmware_source_required": "Upload a file, or give url or githubTag."
+    "firmware_source_required": "Upload a file, or give url or githubTag.",
+    "camlog_bad_kind": "kind must be crash or diag.",
+    "camlog_camos_only": "Only CamOS cameras send their log.",
+    "camlog_simulated": "A simulated camera has no log.",
+    "camlog_bad_level": "level must be error, warn, info, debug or verbose.",
+    "camlog_bad_minutes": "minutes must be 1 to 60.",
+    "camlog_too_many": "Too many reports for this camera."
   },
   "reportPdf": {
     "range": "Period: {from} - {to} ({days} days)",

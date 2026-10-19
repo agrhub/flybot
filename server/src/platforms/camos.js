@@ -357,6 +357,13 @@ function deviceFieldsOf(doc) {
         'device.operator': typeof cell.operator === 'string' && cell.operator.trim() ? cell.operator.trim().slice(0, 40) : undefined,
         'device.hw': ident(doc.hw, /^[A-Za-z0-9._-]{1,32}$/),
         'device.mac': ident(doc.mac, /^[0-9A-Fa-f]{2}(:[0-9A-Fa-f]{2}){5}$/),
+        // reported log {on, level, until, session} (remote log, firmware 0.8.0+)
+        ...(doc.log && typeof doc.log === 'object' && typeof doc.log.on === 'boolean' ? {
+            'device.log.on': doc.log.on,
+            'device.log.level': typeof doc.log.level === 'string' ? doc.log.level.slice(0, 8) : undefined,
+            'device.log.until': doc.log.until && !isNaN(new Date(doc.log.until)) ? new Date(doc.log.until) : undefined,
+            'device.log.session': typeof doc.log.session === 'string' ? doc.log.session.slice(0, 24) : undefined
+        } : {}),
         'device.fw': typeof doc.fw === 'string' ? doc.fw.slice(0, 40) : undefined,
         'device.net': net && ['wifi', '4g'].includes(net) ? net : undefined,
         'device.rssi': rssi,
@@ -407,11 +414,16 @@ async function setOnline(deviceSerial, online, at = new Date(), extra = {}) {
  */
 async function handleMessage(topicName, payload, { now = new Date() } = {}) {
     const doc = typeof payload === 'object' && payload !== null && !Buffer.isBuffer(payload) && !(payload instanceof Uint8Array) ? payload : decode(payload);
-    const camos = String(topicName || '').match(/^camos\/([A-Za-z0-9_-]{1,64})\/(state|event|telemetry|rpc\/res|shadow\/reported)$/);
+    const camos = String(topicName || '').match(/^camos\/([A-Za-z0-9_-]{1,64})\/(state|event|telemetry|rpc\/res|shadow\/reported|log)$/);
     if (camos) {
         const [, deviceSerial, kind] = camos;
         if (!doc || typeof doc !== 'object') return { deviceSerial, kind, ignored: 'bad payload' };
         await markConnected(deviceSerial, now);
+        if (kind === 'log') {
+            // Remote console log (services/cameraLogService.js), on request only
+            const stored = await require('../services/cameraLogService').ingestBatch(deviceSerial, doc, { now });
+            return { deviceSerial, kind, stored };
+        }
         if (kind === 'rpc/res') {
             const waiter = pendingRpc.get(String(doc.id || ''));
             if (waiter) {
@@ -449,6 +461,11 @@ async function handleMessage(topicName, payload, { now = new Date() } = {}) {
         }
         if (type === 'boot') await setOnline(deviceSerial, true, now, set);
         else await Camera.updateMany({ deviceSerial, platform: PLATFORM }, { $set: set });
+        // How the previous boot ended (crash, watchdog, brownout): kept for the camera's log page
+        if (type === 'crash') {
+            await require('../services/cameraLogService').ingestCrash(deviceSerial, doc, { now })
+                .catch(err => console.warn(`⚠️ Crash report ${deviceSerial}: ${err.message}`));
+        }
         // Firmware updates: progress, result, and the boot that confirms (or rolls back) the new version
         const ota = await require('../services/firmwareService').handleEvent(deviceSerial, doc, now)
             .catch(err => { console.warn(`⚠️ OTA event ${deviceSerial}: ${err.message}`); return null; });
@@ -483,7 +500,7 @@ async function handleMessage(topicName, payload, { now = new Date() } = {}) {
 
 /** Topics the subscriber listens to (platforms/iotEvents.js). */
 const SUBSCRIPTIONS = [
-    'camos/+/state', 'camos/+/event', 'camos/+/telemetry', 'camos/+/rpc/res', 'camos/+/shadow/reported',
+    'camos/+/state', 'camos/+/event', 'camos/+/telemetry', 'camos/+/rpc/res', 'camos/+/shadow/reported', 'camos/+/log',
     '$aws/events/presence/connected/+', '$aws/events/presence/disconnected/+',
     '$aws/things/+/shadow/update/accepted'
 ];

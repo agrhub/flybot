@@ -588,7 +588,13 @@
     "firmware_bad_hour": "Giờ phải từ 0 đến 23.",
     "firmware_bad_multipart": "Dữ liệu tải lên không hợp lệ.",
     "firmware_file_required": "Cần chọn tệp firmware.",
-    "firmware_source_required": "Hãy tải tệp lên, hoặc nhập địa chỉ hay tag GitHub."
+    "firmware_source_required": "Hãy tải tệp lên, hoặc nhập địa chỉ hay tag GitHub.",
+    "camlog_bad_kind": "Loại báo cáo phải là crash hoặc diag.",
+    "camlog_camos_only": "Chỉ camera CamOS gửi được nhật ký.",
+    "camlog_simulated": "Camera mô phỏng không có nhật ký.",
+    "camlog_bad_level": "Mức nhật ký phải là error, warn, info, debug hoặc verbose.",
+    "camlog_bad_minutes": "Số phút phải từ 1 đến 60.",
+    "camlog_too_many": "Camera này gửi quá nhiều báo cáo."
   },
   "reportPdf": {
     "range": "Khoảng thời gian: {from} - {to} ({days} ngày)",

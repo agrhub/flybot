@@ -1909,7 +1909,9 @@
       "resumeConfirm": "Bật lại {name}? Camera sẽ chụp theo lịch như trước.",
       "resumedDone": "Đã bật lại camera.",
       "charging": "đang sạc",
-      "powered": "nguồn điện lưới"
+      "powered": "nguồn điện lưới",
+      "crashed": "Khởi động lại: {reason}",
+      "logOn": "Đang gửi nhật ký"
     },
     "registry": {
       "tab": "Sổ serial",
@@ -3813,6 +3815,53 @@
       "LOW_BATTERY": "Pin quá yếu",
       "GONE": "Camera hoặc firmware đã bị xoá",
       "ERROR": "Camera báo lỗi"
+    }
+  },
+  "cameraLog": {
+    "title": "Nhật ký camera",
+    "on": "Đang bật",
+    "onUntil": "Bật tới {time}",
+    "off": "Đang tắt",
+    "level": "Mức",
+    "duration": "Thời gian",
+    "minutes": "{n} phút",
+    "levels": {
+      "error": "Lỗi",
+      "warn": "Cảnh báo",
+      "info": "Thông tin",
+      "debug": "Gỡ lỗi"
+    },
+    "start": "Bật",
+    "extend": "Gia hạn",
+    "stop": "Tắt",
+    "download": "Tải về",
+    "started": "Camera đang gửi nhật ký.",
+    "startedAtWake": "Camera sẽ gửi nhật ký khi thức dậy.",
+    "stopped": "Đã tắt nhật ký.",
+    "waiting": "Đang chờ camera: camera chạy pin gửi nhật ký ở lần thức tới.",
+    "showAll": "Tất cả",
+    "showWarn": "Cảnh báo",
+    "showError": "Lỗi",
+    "search": "Tìm trong nhật ký",
+    "pause": "Tạm dừng",
+    "count": "{n} dòng",
+    "empty": "Chưa có nhật ký. Bật lên để xem camera đang làm gì.",
+    "hint": "Camera chỉ gửi nhật ký khi bạn bật, trong thời gian đã chọn. Mật khẩu và mã được xoá ngay trên camera. FlyBot giữ 24 giờ gần nhất.",
+    "lastCrash": "Khởi động lại do {reason}, {time}",
+    "crashesTitle": "Các lần khởi động lại vì lỗi",
+    "noCrashes": "Không có lần khởi động lại vì lỗi trong 30 ngày qua.",
+    "firmware": "firmware {v}",
+    "task": "Tác vụ",
+    "backtrace": "Vết ngăn xếp",
+    "noCoredump": "Không có bản ghi lõi: camera được cài trước khi có phân vùng này, hoặc không lưu được.",
+    "noTail": "Không giữ được dòng nhật ký nào.",
+    "reasons": {
+      "crash": "lỗi phần mềm",
+      "task_watchdog": "tác vụ bị treo",
+      "int_watchdog": "ngắt bị treo",
+      "watchdog": "bộ giám sát",
+      "brownout": "sụt nguồn",
+      "software": "khởi động lại phần mềm"
     }
   }
 }

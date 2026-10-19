@@ -125,6 +125,20 @@ router.use(rateLimit({ windowMs: 60 * 1000, max: 30, includeIp: false, keyFn: se
 
 // The build of this camera's open firmware update (or the env offer); 204 when there is none. Never 401 for a
 // known camera: the firmware takes a 401 here as "my registration is gone"
+/**
+ * POST /logs { v, kind: crash | diag, fw, uptimeMs, lines, crash }: a camera that cannot reach MQTT sends its crash
+ * report, or a short diagnosis with its latest log, over HTTPS (services/cameraLogService.js). Secrets are removed on
+ * the camera. A few a minute per camera.
+ */
+router.post('/logs', rateLimit({ windowMs: 60 * 1000, max: 4, includeIp: false, keyFn: serialKey, message: 'Too many reports for this camera.' }),
+    express.json({ limit: '64kb' }), async (req, res) => {
+        try {
+            json(res, await require('../services/cameraLogService').deviceReport(req.camera, req.body));
+        } catch (err) {
+            sendServerError(res, err, { context: 'Device logs' });
+        }
+    });
+
 router.get('/ota', async (req, res) => {
     try {
         const manifest = await require('../services/firmwareService').offerFor(req.camera);

@@ -856,6 +856,100 @@ async function disableStream(req, res) {
     }
 }
 
+// ---------- Remote console log (services/cameraLogService.js) ----------
+
+/**
+ * Admins, and owners / managers of the camera (never people it is shared with, demo visitors or support).
+ * Returns the camera (lean) or null after answering 404.
+ */
+async function logCamera(req, res) {
+    const camera = await findManageableCamera(req.user, String(req.params.serial || ''));
+    if (!camera || isDemoOnly(req.user, camera)) {
+        res.status(404).json({ success: false, code: 'NOT_FOUND', message: "Camera not found or permission denied." });
+        return null;
+    }
+    return camera.toObject ? camera.toObject() : camera;
+}
+
+async function getCameraLog(req, res) {
+    try {
+        const camera = await logCamera(req, res);
+        if (!camera) return;
+        res.setHeader('Cache-Control', 'no-store');
+        res.json(await require('../services/cameraLogService').list(camera, req.query));
+    } catch (err) {
+        sendServerError(res, err, { context: 'Camera log' });
+    }
+}
+
+async function downloadCameraLog(req, res) {
+    try {
+        const camera = await logCamera(req, res);
+        if (!camera) return;
+        const body = await require('../services/cameraLogService').text(camera);
+        const name = `${camera.deviceSerial}-log-${new Date().toISOString().slice(0, 16).replace(/[:T]/g, '')}.txt`;
+        res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename="${name}"`);
+        res.setHeader('Cache-Control', 'no-store');
+        res.send(body);
+    } catch (err) {
+        sendServerError(res, err, { context: 'Camera log download' });
+    }
+}
+
+async function getCameraCrashes(req, res) {
+    try {
+        const camera = await logCamera(req, res);
+        if (!camera) return;
+        res.json(await require('../services/cameraLogService').crashes(camera));
+    } catch (err) {
+        sendServerError(res, err, { context: 'Camera crashes' });
+    }
+}
+
+async function startCameraLog(req, res) {
+    try {
+        const camera = await logCamera(req, res);
+        if (!camera) return;
+        const level = req.body?.level === undefined ? 'info' : req.body.level;
+        const minutes = req.body?.minutes === undefined ? 15 : req.body.minutes;
+        const result = await require('../services/cameraLogService').start(camera, { level, minutes });
+        if (result.status === 200) {
+            require('../services/cameraLogService').watch(camera.deviceSerial, req.user.id);
+            recordAudit(req, { action: 'camera.log_started', target: cameraTarget(camera), details: { level, minutes } });
+        }
+        res.status(result.status).json(result.body);
+    } catch (err) {
+        sendServerError(res, err, { context: 'Camera log start' });
+    }
+}
+
+async function stopCameraLog(req, res) {
+    try {
+        const camera = await logCamera(req, res);
+        if (!camera) return;
+        const result = await require('../services/cameraLogService').stop(camera);
+        if (result.status === 200) recordAudit(req, { action: 'camera.log_stopped', target: cameraTarget(camera) });
+        res.status(result.status).json(result.body);
+    } catch (err) {
+        sendServerError(res, err, { context: 'Camera log stop' });
+    }
+}
+
+/** POST /api/cameras/:serial/log/watch { watching }: new lines go to this person's notification stream for 90 s. */
+async function watchCameraLog(req, res) {
+    try {
+        const camera = await logCamera(req, res);
+        if (!camera) return;
+        const logs = require('../services/cameraLogService');
+        if (req.body?.watching === false) logs.unwatch(camera.deviceSerial, req.user.id);
+        else logs.watch(camera.deviceSerial, req.user.id);
+        res.json({ success: true, state: logs.stateOf(camera) });
+    } catch (err) {
+        sendServerError(res, err, { context: 'Camera log watch' });
+    }
+}
+
 // ---------- Firmware (services/firmwareService.js) ----------
 
 const languageOf = (req) => (String(req.get('X-Language') || req.user?.language || 'en').toLowerCase().startsWith('vi') ? 'vi' : 'en');
@@ -1012,6 +1106,12 @@ async function getThresholdSuggestions(req, res) {
 
 module.exports = {
     getThresholdSuggestions,
+    getCameraLog,
+    downloadCameraLog,
+    getCameraCrashes,
+    startCameraLog,
+    stopCameraLog,
+    watchCameraLog,
     getFirmware,
     checkFirmware,
     updateFirmware,

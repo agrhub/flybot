@@ -1909,7 +1909,9 @@
       "resumeConfirm": "Resume {name}? It takes photos on its schedule again.",
       "resumedDone": "Camera resumed.",
       "charging": "charging",
-      "powered": "mains power"
+      "powered": "mains power",
+      "crashed": "Restarted: {reason}",
+      "logOn": "Log on"
     },
     "registry": {
       "tab": "Serial registry",
@@ -3813,6 +3815,53 @@
       "LOW_BATTERY": "Battery too low",
       "GONE": "The camera or the firmware was removed",
       "ERROR": "The camera reported an error"
+    }
+  },
+  "cameraLog": {
+    "title": "Camera log",
+    "on": "On",
+    "onUntil": "On until {time}",
+    "off": "Off",
+    "level": "Level",
+    "duration": "Duration",
+    "minutes": "{n} min",
+    "levels": {
+      "error": "Errors",
+      "warn": "Warnings",
+      "info": "Information",
+      "debug": "Debug"
+    },
+    "start": "Turn on",
+    "extend": "Extend",
+    "stop": "Turn off",
+    "download": "Download",
+    "started": "The camera is sending its log.",
+    "startedAtWake": "The camera sends its log when it wakes up.",
+    "stopped": "The log is off.",
+    "waiting": "Waiting for the camera: a camera on battery sends its log at its next wake.",
+    "showAll": "All",
+    "showWarn": "Warnings",
+    "showError": "Errors",
+    "search": "Search the log",
+    "pause": "Pause",
+    "count": "{n} lines",
+    "empty": "No log yet. Turn it on to see what the camera does.",
+    "hint": "The camera sends its log only when you turn it on, for the chosen time. Passwords and codes are removed on the camera. The last 24 hours are kept.",
+    "lastCrash": "Restarted after {reason}, {time}",
+    "crashesTitle": "Restarts after an error",
+    "noCrashes": "No restart after an error in the last 30 days.",
+    "firmware": "firmware {v}",
+    "task": "Task",
+    "backtrace": "Backtrace",
+    "noCoredump": "No core dump: this camera was installed before the core dump partition, or the dump could not be saved.",
+    "noTail": "No log lines were kept.",
+    "reasons": {
+      "crash": "a crash",
+      "task_watchdog": "a task watchdog",
+      "int_watchdog": "an interrupt watchdog",
+      "watchdog": "a watchdog",
+      "brownout": "a power dip",
+      "software": "a software restart"
     }
   }
 }

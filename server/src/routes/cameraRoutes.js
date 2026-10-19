@@ -45,6 +45,13 @@ router.get('/cameras/:serial/live', cameraController.getLive);
 router.post('/cameras/:serial/live/request', cameraController.requestLive);
 router.get('/cameras/:serial/playback', cameraController.getPlayback);
 router.get('/cameras/:serial/status', cameraController.getCameraStatus);
+// Remote console log (CamOS): lines, download, crash reports, on / off, and "I am watching" for live lines
+router.get('/cameras/:serial/log', cameraController.getCameraLog);
+router.get('/cameras/:serial/log/download', cameraController.downloadCameraLog);
+router.get('/cameras/:serial/crashes', cameraController.getCameraCrashes);
+router.post('/cameras/:serial/log/start', cameraController.startCameraLog);
+router.post('/cameras/:serial/log/stop', cameraController.stopCameraLog);
+router.post('/cameras/:serial/log/watch', cameraController.watchCameraLog);
 // Firmware: status, check, install now (confirmed), automatic updates
 router.get('/cameras/:serial/firmware', cameraController.getFirmware);
 router.post('/cameras/:serial/firmware/check', rateLimit({ windowMs: 60 * 1000, max: 10, keyFn: (req) => String(req.user?.id || ''), message: 'Too many attempts.' }), cameraController.checkFirmware);
