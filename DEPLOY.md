@@ -59,7 +59,7 @@ Its photos are the labeled synthetic trap pictures of flybot-aws `eval/synth` (S
    cd /opt/flybot/current && set -a && . /etc/flybot/env && set +a && setsid nohup sudo -E -u flybot node server/dist/demo_sim.js apply --yes > /var/log/flybot-demo-sim.log 2>&1 < /dev/null &
    tail -f /var/log/flybot-demo-sim.log
    ```
-3. In **Admin → System → Demo access**: turn on *Show the simulated demo farm to visitors*, and *Daily simulation* with an end date to add each day's photos (every 30 minutes, only the simulated farm changes).
+3. In **Admin → System → Demo access**: turn on *Show the simulated demo farm to visitors*, and *Daily simulation* with an end date to add each day's photos (every 30 minutes, only the simulated farm changes). The same switches from the instance, without signing in (dry run without `--yes`): `node server/dist/demo_sim.js settings --set guestAccessEnabled=true --set demoViewSimulated=true --set demoSimEnabled=true --set demoSimUntil=2026-11-10 --yes`; with no `--set` it prints the current demo and guest settings.
 4. When the demo is over: turn both off, then `node server/dist/demo_sim.js remove` (dry run) and `remove --yes`, with the environment loaded as in step 2: it deletes every simulated document and photo copy, and nothing else (the pool under `simulated/` stays until you delete it).
 
 `apply` and the daily job are idempotent. To try it on your computer first: `tools/media/sim-demo.js` runs it with an in-memory database and the vision handler running locally.

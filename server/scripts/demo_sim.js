@@ -12,6 +12,10 @@
  *        [--from YYYY-MM-DD] [--until <ISO date>]    (each one analyzed by the vision Lambda:
  *        [--no-analysis] [--concurrency N]           AI_PROVIDER=opencv-lambda and VISION_LAMBDA_NAME/URL)
  *   node scripts/demo_sim.js remove [--yes]          delete every simulated document and photo, nothing else
+ *   node scripts/demo_sim.js settings                print the demo and guest settings (Admin > System > Demo access)
+ *        [--set key=value]... [--yes]                and change them, for example --set guestAccessEnabled=true
+ *                                                    --set demoSimUntil=2026-11-10 (true/false, null, a list
+ *                                                    of serials for demoViewCameras: a,b)
  *
  * Idempotent: running apply again only adds what is missing. Visitors see the farm when the admin
  * turns on Admin > System > Demo access > "Show the simulated demo farm"; the daily simulation
@@ -35,8 +39,8 @@ async function main() {
         dirs.push(a);
     }
     const dryRun = !flag('yes');
-    if (!['pool', 'apply', 'remove'].includes(command)) {
-        console.log('Usage: node scripts/demo_sim.js pool <dir> | apply | remove [--yes]');
+    if (!['pool', 'apply', 'remove', 'settings'].includes(command)) {
+        console.log('Usage: node scripts/demo_sim.js pool <dir> | apply | remove | settings [--set key=value] [--yes]');
         return 2;
     }
     const demoSim = require('../src/services/demoSim');
@@ -63,7 +67,27 @@ async function main() {
     const { connectDB } = require('../src/config/db');
     await connectDB();
     let result;
-    if (command === 'apply') {
+    if (command === 'settings') {
+        const settingsService = require('../src/services/settingsService');
+        const shown = (all) => Object.fromEntries(Object.entries(all).filter(([key]) => /^(demo|guest)/.test(key)));
+        const patch = {};
+        args.forEach((a, i) => {
+            if (a !== '--set') return;
+            const [key, ...rest] = String(args[i + 1] || '').split('=');
+            const raw = rest.join('=');
+            if (!key || !rest.length) throw new Error('--set takes key=value.');
+            patch[key] = raw === 'true' ? true : raw === 'false' ? false : raw === 'null' ? null
+                : key === 'demoViewCameras' ? raw.split(',').map(v => v.trim()).filter(Boolean) : raw;
+        });
+        const before = shown(await settingsService.getSettings());
+        if (!dryRun && Object.keys(patch).length) {
+            const saved = await settingsService.updateSettings(patch, null);
+            if (saved.error) throw new Error(saved.error);
+            result = { before, after: shown(saved.settings) };
+        } else {
+            result = { settings: before, ...(Object.keys(patch).length ? { change: patch } : {}) };
+        }
+    } else if (command === 'apply') {
         const env = require('../src/config/env');
         const analyze = !flag('no-analysis');
         if (analyze && !(env.VISION_LAMBDA_URL || env.VISION_LAMBDA_NAME)) throw new Error('The vision Lambda is not configured (VISION_LAMBDA_NAME or VISION_LAMBDA_URL), or pass --no-analysis.');
