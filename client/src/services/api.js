@@ -117,6 +117,10 @@ export default {
   login(email, password, language) {
     return apiClient.post('/auth/login', { email, password, language });
   },
+  // The shared, read-only guest account (Admin > System > Demo access > Guest access)
+  guestLogin() {
+    return apiClient.post('/auth/guest');
+  },
   getMe() {
     return apiClient.get('/auth/me');
   },

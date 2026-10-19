@@ -2,9 +2,9 @@ const { isAdmin } = require('../constants/roles');
 
 /**
  * Read-only demo cameras for visitors (for example competition judges): the admin names a few
- * cameras in Settings > System > Demo access (env DEMO_VIEW_* gives the first values) and every
- * account created on or after a date (or every account) may view them, as if they were shared
- * with it, without waiting for the owner to share them:
+ * cameras in Settings > System > Demo access (env DEMO_VIEW_* gives the first values) and the guest
+ * account (or every account, or every account created on or after a date) may view them, as if they
+ * were shared with it, without waiting for the owner to share them:
  *  - photos, counts, analytics, Sentinel traces and proposals, the chatbot: yes
  *    (utils/ownership.js viewFilter adds them for the signed-in request);
  *  - managing them (settings, capture, delete, share, maintenance, treatments, deciding a
@@ -21,18 +21,26 @@ const { isAdmin } = require('../constants/roles');
 /**
  * The demo serials, the simulated organization (when shown) and whether live view is open for this
  * account, from the effective settings. `simulatedOrgId`: the simulated demo organization, if any.
+ * The guest account (services/guestAccess.js) gets them while guest access is on; other accounts
+ * only when demo access is on and its audience includes them: "guest" (nobody else, the default),
+ * "all", or "since" (accounts created on or after demoViewSince).
  */
 function accessFor(userDoc, settings, simulatedOrgId = null) {
     const none = { serials: [], orgId: null, live: false };
-    if (!userDoc || !settings?.demoViewEnabled || isAdmin(userDoc)) return none;
+    if (!userDoc || !settings || isAdmin(userDoc)) return none;
     const serials = Array.isArray(settings.demoViewCameras) ? settings.demoViewCameras : [];
     const orgId = settings.demoViewSimulated && simulatedOrgId ? String(simulatedOrgId) : null;
     if (!serials.length && !orgId) return none;
-    if (settings.demoViewSince) {
+    const access = { serials: [...serials], orgId, live: !!settings.demoViewLive };
+    if (userDoc.guest) return settings.guestAccessEnabled ? access : none;
+    if (!settings.demoViewEnabled) return none;
+    const audience = settings.demoViewAudience || 'guest';
+    if (audience === 'guest') return none;
+    if (audience === 'since' && settings.demoViewSince) {
         const created = userDoc.createdAt ? new Date(userDoc.createdAt).getTime() : NaN;
         if (!(created >= new Date(settings.demoViewSince).getTime())) return none;
     }
-    return { serials: [...serials], orgId, live: !!settings.demoViewLive };
+    return access;
 }
 
 // The simulated demo organization's id, cached like the settings (it is made once by the seed)

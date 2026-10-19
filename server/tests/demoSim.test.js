@@ -246,7 +246,7 @@ test('visitors see the simulated farm read-only when it is shown; background job
     const cameras = async (as) => (await json(await request('/api/user/cameras', { as }))).body.cameras;
     assert.equal((await cameras(visitor)).length, 0, 'not shown yet');
 
-    await settingsService.updateSettings({ demoViewEnabled: true, demoViewCameras: [], demoViewSimulated: true }, null);
+    await settingsService.updateSettings({ demoViewEnabled: true, demoViewAudience: 'all', demoViewCameras: [], demoViewSimulated: true }, null);
     require('../src/services/demoView').clearCache();
     const seen = await cameras(visitor);
     assert.equal(seen.length, world.FARMS.length * 4 + 4);

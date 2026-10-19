@@ -513,7 +513,11 @@
     "demo_live_closed": "Live view of this demo camera is not open to visitors.",
     "simulated_no_live": "A simulated camera has no live view.",
     "simulated_no_capture": "A simulated camera takes no photos on request.",
-    "simulated_decided": "Simulated proposals are decided by the simulation."
+    "simulated_decided": "Simulated proposals are decided by the simulation.",
+    "guest_read_only": "Guest access is read-only.",
+    "guest_access_off": "Guest access is turned off.",
+    "guest_too_many_here": "Too many guest sessions from here. Please try again later.",
+    "guest_too_many": "Too many guest sessions. Please try again later."
   },
   "reportPdf": {
     "range": "Period: {from} - {to} ({days} days)",

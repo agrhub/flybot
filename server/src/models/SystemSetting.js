@@ -17,6 +17,9 @@ const systemSettingSchema = new mongoose.Schema({
     demoViewSince: { type: Date, default: undefined },
     demoViewLive: { type: Boolean, default: undefined },
     demoViewSimulated: { type: Boolean, default: undefined },
+    // guest | all | since (services/demoView.js)
+    demoViewAudience: { type: String, default: undefined },
+    guestAccessEnabled: { type: Boolean, default: undefined },
     // The simulated demo farm's daily simulation (services/demoSim.js)
     demoSimEnabled: { type: Boolean, default: undefined },
     demoSimUntil: { type: Date, default: undefined },

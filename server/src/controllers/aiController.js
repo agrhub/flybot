@@ -1138,6 +1138,9 @@ function readChatRequest(body = {}) {
     return { message, sessionId: String(sessionId), uiContext: uiContext && typeof uiContext === 'object' ? uiContext : {} };
 }
 
+// The guest account (services/guestAccess.js) is shared: each guest session keeps its own chats
+const chatIdOf = (req, id) => (req.user?.guest && req.sessionId ? require('../services/guestAccess').guestChatSession(req.sessionId, id) : id);
+
 // The answer as the panel gets it (tool data stays on the server)
 const chatPayload = (result) => ({
     reply: result.reply,
@@ -1156,7 +1159,7 @@ async function chatWithAssistant(req, res) {
     try {
         const input = readChatRequest(req.body);
         if (input.error) return res.status(400).json({ success: false, message: input.error });
-        const result = await agent.chatWithAgent({ ...input, userId: req.user.id, user: req.user });
+        const result = await agent.chatWithAgent({ ...input, sessionId: chatIdOf(req, input.sessionId), userId: req.user.id, user: req.user });
         res.json({ success: true, ...chatPayload(result) });
     } catch (err) {
         console.error("❌ AI Agent chat error:", err);
@@ -1186,7 +1189,7 @@ async function chatWithAssistantStream(req, res) {
     // Proxies close quiet connections: a comment line now and then while tools run
     const heartbeat = setInterval(() => { if (open) res.write(': keep-alive\n\n'); }, 15000);
     try {
-        const result = await agent.chatWithAgent({ ...input, userId: req.user.id, user: req.user, onEvent: send });
+        const result = await agent.chatWithAgent({ ...input, sessionId: chatIdOf(req, input.sessionId), userId: req.user.id, user: req.user, onEvent: send });
         send('done', chatPayload(result));
     } catch (err) {
         console.error("❌ AI Agent chat error:", err.message);
@@ -1204,7 +1207,7 @@ async function getChatHistory(req, res) {
     try {
         const sessionId = String(req.query.sessionId || '');
         if (!SESSION_ID_REGEX.test(sessionId)) return res.status(400).json({ success: false, message: "Invalid chat session." });
-        res.json({ success: true, messages: await agent.getChatHistory(req.user.id, sessionId) });
+        res.json({ success: true, messages: await agent.getChatHistory(req.user.id, chatIdOf(req, sessionId)) });
     } catch (err) {
         sendServerError(res, err);
     }
@@ -1219,7 +1222,7 @@ async function rateChatMessage(req, res) {
         if (!SESSION_ID_REGEX.test(String(sessionId || '')) || typeof messageId !== 'string' || ![null, 'up', 'down'].includes(rating)) {
             return res.status(400).json({ success: false, message: "Invalid rating." });
         }
-        const found = await agent.rateMessage(req.user.id, String(sessionId), messageId.slice(0, 100), rating);
+        const found = await agent.rateMessage(req.user.id, chatIdOf(req, String(sessionId)), messageId.slice(0, 100), rating);
         if (!found) return res.status(404).json({ success: false, message: "Message not found." });
         res.json({ success: true, rating });
     } catch (err) {
@@ -1395,7 +1398,7 @@ async function clearChatSession(req, res) {
     try {
         const { sessionId = 'default-session' } = req.body || {};
         if (!SESSION_ID_REGEX.test(String(sessionId))) return res.status(400).json({ success: false, message: "Invalid chat session." });
-        await agent.clearChatHistory(req.user.id, String(sessionId));
+        await agent.clearChatHistory(req.user.id, chatIdOf(req, String(sessionId)));
         res.json({ success: true, message: "Chat session refreshed successfully." });
     } catch (err) {
         sendServerError(res, err);

@@ -31,9 +31,17 @@ async function resolveToken(token) {
     // Tokens issued before a password reset/change carry an older version and are rejected
     if ((decoded.v || 0) !== (user.tokenVersion || 0)) return null;
 
+    // The guest account (services/guestAccess.js): only sessions from the Guest access button, until
+    // they end (2 hours), and only while guest access is on
+    if (user.guest) {
+        if (!decoded.sid) return null;
+        if (!(await require('../services/settingsService').getSettings()).guestAccessEnabled) return null;
+    }
+
     if (decoded.sid) {
         const session = await Session.findById(decoded.sid);
         if (!session || session.revokedAt || String(session.userId) !== String(user._id)) return null;
+        if (user.guest && new Date(session.expiresAt) <= new Date()) return null;
         if (Date.now() - new Date(session.lastSeenAt).getTime() > LAST_SEEN_THROTTLE_MS) {
             Session.updateOne({ _id: session._id }, { $set: { lastSeenAt: new Date() } }).catch(() => {});
         }
@@ -70,8 +78,13 @@ async function authenticate(req, res, next) {
             emailVerified: !!user.emailVerified,
             language: user.language,
             role: roleOf(user),
-            sentinelViewer: !!user.sentinelViewer
+            sentinelViewer: !!user.sentinelViewer,
+            ...(user.guest ? { guest: true } : {})
         };
+        // The guest account reads; it writes nothing but its sign-out and the assistant
+        if (user.guest && !require('../services/guestAccess').guestMayRequest(req.method, req.originalUrl)) {
+            return res.status(403).json({ success: false, code: 'GUEST_READ_ONLY', message: 'Guest access is read-only.' });
+        }
         // The current workspace (X-Workspace-Id, else the saved one, else the personal one)
         await require('../services/workspaceService').attach(req, user);
         // Read-only demo cameras this account may view (services/demoView.js)
@@ -119,14 +132,14 @@ function describeDevice(userAgent = '') {
 /**
  * Record a new signed-in device and return its id.
  */
-async function createSession(userId, req) {
+async function createSession(userId, req, { ttlMs = TOKEN_TTL_MS } = {}) {
     const { browser, os } = describeDevice(req.headers['user-agent']);
     const session = await Session.create({
         userId,
         browser,
         os,
         ip: String(req.ip || '').slice(0, 64),
-        expiresAt: new Date(Date.now() + TOKEN_TTL_MS)
+        expiresAt: new Date(Date.now() + ttlMs)
     });
     return session._id;
 }

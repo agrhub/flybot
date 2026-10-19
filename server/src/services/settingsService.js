@@ -1,5 +1,5 @@
 const { SystemSetting } = require('../models');
-const { ALLOW_REGISTRATION, RETENTION_CYCLE, DEMO_VIEW_ENABLED, DEMO_VIEW_CAMERAS, DEMO_VIEW_SINCE, DEMO_VIEW_LIVE, DEMO_VIEW_SIMULATED, DEMO_SIM_ENABLED, DEMO_SIM_UNTIL } = require('../config/env');
+const { ALLOW_REGISTRATION, RETENTION_CYCLE, DEMO_VIEW_ENABLED, DEMO_VIEW_CAMERAS, DEMO_VIEW_SINCE, DEMO_VIEW_LIVE, DEMO_VIEW_SIMULATED, DEMO_SIM_ENABLED, DEMO_SIM_UNTIL, DEMO_VIEW_AUDIENCE, GUEST_ACCESS } = require('../config/env');
 const { DEFAULT_ALERT_THRESHOLD } = require('../constants/risk');
 
 // Short cache: settings are read on every registration/cleanup but change rarely
@@ -17,6 +17,9 @@ const defaults = () => ({
     demoViewCameras: [...DEMO_VIEW_CAMERAS],
     demoViewSince: DEMO_VIEW_SINCE,
     demoViewLive: DEMO_VIEW_LIVE,
+    demoViewAudience: DEMO_VIEW_AUDIENCE,
+    // The shared, read-only guest account (services/guestAccess.js)
+    guestAccessEnabled: GUEST_ACCESS,
     // The simulated demo farm (scripts/demo_sim.js): shown to visitors, and its daily simulation
     demoViewSimulated: DEMO_VIEW_SIMULATED,
     demoSimEnabled: DEMO_SIM_ENABLED,
@@ -53,6 +56,8 @@ const SETTING_RULES = {
     demoViewSince: (v) => v === null || (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}/.test(v) && !Number.isNaN(Date.parse(v))),
     demoViewLive: (v) => typeof v === 'boolean',
     demoViewSimulated: (v) => typeof v === 'boolean',
+    demoViewAudience: (v) => ['guest', 'all', 'since'].includes(v),
+    guestAccessEnabled: (v) => typeof v === 'boolean',
     demoSimEnabled: (v) => typeof v === 'boolean',
     // The last day the daily simulation adds data (null: no end)
     demoSimUntil: (v) => v === null || (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}/.test(v) && !Number.isNaN(Date.parse(v)))

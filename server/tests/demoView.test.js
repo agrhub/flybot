@@ -32,23 +32,24 @@ async function demoFarm({ visitorCreatedAt } = {}) {
     return { admin, operator, ezviz, camos, visitor };
 }
 
-const enable = (patch = {}) => settingsService.updateSettings({ demoViewEnabled: true, demoViewCameras: ['DEMO1', 'DEMO2'], ...patch }, null);
+// The demo for every account (the default audience is the guest account only, see guestAccess.test.js)
+const enable = (patch = {}) => settingsService.updateSettings({ demoViewEnabled: true, demoViewCameras: ['DEMO1', 'DEMO2'], demoViewAudience: 'all', ...patch }, null);
 const camerasOf = async (user) => (await json(await request('/api/user/cameras', { as: user }))).body.cameras;
 
 // ---------- Rules ----------
 
 test('accessFor: off, empty, admins and accounts older than the date get nothing', () => {
     const user = { role: 'user', createdAt: new Date('2026-10-25T00:00:00Z') };
-    const on = { demoViewEnabled: true, demoViewCameras: ['A'], demoViewSince: null, demoViewLive: false };
+    const on = { demoViewEnabled: true, demoViewAudience: 'all', demoViewCameras: ['A'], demoViewSince: null, demoViewLive: false };
     assert.deepEqual(accessFor(user, on), { serials: ['A'], orgId: null, live: false });
     assert.deepEqual(accessFor(user, { ...on, demoViewCameras: [], demoViewSimulated: true }, 'org1'), { serials: [], orgId: 'org1', live: false });
     assert.equal(accessFor(user, { ...on, demoViewSimulated: true }, null).orgId, null, 'no simulated farm yet');
     assert.deepEqual(accessFor(user, { ...on, demoViewEnabled: false }).serials, []);
     assert.deepEqual(accessFor(user, { ...on, demoViewCameras: [] }).serials, []);
     assert.deepEqual(accessFor({ ...user, role: 'admin' }, on).serials, []);
-    assert.deepEqual(accessFor(user, { ...on, demoViewSince: '2026-10-26T00:00:00.000Z' }).serials, []);
-    assert.deepEqual(accessFor(user, { ...on, demoViewSince: '2026-10-25T00:00:00.000Z' }).serials, ['A']);
-    assert.deepEqual(accessFor({ role: 'user' }, { ...on, demoViewSince: '2026-10-25T00:00:00.000Z' }).serials, [], 'no creation date: no access');
+    assert.deepEqual(accessFor(user, { ...on, demoViewAudience: 'since', demoViewSince: '2026-10-26T00:00:00.000Z' }).serials, []);
+    assert.deepEqual(accessFor(user, { ...on, demoViewAudience: 'since', demoViewSince: '2026-10-25T00:00:00.000Z' }).serials, ['A']);
+    assert.deepEqual(accessFor({ role: 'user' }, { ...on, demoViewAudience: 'since', demoViewSince: '2026-10-25T00:00:00.000Z' }).serials, [], 'no creation date: no access');
     assert.equal(accessFor(user, { ...on, demoViewLive: true }).live, true);
 });
 
@@ -105,12 +106,12 @@ test('the owner, people it is shared with and admins keep their own access', asy
 test('DEMO_VIEW_SINCE: only accounts created on or after the date', async () => {
     const { visitor } = await demoFarm({ visitorCreatedAt: new Date(Date.now() - 10 * DAY) });
     const newcomer = await createUser({ email: 'newcomer@example.test' });
-    await enable({ demoViewSince: new Date(Date.now() - DAY).toISOString().slice(0, 10) });
+    await enable({ demoViewAudience: 'since', demoViewSince: new Date(Date.now() - DAY).toISOString().slice(0, 10) });
     assert.deepEqual(await camerasOf(visitor), []);
     assert.equal((await camerasOf(newcomer)).length, 2);
     // The sign-up hint only while an account made now would get it
     assert.equal((await json(await request('/api/auth/config'))).body.demoView, true);
-    await enable({ demoViewSince: new Date(Date.now() + 2 * DAY).toISOString().slice(0, 10) });
+    await enable({ demoViewAudience: 'since', demoViewSince: new Date(Date.now() + 2 * DAY).toISOString().slice(0, 10) });
     assert.equal((await json(await request('/api/auth/config'))).body.demoView, false);
 });
 

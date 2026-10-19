@@ -29,8 +29,19 @@
         <p class="admin-meta w-full mt-1">{{ t('admin.demo.camerasDesc') }}</p>
       </el-form-item>
 
+      <el-form-item>
+        <div class="flex items-start justify-between gap-4 w-full">
+          <div class="min-w-0">
+            <div class="admin-label">{{ t('admin.demo.guest') }}</div>
+            <p class="admin-meta">{{ t('admin.demo.guestDesc') }}</p>
+          </div>
+          <el-switch v-model="form.guestAccessEnabled" :aria-label="t('admin.demo.guest')" data-test="guest-switch" />
+        </div>
+      </el-form-item>
+
       <el-form-item :label="t('admin.demo.audience')">
         <el-radio-group v-model="audience" data-test="demo-audience">
+          <el-radio value="guest">{{ t('admin.demo.audienceGuest') }}</el-radio>
           <el-radio value="all">{{ t('admin.demo.audienceAll') }}</el-radio>
           <el-radio value="since">{{ t('admin.demo.audienceSince') }}</el-radio>
         </el-radio-group>
@@ -99,12 +110,13 @@ const { t, locale } = useI18n();
 const loading = ref(false);
 const saving = ref(false);
 const cameras = ref([]);
-const form = reactive({ demoViewEnabled: false, demoViewCameras: [], demoViewLive: false, demoViewSimulated: false, demoSimEnabled: false });
+const form = reactive({ demoViewEnabled: false, demoViewCameras: [], demoViewLive: false, demoViewSimulated: false, demoSimEnabled: false, guestAccessEnabled: false });
 const sim = ref(null);
 const simUntil = ref('');
 const formatDateTime = (value) => new Date(value).toLocaleString(locale.value === 'vi' ? 'vi-VN' : 'en-US');
-// Who sees the demo cameras: every account, or accounts created on or after a date
-const audience = ref('all');
+// Who sees the demo cameras besides the guest account: nobody, every account, or accounts created
+// on or after a date
+const audience = ref('guest');
 const since = ref('');
 
 const apply = (settings) => {
@@ -115,7 +127,8 @@ const apply = (settings) => {
   form.demoSimEnabled = !!settings.demoSimEnabled;
   // demoSimUntil is the end of that day in farm time (UTC+7)
   simUntil.value = settings.demoSimUntil ? new Date(new Date(settings.demoSimUntil).getTime() + 7 * 3600 * 1000).toISOString().slice(0, 10) : '';
-  audience.value = settings.demoViewSince ? 'since' : 'all';
+  audience.value = settings.demoViewAudience || 'guest';
+  form.guestAccessEnabled = !!settings.guestAccessEnabled;
   since.value = settings.demoViewSince ? String(settings.demoViewSince).slice(0, 10) : '';
 };
 
@@ -143,6 +156,7 @@ const save = async () => {
     const res = await api.updateAdminSettings({
       ...form,
       demoViewCameras: form.demoViewCameras.map(s => String(s).trim()).filter(Boolean),
+      demoViewAudience: audience.value,
       demoViewSince: audience.value === 'since' ? since.value : null,
       demoSimUntil: form.demoSimEnabled && simUntil.value ? `${simUntil.value}T23:59:59+07:00` : null
     });

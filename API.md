@@ -504,6 +504,14 @@ The admin can open a few cameras to every account, read-only, so visitors such a
 
 Such a camera behaves as if it were shared with the visitor: the camera list (`access: "demo"`, `canManage: false`, no `owner`, `liveOpen`), photos, statistics, dashboards, the Sentinel screen and the assistant include it. Every change (settings, capture, delete, share, maintenance, treatments, approvals) answers `403`/`404` as for any camera the person does not manage; live view and playback answer `403 {"code":"DEMO_READ_ONLY"}` while `demoViewLive` is off. Only signed-in requests get the access: alerts, emails, reports and webhooks never mention demo cameras to visitors. Admins are not affected. Nothing is stored on the cameras or accounts, so turning it off ends the access within the settings cache (30 s). `GET /api/auth/config` carries `demoView: true` while it is offered (the sign-up form says so) and `GET /api/auth/me` `demoView: { cameras, live }`.
 
+#### Guest access
+
+`POST /api/auth/guest` (no body) signs in to one shared account (`guest@flybot.invalid`, `User.guest`) while `guestAccessEnabled` is on (`GUEST_ACCESS`), and answers like `/api/auth/login` (`token`, `user` with `guest: true`, `guestUntil`, every capability off). `403 GUEST_ACCESS_OFF` when it is off; `429` past 20 sessions an hour per address or 300 in total. `GET /api/auth/config` carries `guestAccess` (the sign-in page shows the button).
+
+- The session lasts 2 hours and is never extended; turning guest access off ends every guest session.
+- Read-only: every request other than `GET`/`HEAD`/`OPTIONS`, `POST /api/auth/logout` and the assistant (`/api/ai/chat`, `/chat/stream`, `/chat/feedback`, `/chat/clear`) answers `403 {"code":"GUEST_READ_ONLY"}`, and so do `GET /api/auth/export` and `/api/integrations`. Its assistant conversations are kept per guest session.
+- The guest account sees the demo cameras and, with `demoViewSimulated`, the simulated demo farm. Other accounts see them only by `demoViewAudience` (`DEMO_VIEW_AUDIENCE`): `guest` (nobody else, the default), `all`, or `since` (accounts created on or after `demoViewSince`).
+
 #### Simulated demo farm
 
 `server/scripts/demo_sim.js` (DEPLOY.md) builds an organization of simulated farms, plots and traps across Vietnam and releases labeled synthetic trap photos at their times, each analyzed by the vision Lambda. Every document it writes has `simulated: true` (Organization, Farm, Plot, Camera, Snapshot, Treatment, MaintenanceEvent, SentinelProposal, DailyStat). Its cameras are on the `simulated` platform: no device, so capture answers `409 {"code":"SIMULATED_CAMERA"}` and live view `403 {"code":"SIMULATED_CAMERA"}`; its Sentinel proposals are decided by the simulation (`409 SIMULATED`). A snapshot carries `simulation: { photoId, poolPhotoId, truth }` (`truth`: the flies drawn on the synthetic photo, beside the detector's `pestCount`); Sentinel traces carry `simulated` and `simulated_truth`.

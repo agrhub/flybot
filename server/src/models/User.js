@@ -18,6 +18,9 @@ const userSchema = new mongoose.Schema({
     // Read-only access to the FlyBot Sentinel pages for a "user" account (e.g. a competition judge);
     // admins and managers have it anyway. Set by an admin (PUT /api/admin/users/:id)
     sentinelViewer: { type: Boolean, default: false },
+    // The shared, read-only guest account (services/guestAccess.js): nobody signs in to it with a
+    // password; the Guest access button gives a session of at most 2 hours
+    guest: { type: Boolean, default: undefined },
     emailVerified: { type: Boolean, default: false },
     // UI/email language: 'vi' | 'en'
     language: { type: String, default: 'vi' },

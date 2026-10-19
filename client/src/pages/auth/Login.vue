@@ -38,6 +38,14 @@
         <el-button type="primary" class="w-full" :loading="loading" @click="handleLogin">
           {{ t('auth.loginBtn') }}
         </el-button>
+        <!-- Guest access: one shared, read-only demo account (Admin > System > Demo access) -->
+        <template v-if="guestAccess">
+          <el-divider>{{ t('auth.or') }}</el-divider>
+          <el-button class="w-full" :icon="View" :loading="guestLoading" data-test="guest-access" @click="handleGuest">
+            {{ t('auth.guestAccess') }}
+          </el-button>
+          <p class="auth-desc text-center mt-2">{{ t('auth.guestHint') }}</p>
+        </template>
       </el-form>
 
       <p v-if="allowRegistration" class="auth-footer text-center mt-6">
@@ -145,6 +153,7 @@ import { useI18n } from 'vue-i18n';
 import { savedLocale, SUPPORTED_LOCALES } from '@/i18n';
 import { useAuth } from '@/composables/useAuth';
 import { ElNotification } from 'element-plus';
+import { View } from '@element-plus/icons-vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -159,11 +168,13 @@ const invitedEmail = typeof route.query.email === 'string' ? route.query.email.s
 // Admins can close sign-up; the server enforces it, this only hides the link
 const allowRegistration = ref(true);
 const demoView = ref(false);
+const guestAccess = ref(false);
 onMounted(async () => {
   try {
     const res = await api.getAuthConfig();
     allowRegistration.value = res.data.allowRegistration !== false;
     demoView.value = res.data.demoView === true;
+    guestAccess.value = res.data.guestAccess === true;
   } catch {}
 });
 const resetLinkSent = ref(false);
@@ -236,6 +247,21 @@ const handleLogin = async () => {
     ElNotification({ title: t('common.error'), message: error.response?.data?.message || t('auth.loginFailed'), type: 'error' });
   } finally {
     loading.value = false;
+  }
+};
+
+// Guest access: the shared demo account keeps this browser's language
+const guestLoading = ref(false);
+const handleGuest = async () => {
+  guestLoading.value = true;
+  try {
+    const response = await api.guestLogin();
+    setAuth(response.data.user, response.data.token || null);
+    router.push('/dashboard');
+  } catch (error) {
+    ElNotification({ title: t('common.error'), message: error.response?.data?.message || t('auth.loginFailed'), type: 'error' });
+  } finally {
+    guestLoading.value = false;
   }
 };
 

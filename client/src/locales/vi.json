@@ -120,7 +120,10 @@
     "verificationSent": "Đã gửi email xác nhận. Hãy kiểm tra hộp thư.",
     "registerSuccessVerify": "Tài khoản đã sẵn sàng! Chúng tôi đã gửi đường dẫn xác nhận tới email của bạn.",
     "registrationClosed": "Hiện chưa nhận tài khoản mới. Hãy liên hệ quản trị viên để được cấp quyền.",
-    "demoViewHint": "Sau khi đăng ký, bạn xem ngay được các bẫy trình diễn của FlyBot (chỉ xem): ảnh, số đếm, nhật ký của tác tử và trợ lý."
+    "demoViewHint": "Sau khi đăng ký, bạn xem ngay được các bẫy trình diễn của FlyBot (chỉ xem): ảnh, số đếm, nhật ký của tác tử và trợ lý.",
+    "or": "hoặc",
+    "guestAccess": "Vào xem với tư cách khách",
+    "guestHint": "Bản trình diễn chỉ xem, có dữ liệu mô phỏng; phiên kết thúc sau 2 giờ."
   },
   "dashboard": {
     "welcome": "Chào mừng trở lại",
@@ -1808,7 +1811,10 @@
       "simShowDesc": "Khách có quyền xem trình diễn thấy thêm các vườn mô phỏng trên khắp Việt Nam, luôn gắn nhãn Mô phỏng.",
       "simDaily": "Mô phỏng hằng ngày",
       "simDailyDesc": "Thêm ảnh mô phỏng của từng ngày (được quy trình nhận diện phân tích) và nhật ký đồng ruộng cho đến ngày kết thúc. Chỉ vườn mô phỏng thay đổi.",
-      "simUntil": "Đến ngày"
+      "simUntil": "Đến ngày",
+      "guest": "Truy cập cho khách",
+      "guestDesc": "Hiện nút \"Vào xem với tư cách khách\" ở trang đăng nhập. Nút này mở một tài khoản dùng chung, chỉ xem, trong 2 giờ; tài khoản đó thấy camera trình diễn và (nếu bật) vườn mô phỏng, nên tài khoản khách hàng không cần thấy phần trình diễn.",
+      "audienceGuest": "Chỉ tài khoản khách"
     }
   },
   "dashboards": {
@@ -3492,5 +3498,9 @@
     "noLive": "Bẫy mô phỏng không có camera nên không xem trực tiếp được. Ảnh và phân tích có trong phần chi tiết.",
     "truth": "Vẽ sẵn: {n}",
     "truthHint": "Số ruồi được vẽ lên ảnh tổng hợp này, để so với số AI đếm được (không phải kết quả nhận diện)."
+  },
+  "guest": {
+    "banner": "Bạn đang xem với tư cách khách: chỉ xem, phiên kết thúc lúc {time}.",
+    "bannerNoTime": "Bạn đang xem với tư cách khách: chỉ xem, phiên kết thúc sau 2 giờ."
   }
 }

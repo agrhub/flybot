@@ -47,6 +47,17 @@
         </div>
       </el-alert>
 
+      <!-- The shared guest account: read-only, and when its session ends -->
+      <el-alert
+        v-if="user && user.guest"
+        type="info"
+        :closable="false"
+        show-icon
+        class="verify-banner shrink-0"
+        :title="user.guestUntil ? t('guest.banner', { time: new Date(user.guestUntil).toLocaleTimeString(locale === 'vi' ? 'vi-VN' : 'en-US', { hour: '2-digit', minute: '2-digit' }) }) : t('guest.bannerNoTime')"
+        data-test="guest-banner"
+      />
+
       <!-- Simulated demo data in view (scripts/demo_sim.js): always said, never passed off as field data -->
       <el-alert
         v-if="user && user.simulatedData"

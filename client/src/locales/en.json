@@ -120,7 +120,10 @@
     "verificationSent": "Confirmation email sent. Check your inbox.",
     "registerSuccessVerify": "Your account is ready! We sent a confirmation link to your email.",
     "registrationClosed": "New accounts are not being accepted right now. Ask an administrator for access.",
-    "demoViewHint": "After you sign up you can explore FlyBot's demo traps right away (view only): photos, counts, the agent's traces and the chatbot."
+    "demoViewHint": "After you sign up you can explore FlyBot's demo traps right away (view only): photos, counts, the agent's traces and the chatbot.",
+    "or": "or",
+    "guestAccess": "Guest access",
+    "guestHint": "A read-only demo with simulated data; the session ends after 2 hours."
   },
   "dashboard": {
     "welcome": "Welcome back",
@@ -1808,7 +1811,10 @@
       "simShowDesc": "Visitors with demo access also see the simulated farms across Vietnam, labeled Simulated everywhere.",
       "simDaily": "Daily simulation",
       "simDailyDesc": "Adds each day's simulated photos (analyzed by the vision pipeline) and field-log entries until the end date. Only the simulated farm changes.",
-      "simUntil": "Until"
+      "simUntil": "Until",
+      "guest": "Guest access",
+      "guestDesc": "Shows a Guest access button on the sign-in page. It opens one shared, read-only account for 2 hours that sees the demo cameras and, if shown, the simulated farm, so customer accounts need not see the demo.",
+      "audienceGuest": "Only the guest account"
     }
   },
   "dashboards": {
@@ -3492,5 +3498,9 @@
     "noLive": "A simulated trap has no camera, so no live view. Its photos and analysis are in the detail view.",
     "truth": "Drawn: {n}",
     "truthHint": "Flies drawn on this synthetic photo, to compare with the AI's count (not a detection)."
+  },
+  "guest": {
+    "banner": "Guest access: a read-only demo. This session ends at {time}.",
+    "bannerNoTime": "Guest access: a read-only demo. This session ends after 2 hours."
   }
 }

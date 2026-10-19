@@ -513,7 +513,11 @@
     "demo_live_closed": "Camera trình diễn này chưa mở xem trực tiếp cho khách.",
     "simulated_no_live": "Camera mô phỏng không có hình trực tiếp.",
     "simulated_no_capture": "Camera mô phỏng không chụp ảnh theo yêu cầu.",
-    "simulated_decided": "Đề xuất mô phỏng do chương trình mô phỏng tự quyết định."
+    "simulated_decided": "Đề xuất mô phỏng do chương trình mô phỏng tự quyết định.",
+    "guest_read_only": "Tài khoản khách chỉ được xem.",
+    "guest_access_off": "Chức năng truy cập cho khách đang tắt.",
+    "guest_too_many_here": "Có quá nhiều phiên khách từ địa chỉ này. Vui lòng thử lại sau.",
+    "guest_too_many": "Có quá nhiều phiên khách. Vui lòng thử lại sau."
   },
   "reportPdf": {
     "range": "Khoảng thời gian: {from} - {to} ({days} ngày)",

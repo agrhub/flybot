@@ -120,6 +120,11 @@ module.exports = {
         res.setHeader('Retry-After', reportSendQuota.retryAfterSeconds(key));
         return res.status(429).json({ success: false, message: 'Too many attempts. Please try again later.' });
     },
+    // Guest access (services/guestAccess.js): 20 guest sessions an hour per address, 300 in total
+    guestLimiter: [
+        rateLimit({ windowMs: 60 * 60 * 1000, max: 20, message: 'Too many guest sessions from here. Please try again later.' }),
+        rateLimit({ windowMs: 60 * 60 * 1000, max: 300, includeIp: false, keyFn: () => 'guest-all', message: 'Too many guest sessions. Please try again later.' })
+    ],
     // 10 login attempts per IP+email per 15 minutes, and 50 per IP overall
     loginLimiter: [
         rateLimit({ windowMs: 15 * 60 * 1000, max: 50 }),

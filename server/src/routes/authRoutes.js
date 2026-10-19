@@ -6,6 +6,7 @@ const { authenticate } = require('../middlewares/auth');
 const { requireStringFields } = require('../middlewares/validate');
 const {
     loginLimiter,
+    guestLimiter,
     registerLimiter,
     passwordChangeLimiter,
     forgotPasswordLimiter,
@@ -30,6 +31,8 @@ router.use(requireStringFields);
 
 router.post('/register', registerLimiter, authController.register);
 router.post('/login', loginLimiter, authController.login);
+// The shared, read-only guest account (services/guestAccess.js)
+router.post('/guest', guestLimiter, authController.guestLogin);
 router.post('/logout', authController.logout);
 router.post('/forgot-password', forgotPasswordLimiter, authController.forgotPassword);
 router.post('/reset-password', tokenLimiter, authController.resetPassword);

@@ -77,9 +77,11 @@ function toPublicUser(user) {
 /**
  * The profile the app keeps (toPublicUser) plus the current workspace, how many there are, the
  * plan and what the person may do there (capabilities, from the workspace role and the plan),
- * and APP_MODE. `req` gives the X-Workspace-Id the app asked for.
+ * and APP_MODE. `req` gives the X-Workspace-Id the app asked for. The guest account
+ * (services/guestAccess.js) may do nothing and learns when its session ends (`sessionId`, else
+ * the request's).
  */
-async function publicUser(user, req = null) {
+async function publicUser(user, req = null, { sessionId = null } = {}) {
     const base = toPublicUser(user);
     const workspaceService = require('../services/workspaceService');
     const entitlements = require('../services/entitlements');
@@ -93,14 +95,17 @@ async function publicUser(user, req = null) {
         console.warn('⚠️ Workspace not resolved for the profile:', err.message);
     }
     const workspace = current ? workspaceService.viewOf(current, String(user._id)) : null;
-    const ctx = { id: String(user._id), email: user.email, role: roleOf(user), sentinelViewer: !!user.sentinelViewer, workspace, workspaceCount: docs.length };
+    const ctx = { id: String(user._id), email: user.email, role: roleOf(user), sentinelViewer: !!user.sentinelViewer, ...(user.guest ? { guest: true } : {}), workspace, workspaceCount: docs.length };
     const ent = await entitlements.getEntitlements(ctx, current);
-    const works = entitlements.operatorAccount(ctx) || workspaceService.canWorkIn(workspace);
+    const works = !user.guest && (entitlements.operatorAccount(ctx) || workspaceService.canWorkIn(workspace));
+    const guestSession = user.guest && (sessionId || req?.sessionId) ? await Session.findById(sessionId || req.sessionId).select('expiresAt').lean() : null;
     const mode = workspaceService.mode();
     const demo = await require('../services/demoView').demoAccessOf(user);
     return {
         ...base,
         ...sentinelUi.accessFor(ctx),
+        // The shared guest account: read-only, its session ends at guestUntil
+        ...(user.guest ? { guest: true, guestUntil: guestSession?.expiresAt || null } : {}),
         // Read-only demo cameras this account sees (services/demoView.js)
         demoView: { cameras: demo.serials.length, simulated: !!demo.orgId, live: demo.live },
         // Simulated demo cameras among those this person sees: the app shows a banner
@@ -118,9 +123,9 @@ async function publicUser(user, req = null) {
             pdfReports: !!ent.features.pdfReports,
             telegram: !!ent.features.telegram,
             // b2c / hybrid: the pricing page and upgrade requests; b2b: the organization's owner asks the admin
-            pricing: mode !== 'b2b',
-            upgradeRequests: !!workspace || mode !== 'b2b',
-            requestOrganization: mode === 'hybrid'
+            pricing: !user.guest && mode !== 'b2b',
+            upgradeRequests: !user.guest && (!!workspace || mode !== 'b2b'),
+            requestOrganization: !user.guest && mode === 'hybrid'
         }
     };
 }
@@ -226,6 +231,28 @@ async function register(req, res) {
 }
 
 /**
+ * POST /api/auth/guest: a session of the shared, read-only guest account (services/guestAccess.js),
+ * while Admin > System > Demo access turns guest access on. Rate limited per address and in total.
+ */
+async function guestLogin(req, res) {
+    try {
+        const { getSettings } = require('../services/settingsService');
+        if (!(await getSettings()).guestAccessEnabled) {
+            return res.status(403).json({ success: false, code: 'GUEST_ACCESS_OFF', message: 'Guest access is turned off.' });
+        }
+        const guestAccess = require('../services/guestAccess');
+        const user = await guestAccess.guestUser();
+        const sessionId = await createSession(user._id, req, { ttlMs: guestAccess.GUEST_SESSION_MS });
+        const token = signToken(user, sessionId);
+        setAuthCookie(res, token);
+        recordAudit(req, { action: 'auth.guest_login', actor: { id: user._id, email: user.email } });
+        res.json({ success: true, token, user: await publicUser(user, req, { sessionId }) });
+    } catch (err) {
+        sendServerError(res, err, { context: 'Guest access' });
+    }
+}
+
+/**
  * User Login
  */
 async function login(req, res) {
@@ -291,7 +318,9 @@ async function getAuthConfig(req, res) {
         const contactEmail = (require('../config/env').CONTACT_EMAIL || '').split(',')[0].trim() || null;
         // demoView: new accounts see read-only demo cameras (services/demoView.js)
         const demoView = await require('../services/demoView').isOffered();
-        res.json({ success: true, allowRegistration: (await getSettings()).allowRegistration, contactEmail, demoView });
+        const settings = await getSettings();
+        // guestAccess: the sign-in page shows the Guest access button (services/guestAccess.js)
+        res.json({ success: true, allowRegistration: settings.allowRegistration, contactEmail, demoView, guestAccess: !!settings.guestAccessEnabled });
     } catch (err) {
         sendServerError(res, err, { context: 'Auth config' });
     }
@@ -684,6 +713,7 @@ async function getUserAvatar(req, res) {
 }
 
 module.exports = {
+    guestLogin,
     exportMyData,
     register,
     login,

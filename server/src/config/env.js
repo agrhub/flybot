@@ -206,6 +206,12 @@ const config = {
     // may view; DEMO_VIEW_SINCE: only accounts created on or after this date (empty = every
     // account); DEMO_VIEW_LIVE=true also opens live view and SD playback of those cameras
     DEMO_VIEW_ENABLED: process.env.DEMO_VIEW_ENABLED === 'true',
+    // Who sees them: guest (only the guest account, default), all (every account), since (accounts
+    // created on or after DEMO_VIEW_SINCE)
+    DEMO_VIEW_AUDIENCE: ['guest', 'all', 'since'].includes((process.env.DEMO_VIEW_AUDIENCE || '').trim()) ? process.env.DEMO_VIEW_AUDIENCE.trim() : 'guest',
+    // GUEST_ACCESS=true: a "Guest access" button on the sign-in page signs in to one shared, read-only
+    // demo account for at most 2 hours (services/guestAccess.js)
+    GUEST_ACCESS: process.env.GUEST_ACCESS === 'true',
     DEMO_VIEW_CAMERAS: (process.env.DEMO_VIEW_CAMERAS || '').split(',').map(s => s.trim()).filter(s => /^[A-Za-z0-9_-]{1,64}$/.test(s)).slice(0, 20),
     DEMO_VIEW_SINCE: /^\d{4}-\d{2}-\d{2}/.test((process.env.DEMO_VIEW_SINCE || '').trim()) && !Number.isNaN(Date.parse(process.env.DEMO_VIEW_SINCE.trim()))
         ? new Date(process.env.DEMO_VIEW_SINCE.trim()).toISOString() : null,
