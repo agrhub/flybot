@@ -182,6 +182,17 @@ async function runStartupMigrations() {
         console.error('❌ Email normalization failed:', err);
     }
     try {
+        // Firmware releases from before release channels are stable
+        await runOnce('firmware-channels-v1', async () => {
+            const { Firmware } = require('../models');
+            const res = await Firmware.collection.updateMany({ channel: { $exists: false } }, { $set: { channel: 'stable' } });
+            if (res.modifiedCount) console.log(`📦 ${res.modifiedCount} firmware release(s) put on the stable channel.`);
+            return res.modifiedCount;
+        });
+    } catch (err) {
+        console.error('❌ Firmware channel migration failed:', err);
+    }
+    try {
         const { groups } = await mergeDuplicateCameras({ apply: false });
         if (groups > 0) {
             console.warn(`⚠️ ${groups} camera serial(s) are registered more than once, so the unique index cannot be built. ` +

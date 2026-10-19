@@ -182,6 +182,9 @@ export default {
   adminSetCameraDisabled(deviceSerial, disabled, reason = '') {
     return apiClient.put(`/admin/fleet/${encodeURIComponent(deviceSerial)}/disabled`, { disabled, reason });
   },
+  adminSetCameraChannel(serials, channel) {
+    return apiClient.put('/admin/fleet/channel', { serials, channel });
+  },
   adminRegistry(params = {}) {
     return apiClient.get('/admin/registry', { params });
   },

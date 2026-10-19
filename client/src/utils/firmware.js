@@ -31,6 +31,19 @@ const STATE_TYPES = {
 };
 export const OPEN_STATES = ['pending', 'sent', 'installing', 'rebooting'];
 
+// Release channels (server services/firmwareChannels.js): alpha -> beta -> stable
+export const CHANNELS = ['alpha', 'beta', 'stable'];
+const CHANNEL_TYPES = { alpha: 'danger', beta: 'warning', stable: 'success' };
+
+export function channelTagType(channel) {
+  return CHANNEL_TYPES[channel] || 'success';
+}
+
+/** The channel a release is promoted to next, or null for stable. */
+export function nextChannel(channel) {
+  return { alpha: 'beta', beta: 'stable' }[channel] || null;
+}
+
 export function updateTagType(state) {
   return STATE_TYPES[state] || 'info';
 }

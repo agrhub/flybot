@@ -47,6 +47,14 @@ const setCameraDisabled = handle('Admin pause camera', async (req, res) => {
     send(res, result);
 });
 
+const setCameraChannel = handle('Admin camera channel', async (req, res) => {
+    const result = await fleetService.setChannel(req.body || {});
+    if (result.status === 200 && result.body.changed) {
+        recordAudit(req, { action: 'camera.channel_changed', target: { type: 'camera', id: (req.body.serials || []).slice(0, 5).join(','), label: result.body.channel }, details: { channel: result.body.channel, cameras: result.body.changed } });
+    }
+    send(res, result);
+});
+
 // ---------- Registry ----------
 
 const listRegistry = handle('Admin registry', async (req, res) => {
@@ -119,6 +127,7 @@ const addFirmware = handle('Admin firmware add', async (req, res) => {
         const file = parts.find(p => p.name === 'file');
         if (!file?.data?.length) return res.status(400).json({ success: false, message: 'A firmware file is required.' });
         const pct = field('minBatteryPct');
+        const channel = field('channel');
         result = await firmwareService.addRelease({
             buffer: file.data,
             fileName: file.filename,
@@ -127,6 +136,7 @@ const addFirmware = handle('Admin firmware add', async (req, res) => {
             expectedSha256: field('sha256') || undefined,
             notes: { en: field('notesEn') || '', vi: field('notesVi') || '' },
             minBatteryPct: pct ? Number(pct) : undefined,
+            channel: channel || undefined,
             source: { kind: 'upload' }
         }, req.user.id);
     } else if (req.body?.githubTag) {
@@ -186,6 +196,7 @@ module.exports = {
     listFleet,
     revealCameraCode,
     setCameraDisabled,
+    setCameraChannel,
     listRegistry,
     addRegistry,
     updateRegistry,

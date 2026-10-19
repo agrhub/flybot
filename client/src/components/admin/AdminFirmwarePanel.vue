@@ -11,7 +11,12 @@
       <template #header>
         <div class="flex items-center justify-between gap-2">
           <span class="admin-title">{{ t('admin.firmware.releases') }}</span>
-          <el-button size="small" :icon="Refresh" @click="loadReleases">{{ t('common.refresh') }}</el-button>
+          <div class="flex flex-wrap items-center gap-2">
+            <el-tag v-for="c in ['alpha', 'beta']" :key="c" :type="channelTagType(c)" effect="plain" round size="small">
+              {{ t('admin.firmware.testCameras', { channel: t(`firmware.channels.${c}`), n: cameraChannels[c] || 0 }) }}
+            </el-tag>
+            <el-button size="small" :icon="Refresh" @click="loadReleases">{{ t('common.refresh') }}</el-button>
+          </div>
         </div>
       </template>
       <el-empty v-if="!loadingReleases && !releases.length" :description="t('admin.firmware.noReleases')" />
@@ -21,6 +26,9 @@
           <template #default="{ row }">
             <span class="font-mono admin-strong">{{ row.version }}</span>
             <el-tag v-if="row.current" type="success" effect="dark" round size="small" class="ml-2">{{ t('admin.firmware.current') }}</el-tag>
+            <div class="mt-1">
+              <el-tag :type="channelTagType(row.channel)" effect="light" round size="small" data-test="release-channel">{{ t(`firmware.channels.${row.channel}`) }}</el-tag>
+            </div>
           </template>
         </el-table-column>
         <el-table-column :label="t('admin.firmware.file')" min-width="200">
@@ -34,6 +42,13 @@
         <el-table-column :label="t('admin.firmware.cameras')" width="110" align="center">
           <template #default="{ row }">{{ row.cameras }}</template>
         </el-table-column>
+        <el-table-column :label="t('admin.firmware.results')" width="130" align="center">
+          <template #default="{ row }">
+            <span v-if="row.updates?.total">{{ t('admin.firmware.resultCount', { ok: row.updates.succeeded, total: row.updates.total }) }}</span>
+            <span v-else class="admin-meta">--</span>
+            <div v-if="row.updates?.failed" class="admin-meta">{{ t('admin.firmware.resultFailed', { n: row.updates.failed }) }}</div>
+          </template>
+        </el-table-column>
         <el-table-column :label="t('admin.firmware.added')" width="120">
           <template #default="{ row }"><span class="admin-meta">{{ dateText(row.createdAt) }}</span></template>
         </el-table-column>
@@ -44,6 +59,9 @@
               <template #dropdown>
                 <el-dropdown-menu>
                   <el-dropdown-item v-if="!row.current" command="current" :icon="Star">{{ t('admin.firmware.makeCurrent') }}</el-dropdown-item>
+                  <el-dropdown-item v-if="nextChannel(row.channel)" command="promote" :icon="Top">
+                    {{ t('admin.firmware.promote', { channel: t(`firmware.channels.${nextChannel(row.channel)}`) }) }}
+                  </el-dropdown-item>
                   <el-dropdown-item command="rollout" :icon="Upload">{{ t('admin.firmware.rolloutModel') }}</el-dropdown-item>
                   <el-dropdown-item command="notes" :icon="Edit">{{ t('admin.firmware.editNotes') }}</el-dropdown-item>
                   <el-dropdown-item v-if="!row.current" command="delete" :icon="Delete" divided>{{ t('common.delete') }}</el-dropdown-item>
@@ -134,6 +152,12 @@
             <el-form-item :label="t('admin.firmware.repo')">
               <el-input v-model="addForm.repo" placeholder="agrhub/camos-esp32-trap" />
             </el-form-item>
+            <el-form-item :label="t('admin.firmware.channel')">
+              <el-select v-model="addForm.channel" class="!w-64">
+                <el-option value="" :label="t('admin.firmware.channelAuto')" />
+                <el-option v-for="c in CHANNELS" :key="c" :value="c" :label="t(`firmware.channels.${c}`)" />
+              </el-select>
+            </el-form-item>
             <el-alert type="info" :closable="false" show-icon :title="t('admin.firmware.githubHint')" />
           </el-form>
         </el-tab-pane>
@@ -169,6 +193,11 @@
           </el-form-item>
           <el-form-item :label="t('admin.firmware.version')">
             <el-input v-model="addForm.version" placeholder="0.7.0" />
+          </el-form-item>
+          <el-form-item :label="t('admin.firmware.channel')">
+            <el-select v-model="addForm.channel" class="w-full">
+              <el-option v-for="c in CHANNELS" :key="c" :value="c" :label="t(`firmware.channels.${c}`)" />
+            </el-select>
           </el-form-item>
         </div>
         <el-form-item :label="t('admin.firmware.notesVi')">
@@ -224,12 +253,12 @@
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { Plus, Refresh, MoreFilled, Star, Upload, Edit, Delete, Document } from '@element-plus/icons-vue';
+import { Plus, Refresh, MoreFilled, Star, Upload, Edit, Delete, Document, Top } from '@element-plus/icons-vue';
 import api from '@/services/api';
 import PageHeader from '@/components/common/PageHeader.vue';
 import FirmwareRolloutDialog from './FirmwareRolloutDialog.vue';
 import { adminErrorText } from './adminErrors';
-import { formatSize, updateTagType, updateProgress } from '@/utils/firmware';
+import { formatSize, updateTagType, updateProgress, CHANNELS, channelTagType, nextChannel } from '@/utils/firmware';
 
 /**
  * Firmware of the CamOS cameras: builds per model (uploaded, from a URL, or a camos-esp32-trap GitHub release),
@@ -240,6 +269,7 @@ const UPDATE_STATES = ['pending', 'sent', 'installing', 'rebooting', 'succeeded'
 
 const releases = ref([]);
 const knownModels = ref([]);
+const cameraChannels = ref({});
 const loadingReleases = ref(false);
 const dateText = (d) => (d ? new Date(d).toLocaleDateString(locale.value) : '');
 const errorText = (code) => (te(`firmware.errors.${code}`) ? t(`firmware.errors.${code}`) : code);
@@ -250,6 +280,7 @@ async function loadReleases() {
     const res = await api.adminFirmware();
     releases.value = res.data.releases || [];
     knownModels.value = res.data.models || [];
+    cameraChannels.value = res.data.cameraChannels || {};
   } catch (err) {
     ElMessage.error(adminErrorText(t, err));
   } finally {
@@ -352,8 +383,19 @@ async function onRelease(cmd, row) {
     return;
   }
   try {
-    if (cmd === 'current') {
-      await ElMessageBox.confirm(t('admin.firmware.makeCurrentConfirm', { model: row.model, version: row.version }), t('admin.firmware.makeCurrent'), { type: 'warning' });
+    if (cmd === 'promote') {
+      const to = nextChannel(row.channel);
+      const u = row.updates || { total: 0, succeeded: 0, failed: 0 };
+      await ElMessageBox.confirm(
+        `${t('admin.firmware.promoteConfirm', { model: row.model, version: row.version, channel: t(`firmware.channels.${to}`) })} ${u.total ? t('admin.firmware.promoteStats', { ok: u.succeeded, total: u.total, failed: u.failed, from: t(`firmware.channels.${row.channel}`) }) : t('admin.firmware.promoteNoStats', { from: t(`firmware.channels.${row.channel}`) })}`,
+        t('admin.firmware.promote', { channel: t(`firmware.channels.${to}`) }),
+        { type: u.failed ? 'warning' : 'info' }
+      );
+      const res = await api.adminUpdateFirmware(row.id, { channel: to });
+      const a = res.data.announced;
+      ElMessage.success(a ? t('admin.firmware.announced', { notified: a.notified, scheduled: a.scheduled }) : t('admin.saved'));
+    } else if (cmd === 'current') {
+      await ElMessageBox.confirm(t('admin.firmware.makeCurrentConfirm', { model: row.model, version: row.version, channel: t(`firmware.channels.${row.channel}`) }), t('admin.firmware.makeCurrent'), { type: 'warning' });
       const res = await api.adminUpdateFirmware(row.id, { current: true });
       const a = res.data.announced || { notified: 0, scheduled: 0 };
       ElMessage.success(t('admin.firmware.announced', { notified: a.notified, scheduled: a.scheduled }));
@@ -374,9 +416,9 @@ const addVisible = ref(false);
 const addMode = ref('github');
 const adding = ref(false);
 const githubResults = ref(null);
-const addForm = reactive({ githubTag: '', repo: '', file: null, url: '', sha256: '', model: '', version: '', notesVi: '', notesEn: '' });
+const addForm = reactive({ githubTag: '', repo: '', file: null, url: '', sha256: '', model: '', version: '', notesVi: '', notesEn: '', channel: '' });
 const openAdd = () => {
-  Object.assign(addForm, { githubTag: '', repo: '', file: null, url: '', sha256: '', model: knownModels.value[0] || '', version: '', notesVi: '', notesEn: '' });
+  Object.assign(addForm, { githubTag: '', repo: '', file: null, url: '', sha256: '', model: knownModels.value[0] || '', version: '', notesVi: '', notesEn: '', channel: '' });
   githubResults.value = null;
   addVisible.value = true;
 };
@@ -397,7 +439,7 @@ async function submitAdd() {
   try {
     let res;
     if (addMode.value === 'github') {
-      res = await api.adminAddFirmware({ githubTag: addForm.githubTag.trim(), ...(addForm.repo.trim() ? { repo: addForm.repo.trim() } : {}) });
+      res = await api.adminAddFirmware({ githubTag: addForm.githubTag.trim(), ...(addForm.repo.trim() ? { repo: addForm.repo.trim() } : {}), ...(addForm.channel ? { channel: addForm.channel } : {}) });
       githubResults.value = res.data.results || [];
     } else if (addMode.value === 'upload') {
       const data = new FormData();
@@ -406,10 +448,11 @@ async function submitAdd() {
       if (addForm.sha256.trim()) data.append('sha256', addForm.sha256.trim().toLowerCase());
       data.append('notesVi', addForm.notesVi);
       data.append('notesEn', addForm.notesEn);
+      data.append('channel', addForm.channel || 'stable');
       data.append('file', addForm.file, addForm.file.name);
       res = await api.adminAddFirmware(data);
     } else {
-      res = await api.adminAddFirmware({ url: addForm.url.trim(), model: addForm.model, version: addForm.version.trim(), ...(addForm.sha256.trim() ? { sha256: addForm.sha256.trim().toLowerCase() } : {}), notes: { vi: addForm.notesVi, en: addForm.notesEn } });
+      res = await api.adminAddFirmware({ url: addForm.url.trim(), model: addForm.model, version: addForm.version.trim(), ...(addForm.sha256.trim() ? { sha256: addForm.sha256.trim().toLowerCase() } : {}), notes: { vi: addForm.notesVi, en: addForm.notesEn }, channel: addForm.channel || 'stable' });
     }
     ElMessage.success(t('admin.saved'));
     if (addMode.value !== 'github') addVisible.value = false;

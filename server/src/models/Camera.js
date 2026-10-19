@@ -125,7 +125,9 @@ const cameraSchema = new mongoose.Schema({
         autoUpdate: { type: Boolean, default: undefined },
         autoHour: { type: Number, min: 0, max: 23, default: undefined },
         // The newest release the owner was told about (one notice per release)
-        notifiedVersion: { type: String, default: undefined }
+        notifiedVersion: { type: String, default: undefined },
+        // Release channel, set by an admin: alpha / beta test cameras take test releases (unset = stable)
+        channel: { type: String, enum: ['alpha', 'beta', 'stable', null], default: undefined }
     },
     validateCode: { type: String, default: '' },
     deviceName: { type: String, default: 'Camera' },

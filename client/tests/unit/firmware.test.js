@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { compareVersions, formatSize, isOpenUpdate, updateProgress, updateTagType } from '@/utils/firmware';
+import { compareVersions, formatSize, isOpenUpdate, updateProgress, updateTagType, CHANNELS, channelTagType, nextChannel } from '@/utils/firmware';
 
 describe('firmware helpers', () => {
   it('compares dotted versions numerically, a pre-release before its release', () => {
@@ -31,5 +31,12 @@ describe('firmware helpers', () => {
   it('formats image sizes', () => {
     expect(formatSize(1572864)).toBe('1.50 MB');
     expect(formatSize(655360)).toBe('640 KB');
+  });
+
+  it('promotes alpha to beta to stable', () => {
+    expect(CHANNELS).toEqual(['alpha', 'beta', 'stable']);
+    expect([nextChannel('alpha'), nextChannel('beta'), nextChannel('stable')]).toEqual(['beta', 'stable', null]);
+    expect(channelTagType('alpha')).toBe('danger');
+    expect(channelTagType(undefined)).toBe('success');
   });
 });

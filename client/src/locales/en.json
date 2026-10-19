@@ -1911,7 +1911,10 @@
       "charging": "charging",
       "powered": "mains power",
       "crashed": "Restarted: {reason}",
-      "logOn": "Log on"
+      "logOn": "Log on",
+      "setChannel": "Release channel",
+      "channelHint": "{n} cameras. A camera takes the newest release of its channel or of a more stable one.",
+      "channelSaved": "Channel changed on {n} cameras."
     },
     "registry": {
       "tab": "Serial registry",
@@ -1971,7 +1974,7 @@
     "firmware": {
       "tab": "Firmware",
       "title": "Firmware",
-      "subtitle": "Firmware builds for CamOS cameras, the current release of each model, and the updates of each camera.",
+      "subtitle": "Firmware builds for CamOS cameras, the current release of each model and channel, and the updates of each camera.",
       "add": "Add firmware",
       "addNow": "Add",
       "releases": "Releases",
@@ -1987,7 +1990,7 @@
       "cameras": "Cameras on it",
       "added": "Added",
       "makeCurrent": "Make current",
-      "makeCurrentConfirm": "Make {model} {version} the current release? Owners of cameras on older firmware are told, and cameras with automatic updates install it.",
+      "makeCurrentConfirm": "Make {model} {version} the current release of the {channel} channel? Owners of cameras on that channel with older firmware are told, and cameras with automatic updates install it.",
       "announced": "Current release set: {notified} owners told, {scheduled} automatic updates scheduled.",
       "rolloutModel": "Update cameras",
       "editNotes": "Release notes",
@@ -2023,14 +2026,14 @@
       "release": "Firmware",
       "pickRelease": "Choose a build",
       "targets": "Cameras",
-      "allOfModel": "Every {model} camera",
+      "allOfModel": "Every {model} camera on {channel} or a test channel",
       "selectedCameras": "{n} selected cameras",
       "outdatedOnly": "Skip cameras already on this version or newer",
       "mixedModels": "The selection has several models: cameras of another model than this build are skipped.",
       "noReleaseForModel": "There is no firmware for the model of these cameras yet.",
       "rolloutHint": "Each camera installs when it is awake and has enough battery (or is on mains power), then restarts. If the new firmware fails to connect, the camera goes back to its old version by itself.",
       "rolloutConfirm": "Update {n} cameras to {version}? They restart after the install.",
-      "rolloutConfirmModel": "Update every {model} camera to {version}? They restart after the install.",
+      "rolloutConfirmModel": "Update every {model} camera that takes {channel} builds to {version}? They restart after the install.",
       "startRollout": "Start update",
       "rolloutStarted": "{n} cameras will be updated",
       "rolloutSkipped": "{n} left out",
@@ -2043,7 +2046,17 @@
         "busy": "Another update is in progress",
         "not_found": "No such camera",
         "already_queued": "Already waiting for this update"
-      }
+      },
+      "channel": "Channel",
+      "channelAuto": "From GitHub (a pre-release goes to Beta)",
+      "results": "Update results",
+      "resultCount": "{ok}/{total} succeeded",
+      "resultFailed": "{n} failed",
+      "promote": "Promote to {channel}",
+      "promoteConfirm": "Promote {model} {version} to the {channel} channel? It becomes the current release there, and those cameras' owners are told.",
+      "promoteStats": "On {from}: {ok} of {total} updates succeeded, {failed} failed.",
+      "promoteNoStats": "No camera on {from} has installed it yet.",
+      "testCameras": "{channel}: {n} cameras"
     }
   },
   "dashboards": {
@@ -3815,7 +3828,18 @@
       "LOW_BATTERY": "Battery too low",
       "GONE": "The camera or the firmware was removed",
       "ERROR": "The camera reported an error"
-    }
+    },
+    "channels": {
+      "alpha": "Alpha",
+      "beta": "Beta",
+      "stable": "Stable"
+    },
+    "channelHints": {
+      "alpha": "internal test builds, the newest and least tested",
+      "beta": "test builds before they reach every camera",
+      "stable": "tested releases for every camera"
+    },
+    "onChannel": "{channel} channel"
   },
   "cameraLog": {
     "title": "Camera log",

@@ -48,11 +48,22 @@ function stateOf(camera, now = new Date()) {
 
 const firmwareOf = (camera) => ((camera.platform || 'ezviz') === 'camos' ? camera.device?.fw || '' : camera.deviceVersion || '');
 
-/** The current release per model: Map model -> { version, id }. */
+/**
+ * The current releases (every channel): a function (model, cameraChannel) -> { version, id, channel } of the release that
+ * camera takes (services/firmwareChannels.js), or null.
+ */
 async function currentReleases() {
-    const rows = await Firmware.find({ current: true }).select('model version').lean();
-    return new Map(rows.map(r => [r.model, { version: r.version, id: String(r._id) }]));
+    const channels = require('./firmwareChannels');
+    const rows = await Firmware.find({ current: true }).select('model version channel current').lean();
+    const byModel = new Map();
+    for (const r of rows) byModel.set(r.model, [...(byModel.get(r.model) || []), r]);
+    return (model, channel = 'stable') => {
+        const r = channels.pickRelease(byModel.get(model), channel);
+        return r ? { version: r.version, id: String(r._id), channel: channels.channelOf(r) } : null;
+    };
 }
+
+const fwChannel = (c) => require('./firmwareChannels').cameraChannel(c);
 
 function filterOf(query, owners) {
     const and = [{ simulated: { $ne: true } }];
@@ -71,6 +82,8 @@ function filterOf(query, owners) {
         const fw = query.fw.trim().slice(0, 40);
         and.push({ $or: [{ 'device.fw': fw }, { deviceVersion: fw }] });
     }
+    if (query.channel === 'stable') and.push({ $or: [{ 'firmware.channel': 'stable' }, { 'firmware.channel': { $exists: false } }, { 'firmware.channel': null }] });
+    else if (['alpha', 'beta'].includes(query.channel)) and.push({ 'firmware.channel': query.channel, platform: 'camos' });
     if (query.state === 'disabled') and.push({ 'adminDisabled.at': { $exists: true } });
     if (query.state === 'unclaimed') and.push({ unclaimed: true });
     return { $and: and };
@@ -103,7 +116,7 @@ async function list(query = {}, now = new Date()) {
         cameras = all.filter(c => {
             if (['online', 'offline', 'sleeping'].includes(query.state) && (isDisabled(c) || stateOf(c, now) !== query.state)) return false;
             if (query.outdated === 'true' || query.outdated === '1') {
-                const rel = releases.get(c.model);
+                const rel = releases(c.model, fwChannel(c));
                 if (!rel || !firmwareOf(c) || compareVersions(firmwareOf(c), rel.version) >= 0) return false;
             }
             return true;
@@ -143,7 +156,7 @@ function rowOf(c, { userBy, farmBy, regBy, updBy, releases, now }) {
     const owner = c.userId ? userBy.get(String(c.userId)) : null;
     const reg = regBy.get(String(c.deviceSerial).toUpperCase());
     const fw = firmwareOf(c);
-    const rel = platform === 'camos' ? releases.get(c.model) : null;
+    const rel = platform === 'camos' ? releases(c.model, fwChannel(c)) : null;
     const upd = updBy.get(c.deviceSerial);
     const d = c.device || {};
     return {
@@ -170,6 +183,7 @@ function rowOf(c, { userBy, farmBy, regBy, updBy, releases, now }) {
         latestFw: rel?.version || null,
         outdated: !!(rel && fw && compareVersions(fw, rel.version) < 0),
         autoUpdate: !!c.firmware?.autoUpdate,
+        channel: platform === 'camos' ? fwChannel(c) : null,
         update: upd ? { state: upd.state, toVersion: upd.toVersion, waitReason: upd.waitReason || null, progress: upd.progress ?? null } : null,
         imei: d.imei || '',
         iccid: d.iccid || '',
@@ -231,6 +245,28 @@ async function setDisabled(serial, { disabled, reason }, actorId, now = new Date
     return { status: 200, body: { success: true, changed: true, disabled, deviceSynced } };
 }
 
+/**
+ * PUT /api/admin/fleet/channel { serials, channel }: the release channel of CamOS cameras (alpha / beta test cameras,
+ * stable for everyone else). Cameras with automatic updates get their channel's release. Returns { status, body }.
+ */
+async function setChannel({ serials, channel } = {}) {
+    const channels = require('./firmwareChannels');
+    if (!channels.CHANNELS.includes(channel)) return { status: 400, body: { success: false, message: 'channel must be alpha, beta or stable.' } };
+    if (!Array.isArray(serials) || !serials.length || serials.length > 1000 || !serials.every(s => typeof s === 'string' && /^[A-Za-z0-9_-]{1,64}$/.test(s))) {
+        return { status: 400, body: { success: false, message: 'Give the serials of up to 1000 cameras.' } };
+    }
+    const filter = { deviceSerial: { $in: [...new Set(serials)] }, platform: 'camos', simulated: { $ne: true } };
+    const res = channel === 'stable'
+        ? await Camera.updateMany(filter, { $unset: { 'firmware.channel': 1 } })
+        : await Camera.updateMany(filter, { $set: { 'firmware.channel': channel } });
+    // Automatic updates follow the new channel
+    const firmware = require('./firmwareService');
+    const cameras = await Camera.find({ ...filter, 'firmware.autoUpdate': true }).lean();
+    let scheduled = 0;
+    for (const camera of cameras) if (await firmware.scheduleAuto(camera)) scheduled++;
+    return { status: 200, body: { success: true, channel, changed: res.modifiedCount || 0, scheduled } };
+}
+
 /** Is this serial paused? (device API, capture) */
 async function serialDisabled(serial) {
     return !!(await Camera.exists({ deviceSerial: serial, 'adminDisabled.at': { $exists: true } }));
@@ -246,5 +282,6 @@ module.exports = {
     list,
     revealCode,
     setDisabled,
+    setChannel,
     serialDisabled
 };

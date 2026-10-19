@@ -594,7 +594,9 @@
     "camlog_simulated": "A simulated camera has no log.",
     "camlog_bad_level": "level must be error, warn, info, debug or verbose.",
     "camlog_bad_minutes": "minutes must be 1 to 60.",
-    "camlog_too_many": "Too many reports for this camera."
+    "camlog_too_many": "Too many reports for this camera.",
+    "firmware_bad_channel": "channel must be alpha, beta or stable.",
+    "fleet_channel_serials": "Give the serials of up to 1000 cameras."
   },
   "reportPdf": {
     "range": "Period: {from} - {to} ({days} days)",

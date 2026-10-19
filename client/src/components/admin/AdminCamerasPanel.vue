@@ -2,6 +2,7 @@
   <div>
     <PageHeader :title="t('admin.fleet.title')" :subtitle="t('admin.fleet.subtitle')">
       <template #actions>
+        <el-button :icon="Guide" :disabled="!selectedCamos.length" data-test="fleet-set-channel" @click="openChannel(selectedCamos)">{{ t('admin.fleet.setChannel') }}</el-button>
         <el-button :icon="Upload" :disabled="!selectedCamos.length" @click="openRollout">
           {{ selectedCamos.length ? t('admin.fleet.updateSelected', { n: selectedCamos.length }) : t('admin.fleet.updateFirmware') }}
         </el-button>
@@ -28,6 +29,9 @@
         </el-select>
         <el-select v-model="filters.model" :placeholder="t('admin.fleet.model')" clearable filterable class="!w-52" @change="reload">
           <el-option v-for="m in models" :key="m" :value="m" :label="m" />
+        </el-select>
+        <el-select v-model="filters.channel" :placeholder="t('admin.firmware.channel')" clearable class="!w-36" @change="reload">
+          <el-option v-for="c in CHANNELS" :key="c" :value="c" :label="t(`firmware.channels.${c}`)" />
         </el-select>
         <el-checkbox v-model="filters.outdated" @change="reload">{{ t('admin.fleet.outdatedOnly') }}</el-checkbox>
         <el-button :icon="Refresh" @click="load">{{ t('common.refresh') }}</el-button>
@@ -123,6 +127,7 @@
         <el-table-column :label="t('admin.fleet.firmware')" min-width="150">
           <template #default="{ row }">
             <div class="font-mono">{{ row.fw || '--' }}</div>
+            <el-tag v-if="row.channel && row.channel !== 'stable'" :type="channelTagType(row.channel)" effect="light" round size="small" class="mt-1">{{ t(`firmware.channels.${row.channel}`) }}</el-tag>
             <el-tag v-if="row.update" :type="updateTagType(row.update.state)" effect="light" round size="small" class="mt-1">
               {{ t(`firmware.states.${row.update.state}`) }} {{ row.update.toVersion }}
             </el-tag>
@@ -152,6 +157,7 @@
                   <el-dropdown-item command="transfer" :icon="Switch">{{ t('admin.cameras.transfer') }}</el-dropdown-item>
                   <el-dropdown-item v-if="row.platform === 'camos'" command="firmware" :icon="Upload">{{ t('admin.fleet.updateFirmware') }}</el-dropdown-item>
                   <el-dropdown-item v-if="row.platform === 'camos'" command="log" :icon="Tickets">{{ t('cameraLog.title') }}</el-dropdown-item>
+                  <el-dropdown-item v-if="row.platform === 'camos'" command="channel" :icon="Guide">{{ t('admin.fleet.setChannel') }}</el-dropdown-item>
                   <el-dropdown-item v-if="!row.disabled" command="pause" :icon="VideoPause" divided>{{ t('admin.fleet.pause') }}</el-dropdown-item>
                   <el-dropdown-item v-else command="resume" :icon="VideoPlay" divided>{{ t('admin.fleet.resume') }}</el-dropdown-item>
                 </el-dropdown-menu>
@@ -210,6 +216,18 @@
       </template>
     </el-dialog>
 
+    <!-- Release channel of the chosen cameras -->
+    <el-dialog v-model="channelVisible" :title="t('admin.fleet.setChannel')" width="min(460px, 96vw)" align-center>
+      <p class="admin-meta mb-3">{{ t('admin.fleet.channelHint', { n: channelSerials.length }) }}</p>
+      <el-radio-group v-model="channelValue" class="flex flex-col items-start gap-2">
+        <el-radio v-for="c in CHANNELS" :key="c" :value="c">{{ t(`firmware.channels.${c}`) }} · <span class="admin-meta">{{ t(`firmware.channelHints.${c}`) }}</span></el-radio>
+      </el-radio-group>
+      <template #footer>
+        <el-button @click="channelVisible = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" :loading="savingChannel" data-test="fleet-channel-save" @click="saveChannel">{{ t('common.save') }}</el-button>
+      </template>
+    </el-dialog>
+
     <!-- A camera's console log -->
     <el-dialog v-model="logVisible" :title="logCamera ? `${logCamera.deviceName} · ${logCamera.deviceSerial}` : ''" width="min(980px, 96vw)" append-to-body destroy-on-close>
       <CameraLogCard v-if="logCamera" :camera="logCamera" />
@@ -224,7 +242,7 @@
 import { computed, reactive, ref, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { Search, Refresh, Share, Switch, Message, View, MoreFilled, Upload, VideoPause, VideoPlay, Tickets } from '@element-plus/icons-vue';
+import { Search, Refresh, Share, Switch, Message, View, MoreFilled, Upload, VideoPause, VideoPlay, Tickets, Guide } from '@element-plus/icons-vue';
 import api from '@/services/api';
 import { useCameras } from '@/composables/useCameras';
 import PageHeader from '@/components/common/PageHeader.vue';
@@ -232,7 +250,7 @@ import CameraShareDialog from '@/components/cameras/CameraShareDialog.vue';
 import FirmwareRolloutDialog from './FirmwareRolloutDialog.vue';
 import CameraLogCard from '@/components/cameras/CameraLogCard.vue';
 import { adminErrorText } from './adminErrors';
-import { updateTagType } from '@/utils/firmware';
+import { updateTagType, CHANNELS, channelTagType } from '@/utils/firmware';
 
 /**
  * Every camera (EZVIZ and CamOS): owner, state, place, model, firmware, label code (masked, revealed on request
@@ -251,7 +269,7 @@ const page = ref(1);
 const pageSize = 20;
 const loading = ref(false);
 const selected = ref([]);
-const filters = reactive({ q: '', platform: '', state: '', model: '', outdated: false });
+const filters = reactive({ q: '', platform: '', state: '', model: '', channel: '', outdated: false });
 const isMobile = computed(() => typeof window !== 'undefined' && window.innerWidth < 768);
 
 const load = async () => {
@@ -262,6 +280,7 @@ const load = async () => {
       platform: filters.platform || undefined,
       state: filters.state || undefined,
       model: filters.model || undefined,
+      channel: filters.channel || undefined,
       outdated: filters.outdated ? '1' : undefined,
       page: page.value,
       limit: pageSize
@@ -327,6 +346,7 @@ const onCommand = (cmd, row) => {
   else if (cmd === 'transfer') openTransfer(row);
   else if (cmd === 'firmware') openRollout([row]);
   else if (cmd === 'log') openLog(row);
+  else if (cmd === 'channel') openChannel([row]);
   else if (cmd === 'pause') openPause(row);
   else if (cmd === 'resume') resume(row);
 };
@@ -366,6 +386,30 @@ const resume = async (row) => {
     load();
   } catch (err) {
     ElMessage.error(adminErrorText(t, err));
+  }
+};
+
+// ---------- Release channel ----------
+const channelVisible = ref(false);
+const channelSerials = ref([]);
+const channelValue = ref('stable');
+const savingChannel = ref(false);
+const openChannel = (rows) => {
+  channelSerials.value = rows.map(r => r.deviceSerial);
+  channelValue.value = rows.length === 1 ? rows[0].channel || 'stable' : 'beta';
+  channelVisible.value = true;
+};
+const saveChannel = async () => {
+  savingChannel.value = true;
+  try {
+    const res = await api.adminSetCameraChannel(channelSerials.value, channelValue.value);
+    ElMessage.success(t('admin.fleet.channelSaved', { n: res.data.changed }));
+    channelVisible.value = false;
+    load();
+  } catch (err) {
+    ElMessage.error(adminErrorText(t, err));
+  } finally {
+    savingChannel.value = false;
   }
 };
 

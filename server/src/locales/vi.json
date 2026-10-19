@@ -594,7 +594,9 @@
     "camlog_simulated": "Camera mô phỏng không có nhật ký.",
     "camlog_bad_level": "Mức nhật ký phải là error, warn, info, debug hoặc verbose.",
     "camlog_bad_minutes": "Số phút phải từ 1 đến 60.",
-    "camlog_too_many": "Camera này gửi quá nhiều báo cáo."
+    "camlog_too_many": "Camera này gửi quá nhiều báo cáo.",
+    "firmware_bad_channel": "Kênh phải là alpha, beta hoặc ổn định (stable).",
+    "fleet_channel_serials": "Hãy chọn tối đa 1000 camera."
   },
   "reportPdf": {
     "range": "Khoảng thời gian: {from} - {to} ({days} ngày)",

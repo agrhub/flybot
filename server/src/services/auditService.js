@@ -43,6 +43,7 @@ const AUDIT_ACTIONS = [
     'firmware.update_requested',
     'firmware.update_cancelled',
     'firmware.auto_changed',
+    'camera.channel_changed',
     'dashboard.created',
     'dashboard.deleted',
     'dashboard.shared',

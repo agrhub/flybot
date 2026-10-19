@@ -24,6 +24,9 @@ const firmwareSchema = new mongoose.Schema({
         en: { type: String, default: '' },
         vi: { type: String, default: '' }
     },
+    // Release channel (services/firmwareChannels.js): alpha (internal test cameras), beta, stable (everyone)
+    channel: { type: String, enum: ['alpha', 'beta', 'stable'], default: 'stable' },
+    // The current release of its model in its channel (one per model and channel)
     current: { type: Boolean, default: false },
     // A camera on battery installs only above this charge (or when charging / powered)
     minBatteryPct: { type: Number, default: 40, min: 0, max: 100 },
@@ -32,7 +35,7 @@ const firmwareSchema = new mongoose.Schema({
 });
 
 firmwareSchema.index({ model: 1, version: 1 }, { unique: true });
-firmwareSchema.index({ model: 1, current: 1 });
+firmwareSchema.index({ model: 1, channel: 1, current: 1 });
 
 const Firmware = mongoose.model('Firmware', firmwareSchema);
 

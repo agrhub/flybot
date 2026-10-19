@@ -26,6 +26,7 @@ const fleet = require('../controllers/fleetController');
 const env = require('../config/env');
 router.get('/fleet', fleet.listFleet);
 router.post('/fleet/:serial/reveal-code', fleet.revealCameraCode);
+router.put('/fleet/channel', fleet.setCameraChannel);
 router.put('/fleet/:serial/disabled', fleet.setCameraDisabled);
 router.get('/registry', fleet.listRegistry);
 router.post('/registry', fleet.addRegistry);

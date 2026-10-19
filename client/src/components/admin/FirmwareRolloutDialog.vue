@@ -14,12 +14,12 @@
         <el-form label-position="top" @submit.prevent>
           <el-form-item :label="t('admin.firmware.release')">
             <el-select v-model="releaseId" class="w-full" :placeholder="t('admin.firmware.pickRelease')" :disabled="!!fixedRelease">
-              <el-option v-for="r in choices" :key="r.id" :value="r.id" :label="`${r.model} ${r.version}${r.current ? ` (${t('admin.firmware.current')})` : ''}`" />
+              <el-option v-for="r in choices" :key="r.id" :value="r.id" :label="`${r.model} ${r.version} · ${t(`firmware.channels.${r.channel || 'stable'}`)}${r.current ? ` (${t('admin.firmware.current')})` : ''}`" />
             </el-select>
           </el-form-item>
           <el-form-item :label="t('admin.firmware.targets')">
             <el-radio-group v-if="!serials.length" v-model="scope">
-              <el-radio value="model">{{ t('admin.firmware.allOfModel', { model: release?.model || '' }) }}</el-radio>
+              <el-radio value="model">{{ t('admin.firmware.allOfModel', { model: release?.model || '', channel: t(`firmware.channels.${release?.channel || 'stable'}`) }) }}</el-radio>
             </el-radio-group>
             <p v-else class="rollout-meta">{{ t('admin.firmware.selectedCameras', { n: serials.length }) }}</p>
           </el-form-item>
@@ -108,7 +108,7 @@ async function start() {
   const n = props.serials.length;
   try {
     await ElMessageBox.confirm(
-      n ? t('admin.firmware.rolloutConfirm', { n, version: release.value.version }) : t('admin.firmware.rolloutConfirmModel', { model: release.value.model, version: release.value.version }),
+      n ? t('admin.firmware.rolloutConfirm', { n, version: release.value.version }) : t('admin.firmware.rolloutConfirmModel', { model: release.value.model, version: release.value.version, channel: t(`firmware.channels.${release.value.channel || 'stable'}`) }),
       t('admin.firmware.rolloutTitle'),
       { type: 'warning' }
     );

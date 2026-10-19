@@ -3,6 +3,7 @@ const env = require('../config/env');
 const { Camera, Firmware, FirmwareUpdate, User } = require('../models');
 const { OPEN_STATES } = require('../models/FirmwareUpdate');
 const { compareVersions, stateOf, isDisabled } = require('./fleetService');
+const channels = require('./firmwareChannels');
 
 /**
  * Firmware of the CamOS cameras: releases per model, updates of chosen cameras, notices to the owners and their
@@ -58,7 +59,7 @@ function setFetcher(fn) {
 
 // ---------- Releases ----------
 
-function releaseView(fw, counts = {}) {
+function releaseView(fw, counts = {}, stats = {}) {
     return {
         id: idOf(fw),
         model: fw.model,
@@ -68,10 +69,13 @@ function releaseView(fw, counts = {}) {
         sha256: fw.sha256,
         source: fw.source || { kind: 'upload' },
         notes: { en: fw.notes?.en || '', vi: fw.notes?.vi || '' },
+        channel: channels.channelOf(fw),
         current: !!fw.current,
         minBatteryPct: fw.minBatteryPct ?? 40,
         createdAt: fw.createdAt,
-        cameras: counts[`${fw.model}|${fw.version}`] || 0
+        cameras: counts[`${fw.model}|${fw.version}`] || 0,
+        // How its updates went (shown before a promotion to the next channel)
+        updates: stats[idOf(fw)] || { total: 0, succeeded: 0, failed: 0, open: 0 }
     };
 }
 
@@ -84,12 +88,26 @@ async function listReleases() {
         { $group: { _id: { model: '$model', fw: '$device.fw' }, n: { $sum: 1 } } }
     ]);
     const counts = Object.fromEntries(rows.map(r => [`${r._id.model}|${r._id.fw}`, r.n]));
+    const updateRows = await FirmwareUpdate.aggregate([
+        { $group: { _id: '$firmwareId', total: { $sum: 1 },
+            succeeded: { $sum: { $cond: [{ $eq: ['$state', 'succeeded'] }, 1, 0] } },
+            failed: { $sum: { $cond: [{ $in: ['$state', ['failed', 'rolled_back']] }, 1, 0] } },
+            open: { $sum: { $cond: [{ $in: ['$state', OPEN_STATES] }, 1, 0] } } } }
+    ]);
+    const stats = Object.fromEntries(updateRows.map(r => [String(r._id), { total: r.total, succeeded: r.succeeded, failed: r.failed, open: r.open }]));
     const models = await Camera.distinct('model', { platform: 'camos', simulated: { $ne: true } });
+    // Cameras per channel (test cameras are few: the page shows them)
+    const channelRows = await Camera.aggregate([
+        { $match: { platform: 'camos', simulated: { $ne: true } } },
+        { $group: { _id: { $ifNull: ['$firmware.channel', 'stable'] }, n: { $sum: 1 } } }
+    ]);
     return {
         success: true,
         boards: BOARD_MODELS,
+        channels: channels.CHANNELS,
+        cameraChannels: Object.fromEntries(channels.CHANNELS.map(c => [c, channelRows.find(r => r._id === c)?.n || 0])),
         models: [...new Set([...models.filter(Boolean), ...releases.map(r => r.model), ...Object.values(BOARD_MODELS)])].sort(),
-        releases: releases.map(r => releaseView(r, counts))
+        releases: releases.map(r => releaseView(r, counts, stats))
     };
 }
 
@@ -113,7 +131,8 @@ const IMAGE_ERRORS = {
  * Store one build: checks, SHA-256, upload to S3, the release row. `expectedSha256` (from SHA256SUMS or the admin)
  * must match when given. Returns { status, body }.
  */
-async function addRelease({ buffer, fileName, model, version, notes, minBatteryPct, expectedSha256, source }, actorId) {
+async function addRelease({ buffer, fileName, model, version, notes, minBatteryPct, expectedSha256, source, channel }, actorId) {
+    if (channel !== undefined && channel !== '' && !channels.CHANNELS.includes(channel)) return fail(400, 'BAD_REQUEST', 'channel must be alpha, beta or stable.');
     model = String(model || '').trim();
     version = String(version || '').trim().replace(/^v/i, '');
     if (!MODEL.test(model)) return fail(400, 'BAD_REQUEST', 'model is not valid.');
@@ -133,6 +152,7 @@ async function addRelease({ buffer, fileName, model, version, notes, minBatteryP
             source: source || { kind: 'upload' },
             notes: { en: String(notes?.en || '').slice(0, 4000), vi: String(notes?.vi || '').slice(0, 4000) },
             minBatteryPct: pct,
+            channel: channels.CHANNELS.includes(channel) ? channel : 'stable',
             createdBy: actorId
         });
         return { status: 201, body: { success: true, release: releaseView(doc.toObject()) } };
@@ -161,7 +181,7 @@ async function addFromUrl(body, actorId) {
     }
     return addRelease({
         buffer, fileName: url.pathname.split('/').pop(), model: b.model, version: b.version, notes: b.notes,
-        minBatteryPct: b.minBatteryPct, expectedSha256: b.sha256 || undefined, source: { kind: 'url', url: url.href }
+        minBatteryPct: b.minBatteryPct, expectedSha256: b.sha256 || undefined, source: { kind: 'url', url: url.href }, channel: b.channel
     }, actorId);
 }
 
@@ -189,13 +209,18 @@ async function importGithubRelease(body, actorId) {
         if (m && name && BOARD_MODELS[name[1]]) files.push({ sha256: m[1].toLowerCase(), fileName: m[2], board: name[1], version: name[2] });
     }
     if (!files.length) return fail(422, 'NO_IMAGES', 'The release has no update images listed in SHA256SUMS.');
+    if (b.channel !== undefined && b.channel !== '' && !channels.CHANNELS.includes(b.channel)) return fail(400, 'BAD_REQUEST', 'channel must be alpha, beta or stable.');
     let notes = '';
+    let prerelease = false;
     try {
         const info = JSON.parse((await fetcher(`https://api.github.com/repos/${repo}/releases/tags/${encodeURIComponent(tag)}`, { maxBytes: 256 * 1024 })).toString('utf8'));
         notes = String(info?.body || '').slice(0, 4000);
+        prerelease = info?.prerelease === true;
     } catch {
         // Notes are optional
     }
+    // A GitHub pre-release goes to beta unless the admin chose a channel
+    const channel = channels.CHANNELS.includes(b.channel) ? b.channel : (prerelease ? 'beta' : 'stable');
     const results = [];
     for (const f of files) {
         const model = BOARD_MODELS[f.board];
@@ -212,17 +237,18 @@ async function importGithubRelease(body, actorId) {
         }
         const added = await addRelease({
             buffer, fileName: f.fileName, model, version: f.version, notes: { en: notes, vi: '' }, minBatteryPct: b.minBatteryPct,
-            expectedSha256: f.sha256, source: { kind: 'github', url: `${base}/${f.fileName}`, tag }
+            expectedSha256: f.sha256, source: { kind: 'github', url: `${base}/${f.fileName}`, tag }, channel
         }, actorId);
         results.push({ board: f.board, model, version: f.version, status: added.status === 201 ? 'added' : 'failed', error: added.status === 201 ? undefined : added.body.code, id: added.body.release?.id });
     }
     const addedCount = results.filter(r => r.status === 'added').length;
-    return { status: addedCount ? 201 : 200, body: { success: true, tag, repo, results } };
+    return { status: addedCount ? 201 : 200, body: { success: true, tag, repo, channel, results } };
 }
 
 /**
- * PUT /api/admin/firmware/:id { current?, notes?, minBatteryPct? }. Making a build current takes the mark off the
- * model's other builds and tells the owners of older cameras (or schedules their automatic update).
+ * PUT /api/admin/firmware/:id { current?, channel?, notes?, minBatteryPct? }. Making a build current takes the mark off
+ * the model's other builds in its channel and tells the owners of the older cameras that take it (or schedules their
+ * automatic update). A new channel (alpha -> beta -> stable: a promotion) keeps the current mark, now in that channel.
  */
 async function updateRelease(id, body) {
     if (!/^[a-f0-9]{24}$/i.test(String(id))) return fail(404, 'NOT_FOUND', 'Firmware not found.');
@@ -243,11 +269,20 @@ async function updateRelease(id, body) {
         if (!Number.isInteger(b.minBatteryPct) || b.minBatteryPct < 0 || b.minBatteryPct > 100) return fail(400, 'BAD_REQUEST', 'minBatteryPct must be 0 to 100.');
         set.minBatteryPct = b.minBatteryPct;
     }
-    if (set.current === true) await Firmware.updateMany({ model: fw.model, _id: { $ne: fw._id } }, { $set: { current: false } });
+    if (b.channel !== undefined) {
+        if (!channels.CHANNELS.includes(b.channel)) return fail(400, 'BAD_REQUEST', 'channel must be alpha, beta or stable.');
+        set.channel = b.channel;
+    }
+    const channel = set.channel || channels.channelOf(fw);
+    const willBeCurrent = set.current ?? !!fw.current;
+    if (willBeCurrent && (set.current === true || set.channel)) {
+        await Firmware.updateMany({ model: fw.model, _id: { $ne: fw._id }, ...channels.channelFilter([channel]) }, { $set: { current: false } });
+    }
     await Firmware.updateOne({ _id: fw._id }, { $set: set });
     const fresh = await Firmware.findById(fw._id).lean();
     let announced = null;
-    if (set.current === true && !fw.current) announced = await announce(fresh);
+    // Newly current, or current and now open to more cameras (a promotion)
+    if (willBeCurrent && ((set.current === true && !fw.current) || (set.channel && set.channel !== channels.channelOf(fw)))) announced = await announce(fresh);
     return { status: 200, body: { success: true, release: releaseView(fresh), announced } };
 }
 
@@ -263,7 +298,15 @@ async function deleteRelease(id) {
     return { status: 200, body: { success: true } };
 }
 
-const currentFor = (model) => (model ? Firmware.findOne({ model, current: true }).lean() : null);
+/** The release for a camera of `model` on channel `channel` (services/firmwareChannels.js), or null. */
+async function releaseFor(model, channel = 'stable') {
+    if (!model) return null;
+    const currents = await Firmware.find({ model, current: true, ...channels.channelFilter(channels.acceptedChannels(channel)) }).lean();
+    return channels.pickRelease(currents, channel);
+}
+
+/** The stable current release of a model (cameras without a channel). */
+const currentFor = (model) => releaseFor(model, 'stable');
 
 // ---------- Updates ----------
 
@@ -326,7 +369,9 @@ async function rollout(id, body, actorId, now = new Date()) {
     const outdatedOnly = b.outdatedOnly !== false;
     let cameras;
     if (b.allOfModel === true) {
-        cameras = await Camera.find({ platform: 'camos', model: fw.model, simulated: { $ne: true }, unclaimed: { $ne: true } }).lean();
+        // Every camera of the model that takes this release's channel (a beta build goes to beta and alpha cameras)
+        cameras = (await Camera.find({ platform: 'camos', model: fw.model, simulated: { $ne: true }, unclaimed: { $ne: true } }).lean())
+            .filter(c => channels.accepts(channels.cameraChannel(c), channels.channelOf(fw)));
     } else if (Array.isArray(b.serials) && b.serials.length && b.serials.length <= 1000 && b.serials.every(s => typeof s === 'string' && /^[A-Za-z0-9_-]{1,64}$/.test(s))) {
         cameras = await Camera.find({ deviceSerial: { $in: [...new Set(b.serials)] } }).lean();
     } else {
@@ -650,7 +695,8 @@ async function statusFor(camera, { canManage = false, language = 'en' } = {}) {
         // EZVIZ firmware is updated through the EZVIZ app; FlyBot shows the version only
         return { success: true, platform, model: camera.model || null, current, latest: null, updateAvailable: false, managedBy: 'ezviz', canUpdate: false, autoUpdate: false };
     }
-    const rel = await currentFor(camera.model);
+    const channel = channels.cameraChannel(camera);
+    const rel = await releaseFor(camera.model, channel);
     const last = await FirmwareUpdate.findOne({ deviceSerial: camera.deviceSerial }).sort({ createdAt: -1 }).lean();
     const updateAvailable = !!(rel && current && compareVersions(current, rel.version) < 0);
     const open = last && OPEN_STATES.includes(last.state);
@@ -659,7 +705,8 @@ async function statusFor(camera, { canManage = false, language = 'en' } = {}) {
         platform,
         model: camera.model || null,
         current,
-        latest: rel ? { version: rel.version, notes: (language === 'vi' ? rel.notes?.vi : rel.notes?.en) || rel.notes?.en || rel.notes?.vi || '', size: rel.size, publishedAt: rel.createdAt, minBatteryPct: rel.minBatteryPct ?? 40 } : null,
+        channel,
+        latest: rel ? { version: rel.version, channel: channels.channelOf(rel), notes: (language === 'vi' ? rel.notes?.vi : rel.notes?.en) || rel.notes?.en || rel.notes?.vi || '', size: rel.size, publishedAt: rel.createdAt, minBatteryPct: rel.minBatteryPct ?? 40 } : null,
         updateAvailable,
         update: last ? updateView(last) : null,
         canUpdate: canManage && !camera.simulated && updateAvailable && !open,
@@ -676,7 +723,7 @@ async function statusFor(camera, { canManage = false, language = 'en' } = {}) {
 async function requestByOwner(camera, userId) {
     if ((camera.platform || 'ezviz') !== 'camos') return fail(400, 'NOT_CAMOS', 'Only CamOS cameras are updated through FlyBot.');
     if (camera.simulated) return fail(409, 'SIMULATED_CAMERA', 'A simulated camera has no firmware.');
-    const rel = await currentFor(camera.model);
+    const rel = await releaseFor(camera.model, channels.cameraChannel(camera));
     if (!rel) return fail(404, 'NO_RELEASE', 'There is no firmware release for this camera yet.');
     const result = await createUpdate(camera, rel, { source: 'owner', requestedBy: userId });
     if (result.skipped === 'up_to_date') return fail(409, 'UP_TO_DATE', 'The camera already runs the latest firmware.');
@@ -707,7 +754,7 @@ async function setAuto(camera, { enabled, hour }, userId) {
 /** An automatic update for a camera that wants them and runs an older build than its model's current one. */
 async function scheduleAuto(camera, requestedBy) {
     if (!camera?.firmware?.autoUpdate || camera.simulated || (camera.platform || 'ezviz') !== 'camos' || isDisabled(camera)) return null;
-    const rel = await currentFor(camera.model);
+    const rel = await releaseFor(camera.model, channels.cameraChannel(camera));
     if (!rel || !camera.device?.fw || compareVersions(camera.device.fw, rel.version) >= 0) return null;
     const result = await createUpdate(camera, rel, { source: 'auto', requestedBy });
     if (result.update && !result.skipped && !result.existing) {
@@ -718,16 +765,21 @@ async function scheduleAuto(camera, requestedBy) {
 }
 
 /**
- * A build became current: cameras with automatic updates get one; the owners of the other older cameras of that
- * model get one notice per release (in-app, and email / Telegram / push by their alert settings).
+ * A build became current (or was promoted to a wider channel): the cameras of that model it is now the release for
+ * (by their channel) get it. With automatic updates they install it; the owners of the others get one notice per release
+ * (in-app, and email / Telegram / push by their alert settings).
  */
 async function announce(firmware) {
     const cameras = await Camera.find({ platform: 'camos', model: firmware.model, simulated: { $ne: true }, unclaimed: { $ne: true }, userId: { $ne: null } }).lean();
+    const targets = {};
+    for (const ch of channels.CHANNELS) targets[ch] = await releaseFor(firmware.model, ch);
     let scheduled = 0;
     let notified = 0;
     for (const camera of cameras) {
         const fw = camera.device?.fw;
         if (!fw || compareVersions(fw, firmware.version) >= 0) continue;
+        // Only where this build is the camera's release (a stable camera never hears of a beta build)
+        if (idOf(targets[channels.cameraChannel(camera)]) !== idOf(firmware)) continue;
         if (camera.firmware?.autoUpdate && !isDisabled(camera)) {
             if (await scheduleAuto(camera)) scheduled++;
             continue;
@@ -771,9 +823,9 @@ async function sweep({ now = new Date() } = {}) {
         if (state && state !== 'pending') dispatched++;
     }
     let auto = 0;
-    const releases = await Firmware.find({ current: true }).lean();
-    for (const rel of releases) {
-        const cameras = await Camera.find({ platform: 'camos', model: rel.model, 'firmware.autoUpdate': true, simulated: { $ne: true } }).limit(500).lean();
+    const models = await Firmware.distinct('model', { current: true });
+    for (const model of models) {
+        const cameras = await Camera.find({ platform: 'camos', model, 'firmware.autoUpdate': true, simulated: { $ne: true } }).limit(500).lean();
         for (const camera of cameras) if (await scheduleAuto(camera)) auto++;
     }
     return { requeued: stale.modifiedCount || 0, timedOut, dispatched, auto };
@@ -791,6 +843,7 @@ module.exports = {
     updateRelease,
     deleteRelease,
     currentFor,
+    releaseFor,
     createUpdate,
     rollout,
     listUpdates,

@@ -6,6 +6,9 @@
           <span class="fw-title">{{ t('firmware.title') }}</span>
           <el-tag v-if="info?.updateAvailable && !openUpdate" type="warning" effect="light" round size="small">{{ t('firmware.available') }}</el-tag>
           <el-tag v-else-if="info?.latest && !info.updateAvailable && info.current" type="success" effect="light" round size="small">{{ t('firmware.upToDate') }}</el-tag>
+          <el-tooltip v-if="info?.channel && info.channel !== 'stable'" :content="t(`firmware.channelHints.${info.channel}`)" placement="top">
+            <el-tag :type="channelTagType(info.channel)" effect="plain" round size="small">{{ t('firmware.onChannel', { channel: t(`firmware.channels.${info.channel}`) }) }}</el-tag>
+          </el-tooltip>
         </div>
         <div class="flex flex-wrap items-center gap-2">
           <el-button size="small" :icon="Refresh" :loading="checking" data-test="firmware-check" @click="check">{{ t('firmware.check') }}</el-button>
@@ -67,7 +70,7 @@ import { useI18n } from 'vue-i18n';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Refresh, Upload } from '@element-plus/icons-vue';
 import api from '@/services/api';
-import { isOpenUpdate, updateProgress, updateTagType } from '@/utils/firmware';
+import { isOpenUpdate, updateProgress, updateTagType, channelTagType } from '@/utils/firmware';
 import { requestErrorText } from '@/utils/requestError';
 
 /**

@@ -618,6 +618,110 @@ test('automatic updates: turned on, the camera gets the current release in its h
     assert.equal(await models.Notification.countDocuments({ type: 'firmware_available', 'params.version': '0.8.0' }), 0);
 });
 
+// ---------- Release channels ----------
+
+test('channels: a camera takes the newest current release of its channel or a more stable one', () => {
+    const { pickRelease, accepts, acceptedChannels, nextChannel } = require('../src/services/firmwareChannels');
+    const stable = { _id: 's', version: '0.8.0', channel: 'stable', current: true };
+    const beta = { _id: 'b', version: '0.9.0', channel: 'beta', current: true };
+    const alpha = { _id: 'a', version: '0.9.1', channel: 'alpha', current: true };
+    const oldBeta = { _id: 'ob', version: '0.7.5', channel: 'beta', current: true };
+    const legacy = { _id: 'l', version: '0.8.0', current: true }; // from before channels: stable
+    assert.equal(pickRelease([stable, beta, alpha], 'stable')._id, 's');
+    assert.equal(pickRelease([stable, beta, alpha], 'beta')._id, 'b');
+    assert.equal(pickRelease([stable, beta, alpha], 'alpha')._id, 'a');
+    assert.equal(pickRelease([stable, oldBeta], 'beta')._id, 's', 'an older beta loses to a newer stable');
+    assert.equal(pickRelease([legacy], 'stable')._id, 'l');
+    assert.equal(pickRelease([{ ...beta, version: '0.8.0' }, stable], 'beta')._id, 's', 'same version: the more stable channel');
+    assert.equal(pickRelease([beta], 'stable'), null);
+    assert.equal(pickRelease([{ ...stable, current: false }], 'stable'), null);
+    assert.deepEqual(acceptedChannels('beta'), ['beta', 'stable']);
+    assert.equal(accepts('stable', 'beta'), false);
+    assert.equal(accepts('alpha', 'stable'), true);
+    assert.deepEqual([nextChannel('alpha'), nextChannel('beta'), nextChannel('stable')], ['beta', 'stable', null]);
+});
+
+test('channels: a beta release reaches beta cameras only, a promotion brings it to stable cameras; stats show how it went', async () => {
+    const admin = await createUser({ role: 'admin' });
+    const owner = await createUser({ role: 'manager' });
+    const tester = await createUser({ role: 'manager' });
+    await camosCamera(owner, SERIAL, { device: { fw: '0.7.0' } });
+    await camosCamera(tester, 'ESP0000000000B7', { device: { fw: '0.7.0' } });
+    const { id: stableId } = await releaseCurrent(admin, '0.7.0');
+    const up = await uploadFirmware(admin, { version: '0.8.0', data: image(100 * 1024, 8) });
+    const betaId = up.body.release.id;
+
+    // The tester's camera goes on beta (admin, audited)
+    const set = await json(await request('/api/admin/fleet/channel', { method: 'PUT', as: admin, body: { serials: ['ESP0000000000B7'], channel: 'beta' } }));
+    assert.equal(set.status, 200, JSON.stringify(set.body));
+    assert.equal(set.body.changed, 1);
+    assert.equal((await json(await request('/api/admin/fleet/channel', { method: 'PUT', as: admin, body: { serials: ['ESP0000000000B7'], channel: 'gamma' } }))).status, 400);
+    assert.equal((await request('/api/admin/fleet/channel', { method: 'PUT', as: owner, body: { serials: [SERIAL], channel: 'beta' } })).status, 403);
+
+    // 0.8.0 current on beta: only the beta camera's owner hears of it; the stable current stays
+    const made = await json(await request(`/api/admin/firmware/${betaId}`, { method: 'PUT', as: admin, body: { channel: 'beta', current: true } }));
+    assert.equal(made.status, 200, JSON.stringify(made.body));
+    assert.deepEqual(made.body.announced, { scheduled: 0, notified: 1 });
+    assert.equal((await models.Firmware.findById(stableId).lean()).current, true, 'the stable current is not taken off');
+    assert.equal(await models.Notification.countDocuments({ userId: tester._id, type: 'firmware_available', 'params.version': '0.8.0' }), 1);
+    assert.equal(await models.Notification.countDocuments({ userId: owner._id, 'params.version': '0.8.0' }), 0);
+
+    const stableView = await json(await request(`/api/cameras/${SERIAL}/firmware`, { as: owner }));
+    assert.equal(stableView.body.channel, 'stable');
+    assert.equal(stableView.body.updateAvailable, false);
+    const betaView = await json(await request('/api/cameras/ESP0000000000B7/firmware', { as: tester }));
+    assert.equal(betaView.body.channel, 'beta');
+    assert.equal(betaView.body.latest.version, '0.8.0');
+    assert.equal(betaView.body.latest.channel, 'beta');
+
+    // Fleet: the channel and the release each camera takes
+    const fleet = await json(await request('/api/admin/fleet', { as: admin }));
+    const rows = Object.fromEntries(fleet.body.cameras.map(c => [c.deviceSerial, c]));
+    assert.deepEqual([rows[SERIAL].channel, rows[SERIAL].latestFw, rows[SERIAL].outdated], ['stable', '0.7.0', false]);
+    assert.deepEqual([rows.ESP0000000000B7.channel, rows.ESP0000000000B7.latestFw, rows.ESP0000000000B7.outdated], ['beta', '0.8.0', true]);
+    assert.deepEqual((await json(await request('/api/admin/fleet?channel=beta', { as: admin }))).body.cameras.map(c => c.deviceSerial), ['ESP0000000000B7']);
+
+    // "Update every camera of the model" with a beta build: beta cameras only
+    rpcAnswer = (serial, req) => (req.method === 'ota.apply' ? { ok: true, result: { version: '0.8.0' } } : null);
+    const roll = await json(await request(`/api/admin/firmware/${betaId}/rollout`, { method: 'POST', as: admin, body: { allOfModel: true } }));
+    assert.equal(roll.body.created, 1);
+    assert.ok(await waitFor(async () => (await openUpdate('ESP0000000000B7'))?.state === 'installing'));
+    await camos.handleMessage('camos/ESP0000000000B7/event', { v: 1, type: 'boot', reason: 'ota', fw: '0.8.0' });
+    const list = await json(await request('/api/admin/firmware', { as: admin }));
+    const beta = list.body.releases.find(r => r.id === betaId);
+    assert.equal(beta.channel, 'beta');
+    assert.deepEqual(beta.updates, { total: 1, succeeded: 1, failed: 0, open: 0 });
+    assert.equal(beta.cameras, 1);
+    assert.equal(list.body.cameraChannels.beta, 1);
+
+    // Promotion to stable: the stable camera's owner hears of it, 0.7.0 is no longer the stable current
+    const promoted = await json(await request(`/api/admin/firmware/${betaId}`, { method: 'PUT', as: admin, body: { channel: 'stable' } }));
+    assert.equal(promoted.status, 200);
+    assert.equal(promoted.body.release.channel, 'stable');
+    assert.equal(promoted.body.release.current, true);
+    assert.deepEqual(promoted.body.announced, { scheduled: 0, notified: 1 });
+    assert.equal((await models.Firmware.findById(stableId).lean()).current, false);
+    assert.equal((await json(await request(`/api/cameras/${SERIAL}/firmware`, { as: owner }))).body.latest.version, '0.8.0');
+});
+
+test('channels: a GitHub pre-release comes in on beta; releases from before channels are stable', async () => {
+    const admin = await createUser({ role: 'admin' });
+    const data = image(110 * 1024, 4);
+    const h = require('crypto').createHash('sha256').update(data).digest('hex');
+    firmwareService.setFetcher(async (url) => {
+        if (url.endsWith('/SHA256SUMS')) return Buffer.from(`${h}  camos-esp32-trap-freenove-v0.9.0-rc1-update.bin\n`);
+        if (url.includes('api.github.com')) return Buffer.from(JSON.stringify({ body: 'Release candidate', prerelease: true }));
+        return data;
+    });
+    const res = await json(await request('/api/admin/firmware', { method: 'POST', as: admin, body: { githubTag: 'v0.9.0-rc1' } }));
+    assert.equal(res.status, 201, JSON.stringify(res.body));
+    assert.equal(res.body.channel, 'beta');
+    assert.equal((await models.Firmware.findOne({ version: '0.9.0-rc1' }).lean()).channel, 'beta');
+
+    await models.Firmware.collection.insertOne({ model: MODEL, version: '0.5.0', s3Key: 'firmware/x', size: 70000, sha256: 'a'.repeat(64), current: true });
+    assert.equal((await firmwareService.releaseFor(MODEL, 'stable')).version, '0.5.0', 'no channel field: stable');
+});
+
 test('the board model comes with every photo and with the registration of a camera its owner added first', async () => {
     const owner = await createUser({ role: 'manager' });
     await camosCamera(owner, SERIAL, { model: '' });

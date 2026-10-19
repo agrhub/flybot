@@ -1911,7 +1911,10 @@
       "charging": "đang sạc",
       "powered": "nguồn điện lưới",
       "crashed": "Khởi động lại: {reason}",
-      "logOn": "Đang gửi nhật ký"
+      "logOn": "Đang gửi nhật ký",
+      "setChannel": "Kênh phát hành",
+      "channelHint": "{n} camera. Mỗi camera nhận bản mới nhất của kênh mình hoặc của kênh ổn định hơn.",
+      "channelSaved": "Đã đổi kênh cho {n} camera."
     },
     "registry": {
       "tab": "Sổ serial",
@@ -1971,7 +1974,7 @@
     "firmware": {
       "tab": "Firmware",
       "title": "Firmware",
-      "subtitle": "Các bản firmware cho camera CamOS, bản hiện hành của từng mẫu máy, và các lần cập nhật của từng camera.",
+      "subtitle": "Các bản firmware cho camera CamOS, bản hiện hành của từng dòng máy và từng kênh, và các lần cập nhật của mỗi camera.",
       "add": "Thêm firmware",
       "addNow": "Thêm",
       "releases": "Các bản phát hành",
@@ -1987,7 +1990,7 @@
       "cameras": "Số camera đang chạy",
       "added": "Ngày thêm",
       "makeCurrent": "Đặt làm hiện hành",
-      "makeCurrentConfirm": "Đặt {model} {version} làm bản hiện hành? Chủ các camera đang chạy firmware cũ sẽ được báo, và camera bật tự động cập nhật sẽ tự cài.",
+      "makeCurrentConfirm": "Đặt {model} {version} làm bản hiện hành của kênh {channel}? Chủ các camera trên kênh này đang chạy firmware cũ sẽ được báo, và camera bật tự động cập nhật sẽ tự cài.",
       "announced": "Đã đặt bản hiện hành: báo cho {notified} chủ camera, lên lịch {scheduled} lần tự cập nhật.",
       "rolloutModel": "Cập nhật camera",
       "editNotes": "Ghi chú phát hành",
@@ -2023,14 +2026,14 @@
       "release": "Firmware",
       "pickRelease": "Chọn bản firmware",
       "targets": "Camera",
-      "allOfModel": "Tất cả camera {model}",
+      "allOfModel": "Mọi camera {model} trên kênh {channel} hoặc kênh thử nghiệm",
       "selectedCameras": "{n} camera đã chọn",
       "outdatedOnly": "Bỏ qua camera đã chạy bản này hoặc mới hơn",
       "mixedModels": "Các camera đã chọn thuộc nhiều mẫu máy: camera khác mẫu máy với bản firmware này sẽ được bỏ qua.",
       "noReleaseForModel": "Chưa có firmware cho mẫu máy của các camera này.",
       "rolloutHint": "Mỗi camera cài khi đang thức và đủ pin (hoặc cắm điện), rồi khởi động lại. Nếu firmware mới không kết nối được, camera tự quay về bản cũ.",
       "rolloutConfirm": "Cập nhật {n} camera lên {version}? Camera sẽ khởi động lại sau khi cài.",
-      "rolloutConfirmModel": "Cập nhật mọi camera {model} lên {version}? Camera sẽ khởi động lại sau khi cài.",
+      "rolloutConfirmModel": "Cập nhật mọi camera {model} nhận bản kênh {channel} lên {version}? Camera sẽ khởi động lại sau khi cài.",
       "startRollout": "Bắt đầu cập nhật",
       "rolloutStarted": "{n} camera sẽ được cập nhật",
       "rolloutSkipped": "{n} camera bỏ qua",
@@ -2043,7 +2046,17 @@
         "busy": "Đang có lần cập nhật khác",
         "not_found": "Không có camera này",
         "already_queued": "Đã chờ đúng lần cập nhật này"
-      }
+      },
+      "channel": "Kênh",
+      "channelAuto": "Theo GitHub (bản phát hành thử vào kênh Beta)",
+      "results": "Kết quả cập nhật",
+      "resultCount": "{ok}/{total} thành công",
+      "resultFailed": "{n} lỗi",
+      "promote": "Đưa lên kênh {channel}",
+      "promoteConfirm": "Đưa {model} {version} lên kênh {channel}? Bản này sẽ thành bản hiện hành của kênh đó, và chủ các camera trên kênh sẽ được báo.",
+      "promoteStats": "Trên kênh {from}: {ok}/{total} lần cập nhật thành công, {failed} lỗi.",
+      "promoteNoStats": "Chưa có camera nào trên kênh {from} cài bản này.",
+      "testCameras": "{channel}: {n} camera"
     }
   },
   "dashboards": {
@@ -3815,7 +3828,18 @@
       "LOW_BATTERY": "Pin quá yếu",
       "GONE": "Camera hoặc firmware đã bị xoá",
       "ERROR": "Camera báo lỗi"
-    }
+    },
+    "channels": {
+      "alpha": "Alpha",
+      "beta": "Beta",
+      "stable": "Ổn định"
+    },
+    "channelHints": {
+      "alpha": "bản thử nội bộ, mới nhất và ít được kiểm tra nhất",
+      "beta": "bản thử trước khi đến mọi camera",
+      "stable": "bản đã kiểm tra, dành cho mọi camera"
+    },
+    "onChannel": "Kênh {channel}"
   },
   "cameraLog": {
     "title": "Nhật ký camera",
