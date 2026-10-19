@@ -20,6 +20,7 @@
 - **Camera log from afar** for cameras nobody can plug a cable into: turn on a camera's console log for up to an hour from the camera page (or Admin → Camera fleet) and watch it live, filter, search and download it; a camera on battery sends it at its next wake. Passwords and codes are removed on the camera, and FlyBot keeps the last 24 hours.
 - After a crash, a watchdog or a power dip, the camera reports how it stopped: the reason, its last log lines and, on cameras installed with firmware 0.8.0, the crashing task and backtrace. Without a connection to AWS IoT it sends the report, and a short diagnosis, over HTTPS.
 - Owners are told when a newer firmware exists (in the app, and by email, Telegram or phone notification by their alert settings), can check for an update and install it after a confirmation, or let each camera install updates automatically at a chosen hour.
+- The firmware page counts a CamOS camera under its release as soon as the camera sends a photo, also for a camera its owner added before it first connected.
 
 ### New cameras
 - **CamOS trap cameras** (ESP32-S3, AMB82) on AWS IoT Core: Wi-Fi or 4G, solar and battery, GPS. They take photos on their own schedule and sleep in between; the camera card shows the battery, the signal and "sleeping, next wake 14:30".

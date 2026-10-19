@@ -137,7 +137,8 @@ function readMeta(raw) {
             net: ['wifi', '4g'].includes(meta.net) ? meta.net : undefined,
             rssi: num(meta.rssi),
             location,
-            fw: typeof meta.fw === 'string' ? meta.fw.slice(0, 40) : undefined
+            fw: typeof meta.fw === 'string' ? meta.fw.slice(0, 40) : undefined,
+            model: typeof meta.model === 'string' && /^[A-Za-z0-9._-]{1,64}$/.test(meta.model) ? meta.model : undefined
         })
     };
 }
@@ -184,6 +185,8 @@ async function storeDeviceSnapshot(camera, { image, meta: rawMeta, imageType }, 
         'device.lastSeenAt': now,
         'device.sleeping': false,
         'device.fw': m.fw,
+        // The board's model with every photo (camos-esp32-trap sends it): firmware releases match on it
+        model: m.model,
         'device.net': m.net,
         'device.rssi': m.rssi,
         'device.battery': m.battery,

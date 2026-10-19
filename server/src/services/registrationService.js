@@ -157,7 +157,7 @@ async function register(body, now = new Date()) {
     // removed it: the matching code proves the camera is the one the owner typed in, so it joins that account
     if (existing && !existing.selfRegistered && existing.platform === 'camos' && existing.userId && !existing.device?.tokenHash
         && normCode(existing.validateCode) === verifyCode) {
-        return registerForOwner(existing, { serial, csr, csrHash, fw: b.fw, now });
+        return registerForOwner(existing, { serial, csr, csrHash, fw: b.fw, model: b.model, now });
     }
     if (existing) {
         const d = existing.device || {};
@@ -244,7 +244,7 @@ async function register(body, now = new Date()) {
 }
 
 /** Registration of a camera an owner already added: thing, certificate, channel and token, claimed at once. */
-async function registerForOwner(camera, { serial, csr, csrHash, fw, now }) {
+async function registerForOwner(camera, { serial, csr, csrHash, fw, model, now }) {
     let cert = null;
     try {
         const thing = await ensureThing(serial);
@@ -256,6 +256,8 @@ async function registerForOwner(camera, { serial, csr, csrHash, fw, now }) {
             $set: {
                 selfRegistered: true, unclaimed: false, claimedAt: now,
                 'device.thingName': serial, 'device.registeredAt': now, 'device.csrHash': csrHash,
+                // The board's model (firmware releases and the fleet page match on it); the owner's Add camera left it empty
+                ...(model ? { model: String(model) } : {}),
                 'device.tokenHash': sha256(deviceToken), 'device.tokenIssuedAt': now,
                 'device.certificateArn': cert.certificateArn, 'device.certificateId': cert.certificateId, 'device.certificatePem': cert.certificatePem,
                 'device.kvsChannelName': kvs.channelName, 'device.kvsChannelArn': kvs.channelArn,

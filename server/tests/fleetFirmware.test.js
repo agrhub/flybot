@@ -617,3 +617,25 @@ test('automatic updates: turned on, the camera gets the current release in its h
     assert.deepEqual(made.body.announced, { scheduled: 1, notified: 0 });
     assert.equal(await models.Notification.countDocuments({ type: 'firmware_available', 'params.version': '0.8.0' }), 0);
 });
+
+test('the board model comes with every photo and with the registration of a camera its owner added first', async () => {
+    const owner = await createUser({ role: 'manager' });
+    await camosCamera(owner, SERIAL, { model: '' });
+    const boundary = 'B0undary';
+    const jpeg = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(512, 7), Buffer.from([0xff, 0xd9])]);
+    const meta = JSON.stringify({ v: 1, trigger: 'schedule', fw: '0.8.0', model: MODEL });
+    const body = Buffer.concat([
+        Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="image"; filename="s.jpg"\r\nContent-Type: image/jpeg\r\n\r\n`), jpeg,
+        Buffer.from(`\r\n--${boundary}\r\nContent-Disposition: form-data; name="meta"\r\nContent-Type: application/json\r\n\r\n${meta}\r\n--${boundary}--\r\n`)
+    ]);
+    const up = await json(await request('/api/device/snapshot', { method: 'POST', body, headers: { 'Content-Type': `multipart/form-data; boundary=${boundary}`, ...deviceHeaders() } }));
+    assert.equal(up.status, 200, JSON.stringify(up.body));
+    assert.equal((await models.Camera.findOne({ deviceSerial: SERIAL }).lean()).model, MODEL);
+
+    // Added by its owner before it registered: the registration brings the model
+    await models.Camera.create({ userId: owner._id, deviceSerial: 'ESP00000000AD0D', deviceName: 'Pre-added', platform: 'camos', validateCode: CODE, model: '' });
+    const reg = await json(await request('/api/device/register', { method: 'POST', body: registerBody({ serial: 'ESP00000000AD0D' }) }));
+    assert.equal(reg.status, 201, JSON.stringify(reg.body));
+    assert.equal(reg.body.claimed, true);
+    assert.equal((await models.Camera.findOne({ deviceSerial: 'ESP00000000AD0D' }).lean()).model, MODEL);
+});
