@@ -526,6 +526,31 @@ test('a failed download is reported with its code; a pending update can be cance
     assert.equal((await openUpdate()).error, 'TIMEOUT');
 });
 
+test('a camera that fetches its update by itself (console / web page) is installing, and its next photo with the new version ends it', async () => {
+    const admin = await createUser({ role: 'admin' });
+    const owner = await createUser({ role: 'manager' });
+    await camosCamera(owner, SERIAL, { status: 0, device: { sleeping: true } });
+    const { id } = await releaseCurrent(admin);
+    await request(`/api/admin/firmware/${id}/rollout`, { method: 'POST', as: admin, body: { serials: [SERIAL] } });
+    assert.ok(await waitFor(async () => (await openUpdate())?.waitReason === 'sleeping'));
+
+    const offer = await json(await request('/api/device/ota', { headers: deviceHeaders() }));
+    const url = new URL(offer.body.url);
+    assert.equal((await request(url.pathname + url.search)).status, 200);
+    assert.equal((await openUpdate()).state, 'installing');
+
+    const boundary = 'B0undary';
+    const jpeg = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(512, 7), Buffer.from([0xff, 0xd9])]);
+    const meta = JSON.stringify({ v: 1, trigger: 'boot', fw: '0.7.0' });
+    const body = Buffer.concat([
+        Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="image"; filename="s.jpg"\r\nContent-Type: image/jpeg\r\n\r\n`), jpeg,
+        Buffer.from(`\r\n--${boundary}\r\nContent-Disposition: form-data; name="meta"\r\nContent-Type: application/json\r\n\r\n${meta}\r\n--${boundary}--\r\n`)
+    ]);
+    const upload = await json(await request('/api/device/snapshot', { method: 'POST', body, headers: { 'Content-Type': `multipart/form-data; boundary=${boundary}`, ...deviceHeaders() } }));
+    assert.equal(upload.status, 200, JSON.stringify(upload.body));
+    assert.ok(await waitFor(async () => (await openUpdate())?.state === 'succeeded'));
+});
+
 // ---------- Owners ----------
 
 test('owners: notice of a new release (once), check, confirmed install, viewers cannot; EZVIZ shows its version only', async () => {

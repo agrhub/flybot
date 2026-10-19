@@ -633,7 +633,10 @@ async function authorizeDownload(id, { sn, exp, sig } = {}, deviceCamera = null,
     if (!open) return { status: 404 };
     const firmware = await Firmware.findById(id).lean();
     if (!firmware) return { status: 404 };
-    await FirmwareUpdate.updateOne({ deviceSerial: serial, firmwareId: id, state: 'sent' }, { $set: { state: 'installing', progress: 0, updatedAt: now } });
+    // The camera is fetching this build: installing, whether ota.apply asked or the camera's own console / web page did
+    // (then the version it reports next ends the update)
+    await FirmwareUpdate.updateOne({ deviceSerial: serial, firmwareId: id, state: { $in: ['pending', 'sent'] } },
+        { $set: { state: 'installing', progress: 0, waitReason: null, updatedAt: now } });
     return { status: 200, firmware };
 }
 
