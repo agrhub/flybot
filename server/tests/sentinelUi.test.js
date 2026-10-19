@@ -34,7 +34,10 @@ async function orchard() {
         counts: { total, byClass: { fruit_fly: total } },
         quality: { ok: true, flags: [], blur: 0.1, exposure: 0.5 },
         trace: { planner: 'rule', steps: [{ tool: 'detect', ms: 410 }], ms: 1320 },
-        evidence: { annotatedS3Key: 'evidence/CAM1/a.annotated.jpg', crops: [] },
+        evidence: { annotatedS3Key: null, crops: [] },
+        boxes: [{ x: 0.5, y: 0.25, w: 0.1, h: 0.2, score: 0.91, cls: 'fruit_fly' }],
+        width: 1600,
+        height: 1200,
         timings: { totalMs: 1320, dnnMs: 410 },
         ...extra
     });
@@ -42,7 +45,7 @@ async function orchard() {
     const latest = await models.Snapshot.create({
         deviceSerial: 'CAM1', imageUrl: 'x', s3Key: 'snapshots/CAM1/b.jpg', aiProcessed: true, aiProvider: 'opencv-lambda', aiResults: { summary: { fruit_fly: 14 } },
         meta: { battery: { pct: 72 }, rssi: -61 },
-        lambda: lambda('tr_new', 14, { diff: { newCount: 9, goneCount: 0, cardMoved: false }, quality: { ok: false, flags: ['dark'], blur: 0.3, exposure: 0.2 }, proposals: [{ id: 'p1', action: 'set_interval', params: { minutes: 15 }, reason: 'Count doubled', confidence: 0.8 }] })
+        lambda: lambda('tr_new', 14, { privacy: { person_suspected: true, regions: [{ x: 0.7, y: 0.1, w: 0.1, h: 0.15 }], method: 'yunet' }, diff: { newCount: 9, goneCount: 0, cardMoved: false }, quality: { ok: false, flags: ['dark'], blur: 0.3, exposure: 0.2 }, proposals: [{ id: 'p1', action: 'set_interval', params: { minutes: 15 }, reason: 'Count doubled', confidence: 0.8 }] })
     });
     const other = await models.Snapshot.create({ deviceSerial: 'CAM2', imageUrl: 'x', s3Key: 'snapshots/CAM2/c.jpg', aiProcessed: true, aiProvider: 'opencv-lambda', aiResults: { summary: { fruit_fly: 1 } }, lambda: lambda('tr_cam2', 1) });
     const [created] = await sentinelService.createLambdaProposals({ snapshot: latest, camera: cam1.toObject(), proposals: latest.lambda.proposals, traceId: 'tr_new' });
@@ -153,7 +156,14 @@ test('traces: analyzed photos newest first, filter by camera, cursor paging, one
     assert.deepEqual(obs.new_catch, { new_count: 9, disappeared_count: 0, persisted_count: 5, card_change_suspected: false, card_change_reasons: [] });
     assert.equal(obs.image, 'snapshots/CAM1/b.jpg');
     assert.equal(obs.previous_image, 'snapshots/CAM1/a.jpg');
-    assert.deepEqual(obs.evidence, ['evidence/CAM1/a.annotated.jpg']);
+    // The Lambda stores no picture: the console draws the boxes and blurs the faces on FlyBot's photos
+    assert.deepEqual(obs.evidence, []);
+    assert.deepEqual(trace.overlays['snapshots/CAM1/b.jpg'], {
+        boxes: [{ x: 0.5, y: 0.25, w: 0.1, h: 0.2 }],
+        privacy: { regions: [{ x: 0.7, y: 0.1, w: 0.1, h: 0.15 }], blurAll: false },
+        width: 1600, height: 1200
+    });
+    assert.deepEqual(trace.overlays['snapshots/CAM1/a.jpg'].privacy, { regions: [], blurAll: false }, 'the previous photo too');
     assert.equal(obs.analyzer, 'yolo26n / 2026-10-18 / opencv-5.0.0-dnn-new');
     assert.equal(obs.vision_ms, 410);
     assert.equal(obs.battery_percent, 72);
@@ -182,9 +192,12 @@ test('approvals: listed by status; the viewer cannot decide; a manager\'s decisi
     assert.deepEqual(a.payload, { action: 'set_interval', params: { minutes: 15 }, reason: 'Count doubled' });
     assert.equal(a.flybot_proposal_id, String(proposal._id));
     assert.ok(a.expires_at);
-    // The pictures to decide on come with it: the annotated evidence, then the photo
-    assert.deepEqual(a.evidence, ['evidence/CAM1/a.annotated.jpg', 'snapshots/CAM1/b.jpg']);
-    assert.deepEqual((await json(await get(`/approvals/${proposal._id}`, judge))).body.approval.evidence, a.evidence);
+    // The photo to decide on comes with it, with the boxes and the face regions the console draws
+    assert.deepEqual(a.evidence, ['snapshots/CAM1/b.jpg']);
+    assert.deepEqual(a.overlays['snapshots/CAM1/b.jpg'].boxes, [{ x: 0.5, y: 0.25, w: 0.1, h: 0.2 }]);
+    assert.deepEqual(a.overlays['snapshots/CAM1/b.jpg'].privacy.regions, [{ x: 0.7, y: 0.1, w: 0.1, h: 0.15 }]);
+    const alone = (await json(await get(`/approvals/${proposal._id}`, judge))).body.approval;
+    assert.deepEqual([alone.evidence, alone.overlays], [a.evidence, a.overlays]);
     assert.equal((await json(await get('/approvals?status=approved', judge))).body.items.length, 0);
     assert.equal((await json(await get(`/approvals/${proposal._id}`, judge))).body.approval.status, 'pending');
 

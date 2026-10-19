@@ -38,7 +38,7 @@
 
     <div v-if="images.length" class="mt-3">
       <div class="section-label">{{ t('sentinel.approvals.evidence') }}</div>
-      <EvidenceGallery :images="images" />
+      <EvidenceGallery :images="images" :overlays="a.overlays || {}" />
     </div>
 
     <div class="flex flex-wrap items-center gap-2 mt-4">

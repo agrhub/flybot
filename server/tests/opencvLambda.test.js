@@ -49,7 +49,8 @@ function okResponse(request, extra = {}) {
             ...(request.prevPhoto ? { diff: { newCount: 3, goneCount: 1, cardMoved: false } } : {}),
             proposals: [],
             trace: { planner: 'rule', steps: [{ tool: 'detect', ms: 410 }], tokens: { in: 0, cachedIn: 0, out: 0 }, ms: 1320 },
-            evidence: { annotatedS3Key: `evidence/${request.camera.id}/x.annotated.jpg`, crops: [] },
+            evidence: { annotatedS3Key: null, crops: [] },
+            privacy: { person_suspected: false },
             timings: { totalMs: 1320, dnnMs: 410 },
             ...extra
         }
@@ -125,7 +126,7 @@ test('the request follows CONTRACTS section 1 and the answer is stored on the sn
     assert.deepEqual(snap.lambda.quality, { ok: true, flags: [], blur: 0.12, exposure: 0.48 });
     assert.deepEqual(snap.lambda.diff, { newCount: 3, goneCount: 1, cardMoved: false });
     assert.equal(snap.lambda.trace.planner, 'rule');
-    assert.equal(snap.lambda.evidence.annotatedS3Key, 'evidence/BE4089629/x.annotated.jpg');
+    assert.deepEqual(snap.lambda.privacy, { person_suspected: false }, 'kept for blurring where the photo is shown');
     assert.equal(snap.lambda.width, 640);
     assert.equal(snap.lambda.attempts, 1);
     // Daily statistics and the quality check followed, as with every provider

@@ -20,7 +20,11 @@
     </figure>
     <div v-else-if="pair?.left" class="grid grid-cols-1 sm:grid-cols-2 gap-3" data-test="side-by-side">
       <figure v-for="(side, i) in [pair.left, pair.right]" :key="side.ref" class="evidence-figure">
+        <div v-if="overlays[side.ref]" class="evidence-open" role="button" tabindex="0" @click="enlarge(side)" @keydown.enter="enlarge(side)">
+          <AnnotatedPhoto :src="srcOf(side.ref)" :overlay="overlays[side.ref]" :alt="fileName(side.ref)" />
+        </div>
         <el-image
+          v-else
           :src="srcOf(side.ref)"
           :alt="`${i ? t('sentinel.traces.after') : t('sentinel.traces.before')}: ${fileName(side.ref)}`"
           :preview-src-list="previewList"
@@ -38,7 +42,11 @@
 
     <div v-if="rest.length" class="evidence-grid">
       <figure v-for="img in rest" :key="img.ref" class="evidence-figure" data-test="evidence-item">
+        <div v-if="overlays[img.ref]" class="evidence-open" role="button" tabindex="0" @click="enlarge(img)" @keydown.enter="enlarge(img)">
+          <AnnotatedPhoto :src="srcOf(img.ref)" :overlay="overlays[img.ref]" :alt="altOf(img)" />
+        </div>
         <el-image
+          v-else
           :src="srcOf(img.ref)"
           :alt="altOf(img)"
           :preview-src-list="previewList"
@@ -56,14 +64,20 @@
         </figcaption>
       </figure>
     </div>
+
+    <!-- A photo with its boxes, large -->
+    <el-dialog v-model="bigOpen" :title="big ? altOf(big) : ''" width="min(1000px, 96vw)" append-to-body data-test="photo-dialog">
+      <AnnotatedPhoto v-if="big" :src="srcOf(big.ref)" :overlay="overlays[big.ref]" :alt="altOf(big)" />
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import api from '@/services/api';
 import { alignedPair } from '@/utils/sentinel/trace';
+import AnnotatedPhoto from './AnnotatedPhoto.vue';
 
 /**
  * Evidence pictures of a trace or a proposal: the aligned pair first, then masks, crops, heat maps
@@ -72,6 +86,8 @@ import { alignedPair } from '@/utils/sentinel/trace';
 const props = defineProps({
   images: { type: Array, required: true }, // [{ ref, kind, from }]
   obs: { type: Object, default: null },
+  // Per picture key: the analysis overlay of a FlyBot photo ({ boxes, privacy, width, height }), drawn by AnnotatedPhoto
+  overlays: { type: Object, default: () => ({}) },
 });
 const { t } = useI18n();
 
@@ -94,6 +110,9 @@ const previewList = computed(() => ordered.value.map((i) => api.sentinelEvidence
 const indexOf = (ref) => Math.max(0, ordered.value.findIndex((i) => i.ref === ref));
 
 const srcOf = (ref) => api.sentinelEvidenceUrl(ref);
+const bigOpen = ref(false);
+const big = ref(null);
+const enlarge = (img) => { big.value = img; bigOpen.value = true; };
 const fileName = (ref) => String(ref).split('/').pop();
 const kindLabel = (kind) => (kind ? t(`sentinel.traces.kind.${kind}`) : t('sentinel.traces.kind.photo'));
 const altOf = (img) => `${kindLabel(img.kind)}: ${fileName(img.ref)}`;
@@ -133,6 +152,9 @@ const altOf = (img) => `${kindLabel(img.kind)}: ${fileName(img.ref)}`;
 .evidence-image--wide {
   aspect-ratio: auto;
   max-height: 360px;
+}
+.evidence-open {
+  cursor: zoom-in;
 }
 .evidence-missing {
   display: flex;

@@ -195,13 +195,23 @@ describe('Sentinel approvals', () => {
       event_id: cardTrace.event_id,
       on_timeout: 'no_op',
       payload: { action: 'capture_now', params: {}, reason: 'Something covers the trap' },
-      evidence: ['evidence/ESP1234567890AB/a_annotated.jpg', 'snapshots/ESP1234567890AB/a.jpg'],
+      evidence: ['snapshots/ESP1234567890AB/a.jpg'],
+      overlays: { 'snapshots/ESP1234567890AB/a.jpg': { boxes: [{ x: 0.1, y: 0.2, w: 0.05, h: 0.05 }, { x: 0.6, y: 0.5, w: 0.04, h: 0.04 }], privacy: { regions: [{ x: 0.7, y: 0.1, w: 0.1, h: 0.1 }], blurAll: false }, width: 1600, height: 1200 } },
     };
     const { wrapper, router } = await mountWith(ApprovalCard, { props: { approval: action, canDecide: true } });
     expect(wrapper.find('.section-title').text()).toBe('Extra photo');
     expect(wrapper.text()).toContain('Nothing is done');
     expect(wrapper.text()).not.toContain('no_op');
-    expect(wrapper.findAll('[data-test="evidence-item"]').length + wrapper.findAll('[data-test="side-by-side"]').length).toBeGreaterThan(0);
+    // FlyBot's photo with the Lambda's boxes drawn on it and the face region blurred; a click shows it large
+    const photo = wrapper.find('[data-test="annotated-photo"]');
+    expect(photo.exists()).toBe(true);
+    expect(photo.findAll('[data-test="photo-box"]').length).toBe(2);
+    expect(photo.find('.annotated-photo__privacy').exists()).toBe(true);
+    expect(photo.attributes('style')).toContain('1600 / 1200');
+    expect(photo.find('[data-test="photo-box"]').attributes('style')).toContain('left: 10%');
+    await wrapper.find('.evidence-open').trigger('click');
+    await flushPromises();
+    expect(document.body.querySelector('[data-test="photo-dialog"] [data-test="annotated-photo"]')).not.toBeNull();
 
     const before = router.currentRoute.value.fullPath;
     await wrapper.find('[data-test="view-trace"]').trigger('click');

@@ -231,6 +231,8 @@ function resultUpdate(response, { width, height, attempt, now = new Date() } = {
             proposals: clipJson(Array.isArray(response.proposals) ? response.proposals.slice(0, 10) : undefined, 16 * 1024),
             trace: clipJson(response.trace, 64 * 1024),
             evidence: clipJson(response.evidence, 16 * 1024),
+            // Face regions to blur where the photo is shown (the Lambda stores no picture of its own)
+            privacy: clipJson(response.privacy, 4 * 1024),
             timings: clipJson(response.timings, 2 * 1024),
             width: width || undefined,
             height: height || undefined

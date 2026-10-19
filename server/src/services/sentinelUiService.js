@@ -72,11 +72,30 @@ function decisionsOf(snap) {
     }));
 }
 
+/**
+ * What the console draws on one of FlyBot's photos: the vision Lambda's boxes and the face regions
+ * to blur (all normalised), with the photo's size for the frame. The Lambda stores no picture.
+ */
+function overlayOf(snap) {
+    const lambda = snap?.lambda;
+    if (!lambda) return null;
+    const privacy = lambda.privacy || {};
+    return {
+        boxes: (Array.isArray(lambda.boxes) ? lambda.boxes : []).slice(0, 500).map(b => ({ x: b.x, y: b.y, w: b.w, h: b.h })),
+        privacy: { regions: Array.isArray(privacy.regions) ? privacy.regions.slice(0, 50) : [], blurAll: !!privacy.blurAll },
+        width: lambda.width || null,
+        height: lambda.height || null
+    };
+}
+
+const overlaysOf = (...snaps) => Object.fromEntries(snaps.filter(s => s?.s3Key && s.lambda).map(s => [s.s3Key, overlayOf(s)]));
+
+const OVERLAY_FIELDS = 's3Key lambda.boxes lambda.privacy lambda.width lambda.height';
+
 function approvalOf(proposal, snap = null) {
     if (!proposal) return null;
-    // The pictures a person decides on: the Lambda's annotated evidence, then the photo itself
-    const lambdaEvidence = snap?.lambda?.evidence || {};
-    const pictures = [lambdaEvidence.annotatedS3Key, snap?.s3Key, ...(proposal.evidence || []).map(e => e.url || e.ref)];
+    // The pictures a person decides on: the photo the proposal came from (boxes drawn by the console), then any other evidence
+    const pictures = [snap?.s3Key, ...(proposal.evidence || []).map(e => e.url || e.ref)];
     return {
         approval_id: String(proposal._id),
         event_id: proposal.traceId || null,
@@ -96,7 +115,8 @@ function approvalOf(proposal, snap = null) {
             reason: proposal.reason || '',
             ...(proposal.result ? { result: proposal.result } : {})
         },
-        evidence: [...new Set(pictures.filter(v => typeof v === 'string' && v))]
+        evidence: [...new Set(pictures.filter(v => typeof v === 'string' && v))],
+        overlays: overlaysOf(snap)
     };
 }
 
@@ -131,8 +151,9 @@ function slimTrace(snap, camera, proposal) {
 async function fullTrace(snap, camera, proposals) {
     const lambda = snap.lambda || {};
     const slim = slimTrace(snap, camera, proposals[0]);
-    const previous = await Snapshot.findOne({ deviceSerial: snap.deviceSerial, aiProcessed: true, createdAt: { $lt: snap.createdAt } }).sort({ createdAt: -1 }).select('s3Key').lean();
-    const evidence = [lambda.evidence?.annotatedS3Key, ...(Array.isArray(lambda.evidence?.crops) ? lambda.evidence.crops : [])].filter(v => typeof v === 'string');
+    const previous = await Snapshot.findOne({ deviceSerial: snap.deviceSerial, aiProcessed: true, createdAt: { $lt: snap.createdAt } }).sort({ createdAt: -1 }).select(OVERLAY_FIELDS).lean();
+    // The Lambda stores no picture: the photos are FlyBot's, the console draws the boxes (overlays)
+    const evidence = [];
     const diff = lambda.diff;
     const total = lambda.counts?.total;
     const steps = Array.isArray(lambda.trace?.steps) ? lambda.trace.steps : [];
@@ -192,7 +213,8 @@ async function fullTrace(snap, camera, proposals) {
         deep: deep.map(d => ({ at: iso(d.at), question: d.question, answer: d.answer, trace_id: d.traceId })),
         timings: lambda.timings || null,
         model: lambda.model || null,
-        evidence_keys: evidence
+        evidence_keys: evidence,
+        overlays: overlaysOf(snap, previous)
     };
 }
 
@@ -311,7 +333,7 @@ async function approval({ user, id }) {
 async function photosOf(proposals) {
     const ids = [...new Set(proposals.map(p => p.snapshotId).filter(Boolean).map(String))];
     if (!ids.length) return new Map();
-    const snaps = await Snapshot.find({ _id: { $in: ids } }).select('s3Key lambda.evidence').lean();
+    const snaps = await Snapshot.find({ _id: { $in: ids } }).select(OVERLAY_FIELDS).lean();
     return new Map(snaps.map(s => [String(s._id), s]));
 }
 

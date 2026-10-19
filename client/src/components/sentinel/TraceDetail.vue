@@ -194,7 +194,7 @@
 
     <div class="trace-images">
       <div class="trace-step__title">{{ t('sentinel.traces.images') }}</div>
-      <EvidenceGallery :images="images" :obs="obs" />
+      <EvidenceGallery :images="images" :obs="obs" :overlays="trace.overlays || {}" />
     </div>
   </div>
 </template>

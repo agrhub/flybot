@@ -61,6 +61,8 @@ const snapshotSchema = new mongoose.Schema({
         proposals: { type: mongoose.Schema.Types.Mixed, default: undefined },
         trace: { type: mongoose.Schema.Types.Mixed, default: undefined },
         evidence: { type: mongoose.Schema.Types.Mixed, default: undefined },
+        // person_suspected, and the face regions to blur where the photo is shown (normalised)
+        privacy: { type: mongoose.Schema.Types.Mixed, default: undefined },
         timings: { type: mongoose.Schema.Types.Mixed, default: undefined },
         width: { type: Number, default: undefined },
         height: { type: Number, default: undefined },
