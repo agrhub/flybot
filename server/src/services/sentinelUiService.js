@@ -310,6 +310,19 @@ async function summary({ user, hours = 24 }) {
 
 const STATE_OF_STATUS = { pending: ['pending'], approved: ['confirmed'], rejected: ['rejected', 'failed'], expired: ['expired'] };
 
+/**
+ * The serials among `serials` whose proposals this person may decide: they decide in the console
+ * and manage the camera (read-only demo cameras and shared ones never qualify).
+ */
+async function decidableSerials(user, serials) {
+    if (!canDecideSentinel(user) || !serials.length) return new Set();
+    const { canManageCamera } = require('../utils/ownership');
+    const own = await Camera.find({ deviceSerial: { $in: serials } }).select('deviceSerial userId sharedWith unclaimed').lean();
+    return new Set(own.filter(c => canManageCamera(user, c)).map(c => c.deviceSerial));
+}
+
+const withDecide = (item, decidable) => ({ ...item, can_decide: item.cameras.some(s => decidable.has(s)) });
+
 async function approvals({ user, status, limit, lang }) {
     const cameras = await visibleCameras(user);
     const serials = [...cameras.keys()];
@@ -320,7 +333,8 @@ async function approvals({ user, status, limit, lang }) {
     const rows = await SentinelProposal.find(filter).sort({ createdAt: -1 }).limit(size).lean();
     const snaps = await photosOf(rows);
     const now = new Date();
-    const items = rows.map(p => approvalOf(p.state === 'pending' && p.expiresAt <= now ? { ...p, state: 'expired' } : p, snaps.get(String(p.snapshotId)), languageFor(user, lang)));
+    const decidable = await decidableSerials(user, serials);
+    const items = rows.map(p => withDecide(approvalOf(p.state === 'pending' && p.expiresAt <= now ? { ...p, state: 'expired' } : p, snaps.get(String(p.snapshotId)), languageFor(user, lang)), decidable));
     return { items: status === 'pending' ? items.filter(a => a.status === 'pending') : items, next: null };
 }
 
@@ -331,7 +345,8 @@ async function approval({ user, id, lang }) {
     if (!p || !p.deviceSerials.some(s => cameras.has(s))) return null;
     const snaps = await photosOf([p]);
     const now = new Date();
-    return { approval: approvalOf(p.state === 'pending' && p.expiresAt <= now ? { ...p, state: 'expired' } : p, snaps.get(String(p.snapshotId)), languageFor(user, lang)), media: {} };
+    const decidable = await decidableSerials(user, p.deviceSerials);
+    return { approval: withDecide(approvalOf(p.state === 'pending' && p.expiresAt <= now ? { ...p, state: 'expired' } : p, snaps.get(String(p.snapshotId)), languageFor(user, lang)), decidable), media: {} };
 }
 
 /** The photos proposals came from, by id (only their picture keys). */

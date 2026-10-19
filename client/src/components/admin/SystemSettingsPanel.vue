@@ -39,6 +39,7 @@
       </el-form>
     </el-card>
 
+    <DemoAccessCard />
     <TrainingSyncCard />
   </div>
 </template>
@@ -52,6 +53,7 @@ import api from '@/services/api';
 import PageHeader from '@/components/common/PageHeader.vue';
 import { adminErrorText } from './adminErrors';
 import TrainingSyncCard from './TrainingSyncCard.vue';
+import DemoAccessCard from './DemoAccessCard.vue';
 
 const { t, locale } = useI18n();
 const loading = ref(false);

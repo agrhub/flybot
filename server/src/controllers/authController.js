@@ -97,9 +97,12 @@ async function publicUser(user, req = null) {
     const ent = await entitlements.getEntitlements(ctx, current);
     const works = entitlements.operatorAccount(ctx) || workspaceService.canWorkIn(workspace);
     const mode = workspaceService.mode();
+    const demo = await require('../services/demoView').demoAccessOf(user);
     return {
         ...base,
         ...sentinelUi.accessFor(ctx),
+        // Read-only demo cameras this account sees (services/demoView.js)
+        demoView: { cameras: demo.serials.length, live: demo.live },
         appMode: mode,
         workspace,
         workspaceCount: docs.length,
@@ -284,7 +287,9 @@ async function getAuthConfig(req, res) {
     try {
         const { getSettings } = require('../services/settingsService');
         const contactEmail = (require('../config/env').CONTACT_EMAIL || '').split(',')[0].trim() || null;
-        res.json({ success: true, allowRegistration: (await getSettings()).allowRegistration, contactEmail });
+        // demoView: new accounts see read-only demo cameras (services/demoView.js)
+        const demoView = await require('../services/demoView').isOffered();
+        res.json({ success: true, allowRegistration: (await getSettings()).allowRegistration, contactEmail, demoView });
     } catch (err) {
         sendServerError(res, err, { context: 'Auth config' });
     }

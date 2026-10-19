@@ -240,7 +240,7 @@
                   <div class="flex flex-wrap items-center gap-1.5 mt-2">
                     <el-tag v-if="row.access === 'owner' || !row.access" type="success" effect="light" round size="small">{{ t('share.accessOwner') }}</el-tag>
                     <el-tag v-else :type="row.access === 'admin' ? 'warning' : 'info'" effect="light" round size="small">
-                      {{ row.access === 'admin' ? t('share.accessAdmin') : t('share.accessShared') }}
+                      {{ row.access === 'admin' ? t('share.accessAdmin') : row.access === 'demo' ? t('share.accessDemo') : t('share.accessShared') }}
                     </el-tag>
                     <el-tag v-if="row.canManage && row.sharedWith?.length" type="info" effect="plain" size="small">
                       {{ t('share.sharedCount', { count: row.sharedWith.length }) }}
@@ -301,7 +301,7 @@
                     </el-tag>
                     <el-tooltip v-else :content="row.owner?.email || ''" placement="top" :disabled="!row.owner?.email">
                       <el-tag :type="row.access === 'admin' ? 'warning' : 'info'" effect="light" round size="small">
-                        {{ row.access === 'admin' ? t('share.accessAdmin') : t('share.accessShared') }}
+                        {{ row.access === 'admin' ? t('share.accessAdmin') : row.access === 'demo' ? t('share.accessDemo') : t('share.accessShared') }}
                       </el-tag>
                     </el-tooltip>
                     <el-tag

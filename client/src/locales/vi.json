@@ -119,7 +119,8 @@
     "resendVerification": "Gửi lại email",
     "verificationSent": "Đã gửi email xác nhận. Hãy kiểm tra hộp thư.",
     "registerSuccessVerify": "Tài khoản đã sẵn sàng! Chúng tôi đã gửi đường dẫn xác nhận tới email của bạn.",
-    "registrationClosed": "Hiện chưa nhận tài khoản mới. Hãy liên hệ quản trị viên để được cấp quyền."
+    "registrationClosed": "Hiện chưa nhận tài khoản mới. Hãy liên hệ quản trị viên để được cấp quyền.",
+    "demoViewHint": "Sau khi đăng ký, bạn xem ngay được các bẫy trình diễn của FlyBot (chỉ xem): ảnh, số đếm, nhật ký của tác tử và trợ lý."
   },
   "dashboard": {
     "welcome": "Chào mừng trở lại",
@@ -512,7 +513,12 @@
     "zoomIn": "Phóng to",
     "zoomOut": "Thu nhỏ",
     "timeline": "Dòng thời gian ghi hình trong ngày (mũi tên: đoạn trước/sau, Page Up/Down: 1 giờ)",
-    "timelineIdle": "Chưa phát đoạn nào"
+    "timelineIdle": "Chưa phát đoạn nào",
+    "demo": {
+      "tag": "Trình diễn",
+      "hint": "Camera trình diễn: bạn xem được ảnh, số đếm và phân tích, nhưng không thay đổi được.",
+      "liveClosed": "Camera trình diễn này chưa mở xem trực tiếp cho khách. Ảnh và phân tích có trong phần chi tiết."
+    }
   },
   "analytics": {
     "title": "Báo Cáo & Lịch Sử Nhận Dạng AI",
@@ -1493,7 +1499,8 @@
       "ALREADY_SHARED": "Đã chia sẻ với email này."
     },
     "viaFarm": "Qua vườn",
-    "viaFarmHint": "Người này xem camera qua vườn chứa nó. Hãy gỡ họ ở trang vườn."
+    "viaFarmHint": "Người này xem camera qua vườn chứa nó. Hãy gỡ họ ở trang vườn.",
+    "accessDemo": "Trình diễn (chỉ xem)"
   },
   "admin": {
     "group": "Quản trị",
@@ -1762,6 +1769,22 @@
       "rejectTitle": "Từ chối yêu cầu",
       "rejectHint": "Lý do (người gửi sẽ thấy)",
       "paid": "Đã thanh toán"
+    },
+    "demo": {
+      "title": "Quyền xem trình diễn cho khách",
+      "desc": "Cho khách (ví dụ giám khảo cuộc thi) xem một vài camera ngay sau khi đăng ký, không cần ai chia sẻ thủ công. Khách xem được ảnh, số đếm, biểu đồ, nhật ký và đề xuất của tác tử, và có thể hỏi trợ lý về các camera này.",
+      "cameras": "Camera trình diễn",
+      "camerasPlaceholder": "Chọn camera hoặc nhập số sê-ri",
+      "camerasDesc": "Tối đa 20 camera. Chủ camera vẫn toàn quyền; khách không được biết ai là chủ.",
+      "audience": "Ai được xem",
+      "audienceAll": "Mọi tài khoản",
+      "audienceSince": "Tài khoản tạo từ một ngày",
+      "sincePlaceholder": "Chọn ngày",
+      "sinceRequired": "Hãy chọn ngày bắt đầu tính tài khoản mới.",
+      "audienceDesc": "Quản trị viên luôn thấy mọi camera. Khách không nhận cảnh báo, email hay báo cáo về camera trình diễn.",
+      "live": "Cho xem trực tiếp",
+      "liveDesc": "Khách được xem trực tiếp và xem lại bản ghi của các camera này. Tắt: khách chỉ xem ảnh.",
+      "readOnly": "Khách không thay đổi được gì trên camera trình diễn: không cài đặt, chụp, xoá, chia sẻ, bảo trì, ghi phun thuốc hay duyệt đề xuất. Hãy tắt khi buổi trình diễn kết thúc; quyền xem dừng trong vòng một phút."
     }
   },
   "dashboards": {

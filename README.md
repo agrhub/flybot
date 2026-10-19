@@ -168,6 +168,10 @@ All settings are environment variables, read from `.env` at the repository root 
 | `DEMO_LIVE_MINUTES` | `5` | FREE plan's first live view minutes per request |
 | `DEMO_MAX_UNCLAIMED` | `200` | Self-registered cameras that may wait for a claim at the same time |
 | `DEMO_EXEMPT_EMAILS` | | Accounts without any plan limit, comma-separated (administrators have none either) |
+| `DEMO_VIEW_ENABLED` | `false` | `true` lets visitors view `DEMO_VIEW_CAMERAS` read-only (first value of Admin → System → Demo access) |
+| `DEMO_VIEW_CAMERAS` | | Comma-separated serials of the read-only demo cameras |
+| `DEMO_VIEW_SINCE` | | Only accounts created on or after this date (`YYYY-MM-DD`) see them; empty: every account |
+| `DEMO_VIEW_LIVE` | `false` | `true` also opens live view and SD playback of the demo cameras |
 
 **Photos (S3)**
 

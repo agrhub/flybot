@@ -509,7 +509,8 @@
     "planCodeInvalid": "plan must be free, pro or enterprise.",
     "orgSettingOnly": "Only organizations have this setting.",
     "orgsOffB2c": "Organizations are off in this mode (APP_MODE=b2c).",
-    "allowPersonalBool": "allowMemberPersonalWorkspaces must be true or false."
+    "allowPersonalBool": "allowMemberPersonalWorkspaces must be true or false.",
+    "demo_live_closed": "Live view of this demo camera is not open to visitors."
   },
   "reportPdf": {
     "range": "Period: {from} - {to} ({days} days)",

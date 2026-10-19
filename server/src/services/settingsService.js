@@ -1,5 +1,5 @@
 const { SystemSetting } = require('../models');
-const { ALLOW_REGISTRATION, RETENTION_CYCLE } = require('../config/env');
+const { ALLOW_REGISTRATION, RETENTION_CYCLE, DEMO_VIEW_ENABLED, DEMO_VIEW_CAMERAS, DEMO_VIEW_SINCE, DEMO_VIEW_LIVE } = require('../config/env');
 const { DEFAULT_ALERT_THRESHOLD } = require('../constants/risk');
 
 // Short cache: settings are read on every registration/cleanup but change rarely
@@ -11,8 +11,15 @@ const defaults = () => ({
     allowRegistration: ALLOW_REGISTRATION,
     retentionMonths: RETENTION_CYCLE,
     defaultAlertThreshold: DEFAULT_ALERT_THRESHOLD,
-    trainingSync: false
+    trainingSync: false,
+    // Read-only demo cameras for visitors (services/demoView.js)
+    demoViewEnabled: DEMO_VIEW_ENABLED,
+    demoViewCameras: [...DEMO_VIEW_CAMERAS],
+    demoViewSince: DEMO_VIEW_SINCE,
+    demoViewLive: DEMO_VIEW_LIVE
 });
+// Saved as null on purpose ("every account"): null does not fall back to the environment
+const NULLABLE = new Set(['demoViewSince']);
 
 /**
  * Effective settings: the admin-saved values, falling back to the environment.
@@ -22,8 +29,9 @@ async function getSettings() {
     const doc = await SystemSetting.findOne({ key: 'global' }).lean();
     const merged = { ...defaults() };
     for (const key of Object.keys(merged)) {
-        if (doc && doc[key] !== undefined && doc[key] !== null) merged[key] = doc[key];
+        if (doc && doc[key] !== undefined && (doc[key] !== null || NULLABLE.has(key))) merged[key] = doc[key];
     }
+    merged.demoViewSince = merged.demoViewSince ? new Date(merged.demoViewSince).toISOString() : null;
     merged.updatedAt = doc?.updatedAt || null;
     cached = merged;
     cachedAt = Date.now();
@@ -34,7 +42,17 @@ const SETTING_RULES = {
     allowRegistration: (v) => typeof v === 'boolean',
     retentionMonths: (v) => Number.isInteger(v) && v >= 1 && v <= 60,
     defaultAlertThreshold: (v) => Number.isInteger(v) && v >= 1 && v <= 10000,
-    trainingSync: (v) => typeof v === 'boolean'
+    trainingSync: (v) => typeof v === 'boolean',
+    demoViewEnabled: (v) => typeof v === 'boolean',
+    demoViewCameras: (v) => Array.isArray(v) && v.length <= 20 && v.every(s => typeof s === 'string' && /^[A-Za-z0-9_-]{1,64}$/.test(s)),
+    // A date (accounts created on or after it) or null (every account)
+    demoViewSince: (v) => v === null || (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}/.test(v) && !Number.isNaN(Date.parse(v))),
+    demoViewLive: (v) => typeof v === 'boolean'
+};
+const normalize = (key, value) => {
+    if (key === 'demoViewCameras') return [...new Set(value)];
+    if (key === 'demoViewSince') return value ? new Date(value) : null;
+    return value;
 };
 
 /**
@@ -47,7 +65,7 @@ async function updateSettings(patch, userId) {
         const rule = SETTING_RULES[key];
         if (!rule) return { error: `Unknown setting "${key}".` };
         if (!rule(value)) return { error: `Invalid value for "${key}".` };
-        update[key] = value;
+        update[key] = normalize(key, value);
     }
     await SystemSetting.updateOne(
         { key: 'global' },

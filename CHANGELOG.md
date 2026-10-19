@@ -7,6 +7,7 @@
 - **Counting with OpenCV 5** on AWS Lambda: every photo is counted by a YOLO26n model, compared with the trap's previous photo (new flies, a replaced card) and checked for quality. A planning agent suggests what to do (take an extra photo, photograph more often for a day, adjust the camera image, ask a person to check), and nothing happens until you press Confirm.
 - **Deep analysis** in the assistant: ask "why did the count jump today?" about a photo and the vision agent looks at it in detail.
 - **Sentinel screen**: for every photo, what the vision agent saw, counted and proposed, with the proposals waiting for a decision and the state of each camera.
+- **Demo access for visitors** (Admin → System): chosen cameras show up, read-only and marked Demo, in every new account, so a visitor (for example a competition judge) sees real traps, counts, traces and the assistant right after signing up. Nothing on those cameras can be changed; live view opens only if the administrator allows it; turning it off ends the access within a minute.
 
 ### New cameras
 - **CamOS trap cameras** (ESP32-S3, AMB82) on AWS IoT Core: Wi-Fi or 4G, solar and battery, GPS. They take photos on their own schedule and sleep in between; the camera card shows the battery, the signal and "sleeping, next wake 14:30".

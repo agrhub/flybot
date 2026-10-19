@@ -188,7 +188,10 @@ const searchRecords = async () => {
   const day = dayText(dayStart.value);
   try {
     const [response, dayPhotos] = await Promise.all([
-      api.getRecords(props.camera.deviceSerial, `${day} 00:00:00`, `${day} 23:59:59`),
+      // A read-only demo camera whose recordings are not open to visitors: its photos only
+      props.camera.liveOpen === false
+        ? Promise.resolve({ data: { data: [] } })
+        : api.getRecords(props.camera.deviceSerial, `${day} 00:00:00`, `${day} 23:59:59`),
       loadPhotos(),
     ]);
     if (!isLatest()) return;

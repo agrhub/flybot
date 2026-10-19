@@ -31,7 +31,7 @@
               <div v-if="isCamos && camera && liveUnsupported && camera.canManage !== false" class="flex items-center gap-2 mt-4">
                 <el-button type="primary" size="small" :icon="Camera" :loading="capturing" data-test="live-capture" @click="handleCaptureNow">{{ t('cameras.captureNow') }}</el-button>
               </div>
-              <div v-else-if="isCamos && camera && !liveUnsupported" class="flex items-center gap-2 mt-4">
+              <div v-else-if="isCamos && camera && !liveUnsupported && !liveClosed" class="flex items-center gap-2 mt-4">
                 <el-button type="primary" size="small" :icon="VideoCamera" :loading="kvsLoading" @click="playLiveStream">{{ t('cameras.live') }}</el-button>
                 <el-button size="small" :icon="Clock" :loading="requestingLive" @click="requestLive">{{ t('cameras.requestLive') }}</el-button>
               </div>
@@ -258,6 +258,8 @@ const currentStreamId = ref('')
 
 // CamOS cameras: live over KVS WebRTC, asked for at the next wake when the camera sleeps
 const isCamos = computed(() => ['camos', 'kinesis'].includes(props.camera?.platform))
+// A read-only demo camera whose live view the administrator has not opened to visitors
+const liveClosed = computed(() => props.camera?.liveOpen === false)
 const kvsConfig = ref(null)
 const kvsLoading = ref(false)
 const requestingLive = ref(false)
@@ -671,6 +673,11 @@ const playLiveStream = async () => {
   if (!props.camera) {
     placeholderText.value = t('cameras.noCameraSelected')
     currentStreamType.value = t('cameras.player.noDevice')
+    return
+  }
+  if (liveClosed.value) {
+    placeholderText.value = t('cameras.demo.liveClosed')
+    currentStreamType.value = t('cameras.demo.tag')
     return
   }
 

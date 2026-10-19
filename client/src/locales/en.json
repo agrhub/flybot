@@ -119,7 +119,8 @@
     "resendVerification": "Resend email",
     "verificationSent": "Confirmation email sent. Check your inbox.",
     "registerSuccessVerify": "Your account is ready! We sent a confirmation link to your email.",
-    "registrationClosed": "New accounts are not being accepted right now. Ask an administrator for access."
+    "registrationClosed": "New accounts are not being accepted right now. Ask an administrator for access.",
+    "demoViewHint": "After you sign up you can explore FlyBot's demo traps right away (view only): photos, counts, the agent's traces and the chatbot."
   },
   "dashboard": {
     "welcome": "Welcome back",
@@ -512,7 +513,12 @@
     "zoomIn": "Zoom in",
     "zoomOut": "Zoom out",
     "timeline": "Recording timeline of the day (arrows: previous/next clip, Page Up/Down: one hour)",
-    "timelineIdle": "No clip playing"
+    "timelineIdle": "No clip playing",
+    "demo": {
+      "tag": "Demo",
+      "hint": "A demo camera: you can look at its photos, counts and analysis, but not change it.",
+      "liveClosed": "Live view of this demo camera is not open to visitors. Its photos and analysis are in the detail view."
+    }
   },
   "analytics": {
     "title": "AI Analytics & Detection History",
@@ -1493,7 +1499,8 @@
       "ALREADY_SHARED": "Already shared with this email."
     },
     "viaFarm": "Via farm",
-    "viaFarmHint": "This person sees the camera through its farm. Remove them on the farm page."
+    "viaFarmHint": "This person sees the camera through its farm. Remove them on the farm page.",
+    "accessDemo": "Demo (view only)"
   },
   "admin": {
     "group": "Administration",
@@ -1762,6 +1769,22 @@
       "rejectTitle": "Turn down the request",
       "rejectHint": "Why (the requester sees this)",
       "paid": "Paid"
+    },
+    "demo": {
+      "title": "Demo access for visitors",
+      "desc": "Let visitors (for example competition judges) look at a few cameras right after they sign up, without anyone sharing them by hand. They see photos, counts, charts, the agent's traces and proposals, and can ask the chatbot about them.",
+      "cameras": "Demo cameras",
+      "camerasPlaceholder": "Choose cameras or type a serial",
+      "camerasDesc": "Up to 20. Their owner keeps full control; visitors are not told who owns them.",
+      "audience": "Who sees them",
+      "audienceAll": "Every account",
+      "audienceSince": "Accounts created from a date",
+      "sincePlaceholder": "Pick a date",
+      "sinceRequired": "Pick the date accounts must be created from.",
+      "audienceDesc": "Administrators always see every camera. Visitors get no alerts, emails or reports about demo cameras.",
+      "live": "Open live view",
+      "liveDesc": "Visitors may also watch these cameras live and play back their recordings. Off: they see photos only.",
+      "readOnly": "Visitors never change anything on a demo camera: no settings, captures, deleting, sharing, maintenance, treatments or approvals. Turn this off when the demo ends; access stops within a minute."
     }
   },
   "dashboards": {

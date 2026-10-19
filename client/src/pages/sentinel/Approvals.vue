@@ -42,7 +42,7 @@
           :key="a.approval_id"
           :ref="(el) => setCardRef(a.approval_id, el)"
           :approval="a"
-          :can-decide="canDecide"
+          :can-decide="canDecide && a.can_decide !== false"
           :focused="a.approval_id === focusId"
           @decided="onDecided"
           @refresh="load"

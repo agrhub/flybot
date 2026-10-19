@@ -93,6 +93,16 @@
         :title="t('auth.registrationClosed')"
         class="mb-4"
       />
+      <!-- The admin opened read-only demo cameras to new accounts (Admin > System > Demo access) -->
+      <el-alert
+        v-else-if="demoView"
+        type="success"
+        :closable="false"
+        show-icon
+        :title="t('auth.demoViewHint')"
+        class="mb-4"
+        data-test="demo-hint"
+      />
       <el-form label-position="top" size="large" @submit.prevent="handleRegister">
         <el-form-item :label="t('auth.newEmail')">
           <el-input
@@ -148,10 +158,12 @@ const formType = ref(['forgot', 'register'].includes(route.query.mode) ? route.q
 const invitedEmail = typeof route.query.email === 'string' ? route.query.email.slice(0, 254) : '';
 // Admins can close sign-up; the server enforces it, this only hides the link
 const allowRegistration = ref(true);
+const demoView = ref(false);
 onMounted(async () => {
   try {
     const res = await api.getAuthConfig();
     allowRegistration.value = res.data.allowRegistration !== false;
+    demoView.value = res.data.demoView === true;
   } catch {}
 });
 const resetLinkSent = ref(false);

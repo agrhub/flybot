@@ -11,6 +11,11 @@ const systemSettingSchema = new mongoose.Schema({
     defaultAlertThreshold: { type: Number, min: 1, max: 10000, default: undefined },
     // Upload reviewed photos to Roboflow for retraining (services/trainingSync.js)
     trainingSync: { type: Boolean, default: undefined },
+    // Read-only demo cameras for visitors (services/demoView.js)
+    demoViewEnabled: { type: Boolean, default: undefined },
+    demoViewCameras: { type: [String], default: undefined },
+    demoViewSince: { type: Date, default: undefined },
+    demoViewLive: { type: Boolean, default: undefined },
     // Names of one-time data migrations already applied (services/migrations.js)
     migrations: { type: [String], default: undefined },
     updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: undefined },

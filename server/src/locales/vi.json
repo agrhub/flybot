@@ -509,7 +509,8 @@
     "planCodeInvalid": "plan phải là free, pro hoặc enterprise.",
     "orgSettingOnly": "Chỉ tổ chức mới có cài đặt này.",
     "orgsOffB2c": "Chế độ này không dùng tổ chức (APP_MODE=b2c).",
-    "allowPersonalBool": "allowMemberPersonalWorkspaces phải là true hoặc false."
+    "allowPersonalBool": "allowMemberPersonalWorkspaces phải là true hoặc false.",
+    "demo_live_closed": "Camera trình diễn này chưa mở xem trực tiếp cho khách."
   },
   "reportPdf": {
     "range": "Khoảng thời gian: {from} - {to} ({days} ngày)",

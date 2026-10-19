@@ -107,7 +107,7 @@ Base URL: `https://YOUR_FLYBOT_DOMAIN/api/sentinel/ui`
 | account with `sentinelViewer` (a read-only reviewer; set by an admin) | yes | no (`403 FORBIDDEN`) |
 | a member who does not run the current workspace | no (`403 FORBIDDEN`) | no |
 
-Everyone sees the cameras they may see in FlyBot (owned, shared with them, or every camera for an admin). `GET /api/auth/me` carries `sentinelEnabled` and `sentinelCanDecide`; `GET /api/system/info` has the same as `info.sentinel: { enabled, canDecide }`. An admin sets `sentinelViewer` with `PUT /api/admin/users/{id} {"sentinelViewer": true|false}` (audited as `user.sentinel_access_changed`).
+Everyone sees the cameras they may see in FlyBot (owned, shared with them, the read-only demo cameras below, or every camera for an admin). Each approval carries `can_decide`: `false` when the person manages none of its cameras (a shared or demo camera), so the client shows it read-only. `GET /api/auth/me` carries `sentinelEnabled` and `sentinelCanDecide`; `GET /api/system/info` has the same as `info.sentinel: { enabled, canDecide }`. An admin sets `sentinelViewer` with `PUT /api/admin/users/{id} {"sentinelViewer": true|false}` (audited as `user.sentinel_access_changed`).
 
 #### Routes
 
@@ -490,5 +490,18 @@ Every route below needs an administrator's session; `support` accounts may read 
 | `GET /api/admin/upgrade-requests?status=` | All requests |
 | `POST /api/admin/upgrade-requests/{id}/approve {plan?, addonCameras?, expiresAt?, paid?, adminNote?}` | Sets the workspace's plan (an organization request makes the organization with the requester as owner); the requester is notified. Payment is manual (`paid` is the admin's checkbox) |
 | `POST /api/admin/upgrade-requests/{id}/reject {adminNote}` | Turned down with a note the requester sees |
+
+#### Demo access for visitors
+
+The admin can open a few cameras to every account, read-only, so visitors such as competition judges see real traps without anyone sharing them by hand (`services/demoView.js`). `PUT /api/admin/settings` takes:
+
+| Field | Value | Environment default |
+|---|---|---|
+| `demoViewEnabled` | `true` / `false` | `DEMO_VIEW_ENABLED` (`false`) |
+| `demoViewCameras` | up to 20 serials | `DEMO_VIEW_CAMERAS` (comma-separated) |
+| `demoViewSince` | `"YYYY-MM-DD"`: only accounts created on or after it; `null`: every account | `DEMO_VIEW_SINCE` |
+| `demoViewLive` | `true` also opens live view and SD playback | `DEMO_VIEW_LIVE` (`false`) |
+
+Such a camera behaves as if it were shared with the visitor: the camera list (`access: "demo"`, `canManage: false`, no `owner`, `liveOpen`), photos, statistics, dashboards, the Sentinel screen and the assistant include it. Every change (settings, capture, delete, share, maintenance, treatments, approvals) answers `403`/`404` as for any camera the person does not manage; live view and playback answer `403 {"code":"DEMO_READ_ONLY"}` while `demoViewLive` is off. Only signed-in requests get the access: alerts, emails, reports and webhooks never mention demo cameras to visitors. Admins are not affected. Nothing is stored on the cameras or accounts, so turning it off ends the access within the settings cache (30 s). `GET /api/auth/config` carries `demoView: true` while it is offered (the sign-up form says so) and `GET /api/auth/me` `demoView: { cameras, live }`.
 
 Users: `GET /api/admin/users`, `PUT /api/admin/users/{id}` (`role`: `admin`, `support` or `user`; `disabled`; `emailVerified`; `sentinelViewer`), `DELETE /api/admin/users/{id}`. Cameras: `GET /api/admin/cameras`, `PUT /api/admin/cameras/{serial}/owner`. System: `GET`/`PUT /api/admin/settings`, `GET /api/admin/audit` (and `/audit/export`), `GET /api/admin/pipeline`, `GET /api/admin/usage`.

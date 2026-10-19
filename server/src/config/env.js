@@ -201,6 +201,15 @@ const config = {
     DEMO_MAX_UNCLAIMED: Math.min(Math.max(parseInt(process.env.DEMO_MAX_UNCLAIMED || '200', 10) || 200, 0), 100000),
     DEMO_LIVE_MINUTES: Math.min(Math.max(parseInt(process.env.DEMO_LIVE_MINUTES || '5', 10) || 5, 1), 30),
     DEMO_EXEMPT_EMAILS: (process.env.DEMO_EXEMPT_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean),
+    // Read-only demo cameras for visitors (services/demoView.js): the first values of the admin's
+    // Settings > System > Demo access. DEMO_VIEW_CAMERAS: comma-separated serials every account
+    // may view; DEMO_VIEW_SINCE: only accounts created on or after this date (empty = every
+    // account); DEMO_VIEW_LIVE=true also opens live view and SD playback of those cameras
+    DEMO_VIEW_ENABLED: process.env.DEMO_VIEW_ENABLED === 'true',
+    DEMO_VIEW_CAMERAS: (process.env.DEMO_VIEW_CAMERAS || '').split(',').map(s => s.trim()).filter(s => /^[A-Za-z0-9_-]{1,64}$/.test(s)).slice(0, 20),
+    DEMO_VIEW_SINCE: /^\d{4}-\d{2}-\d{2}/.test((process.env.DEMO_VIEW_SINCE || '').trim()) && !Number.isNaN(Date.parse(process.env.DEMO_VIEW_SINCE.trim()))
+        ? new Date(process.env.DEMO_VIEW_SINCE.trim()).toISOString() : null,
+    DEMO_VIEW_LIVE: process.env.DEMO_VIEW_LIVE === 'true',
     // Registrations per client IP per hour, and in total per hour
     REGISTER_MAX_PER_IP_HOUR: Math.min(Math.max(parseInt(process.env.REGISTER_MAX_PER_IP_HOUR || '5', 10) || 5, 1), 1000),
     REGISTER_MAX_PER_HOUR: Math.min(Math.max(parseInt(process.env.REGISTER_MAX_PER_HOUR || '60', 10) || 60, 1), 100000),

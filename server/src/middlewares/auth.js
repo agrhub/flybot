@@ -74,6 +74,10 @@ async function authenticate(req, res, next) {
         };
         // The current workspace (X-Workspace-Id, else the saved one, else the personal one)
         await require('../services/workspaceService').attach(req, user);
+        // Read-only demo cameras this account may view (services/demoView.js)
+        const demo = await require('../services/demoView').demoAccessOf(user);
+        req.user.demoSerials = demo.serials;
+        req.user.demoLive = demo.live;
         req.sessionId = sessionId;
         req.authToken = token;
         return next();
