@@ -533,7 +533,7 @@ Such a camera behaves as if it were shared with the visitor: the camera list (`a
 `POST /api/auth/guest` (no body) signs in to one shared account (`guest@flybot.invalid`, `User.guest`) while `guestAccessEnabled` is on (`GUEST_ACCESS`), and answers like `/api/auth/login` (`token`, `user` with `guest: true`, `guestUntil`, every capability off). `403 GUEST_ACCESS_OFF` when it is off; `429` past 20 sessions an hour per address or 300 in total. `GET /api/auth/config` carries `guestAccess` (the sign-in page shows the button).
 
 - The session lasts 2 hours and is never extended; turning guest access off ends every guest session.
-- Read-only: every request other than `GET`/`HEAD`/`OPTIONS`, `POST /api/auth/logout` and the assistant (`/api/ai/chat`, `/chat/stream`, `/chat/feedback`, `/chat/clear`) answers `403 {"code":"GUEST_READ_ONLY"}`, and so do `GET /api/auth/export` and `/api/integrations`. Its assistant conversations are kept per guest session.
+- Read-only: every request other than `GET`/`HEAD`/`OPTIONS`, `POST /api/auth/logout`, `POST /api/ai/diagnose` (it computes and saves nothing) and the assistant (`/api/ai/chat`, `/chat/stream`, `/chat/feedback`, `/chat/clear`) answers `403 {"code":"GUEST_READ_ONLY"}`, and so do `GET /api/auth/export` and `/api/integrations`. Its assistant conversations are kept per guest session.
 - The guest account sees the demo cameras and, with `demoViewSimulated`, the simulated demo farm. Other accounts see them only by `demoViewAudience` (`DEMO_VIEW_AUDIENCE`): `guest` (nobody else, the default), `all`, or `since` (accounts created on or after `demoViewSince`).
 
 #### Simulated demo farm

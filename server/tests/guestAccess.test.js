@@ -41,13 +41,15 @@ test('accessFor: the guest account sees the demo while guest access is on; other
     assert.deepEqual(accessFor({ role: 'user', createdAt: new Date() }, { ...settings, demoViewAudience: 'all' }).serials, ['A']);
 });
 
-test('what a guest may send: reads, sign-out and the assistant only', () => {
+test('what a guest may send: reads, sign-out, the AI diagnosis and the assistant only', () => {
     assert.equal(guestMayRequest('GET', '/api/user/cameras?x=1'), true);
     assert.equal(guestMayRequest('GET', '/api/auth/export'), false);
     assert.equal(guestMayRequest('GET', '/api/integrations/keys'), false);
     assert.equal(guestMayRequest('POST', '/api/auth/logout'), true);
     assert.equal(guestMayRequest('POST', '/api/ai/chat/stream'), true);
     assert.equal(guestMayRequest('POST', '/api/ai/chat/confirm'), false);
+    assert.equal(guestMayRequest('POST', '/api/ai/diagnose'), true, 'the dashboard diagnosis only reads');
+    assert.equal(guestMayRequest('POST', '/api/ai/analyze-roboflow/abc'), false);
     for (const [method, path] of [['POST', '/api/user/add-camera'], ['PUT', '/api/admin/settings'], ['POST', '/api/auth/profile'], ['DELETE', '/api/user/delete-camera'], ['POST', '/api/dashboards']]) {
         assert.equal(guestMayRequest(method, path), false, `${method} ${path}`);
     }
@@ -129,6 +131,28 @@ test('read-only: every write is refused, sign-out and the assistant pass', async
     const guest = await models.User.findOne({ email: GUEST_EMAIL }).lean();
     assert.equal(guest.name, 'Guest');
     assert.equal((await request('/api/auth/logout', { method: 'POST', headers: h })).status, 200);
+});
+
+test('the dashboard AI diagnosis runs for a guest on the demo cameras, and saves nothing', async () => {
+    await setup();
+    const { token } = (await json(await guestLogin())).body;
+    const countAll = async () => {
+        const counts = {};
+        // The audit log is left out: the sign-in may still be writing to it
+        for (const [name, model] of Object.entries(models)) {
+            if (name !== 'AuditLog' && typeof model?.countDocuments === 'function') counts[name] = await model.countDocuments();
+        }
+        return counts;
+    };
+    const before = await countAll();
+    const res = await json(await request('/api/ai/diagnose', { method: 'POST', headers: withToken(token), body: { timeRange: '7d' } }));
+    assert.equal(res.status, 200);
+    assert.equal(res.body.success, true);
+    assert.ok(['DEMO1', 'DEMO2'].includes(res.body.diagnosis.peakCamera.deviceSerial), 'the demo traps, not a customer\'s');
+    assert.deepEqual(await countAll(), before);
+    // A camera the guest cannot see stays refused
+    const other = await json(await request('/api/ai/diagnose', { method: 'POST', headers: withToken(token), body: { deviceSerial: 'FARM1' } }));
+    assert.equal(other.status, 403);
 });
 
 test('chat history is per guest session: visitors never see each other\'s questions', async () => {

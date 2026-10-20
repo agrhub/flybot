@@ -7,19 +7,22 @@ const { User } = require('../models');
  * to ONE shared account (User.guest) that sees the demo cameras and the simulated demo farm, so
  * customers' own accounts never need to. It is read-only by construction:
  *  - nobody knows its password (random) and its address receives no mail; no alerts or reports;
- *  - every write is refused (403 GUEST_READ_ONLY) except signing out and talking to the assistant,
- *    whose chat history is kept per guest session (visitors never see each other's questions);
+ *  - every write is refused (403 GUEST_READ_ONLY) except signing out, the dashboard's AI diagnosis
+ *    (read-only) and talking to the assistant, whose chat history is kept per guest session
+ *    (visitors never see each other's questions);
  *  - a guest session lasts GUEST_SESSION_MS and is never extended;
  *  - signing in is rate limited per address and in total (middlewares/rateLimit.js guestLimiter).
  */
 const GUEST_EMAIL = 'guest@flybot.invalid';
 const GUEST_SESSION_MS = 2 * 3600 * 1000;
 
-// What a guest may still send (path without the query): sign out, and the assistant
+// What a guest may still send (path without the query): sign out, the assistant, and the
+// dashboard's AI diagnosis (a POST only for its options; it computes and saves nothing)
 const GUEST_WRITES = [
     /^\/api\/auth\/logout$/,
     /^\/api\/ai\/chat(\/stream)?$/,
-    /^\/api\/ai\/chat\/(feedback|clear)$/
+    /^\/api\/ai\/chat\/(feedback|clear)$/,
+    /^\/api\/ai\/diagnose$/
 ];
 // Reads that hand out the account itself
 const GUEST_BLOCKED_READS = [
