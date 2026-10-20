@@ -302,7 +302,7 @@ const VIEWS = {
             return { row, num, v, lab };
         });
         place(el('small', 'abs source', 'eval/SYNTHETIC_RESULTS.md · simulated cards, not field data', b), 34, 280);
-        const c = place(el('div', 'card stat', '<b>1,091 ms</b><p>warm p50 per photo on Lambda<br>(arm64, 2 GB, whole call)</p><small>bench/results/lambda_latency.json</small>', s), 1180, 520, 620, 330);
+        const c = place(el('div', 'card stat', '<b>980 ms</b><p>warm p50 per photo on Lambda<br>(arm64, 2 GB, whole call)</p><small>bench/results/lambda_latency.json</small>', s), 1180, 520, 620, 330);
         return (tt) => {
             show(k, prog(tt, 0, 0.6)); show(t, prog(tt, 0.2, 0.8));
             show(code, prog(tt, 0.6, 0.8)); show(a, prog(tt, 1.6, 0.8)); show(b, prog(tt, 4, 0.8)); show(c, prog(tt, 9, 0.8));
@@ -319,7 +319,7 @@ const VIEWS = {
         const cards = [
             ['38 / 38', 'failure-injection cases passed, 0 false actuations', 'eval/RESULTS.md · earlier build, fake devices'],
             ['≈ 17 USD', 'a month for the whole demo on AWS', 'infra/COST.md'],
-            ['≈ 0.054 USD', 'per 1,000 photos on Lambda', 'infra/COST.md'],
+            ['≈ 0.046 USD', 'per 1,000 photos on Lambda', 'infra/COST.md'],
             ['4.6 % slower', 'COOL on Graviton4 than the pip wheel, per photo', 'bench/REPORT_COOL.md']
         ].map(([b, p, src], i) => place(el('div', 'card stat', `<b>${b}</b><p>${p}</p><small>${src}</small>`, s), 120 + (i % 2) * 860, 260 + Math.floor(i / 2) * 330, 820, 290));
         return (tt) => { show(k, prog(tt, 0, 0.6)); show(t, prog(tt, 0.2, 0.8)); cards.forEach((c, i) => show(c, prog(tt, 0.8 + i * 1.6, 0.8), 40)); };
