@@ -119,6 +119,8 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   if (url.origin !== self.location.origin || DEV.test(url.pathname) || NEVER.test(url.pathname + url.search)) return;
+  // Standalone pages outside the app (the expert review): never saved as the app's page
+  if (url.pathname.startsWith('/review/')) return;
   // Range requests (video) and the server-sent event stream are left to the browser
   if (request.headers.has('range') || request.headers.get('accept') === 'text/event-stream') return;
 

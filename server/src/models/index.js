@@ -26,6 +26,7 @@ const Firmware = require('./Firmware');
 const FirmwareUpdate = require('./FirmwareUpdate');
 const CameraLog = require('./CameraLog');
 const CameraCrash = require('./CameraCrash');
+const ExpertReview = require('./ExpertReview');
 
 module.exports = {
     User,
@@ -55,5 +56,6 @@ module.exports = {
     Firmware,
     FirmwareUpdate,
     CameraLog,
-    CameraCrash
+    CameraCrash,
+    ExpertReview
 };

@@ -50,5 +50,6 @@ async function submitContact(req, res) {
 }
 
 module.exports = {
-    submitContact
+    submitContact,
+    recipients
 };

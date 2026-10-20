@@ -182,6 +182,11 @@
       "attached": "The full report is attached as a PDF.",
       "button": "Open the report",
       "footer": "You get this report on the schedule its owner set. To stop it, open the report in FlyBot and turn off \"Receive scheduled reports\" (the owner changes or stops the schedule on the same page)."
+    },
+    "expertReview": {
+      "subject": "FlyBot expert review: {count}/{total} answers",
+      "intro": "The advisor sent {count} of {total} answers from the expert review page. One line per case: id | verdict | note.",
+      "footer": "Sent from the FlyBot expert review page. The answers are also saved on the server."
     }
   },
   "telegram": {
@@ -596,7 +601,9 @@
     "camlog_bad_minutes": "minutes must be 1 to 60.",
     "camlog_too_many": "Too many reports for this camera.",
     "firmware_bad_channel": "channel must be alpha, beta or stable.",
-    "fleet_channel_serials": "Give the serials of up to 1000 cameras."
+    "fleet_channel_serials": "Give the serials of up to 1000 cameras.",
+    "expert_review_not_found": "Review not found.",
+    "expert_review_bad_answers": "The answers are not valid."
   },
   "reportPdf": {
     "range": "Period: {from} - {to} ({days} days)",

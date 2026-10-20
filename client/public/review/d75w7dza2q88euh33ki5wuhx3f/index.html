@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<title>FlyBot</title>
+<link rel="icon" href="/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400&display=swap">
+<!--
+  Expert review of FlyBot agent decisions (flybot-aws eval/EXPERT_REVIEW.md), for the project's agronomy
+  advisor, without an account. Text and cases: vi.json (string table and row data). Answers: saved in this
+  browser and on the server (POST /api/public/expert-review/<token>, server/src/controllers/expertReviewController.js).
+  Layout: one review card at a time under a sticky progress bar, then a 50-chip overview and the send panel.
+-->
+<style>
+:root {
+  --bg: #f3f5f1; --surface: #ffffff; --ink: #18211c; --muted: #58645d; --line: #d8ded6;
+  --accent: #2c6a3d; --accent-ink: #ffffff; --accent-soft: #e3efe5;
+  --good: #23743a; --good-soft: #e2f1e5; --bad: #b42b22; --bad-soft: #f8e3e1; --warn: #9a5b00; --warn-soft: #f8ecd8;
+  --font-body: "Be Vietnam Pro", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+  --r: 10px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root {
+  --bg: #111713; --surface: #19211c; --ink: #e4ebe6; --muted: #9aa69f; --line: #2b352f;
+  --accent: #7cc08c; --accent-ink: #0f1a12; --accent-soft: #1f3325;
+  --good: #7ccf8f; --good-soft: #1c3323; --bad: #f08a80; --bad-soft: #3a1f1c; --warn: #f0b354; --warn-soft: #3a2c16;
+  color-scheme: dark } }
+* { box-sizing: border-box }
+html { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px) }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.55 var(--font-body); }
+img { max-width: 100% }
+[hidden] { display: none !important }
+.wrap { max-width: 720px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 48px; display: grid; gap: 20px; }
+h1 { font-size: 1.45rem; line-height: 1.25; margin: 0; text-wrap: balance; font-weight: 700 }
+h2 { font-size: 1.1rem; margin: 0; text-wrap: balance; font-weight: 700 }
+p { margin: 0 }
+b { font-weight: 600 }
+.muted { color: var(--muted) }
+.small { font-size: .875rem }
+
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 10px; }
+.bar-in { max-width: 720px; margin: 0 auto; display: grid; gap: 6px }
+.bar-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap }
+.count { font-weight: 700; font-variant-numeric: tabular-nums }
+.meter { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden }
+.meter > i { display: block; height: 100%; background: var(--accent); width: 0; transition: width .25s }
+.sync { font-size: .8rem; color: var(--muted) }
+.sync.ok { color: var(--good) } .sync.warn { color: var(--warn) }
+
+.intro { display: grid; gap: 12px; padding-top: 18px }
+details.box { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); }
+details.box > summary { cursor: pointer; padding: 12px 14px; font-weight: 600; list-style-position: inside }
+details.box > .in { padding: 0 14px 14px; display: grid; gap: 10px }
+ul { margin: 0; padding-left: 1.2em; display: grid; gap: 4px }
+.legend { display: grid; gap: 6px }
+.tag { display: inline-block; font-size: .75rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); justify-self: start }
+
+#cardslot, #send { scroll-margin-top: calc(72px + env(safe-area-inset-top, 0px)) }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; display: grid }
+.card-head { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; padding: 12px 14px; border-bottom: 1px solid var(--line) }
+.card-id { font-weight: 700; font-variant-numeric: tabular-nums }
+.card-n { margin-left: auto }
+.photo { display: block; width: 100%; max-width: 100%; aspect-ratio: 16 / 9; background: var(--line); cursor: zoom-in; border: 0; padding: 0 }
+.photo img { width: 100%; height: 100%; object-fit: cover; display: block }
+.zoomhint { font-size: .8rem; color: var(--muted); padding: 6px 14px 0 }
+.sect { padding: 12px 14px; display: grid; gap: 6px; min-width: 0 }
+.sect h3 { margin: 0; font-size: .78rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600 }
+.caveat { background: var(--warn-soft); color: var(--ink); border-radius: 8px; padding: 10px 12px; font-size: .92rem }
+.decision { background: var(--accent-soft); border-radius: 8px; padding: 10px 12px; display: grid; gap: 4px }
+.decision .what { font-weight: 600; font-size: 1.05rem }
+details.tech { font-size: .85rem }
+details.tech summary { cursor: pointer; color: var(--muted) }
+.mono { font-family: var(--font-mono); font-size: .78rem; line-height: 1.5; white-space: pre-wrap; word-break: break-word; background: var(--bg); border-radius: 6px; padding: 8px 10px; margin-top: 6px }
+.q { font-weight: 600 }
+.verdicts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px }
+.vbtn { font: inherit; font-weight: 700; font-size: 1.05rem; padding: 14px 6px; border-radius: 10px; border: 2px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; min-height: 56px }
+.vbtn[data-v="correct"][aria-pressed="true"] { background: var(--good-soft); border-color: var(--good); color: var(--good) }
+.vbtn[data-v="incorrect"][aria-pressed="true"] { background: var(--bad-soft); border-color: var(--bad); color: var(--bad) }
+.vbtn[data-v="unsure"][aria-pressed="true"] { background: var(--warn-soft); border-color: var(--warn); color: var(--warn) }
+label { margin-top: 6px }
+textarea { font: inherit; width: 100%; min-height: 84px; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); resize: vertical }
+textarea.need { border-color: var(--bad); outline: 1px solid var(--bad) }
+.hint-bad { color: var(--bad); font-size: .88rem; font-weight: 500 }
+.saved { font-size: .82rem; color: var(--muted) }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px }
+
+.nav { display: flex; gap: 8px; padding: 12px 14px 14px; border-top: 1px solid var(--line); flex-wrap: wrap }
+.btn { font: inherit; font-weight: 600; padding: 12px 16px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; min-height: 48px }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); flex: 1 }
+.btn:disabled { opacity: .45; cursor: default }
+
+.grid-wrap { display: grid; gap: 14px }
+.group { display: grid; gap: 6px }
+.chips { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 6px }
+.chip { font: inherit; font-size: .8rem; font-weight: 600; font-variant-numeric: tabular-nums; padding: 8px 2px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--muted); cursor: pointer }
+.chip.correct { background: var(--good-soft); color: var(--good); border-color: transparent }
+.chip.incorrect { background: var(--bad-soft); color: var(--bad); border-color: transparent }
+.chip.unsure { background: var(--warn-soft); color: var(--warn); border-color: transparent }
+.chip.pending { border-color: var(--bad); border-style: dashed; color: var(--bad) }
+.chip.cur { outline: 2px solid var(--ink); outline-offset: 1px }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px; display: grid; gap: 10px }
+.panel textarea { font-family: var(--font-mono); font-size: .8rem; min-height: 140px }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center }
+.ok-text { color: var(--good) } .bad-text { color: var(--bad) }
+
+.ex { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 10px; align-items: start; padding-top: 10px; border-top: 1px solid var(--line) }
+.ex img { width: 112px; aspect-ratio: 16/9; object-fit: cover; border-radius: 6px }
+.ex-text { display: grid; gap: 4px; min-width: 0 }
+.pill { display: inline-block; font-size: .78rem; font-weight: 700; padding: 1px 8px; border-radius: 999px }
+.pill.correct { background: var(--good-soft); color: var(--good) } .pill.incorrect { background: var(--bad-soft); color: var(--bad) } .pill.unsure { background: var(--warn-soft); color: var(--warn) }
+
+.zoom { position: fixed; inset: 0; z-index: 20; background: rgba(0,0,0,.92); display: grid; grid-template-rows: auto 1fr; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px) }
+.zoom-top { display: flex; justify-content: space-between; align-items: center; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 10px; color: #fff }
+.zoom-top .btn { background: #fff; color: #111; border-color: #fff }
+.zoom-body { overflow: auto; display: flex; align-items: center; touch-action: pan-x pan-y pinch-zoom }
+.zoom-body img { max-width: none; width: 200%; height: auto; display: block; margin: auto }
+@media (min-width: 900px) { .zoom-body img { width: auto; max-width: 100% } }
+@media (prefers-reduced-motion: reduce) { .meter > i { transition: none } }
+</style>
+</head>
+<body>
+<div class="bar">
+  <div class="bar-in">
+    <div class="bar-row"><span><span class="count" id="count"></span> <span class="muted small" data-t="answered"></span></span><span class="sync" id="sync"></span></div>
+    <div class="meter" aria-hidden="true"><i id="meter"></i></div>
+  </div>
+</div>
+
+<main class="wrap">
+  <section class="intro">
+    <span class="tag" data-t="tag"></span>
+    <h1 data-t="h1"></h1>
+    <p data-t="lead"></p>
+    <p class="q" data-t="question"></p>
+    <p class="muted small" data-t="sub"></p>
+    <details class="box" id="howto">
+      <summary data-t="howtoTitle"></summary>
+      <div class="in">
+        <div class="legend" id="legend"></div>
+        <p class="small muted" data-t="hintsTitle"></p>
+        <ul class="small" id="hints"></ul>
+        <p class="small muted" data-t="groupsTitle"></p>
+        <ul class="small" id="grouphelp"></ul>
+        <p class="small muted" data-t="mapping"></p>
+      </div>
+    </details>
+    <details class="box">
+      <summary data-t="examplesTitle"></summary>
+      <div class="in" id="exlist"><p class="small muted" data-t="examplesNote"></p></div>
+    </details>
+  </section>
+
+  <section id="cardslot" aria-live="polite"></section>
+
+  <section class="grid-wrap" id="overview">
+    <h2 data-t="overviewTitle"></h2>
+    <p class="small muted" data-t="overviewHelp"></p>
+    <div id="groups" class="grid-wrap"></div>
+  </section>
+
+  <section class="panel" id="send">
+    <h2 data-t="sendTitle"></h2>
+    <p class="small" id="remaining"></p>
+    <div class="row"><button class="btn primary" id="sendbtn" type="button" data-t="sendBtn"></button></div>
+    <p class="small" id="sendstatus" aria-live="polite"></p>
+    <p class="small muted" data-t="copyHelp"></p>
+    <textarea id="export" readonly></textarea>
+    <div class="row"><button class="btn" id="copy" type="button" data-t="copyBtn"></button><span class="small muted" id="copied"></span></div>
+  </section>
+</main>
+
+<div class="zoom" id="zoom" hidden>
+  <div class="zoom-top"><span id="zoom-title"></span><button class="btn" id="zoom-close" type="button" data-t="close"></button></div>
+  <div class="zoom-body"><img id="zoom-img" alt=""></div>
+</div>
+
+<script>
+(async () => {
+  const TOKEN = location.pathname.split('/').filter(Boolean)[1] || '';
+  const API = '/api/public/expert-review/' + encodeURIComponent(TOKEN);
+  const LS = 'flybot-expert-review-' + TOKEN;
+  const $ = id => document.getElementById(id);
+  const fill = (s, p) => s.replace(/\{(\w+)\}/g, (m, k) => (k in p ? p[k] : m));
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+
+  let T, ROWS;
+  try {
+    const data = await (await fetch('vi.json', { cache: 'no-cache' })).json();
+    T = data.ui; ROWS = data.rows;
+  } catch (e) {
+    document.body.textContent = 'FlyBot: vi.json';
+    return;
+  }
+  document.title = T.title;
+  document.querySelectorAll('[data-t]').forEach(el => { el.innerHTML = T[el.dataset.t]; });
+  $('export').setAttribute('aria-label', T.exportLabel);
+  $('overview').setAttribute('aria-label', T.overviewLabel);
+
+  const REVIEW = ROWS.filter(r => r.source !== 'example');
+  const EXAMPLES = ROWS.filter(r => r.source === 'example');
+  const GROUPS = ['aws_live', 'replay_30d_review', 'staged_proposal', 'failure_injection'];
+  const VERDICTS = ['correct', 'incorrect', 'unsure'];
+
+  $('legend').innerHTML = VERDICTS.map(v => `<p><span class="pill ${v}">${T.verdict[v]}</span> ${T.legend[v]}</p>`).join('');
+  $('hints').innerHTML = T.hints.map(h => `<li>${h}</li>`).join('');
+  $('grouphelp').innerHTML = GROUPS.map(g => `<li>${T.groupHelp[g]}</li>`).join('');
+  $('exlist').insertAdjacentHTML('beforeend', EXAMPLES.map(r => `<div class="ex"><img src="${r.img}" alt="${fill(T.exampleAlt, { id: r.id })}" loading="lazy"><div class="small ex-text"><p><b>${r.id}</b> · ${r.decision}</p><p class="muted">${r.facts.slice(0, 2).join(' · ')}</p><p><span class="pill ${r.example.v}">${T.verdict[r.example.v]}</span> ${r.example.n}</p></div></div>`).join(''));
+
+  // answers[id] = { v, n, t }: verdict, note, time of the last change (ms)
+  let answers = {}, cur = 0, firstVisit = true;
+  try {
+    const s = JSON.parse(localStorage.getItem(LS) || 'null');
+    if (s) { answers = s.answers || {}; cur = Math.min(s.cur || 0, REVIEW.length - 1); firstVisit = false; }
+  } catch (e) {}
+  if (firstVisit) $('howto').open = true;
+  const saveLocal = () => { try { localStorage.setItem(LS, JSON.stringify({ answers, cur })); } catch (e) {} };
+
+  const done = a => !!(a && a.v && (a.v !== 'incorrect' || (a.n || '').trim()));
+  const pendingNote = a => !!(a && a.v === 'incorrect' && !(a.n || '').trim());
+  const countDone = () => REVIEW.filter(r => done(answers[r.id])).length;
+  const hhmm = d => new Date(d).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+
+  // --- server: saved a few seconds after each change; "send" also emails the answers -----------------
+  let serverT = 0, sync = 'local', saveTimer = null, saving = null;
+  const latestT = () => Math.max(0, ...Object.values(answers).map(a => a.t || 0));
+  const payload = () => REVIEW.filter(r => answers[r.id] && (answers[r.id].v || answers[r.id].n))
+    .map(r => ({ id: r.id, verdict: answers[r.id].v || '', note: answers[r.id].n || '', t: answers[r.id].t || 0 }));
+
+  function merge(list) {
+    let changed = false;
+    for (const x of list || []) {
+      const a = answers[x.id];
+      if (!a || (x.t || 0) > (a.t || 0)) { answers[x.id] = { v: x.verdict || '', n: x.note || '', t: x.t || 0 }; changed = true; }
+    }
+    return changed;
+  }
+
+  async function post(send) {
+    const upTo = latestT();
+    const res = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Language': 'vi' }, body: JSON.stringify({ answers: payload(), send }) });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok || !body.success) throw new Error(body.message || String(res.status));
+    serverT = Math.max(serverT, upTo);
+    if (merge(body.answers)) { saveLocal(); renderCard(); }
+    return body;
+  }
+
+  function scheduleSave() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(async () => {
+      if (saving) { scheduleSave(); return; }
+      sync = 'saving'; renderSync();
+      saving = post(false).then(() => { sync = 'saved'; }, () => { sync = 'offline'; }).finally(() => { saving = null; renderSync(); savedLine(); });
+    }, 2500);
+  }
+
+  function renderSync() {
+    const el = $('sync');
+    el.className = 'sync';
+    if (sync === 'saving') el.textContent = T.syncSaving;
+    else if (sync === 'saved' && serverT >= latestT()) { el.textContent = T.syncSaved; el.classList.add('ok'); }
+    else if (sync === 'offline') { el.textContent = T.syncOffline; el.classList.add('warn'); }
+    else el.textContent = T.syncLocal;
+  }
+
+  // --- rendering ---------------------------------------------------------------------------------
+  function renderProgress() {
+    const n = countDone();
+    $('count').textContent = n + '/' + REVIEW.length;
+    $('meter').style.width = (100 * n / REVIEW.length) + '%';
+    $('remaining').textContent = n === REVIEW.length ? T.allDone : fill(T.remaining, { n: REVIEW.length - n });
+    renderSync();
+  }
+
+  function savedLine() {
+    const el = $('saved'); if (!el) return;
+    const a = answers[REVIEW[cur].id];
+    el.textContent = !a || !a.v ? '' : (serverT >= (a.t || 0) ? T.savedServer : T.savedPhone);
+  }
+
+  function renderCard() {
+    const r = REVIEW[cur], a = answers[r.id] || {};
+    const active = document.activeElement && document.activeElement.id === 'note';
+    if (active && $('cardslot').dataset.id === r.id) return; // never rewrite the note under the reviewer's fingers
+    $('cardslot').dataset.id = r.id;
+    $('cardslot').innerHTML = `<article class="card">
+      <div class="card-head"><span class="card-id">${r.id}</span><span class="tag">${T.groups[r.source]}</span><span class="muted small">${r.trap}${r.when ? ' · ' + r.when : ''}</span><span class="muted small card-n">${fill(T.caseOf, { i: cur + 1, n: REVIEW.length })}</span></div>
+      <button class="photo" type="button" aria-label="${fill(T.zoomLabel, { id: r.id })}"><img src="${r.img}" alt="${fill(T.photoAlt, { id: r.id })}"></button>
+      <p class="zoomhint">${T.zoomHint}</p>
+      ${r.caveat ? `<div class="sect"><div class="caveat">${r.caveat}</div></div>` : ''}
+      <div class="sect"><h3>${T.measured}</h3><ul>${r.facts.map(f => `<li>${f}</li>`).join('')}</ul></div>
+      <div class="sect"><h3>${T.decided}</h3><div class="decision"><span class="what">${r.decision}</span><span class="small">${r.reason}</span></div>
+        <details class="tech"><summary>${T.tech}</summary><div class="mono">opencv_summary: ${esc(r.tech.opencv_summary)}\n\nagent_decision: ${esc(r.tech.agent_decision)}\n\nagent_reason: ${esc(r.tech.agent_reason)}</div></details></div>
+      <div class="sect"><p class="q">${T.ask}</p>
+        <div class="verdicts" role="group" aria-label="${T.askGroup}">${VERDICTS.map(v => `<button type="button" class="vbtn" data-v="${v}" aria-pressed="${a.v === v}">${T.verdict[v]}</button>`).join('')}</div>
+        <label for="note" class="small">${T.noteLabel} <span class="muted">${T.noteOptional}</span></label>
+        <textarea id="note" placeholder="${T.notePlaceholder}"></textarea>
+        <p class="hint-bad" id="needhint" hidden>${T.needNote}</p>
+        <p class="saved" id="saved"></p>
+      </div>
+      <div class="nav"><button class="btn" id="prev" type="button"${cur === 0 ? ' disabled' : ''}>${T.prev}</button><button class="btn primary" id="next" type="button">${cur === REVIEW.length - 1 ? T.nextLast : T.next}</button></div>
+    </article>`;
+    $('note').value = a.n || '';
+    markNote();
+    savedLine();
+  }
+
+  function markNote() {
+    const a = answers[REVIEW[cur].id];
+    $('note').classList.toggle('need', pendingNote(a));
+    $('needhint').hidden = !pendingNote(a);
+  }
+
+  function renderGroups() {
+    $('groups').innerHTML = GROUPS.map(g => {
+      const rows = REVIEW.filter(r => r.source === g);
+      return `<div class="group"><p class="small"><b>${T.groups[g]}</b> <span class="muted">(${rows.filter(r => done(answers[r.id])).length}/${rows.length})</span></p><div class="chips">${rows.map(r => {
+        const a = answers[r.id], i = REVIEW.indexOf(r);
+        const cls = pendingNote(a) ? 'pending' : (done(a) ? a.v : '');
+        return `<button type="button" class="chip ${cls}${i === cur ? ' cur' : ''}" data-go="${i}" aria-label="${r.id}${a && a.v ? ': ' + T.verdict[a.v] : ''}">${r.id}</button>`;
+      }).join('')}</div></div>`;
+    }).join('');
+  }
+
+  function renderExport() {
+    const lines = [fill(T.exportHeader, { count: countDone(), total: REVIEW.length })];
+    for (const r of REVIEW) {
+      const a = answers[r.id];
+      if (a && a.v) lines.push(`${r.id} | ${T.verdict[a.v]} | ${(a.n || '').replace(/\s+/g, ' ').trim()}`);
+    }
+    $('export').value = lines.join('\n');
+  }
+
+  const renderAll = () => { renderProgress(); renderGroups(); renderExport(); };
+
+  function go(i) {
+    cur = Math.max(0, Math.min(REVIEW.length - 1, i));
+    saveLocal(); renderCard(); renderGroups();
+    $('cardslot').scrollIntoView({ block: 'start' });
+  }
+
+  function change(patch) {
+    const id = REVIEW[cur].id;
+    answers[id] = Object.assign({ v: '', n: '' }, answers[id], patch, { t: Date.now() });
+    saveLocal(); markNote(); savedLine(); renderAll(); scheduleSave();
+  }
+
+  // --- events (delegated: the card is redrawn) -----------------------------------------------------
+  $('cardslot').addEventListener('click', e => {
+    const v = e.target.closest('.vbtn');
+    if (v) {
+      change({ v: v.dataset.v });
+      document.querySelectorAll('.vbtn').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === v.dataset.v)));
+      if (pendingNote(answers[REVIEW[cur].id])) $('note').focus();
+      return;
+    }
+    if (e.target.closest('#prev')) return go(cur - 1);
+    if (e.target.closest('#next')) {
+      if (cur < REVIEW.length - 1) return go(cur + 1);
+      const j = REVIEW.findIndex(x => !done(answers[x.id]));
+      return j >= 0 ? go(j) : $('send').scrollIntoView({ block: 'start' });
+    }
+    const p = e.target.closest('.photo');
+    if (p) { const r = REVIEW[cur]; $('zoom-img').src = r.img; $('zoom-title').textContent = r.id; $('zoom').hidden = false; }
+  });
+  $('cardslot').addEventListener('input', e => { if (e.target.id === 'note') change({ n: e.target.value }); });
+  $('zoom-close').addEventListener('click', () => { $('zoom').hidden = true; });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') $('zoom').hidden = true; });
+  $('groups').addEventListener('click', e => { const b = e.target.closest('[data-go]'); if (b) go(+b.dataset.go); });
+
+  $('sendbtn').addEventListener('click', async () => {
+    const btn = $('sendbtn'), st = $('sendstatus');
+    btn.disabled = true; st.className = 'small'; st.textContent = T.sending;
+    clearTimeout(saveTimer);
+    try {
+      if (saving) await saving;
+      const body = await post(true);
+      sync = 'saved';
+      st.className = 'small ok-text';
+      st.textContent = fill(T.sent, { count: countDone(), total: body.total || REVIEW.length, time: hhmm(body.sentAt || Date.now()) });
+    } catch (e) {
+      st.className = 'small bad-text'; st.textContent = T.sendFailed;
+    } finally {
+      btn.disabled = false; renderAll(); savedLine();
+    }
+  });
+
+  $('copy').addEventListener('click', () => {
+    const fallback = () => { $('export').focus(); $('export').select(); $('copied').textContent = T.copyFallback; };
+    try { navigator.clipboard.writeText($('export').value).then(() => { $('copied').textContent = T.copied; }, fallback); }
+    catch (e) { fallback(); }
+  });
+
+  renderCard(); renderAll();
+
+  // Answers saved from another device or an earlier visit
+  try {
+    const res = await fetch(API, { headers: { 'X-Language': 'vi' }, cache: 'no-store' });
+    const body = await res.json();
+    if (res.ok && body.success) {
+      serverT = Math.max(0, ...body.answers.map(a => a.t || 0));
+      sync = 'saved';
+      if (merge(body.answers)) { saveLocal(); renderCard(); }
+      if (latestT() > serverT) scheduleSave();
+    } else sync = 'offline';
+  } catch (e) { sync = 'offline'; }
+  renderAll(); savedLine();
+})();
+</script>
+</body>
+</html>

@@ -266,7 +266,23 @@ function contactEmail({ to, language, name, email, subject, message }) {
     };
 }
 
+/** The expert review answers (controllers/expertReviewController.js): one line per case, id | verdict | note. */
+function expertReviewEmail({ to, language, answers, total }) {
+    const t = (key, params) => translate(language, key, params);
+    const done = answers.filter(a => a.verdict).length;
+    const lines = [
+        t('email.expertReview.intro', { count: done, total }),
+        ...answers.map(a => [a.id, a.verdict || '-', String(a.note || '').replace(/[\r\n\t]+/g, ' ')].join(' | '))
+    ];
+    return {
+        to,
+        subject: t('email.expertReview.subject', { count: done, total }),
+        ...layout({ language, user: { email: to }, paragraphs: lines, footerKey: 'email.expertReview.footer' })
+    };
+}
+
 module.exports = {
+    expertReviewEmail,
     coopReportEmail,
     seasonEmail,
     contactEmail,
