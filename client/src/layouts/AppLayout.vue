@@ -58,16 +58,19 @@
         data-test="guest-banner"
       />
 
-      <!-- Simulated demo data in view (scripts/demo_sim.js): always said, never passed off as field data -->
+      <!-- Simulated demo data in view (scripts/demo_sim.js): always said, never passed off as field data.
+           Closing it folds it into the "Simulated" tag of the top bar, which opens it again -->
       <el-alert
-        v-if="user && user.simulatedData"
+        v-if="user && user.simulatedData && !simBannerCollapsed"
         type="warning"
-        :closable="false"
+        closable
+        :close-text="t('simulated.collapse')"
         show-icon
         class="verify-banner shrink-0"
         :title="t('simulated.bannerTitle')"
         :description="t('simulated.bannerDesc')"
         data-test="simulated-banner"
+        @close="collapseSimBanner"
       />
 
       <!-- Email confirmation reminder (alert emails need a confirmed address) -->
@@ -150,12 +153,14 @@ import AddCameraModal from '@/components/modals/AddCameraModal.vue';
 import UpgradeDialog from '@/components/plans/UpgradeDialog.vue';
 import AppTour from '@/components/layout/AppTour.vue';
 import { useAppTour } from '@/composables/useAppTour';
+import { useSimulatedBanner } from '@/composables/useSimulatedBanner';
 
 const router = useRouter();
 const route = useRoute();
 const { initTheme } = useTheme();
 const { t, locale } = useI18n();
 const { user, refreshUser } = useAuth();
+const { collapsed: simBannerCollapsed, collapse: collapseSimBanner } = useSimulatedBanner();
 const { offline, savedAt } = useOffline();
 const { items: outboxItems, pending: outboxPending, failed: outboxFailed, sending: outboxSending, flush: flushOutbox, removeItem: removeOutboxItem, reload: reloadOutbox } = useOutbox();
 const sendOutbox = async () => {

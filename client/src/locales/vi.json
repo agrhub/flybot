@@ -3769,7 +3769,9 @@
     "cameraHint": "Bẫy mô phỏng: ảnh tổng hợp được AI thật đếm, không phải số liệu thực địa.",
     "noLive": "Bẫy mô phỏng không có camera nên không xem trực tiếp được. Ảnh và phân tích có trong phần chi tiết.",
     "truth": "Vẽ sẵn: {n}",
-    "truthHint": "Số ruồi được vẽ lên ảnh tổng hợp này, để so với số AI đếm được (không phải kết quả nhận diện)."
+    "truthHint": "Số ruồi được vẽ lên ảnh tổng hợp này, để so với số AI đếm được (không phải kết quả nhận diện).",
+    "collapse": "Ẩn",
+    "showBanner": "Có dữ liệu mô phỏng: xem giải thích"
   },
   "guest": {
     "banner": "Bạn đang xem với tư cách khách: chỉ xem, phiên kết thúc lúc {time}.",

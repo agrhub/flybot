@@ -3769,7 +3769,9 @@
     "cameraHint": "Simulated demo trap: synthetic photos counted by the real AI; not field data.",
     "noLive": "A simulated trap has no camera, so no live view. Its photos and analysis are in the detail view.",
     "truth": "Drawn: {n}",
-    "truthHint": "Flies drawn on this synthetic photo, to compare with the AI's count (not a detection)."
+    "truthHint": "Flies drawn on this synthetic photo, to compare with the AI's count (not a detection).",
+    "collapse": "Hide",
+    "showBanner": "Simulated demo data in view: show what it means"
   },
   "guest": {
     "banner": "Guest access: a read-only demo. This session ends at {time}.",
