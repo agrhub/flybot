@@ -1,0 +1,5 @@
+{
+  "private": true,
+  "type": "module",
+  "description": "FlyBot demo film: script.js and edit.js are ES modules shared by the page and the Node scripts"
+}

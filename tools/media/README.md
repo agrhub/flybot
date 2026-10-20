@@ -65,6 +65,45 @@ FLYBOT_TVC_PAGE=tvc-vertical.html node render-tvc.mjs vi flybot-tvc-vertical-vi.
 
 Rendering takes about ten minutes a language; `FLYBOT_TVC_KEEP=1` keeps the frames and `FLYBOT_TVC_REUSE=1` encodes them again without rendering. The MP4 needs no `remux-mp4.ps1` or `faststart-mp4.mjs`: it already has its index in front. Copy the videos and posters (`flybot-tvc-<lang>-poster.webp`) to `client/public/media/`.
 
+## Demo film (OpenCV AI Competition 2026)
+
+The competition video (at most 5 minutes, 1920x1080, English voice and subtitles) lives in `film/`: screen recordings of the live app at https://flybot.agrhub.com and motion graphics (the problem, the trap camera's parts and wiring, results) on one timeline, rendered frame by frame like the commercial. Its shot list is flybot-aws `docs/VIDEO_SCRIPT.md`.
+
+Everything large stays in `film/media/` (not versioned): `rec/` the recordings, `photos/` the component photos, `assets/` the flybot-aws diagrams and sample photos and the logo, `footage/` the orchard clip, `voice/` the spoken lines, `tts/` the voice model, `out/` the films.
+
+From the `film` folder:
+
+```bash
+# The values the recordings must never show (camera serial, verify code, home address, GPS position): fill these in first
+cp privacy.example.json privacy.local.json
+
+# Guest recordings (Guest access, headless Chrome)
+node record-app.mjs guest all
+# Owner recordings: a Chrome window opens on the sign-in page; the owner signs in there, then
+node record-app.mjs browser
+node record-app.mjs owner all
+
+# People check of every recording before anyone looks at it (counts only, nothing leaves the computer)
+uv run --no-project --python 3.12 --with opencv-python-headless==4.10.0.84 python -I peoplecheck.py media/rec/<shot>
+
+# The voice-over (offline, Kokoro): model files in media/tts first, see below
+node voice.mjs
+
+# Watch it play, or take stills
+node serve.mjs            # http://127.0.0.1:8090/film.html (?subs=vi, ?t=42, ?from=60)
+node stills.mjs <outdir> 12 wiring trace
+
+# The film, in one command (about an hour): media/out/flybot-demo-en.mp4 and its .en.srt / .vi.srt
+node render-film.mjs
+node render-film.mjs media/out/flybot-demo-vi.mp4 --subs vi
+```
+
+The orchard clip: put the team's clip at `film/media/footage/real-trap.mp4` (H.264 MP4; `.webm` and `.mov` are tried too) and render again; it fills the 30-second slot after the wiring animation (muted, the voice and music play over it). To start later in a longer clip, add `film/media/footage/footage.json`: `{ "file": "real-trap.mp4", "from": 12.5 }`. Without a clip the slot shows a "Placeholder" card. Check the clip for people before rendering.
+
+Privacy while recording: `inject.js` runs in every recorded page before the app. It rewrites every text, attribute and input value that matches a rule in `privacy.local.json` (and every e-mail address except the demo ones) before it is painted, and `record-app.mjs` deletes a take as soon as a masked value shows up unmasked. Pictures (camera photos, live view) are not masked: check them with `peoplecheck.py` and cut what it flags. The owner's window uses its own profile in `media/profile`; delete that folder after recording.
+
+The voice: `voice.mjs` speaks the English lines of `script.js` with Kokoro (open weights, Apache-2.0) on this computer. Download `kokoro-v1.0.onnx` and `voices-v1.0.bin` from https://github.com/thewh1teagle/kokoro-onnx/releases/tag/model-files-v1.0 into `film/media/tts/`. A recorded voice can replace any line: `media/voice/<scene>-<n>.wav` with its length in `media/voice/manifest.json`.
+
 ## Simulated demo farm, locally
 
 `sim-demo.js` runs the simulated demo farm (`server/src/services/demoSim.js`, DEPLOY.md) the way production does, with the real vision handler: an in-memory MongoDB, the photos in a folder instead of S3, and the flybot-aws vision Lambda running on this computer.
@@ -97,6 +136,10 @@ Sign in as `judge@flybot.test` (a visitor, password `judge-demo-1`) or `admin@fl
 - `tvc/tvc.html`: the commercial's eight scenes on one timeline (`S`, seconds, on the music's 2.4 s bars), their text in both languages (`COPY`) and `window.renderAt(t)`, which draws any moment exactly.
 - `tvc/tvc-vertical.html`: the 9:16 cut, six scenes on 30 s, the app on a phone (the `mobile-*` guide screenshots). Each page tells the scripts its size and music in `window.TVC`.
 - `tvc/music.js`: the music, synthesized with Web Audio (no samples): pads, bass, drums and arpeggio following the scenes, a rise and hit on the logo. `ARRANGEMENTS` holds one plan of bars per page (`landscape`, `vertical`).
-- `tvc/encode.html`: encodes the frames and the music with WebCodecs, frame by frame rather than in real time, so a busy machine drops nothing.
+- `tvc/encode.html`: encodes the frames and the music (or a finished sound file, as the demo film's mix) with WebCodecs, frame by frame rather than in real time, so a busy machine drops nothing.
 - `tvc/mux-mp4.mjs`: writes the encoded video and sound into an MP4 with its index in front.
 - `tvc/render-tvc.mjs`, `tvc/stills.mjs`: the video and stills, as above.
+- `film/film.html`, `film/film.js`, `film/film.css`: the demo film's timeline; `window.renderAt(t)` draws any moment exactly. The scenes' text and voice lines are in `film/script.js`, the cut of the recordings (which take, from where, how fast, zoom) in `film/edit.js`.
+- `film/record-app.mjs`, `film/shots.mjs`, `film/inject.js`: the screen recordings of the live app (`Page.startScreencast` frames with their times), the clicks of each shot, and the privacy mask and drawn cursor injected into the recorded page.
+- `film/peoplecheck.py`: counts faces (YuNet, the model flybot-aws vendors) and people (HOG) in pictures, so pictures with people are found without anyone looking at them.
+- `film/voice.mjs`, `film/tts.py`: the voice-over. `film/mix.html`: the music bed (`tvc/music.js`) ducked under the voice. `film/render-film.mjs`: frames, sound, MP4 and subtitles. `film/serve.mjs`, `film/stills.mjs`: preview.

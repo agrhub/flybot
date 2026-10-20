@@ -2,7 +2,7 @@
 <!--
   Encodes the rendered frames and the synthesized music with WebCodecs (H.264 + AAC), frame by
   frame and not in real time, so a busy machine cannot drop frames. The packets stay in the page:
-  window.encode({ frameUrl, count, fps, bitrate, width, height, music }) resolves to the sample tables and the codec
+  window.encode({ frameUrl, count, fps, bitrate, width, height, music, audio }) resolves to the sample tables and the codec
   setup, window.part(track, start, end) hands the bytes over in base64 slices, and mux-mp4.mjs
   writes the MP4.
 -->
@@ -62,9 +62,12 @@ async function encodeVideo({ frameUrl, count, fps, bitrate, width, height }) {
     join(track);
 }
 
-async function encodeAudio(seconds, arrangement) {
+// The page's own music, or a finished sound file (audio: its URL, e.g. the demo film's mix)
+async function encodeAudio(seconds, arrangement, audio) {
     const track = tracks.audio = collector();
-    const music = await makeMusic(seconds, arrangement);
+    const music = audio
+        ? await new OfflineAudioContext(2, 1, 48000).decodeAudioData(await (await fetch(audio)).arrayBuffer())
+        : await makeMusic(seconds, arrangement);
     const rate = music.sampleRate, channels = music.numberOfChannels;
     let failure = null;
     const enc = new AudioEncoder({ output: (c, m) => keep(track, c, m), error: (e) => { failure = e; } });
@@ -91,10 +94,10 @@ async function encodeAudio(seconds, arrangement) {
 }
 
 // music: the arrangement's name in music.js
-async function encode({ frameUrl, count, fps = 30, bitrate = 8000000, width = 1920, height = 1080, music = 'landscape' }) {
+async function encode({ frameUrl, count, fps = 30, bitrate = 8000000, width = 1920, height = 1080, music = 'landscape', audio = null }) {
     const seconds = count / fps;
     await encodeVideo({ frameUrl, count, fps, bitrate, width, height });
-    const { rate, channels } = await encodeAudio(seconds, music);
+    const { rate, channels } = await encodeAudio(seconds, music, audio);
     const describe = (t) => ({ samples: t.samples, size: t.size, description: t.description ? toHex(t.description) : null });
     return {
         video: { ...describe(tracks.video), width, height, fps },

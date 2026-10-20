@@ -1,0 +1,9 @@
+{
+  "_": "Copy to privacy.local.json (not versioned) and fill in what must never appear in the film. find is a regular expression.",
+  "rules": [
+    { "find": "ESP0000000000AA", "flags": "gi", "replace": "ESP1234567890AB" },
+    { "find": "00:00:00:00:00:00", "flags": "gi", "replace": "AA:BB:CC:DD:EE:FF" },
+    { "find": "1 Example Street[^\\n]*", "flags": "gi", "replace": "Demo address" }
+  ],
+  "emailOk": "@(flybot\\.invalid|flybot\\.test|example\\.com)$"
+}

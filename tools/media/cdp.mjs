@@ -11,25 +11,36 @@ const PROFILE = process.env.FLYBOT_SHOT_PROFILE || path.join(os.tmpdir(), 'flybo
 const PORT = Number(process.env.FLYBOT_CDP_PORT) || 9333;
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
-// keepProfile: reuse the previous run's profile (service worker, caches); args: extra Chrome flags
-export async function launch({ keepProfile = false, args = [] } = {}) {
-    if (!keepProfile) fs.rmSync(PROFILE, { recursive: true, force: true, maxRetries: 10, retryDelay: 300 });
+// keepProfile: reuse the previous run's profile (service worker, caches); args: extra Chrome flags;
+// profile and port: another profile folder and debugging port than the defaults (two scripts at once)
+export async function launch({ keepProfile = false, args = [], profile = PROFILE, port = PORT } = {}) {
+    if (!keepProfile) fs.rmSync(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 300 });
     // FLYBOT_CHROME_ARGS: extra flags from the environment (e.g. --no-sandbox on CI runners)
     const extra = (process.env.FLYBOT_CHROME_ARGS || '').split(' ').filter(Boolean);
     const proc = spawn(CHROME, [...extra, ...args,
-        '--headless=new', `--remote-debugging-port=${PORT}`, `--user-data-dir=${PROFILE}`,
+        '--headless=new', `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`,
         '--no-first-run', '--no-default-browser-check', '--hide-scrollbars', '--mute-audio',
         '--disable-extensions', '--disable-background-networking', '--disable-sync',
         // No crash handler: it outlives Chrome on Windows and keeps the profile folder locked
         '--disable-crash-reporter', '--disable-breakpad',
         '--autoplay-policy=no-user-gesture-required', '--window-size=1440,900', 'about:blank'
     ], { stdio: 'ignore' });
+    return connect({ port, proc, profile });
+}
+
+// Drives a Chrome that is already running with --remote-debugging-port (e.g. a window where a person signed in).
+// close() only disconnects: the window stays open.
+export async function attach(port = PORT) {
+    return connect({ port, proc: null, profile: null });
+}
+
+async function connect({ port, proc, profile }) {
     let target;
     for (let i = 0; i < 50 && !target; i++) {
         await sleep(200);
         try {
-            const list = await (await fetch(`http://127.0.0.1:${PORT}/json/list`)).json();
-            target = list.find(t => t.type === 'page');
+            const list = await (await fetch(`http://127.0.0.1:${port}/json/list`)).json();
+            target = list.find(t => t.type === 'page' && !t.url.startsWith('devtools://'));
         } catch { /* not up yet */ }
     }
     if (!target) throw new Error('Chrome did not start');
@@ -55,8 +66,8 @@ export async function launch({ keepProfile = false, args = [] } = {}) {
         for (const { reject } of pending.values()) reject(new Error(reason));
         pending.clear();
     };
-    ws.onclose = () => failAll(`Chrome connection closed${proc.exitCode !== null ? ` (Chrome exited with ${proc.exitCode})` : ''}`);
-    proc.once('exit', (code, signal) => failAll(`Chrome exited (${signal || code})`));
+    ws.onclose = () => failAll(`Chrome connection closed${proc && proc.exitCode !== null ? ` (Chrome exited with ${proc.exitCode})` : ''}`);
+    if (proc) proc.once('exit', (code, signal) => failAll(`Chrome exited (${signal || code})`));
     // FLYBOT_CDP_TIMEOUT: longest wait for one call, 120 s by default (an eval may wait for the page)
     const TIMEOUT = Number(process.env.FLYBOT_CDP_TIMEOUT) || 120000;
     const send = (method, params = {}, ms = TIMEOUT) => new Promise((resolve, reject) => {
@@ -108,6 +119,7 @@ export async function launch({ keepProfile = false, args = [] } = {}) {
             return fs.statSync(file).size;
         },
         async close() {
+            if (!proc) { ws.close(); return; }
             // Closing never answers: do not wait for it
             ws.send(JSON.stringify({ id: ++id, method: 'Browser.close' }));
             ws.close();
@@ -115,7 +127,7 @@ export async function launch({ keepProfile = false, args = [] } = {}) {
             await Promise.race([exited, sleep(5000)]);
             try { proc.kill(); } catch { /* gone */ }
             await sleep(500);
-            try { fs.rmSync(PROFILE, { recursive: true, force: true, maxRetries: 10, retryDelay: 300 }); } catch { /* removed next launch */ }
+            try { fs.rmSync(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 300 }); } catch { /* removed next launch */ }
         }
     };
     return page;

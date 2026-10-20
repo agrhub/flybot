@@ -1,0 +1,99 @@
+:root {
+  --mint: #3ecf8e;
+  --mint-deep: #0f8a57;
+  --ink: #071510;
+  --ink-2: #0c2018;
+  --card: rgba(255, 255, 255, 0.06);
+  --line: rgba(255, 255, 255, 0.14);
+  --muted: rgba(255, 255, 255, 0.68);
+  --amber: #f5b83d;
+  --red: #ef5b5b;
+  /* wire colours: one per net, as in the 4G wiring sheet */
+  --w-bat: #ff6b63;
+  --w-5v: #ffa24a;
+  --w-3v3: #b892ff;
+  --w-gnd: #c9d0da;
+  --w-uart: #45d08a;
+  --w-gps: #6eaaff;
+  --w-sense: #3fd3d4;
+  --w-solar: #e48a4c;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--ink); }
+body { font-family: 'Be Vietnam Pro', 'Segoe UI', sans-serif; color: #fff; -webkit-font-smoothing: antialiased; }
+#stage { position: absolute; inset: 0; overflow: hidden; background: radial-gradient(1200px 700px at 30% 20%, #12352a 0%, transparent 60%), radial-gradient(900px 600px at 80% 90%, #0f2c22 0%, transparent 60%), var(--ink); }
+.scene { position: absolute; inset: 0; opacity: 0; visibility: hidden; }
+.abs { position: absolute; }
+
+/* Type */
+.kicker { font-size: 24px; font-weight: 700; letter-spacing: 0.28em; text-transform: uppercase; color: var(--mint); }
+.title { font-size: 64px; font-weight: 800; line-height: 1.1; letter-spacing: -0.02em; }
+.sub { font-size: 30px; font-weight: 500; line-height: 1.4; color: var(--muted); }
+.mono { font-family: 'JetBrains Mono', Consolas, monospace; }
+.chip { display: inline-flex; align-items: center; gap: 10px; padding: 8px 18px; border-radius: 999px; font-size: 20px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; background: rgba(7, 21, 16, 0.86); border: 1px solid var(--line); color: #fff; white-space: nowrap; }
+.chip.sim { background: rgba(245, 184, 61, 0.92); color: #2a1a00; border-color: transparent; }
+.chip.owner { background: rgba(110, 170, 255, 0.92); color: #06142b; border-color: transparent; }
+.chip.guest { background: rgba(62, 207, 142, 0.92); color: var(--ink); border-color: transparent; }
+.chip.ph { background: rgba(239, 91, 91, 0.92); border-color: transparent; }
+.source { font-size: 17px; color: rgba(255, 255, 255, 0.5); }
+
+/* Recording window */
+.win { position: absolute; left: 160px; top: 34px; width: 1600px; height: 900px; border-radius: 18px; overflow: hidden; background: #0b0f0d; box-shadow: 0 40px 90px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.1); }
+.win .bar { position: absolute; left: 0; right: 0; top: 0; height: 36px; background: #1a211e; display: flex; align-items: center; gap: 9px; padding: 0 16px; z-index: 2; }
+.win .bar i { width: 12px; height: 12px; border-radius: 50%; background: #3a4440; }
+.win .bar span { margin-left: 18px; font-size: 16px; color: rgba(255, 255, 255, 0.6); background: #0f1513; padding: 3px 16px; border-radius: 8px; }
+.win .view { position: absolute; left: 0; top: 36px; width: 1600px; height: 864px; overflow: hidden; }
+.win .view img { position: absolute; left: 0; top: 0; width: 1600px; height: 900px; transform-origin: 0 0; }
+.win .missing { position: absolute; inset: 36px 0 0 0; display: grid; place-items: center; text-align: center; font-size: 34px; color: var(--muted); background: repeating-linear-gradient(45deg, #101814, #101814 20px, #0c130f 20px, #0c130f 40px); }
+.badges { position: absolute; right: 176px; top: 38px; display: flex; gap: 10px; z-index: 5; }
+.badges .chip { font-size: 15px; padding: 4px 14px; letter-spacing: 0.04em; }
+
+/* Subtitles */
+#subs { position: absolute; left: 0; right: 0; bottom: 26px; display: flex; justify-content: center; z-index: 50; pointer-events: none; }
+#subs div { max-width: 1560px; padding: 10px 26px; border-radius: 14px; background: rgba(0, 0, 0, 0.72); font-size: 34px; font-weight: 600; line-height: 1.32; text-align: center; color: #fff; }
+#subs div:empty { display: none; }
+
+/* Cards */
+.card { position: absolute; border-radius: 24px; background: var(--card); border: 1px solid var(--line); box-shadow: 0 30px 70px rgba(0, 0, 0, 0.4); }
+.stat { padding: 30px 34px; }
+.stat b { display: block; font-size: 64px; font-weight: 800; letter-spacing: -0.02em; color: var(--mint); line-height: 1.05; }
+.stat p { font-size: 26px; line-height: 1.35; margin-top: 10px; }
+.stat small { display: block; margin-top: 12px; font-size: 17px; color: rgba(255, 255, 255, 0.5); }
+
+/* Bill of materials */
+.part { position: absolute; width: 400px; height: 330px; border-radius: 22px; overflow: hidden; background: #0e1a15; border: 1px solid var(--line); }
+.part .pic { position: absolute; left: 0; top: 0; width: 400px; height: 220px; overflow: hidden; background: #16241e; }
+.part .txt { position: absolute; left: 20px; right: 20px; top: 232px; }
+.part h4 { font-size: 24px; font-weight: 700; line-height: 1.2; }
+.part p { font-size: 19px; color: var(--muted); margin-top: 6px; }
+.crop { position: absolute; inset: 0; overflow: hidden; }
+.crop img { position: absolute; }
+
+/* Wiring */
+.mod { position: absolute; border-radius: 18px; background: #0f1c17; border: 2px solid rgba(255, 255, 255, 0.18); overflow: hidden; }
+.mod .pic { position: absolute; left: 0; right: 0; top: 0; overflow: hidden; background: #17261f; }
+.mod .name { position: absolute; left: 14px; right: 14px; bottom: 10px; font-size: 21px; font-weight: 700; line-height: 1.2; }
+.mod .name small { display: block; font-size: 16px; font-weight: 500; color: var(--muted); }
+.pin { position: absolute; font-size: 17px; font-weight: 700; font-family: 'JetBrains Mono', Consolas, monospace; color: #fff; background: rgba(7, 21, 16, 0.9); padding: 1px 7px; border-radius: 6px; white-space: nowrap; transform: translateY(-50%); }
+.step { position: absolute; left: 90px; top: 40px; display: flex; align-items: center; gap: 18px; }
+.step i { font-style: normal; display: grid; place-items: center; width: 54px; height: 54px; border-radius: 50%; background: var(--mint); color: var(--ink); font-size: 28px; font-weight: 800; }
+.step span { font-size: 38px; font-weight: 800; }
+.note { position: absolute; padding: 12px 20px; border-radius: 14px; background: rgba(245, 184, 61, 0.14); border: 1px solid rgba(245, 184, 61, 0.6); color: #ffd98a; font-size: 21px; font-weight: 600; line-height: 1.35; }
+
+/* Photo labels */
+.tag { position: absolute; transform: translate(-50%, -50%); padding: 8px 16px; border-radius: 12px; background: rgba(7, 21, 16, 0.88); border: 2px solid var(--mint); font-size: 22px; font-weight: 700; white-space: nowrap; }
+.dotmark { position: absolute; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; background: var(--mint); box-shadow: 0 0 0 6px rgba(62, 207, 142, 0.3); }
+
+/* Pipeline */
+.node { position: absolute; width: 330px; height: 210px; border-radius: 24px; padding: 26px; background: rgba(255, 255, 255, 0.07); border: 1px solid var(--line); }
+.node h3 { font-size: 30px; font-weight: 800; line-height: 1.15; }
+.node p { font-size: 21px; color: var(--muted); margin-top: 10px; line-height: 1.35; }
+.node.hl { border-color: rgba(62, 207, 142, 0.8); background: rgba(62, 207, 142, 0.12); }
+
+/* Code */
+.code { position: absolute; padding: 26px 30px; border-radius: 18px; background: #0b1210; border: 1px solid var(--line); font-family: 'JetBrains Mono', Consolas, monospace; font-size: 25px; line-height: 1.6; color: #cfe9dc; white-space: pre; }
+.code .k { color: #ffa24a; }
+.code .c { color: rgba(255, 255, 255, 0.45); }
+
+.bar-row { position: absolute; height: 46px; border-radius: 10px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
+.bar-row div { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 10px; }
