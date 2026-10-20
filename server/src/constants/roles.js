@@ -19,10 +19,10 @@ const worksInCurrentWorkspace = (user) => ['owner', 'manager'].includes(user?.wo
 const canAddCameras = (user) => isAdmin(user) || worksInCurrentWorkspace(user);
 const canBuildDashboards = (user) => isAdmin(user) || worksInCurrentWorkspace(user);
 // FlyBot Sentinel console (/api/sentinel/ui): whoever runs the current workspace decides approvals
-// (for cameras they manage). An account an admin marked sentinelViewer (a competition judge)
-// reads only, whatever it owns; a workspace member reads nothing
+// (for cameras they manage). An account an admin marked sentinelViewer (a competition judge) and
+// the shared guest account read only, whatever they own; a workspace member reads nothing
 const canDecideSentinel = (user) => isAdmin(user) || (worksInCurrentWorkspace(user) && !user?.sentinelViewer && !user?.guest);
-const canViewSentinel = (user) => canDecideSentinel(user) || !!user?.sentinelViewer;
+const canViewSentinel = (user) => canDecideSentinel(user) || !!user?.sentinelViewer || !!user?.guest;
 
 module.exports = {
     ROLES,

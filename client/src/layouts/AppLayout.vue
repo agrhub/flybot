@@ -75,7 +75,7 @@
 
       <!-- Email confirmation reminder (alert emails need a confirmed address) -->
       <el-alert
-        v-if="user && user.emailVerified === false"
+        v-if="user && user.emailVerified === false && !user.guest"
         type="warning"
         :closable="false"
         show-icon

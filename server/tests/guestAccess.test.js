@@ -76,6 +76,19 @@ test('on: one shared guest account, a 2-hour session, the demo cameras and nothi
     assert.equal(first.body.user.capabilities.addCameras, false);
     assert.equal(first.body.user.capabilities.pricing, false);
     assert.equal(first.body.user.sentinelCanDecide, false);
+    // The agent's console is what judges come for: guests read it, never decide
+    const env = require('../src/config/env');
+    const wasConsole = env.SENTINEL_CONSOLE;
+    env.SENTINEL_CONSOLE = true;
+    try {
+        const me = await json(await request('/api/auth/me', { headers: withToken(first.body.token) }));
+        assert.equal(me.body.user.sentinelEnabled, true);
+        assert.equal(me.body.user.sentinelCanDecide, false);
+        assert.equal((await request('/api/sentinel/ui/summary', { headers: withToken(first.body.token) })).status, 200);
+        assert.equal((await request('/api/sentinel/ui/approvals/64b000000000000000000009/decide', { method: 'POST', headers: withToken(first.body.token), body: { decision: 'approve' } })).status, 403);
+    } finally {
+        env.SENTINEL_CONSOLE = wasConsole;
+    }
     const second = await json(await guestLogin());
     assert.equal(second.body.user.id, first.body.user.id, 'the same account');
     assert.equal(await models.User.countDocuments({ email: GUEST_EMAIL }), 1);
