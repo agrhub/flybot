@@ -95,9 +95,12 @@
             </div>
 
             <!-- Middle: Page Number Buttons -->
+            <!-- Phones: smaller, with fewer page numbers, so the pager fits 375 px -->
             <el-pagination
               class="self-center"
               background
+              :size="isMobile ? 'small' : 'default'"
+              :pager-count="isMobile ? 5 : 7"
               layout="prev, pager, next"
               :current-page="currentPage"
               :page-size="pageSize"
