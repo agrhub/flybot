@@ -305,7 +305,8 @@
       "viewList": "List",
       "viewGrid": "Grid",
       "noMatch": "No camera matches these filters."
-    }
+    },
+    "cameraRosterTop": "The {n} cameras with the latest photos, of {total}"
   },
   "cameras": {
     "platformLabel": "Camera platform",
@@ -411,9 +412,6 @@
     "clipNumber": "Clip",
     "playAll": "Play All",
     "stopAll": "Stop All",
-    "layoutAuto": "Auto",
-    "layout2x2": "Grid 2x2",
-    "layout3x3": "Grid 3x3",
     "quickInfo": "Quick Info",
     "status": "Status",
     "cloudService": "Cloud Service",
@@ -543,6 +541,14 @@
       "title": "This camera is paused by an administrator",
       "desc": "It takes no photos and live view is closed until it is resumed. Its photos and history stay available.",
       "reason": "Reason: {reason}. It takes no photos and live view is closed until it is resumed."
+    },
+    "layoutCols": "{n} cols",
+    "filters": {
+      "allKinds": "All trap kinds",
+      "source": "Source",
+      "allSources": "Real and simulated",
+      "real": "Real cameras",
+      "simulated": "Simulated"
     }
   },
   "analytics": {

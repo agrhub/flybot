@@ -24,4 +24,16 @@ describe('filterCameras', () => {
     expect(filterCameras(cams)).toHaveLength(4);
     expect(filterCameras(null)).toEqual([]);
   });
+
+  it('filters by trap kind (sticky by default) and by real or simulated', () => {
+    const mixed = [
+      { deviceSerial: 'REAL-LURE', trapKind: 'lure', status: 1 },
+      { deviceSerial: 'REAL-STICKY', status: 1 },
+      { deviceSerial: 'SIM-STICKY', trapKind: 'sticky', simulated: true, status: 1 },
+    ];
+    expect(serials(filterCameras(mixed, { kind: 'sticky' }))).toEqual(['REAL-STICKY', 'SIM-STICKY']);
+    expect(serials(filterCameras(mixed, { kind: 'lure' }))).toEqual(['REAL-LURE']);
+    expect(serials(filterCameras(mixed, { source: 'real' }))).toEqual(['REAL-LURE', 'REAL-STICKY']);
+    expect(serials(filterCameras(mixed, { source: 'simulated', kind: 'sticky' }))).toEqual(['SIM-STICKY']);
+  });
 });

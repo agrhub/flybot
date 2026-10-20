@@ -389,7 +389,7 @@
         <div class="flex items-center justify-between gap-3">
           <div class="min-w-0">
             <h3 class="section-title">{{ t('dashboard.cameraRoster') }}</h3>
-            <p class="section-desc">{{ t('dashboard.cameraRosterSubtitle') }}</p>
+            <p class="section-desc">{{ cameras.length > ROSTER_SIZE ? t('dashboard.cameraRosterTop', { n: ROSTER_SIZE, total: cameras.length }) : t('dashboard.cameraRosterSubtitle') }}</p>
           </div>
 
           <el-button type="primary" link @click="router.push('/cameras')">
@@ -407,10 +407,11 @@
 
       <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <el-card
-          v-for="cam in cameras"
+          v-for="cam in rosterCameras"
           :key="cam.deviceSerial"
           shadow="hover"
           class="roster-card cursor-pointer"
+          data-test="roster-card"
           @click="selectCameraAndGoToLive(cam)"
         >
           <div class="flex items-start justify-between gap-2">
@@ -585,6 +586,10 @@ watch(() => [density.view, density.pageSize], () => {
 
 const realtimeBySerial = computed(() => new Map((overviewData.value.cameraRealtimeList || []).map(c => [c.deviceSerial, c])));
 const latestOf = (cam) => realtimeBySerial.value.get(cam.deviceSerial);
+// The roster shows the cameras with the newest photo (or, without one, the latest contact); "View all" opens the rest
+const ROSTER_SIZE = 10;
+const updatedAt = (cam) => Date.parse(latestOf(cam)?.latestSnapshot?.createdAt || cam.device?.lastSeenAt || 0) || 0;
+const rosterCameras = computed(() => [...cameras.value].sort((a, b) => updatedAt(b) - updatedAt(a)).slice(0, ROSTER_SIZE));
 const snapshotVisible = ref(false);
 const openedSnapshot = ref(null);
 const openSnapshot = (snapshot) => {

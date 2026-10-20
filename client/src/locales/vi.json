@@ -305,7 +305,8 @@
       "viewList": "Danh sách",
       "viewGrid": "Lưới",
       "noMatch": "Không có camera nào khớp bộ lọc."
-    }
+    },
+    "cameraRosterTop": "{n} camera có ảnh mới nhất, trong {total} camera"
   },
   "cameras": {
     "platformLabel": "Nền tảng camera",
@@ -412,9 +413,6 @@
     "clipNumber": "Đoạn",
     "playAll": "Phát toàn bộ",
     "stopAll": "Dừng toàn bộ",
-    "layoutAuto": "Tự động",
-    "layout2x2": "Lưới 2x2",
-    "layout3x3": "Lưới 3x3",
     "quickInfo": "Thông tin nhanh",
     "status": "Trạng thái",
     "cloudService": "Dịch vụ đám mây",
@@ -543,6 +541,14 @@
       "title": "Camera này đang bị quản trị viên tạm dừng",
       "desc": "Camera không chụp ảnh và không xem trực tiếp được cho tới khi được bật lại. Ảnh và lịch sử vẫn còn nguyên.",
       "reason": "Lý do: {reason}. Camera không chụp ảnh và không xem trực tiếp được cho tới khi được bật lại."
+    },
+    "layoutCols": "{n} cột",
+    "filters": {
+      "allKinds": "Mọi loại bẫy",
+      "source": "Nguồn",
+      "allSources": "Thật và mô phỏng",
+      "real": "Camera thật",
+      "simulated": "Mô phỏng"
     }
   },
   "analytics": {

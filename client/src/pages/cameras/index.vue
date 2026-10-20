@@ -4,11 +4,12 @@
     <template v-if="subPage === 'grid'">
       <PageHeader :title="t('cameras.title')" :subtitle="t('cameras.subtitle')">
         <template #actions>
-          <!-- Grid Columns Switcher -->
+          <!-- Columns per row (phones: always one) -->
           <el-segmented
             v-if="!isMobile"
             :model-value="activeGridCols"
             :options="gridLayouts"
+            data-test="grid-cols"
             @change="setGridLayout"
           />
 
@@ -39,7 +40,37 @@
 
       <!-- Multi-Camera Live Grid View with Pagination -->
       <div v-else class="flex flex-col gap-6">
-        <div class="grid gap-6" :class="gridColClass">
+        <!-- Search and filters over the whole list; the grid shows one page of the result -->
+        <el-card shadow="never">
+          <div class="flex flex-wrap items-center gap-2">
+            <el-input v-model="filters.query" :placeholder="t('cameras.switcher.search')" :prefix-icon="Search" clearable class="cameras-filters__search" data-test="cameras-search" />
+            <el-select v-model="filters.status" class="cameras-filters__select" :aria-label="t('cameras.switcher.status')" data-test="cameras-status">
+              <el-option value="all" :label="t('cameras.switcher.allStatus')" />
+              <el-option value="online" :label="t('common.online')" />
+              <el-option value="offline" :label="t('common.offline')" />
+            </el-select>
+            <el-select v-model="filters.type" class="cameras-filters__select" :aria-label="t('cameras.switcher.type')" data-test="cameras-type">
+              <el-option value="all" :label="t('cameras.switcher.allTypes')" />
+              <el-option value="ezviz" :label="t('cameras.platform.ezviz')" />
+              <el-option value="camos" :label="t('cameras.platform.camos')" />
+            </el-select>
+            <el-select v-model="filters.kind" class="cameras-filters__select" :aria-label="t('trapKind.label')" data-test="cameras-kind">
+              <el-option value="all" :label="t('cameras.filters.allKinds')" />
+              <el-option value="sticky" :label="t('trapKind.sticky.short')" />
+              <el-option value="lure" :label="t('trapKind.lure.short')" />
+            </el-select>
+            <el-select v-if="hasSimulated" v-model="filters.source" class="cameras-filters__select" :aria-label="t('cameras.filters.source')" data-test="cameras-source">
+              <el-option value="all" :label="t('cameras.filters.allSources')" />
+              <el-option value="real" :label="t('cameras.filters.real')" />
+              <el-option value="simulated" :label="t('cameras.filters.simulated')" />
+            </el-select>
+            <span class="cameras-meta ml-auto" data-test="cameras-count">{{ t('cameras.switcher.count', { shown: filteredCameras.length, total: cameras.length }) }}</span>
+          </div>
+        </el-card>
+
+        <el-empty v-if="!filteredCameras.length" :description="t('cameras.switcher.none')" :image-size="72" />
+
+        <div v-else class="grid gap-6" :class="gridColClass">
           <GridCameraCard
             v-for="cam in paginatedCameras"
             :key="cam.deviceSerial"
@@ -50,16 +81,16 @@
         </div>
 
         <!-- Pagination Controls Bar -->
-        <el-card v-if="cameras.length > 0" shadow="never">
+        <el-card v-if="filteredCameras.length > 0" shadow="never">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <!-- Left: Range Info -->
             <div class="cameras-meta">
               {{ t('common.showing') }}
               <span class="cameras-meta__strong">
-                {{ startIndex + 1 }}-{{ Math.min(startIndex + pageSize, cameras.length) }}
+                {{ startIndex + 1 }}-{{ Math.min(startIndex + pageSize, filteredCameras.length) }}
               </span>
               {{ t('common.of') }}
-              <span class="cameras-meta__strong">{{ cameras.length }}</span>
+              <span class="cameras-meta__strong">{{ filteredCameras.length }}</span>
               {{ t('nav.cameras').toLowerCase() }}
             </div>
 
@@ -70,7 +101,7 @@
               layout="prev, pager, next"
               :current-page="currentPage"
               :page-size="pageSize"
-              :total="cameras.length"
+              :total="filteredCameras.length"
               :prev-icon="ArrowLeft"
               :next-icon="ArrowRight"
               @current-change="changePage"
@@ -82,7 +113,7 @@
               <el-segmented
                 size="small"
                 :model-value="pageSize"
-                :options="[4, 6, 9, 12]"
+                :options="pageSizes"
                 @change="changePageSize"
               />
             </div>
@@ -131,10 +162,11 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onUnmounted, nextTick } from 'vue';
+import { ref, reactive, computed, watch, onUnmounted, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
-import { Plus, Back, ArrowLeft, ArrowRight, VideoCamera, Connection, Menu } from '@element-plus/icons-vue';
+import { Plus, Back, ArrowLeft, ArrowRight, VideoCamera, Connection, Menu, Search } from '@element-plus/icons-vue';
+import { filterCameras } from '@/utils/cameraFilter';
 import { useCameras } from '@/composables/useCameras';
 import { useAuth } from '@/composables/useAuth';
 import { useBreakpoints } from '@/composables/useBreakpoints';
@@ -164,22 +196,29 @@ const currentDetailCamera = ref(selectedCamera.value || null);
 // Stable props for the camera's history table (new arrays on every render would reset its filters)
 const HISTORY_RANGE = { preset: '7d' };
 const historySerials = computed(() => (currentDetailCamera.value?.deviceSerial ? [currentDetailCamera.value.deviceSerial] : []));
-const activeGridCols = ref('3'); // '2' | '3' | 'auto'
+// Columns per row (2 to 5), remembered per browser; a page holds whole rows
+const COLS = [2, 3, 4, 5];
+const COLS_KEY = 'flybot.cameras.cols';
+const storedCols = () => {
+  try { return Number(localStorage.getItem(COLS_KEY)); } catch { return 0; }
+};
+const activeGridCols = ref(COLS.includes(storedCols()) ? storedCols() : 3);
+const gridLayouts = computed(() => COLS.map((n) => ({ value: n, label: t('cameras.layoutCols', { n }) })));
+const pageSizes = computed(() => [2, 3, 4].map((rows) => rows * activeGridCols.value));
 
-const gridLayouts = computed(() => [
-  { value: '2', label: t('cameras.layout2x2') },
-  { value: '3', label: t('cameras.layout3x3') },
-  { value: 'auto', label: t('cameras.layoutAuto') }
-]);
+// Search and filters over the whole list
+const filters = reactive({ query: '', status: 'all', type: 'all', kind: 'all', source: 'all' });
+const filteredCameras = computed(() => filterCameras(cameras.value, filters));
+const hasSimulated = computed(() => cameras.value.some((c) => c.simulated));
 
 // Pagination state
 const currentPage = ref(1);
-const pageSize = ref(6);
+const pageSize = ref(activeGridCols.value * 3);
 
-const totalPages = computed(() => Math.ceil(cameras.value.length / pageSize.value) || 1);
+const totalPages = computed(() => Math.ceil(filteredCameras.value.length / pageSize.value) || 1);
 const startIndex = computed(() => (currentPage.value - 1) * pageSize.value);
-const endIndex = computed(() => Math.min(startIndex.value + pageSize.value, cameras.value.length));
-const paginatedCameras = computed(() => cameras.value.slice(startIndex.value, endIndex.value));
+const endIndex = computed(() => Math.min(startIndex.value + pageSize.value, filteredCameras.value.length));
+const paginatedCameras = computed(() => filteredCameras.value.slice(startIndex.value, endIndex.value));
 
 const changePage = (page) => {
   if (page < 1 || page > totalPages.value || page === currentPage.value) return;
@@ -198,23 +237,25 @@ const changePageSize = (size) => {
 
 const setGridLayout = (cols) => {
   activeGridCols.value = cols;
-  if (cols === '2') {
-    changePageSize(4);
-  } else if (cols === '3') {
-    changePageSize(9);
-  } else if (cols === 'auto') {
-    changePageSize(6);
-  }
+  try { localStorage.setItem(COLS_KEY, String(cols)); } catch { /* private mode: not remembered */ }
+  changePageSize(cols * 3);
 };
 
-const gridColClass = computed(() => {
-  if (activeGridCols.value === '2') {
-    return 'grid-cols-1 md:grid-cols-2';
-  } else if (activeGridCols.value === '3') {
-    return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3';
-  }
-  return 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4';
+// A filter change starts again at page 1 (and stops the streams of the cards that leave)
+watch(() => JSON.stringify(filters), () => {
+  stopAllStreams();
+  cardRefsMap.clear();
+  currentPage.value = 1;
 });
+
+// Fewer columns on narrower screens; the chosen count from xl up
+const GRID_CLASS = {
+  2: 'grid-cols-1 md:grid-cols-2',
+  3: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3',
+  4: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4',
+  5: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5'
+};
+const gridColClass = computed(() => GRID_CLASS[activeGridCols.value] || GRID_CLASS[3]);
 
 // Card references to control multi-stream playback
 const cardRefsMap = new Map();
@@ -306,5 +347,11 @@ watch(
 }
 .cameras-empty__icon {
   color: var(--el-text-color-placeholder);
+}
+.cameras-filters__search {
+  width: min(320px, 100%);
+}
+.cameras-filters__select {
+  width: 150px;
 }
 </style>
