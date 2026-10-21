@@ -1,5 +1,8 @@
 // The demo film as an MP4 (H.264 + AAC, 1920x1080, 30 fps), in one command:
-//   node render-film.mjs [out.mp4] [--subs en|vi|none] [--work <folder>]
+//   node render-film.mjs [out.mp4] [--subs en|vi|none] [--work <folder>] [--footage placeholder]
+// --footage placeholder: an internal review cut with the stand-in clip of media/vendor/footage.json in the orchard slot,
+// labelled in the corner; its file name must end in -placeholder.mp4 and it is never to be published. Without it, the
+// slot shows the owner's clip (media/footage) or the placeholder card.
 // 1. film.html drawn frame by frame (JPEG frames in the work folder, about 2.5 GB, removed at the end);
 // 2. the sound mixed by mix.html (music bed + media/voice/*.wav at their cues);
 // 3. both encoded by ../tvc/encode.html (WebCodecs) and written by ../tvc/mux-mp4.mjs, index in front.
@@ -16,8 +19,13 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const args = process.argv.slice(2);
 const opt = (name, def) => { const i = args.indexOf(name); return i >= 0 ? args.splice(i, 2)[1] : def; };
 const subs = opt('--subs', 'en');
+const footage = opt('--footage', 'owner');
+if (!['owner', 'placeholder'].includes(footage)) throw new Error('--footage is owner or placeholder');
+const suffix = footage === 'placeholder' ? '-placeholder' : '';
 const work = path.resolve(opt('--work', path.join(MEDIA, 'work')));
-const out = path.resolve(args[0] || path.join(MEDIA, 'out', `flybot-demo-${subs}.mp4`));
+const out = path.resolve(args[0] || path.join(MEDIA, 'out', `flybot-demo-${subs}${suffix}.mp4`));
+if (footage === 'placeholder' && !/-placeholder\.mp4$/i.test(out)) throw new Error('a cut with the stand-in clip must be named *-placeholder.mp4');
+if (footage !== 'placeholder' && /-placeholder\.mp4$/i.test(out)) throw new Error('only --footage placeholder cuts are named *-placeholder.mp4');
 const FPS = 30;
 const BITRATE = Number(process.env.FLYBOT_FILM_BITRATE) || 8000000;
 const reuse = process.env.FLYBOT_FILM_REUSE === '1';
@@ -40,9 +48,11 @@ const base = `http://127.0.0.1:${port}`;
 const page = await launch({ port: Number(process.env.FLYBOT_CDP_PORT) || 9443, profile: path.join(MEDIA, 'render-profile') });
 try {
     await page.viewport(1920, 1080);
-    await page.goto(`${base}/film.html?render&subs=${subs}`, 1500);
+    await page.goto(`${base}/film.html?render&subs=${subs}${footage === 'placeholder' ? '&footage=placeholder' : ''}`, 1500);
     const film = await page.eval('return await window.ready;');
-    console.log(`film: ${film.duration.toFixed(1)} s, ${film.scenes.length} scenes, ${film.cues.filter(c => c.voice).length}/${film.cues.length} lines voiced, orchard clip: ${film.footage ? 'yes' : 'placeholder'}`);
+    console.log(`film: ${film.duration.toFixed(1)} s, ${film.scenes.length} scenes, ${film.cues.filter(c => c.voice).length}/${film.cues.length} lines voiced, orchard clip: ${film.footage || 'placeholder card'}`);
+    // The stand-in clip only in a cut asked for and named as a placeholder
+    if ((footage === 'placeholder') !== (film.footage === 'placeholder')) throw new Error(`footage source mismatch: asked ${footage}, page has ${film.footage}`);
     if (film.duration > film.maxSeconds) throw new Error(`the film runs ${film.duration.toFixed(1)} s, over ${film.maxSeconds} s: shorten script.js`);
     const count = Math.round(film.duration * FPS);
     const started = Date.now();

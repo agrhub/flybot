@@ -1,4 +1,4 @@
-// Stills of the film at chosen seconds, to check the layout: node stills.mjs <outdir> <seconds|scene id>... [--subs vi]
+// Stills of the film at chosen seconds, to check the layout: node stills.mjs <outdir> <seconds|scene id>... [--subs vi] [--footage placeholder]
 // A scene id gives a still in the middle of that scene. Also prints the scene list with start times.
 import fs from 'node:fs';
 import path from 'node:path';
@@ -8,15 +8,17 @@ import { serve } from './serve.mjs';
 const args = process.argv.slice(2);
 const subsAt = args.indexOf('--subs');
 const subs = subsAt >= 0 ? args.splice(subsAt, 2)[1] : 'en';
+const fAt = args.indexOf('--footage');
+const footage = fAt >= 0 ? args.splice(fAt, 2)[1] : 'owner';
 const [out, ...times] = args;
 fs.mkdirSync(out, { recursive: true });
 const { server, port } = await serve(0);
 const page = await launch({ port: Number(process.env.FLYBOT_CDP_PORT) || 9442, profile: path.join(process.env.TEMP || '.', 'flybot-film-stills') });
 try {
     await page.viewport(1920, 1080);
-    await page.goto(`http://127.0.0.1:${port}/film.html?render&subs=${subs}`, 1500);
+    await page.goto(`http://127.0.0.1:${port}/film.html?render&subs=${subs}${footage === 'placeholder' ? '&footage=placeholder' : ''}`, 1500);
     const film = await page.eval('return await window.ready;');
-    console.log(`duration ${film.duration.toFixed(1)} s, footage ${film.footage ? 'yes' : 'placeholder'}`);
+    console.log(`duration ${film.duration.toFixed(1)} s, footage ${film.footage || 'placeholder card'}`);
     for (const s of film.scenes) console.log(`  ${s.start.toFixed(1).padStart(6)}  ${s.len.toFixed(1).padStart(5)}  ${s.id}`);
     for (const t of times) {
         const sc = film.scenes.find(s => s.id === t);

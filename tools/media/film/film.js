@@ -449,13 +449,46 @@ function wiringView(s) {
     };
 }
 
-// ---------------------------------------------------------------- the owner's orchard clip
-// media/footage/real-trap.mp4 (or footage.json { "file": "...", "from": seconds }) fills the slot; otherwise a card.
+// ---------------------------------------------------------------- the orchard clip
+// The owner's clip: media/footage/real-trap.mp4 (or footage.json { "file", "from" } or { "file", "segments": [[from, to], ...] }).
+// ?footage=placeholder (render-film.mjs --footage placeholder) is the only way to show the internal stand-in instead:
+// media/vendor/footage.json { "file", "segments" }, always labelled as a placeholder in the corner.
+// Without either, the slot shows a placeholder card.
+const FOOTAGE_SOURCE = q.get('footage') === 'placeholder' ? 'placeholder' : 'owner';
+const PLACEHOLDER_LABEL = 'Placeholder: seller footage, to be replaced';
 let footage = null;
+async function loadFootage() {
+    if (FOOTAGE_SOURCE === 'placeholder') {
+        const r = await fetch(M + 'vendor/footage.json');
+        if (!r.ok) throw new Error('media/vendor/footage.json is missing');
+        const f = await r.json();
+        return { file: M + 'vendor/' + f.file, segments: f.segments || [[f.from || 0, Infinity]], label: PLACEHOLDER_LABEL };
+    }
+    try {
+        const r = await fetch(M + 'footage/footage.json');
+        if (r.ok) { const f = await r.json(); return { file: M + 'footage/' + f.file, segments: f.segments || [[f.from || 0, Infinity]], label: null }; }
+    } catch { /* none */ }
+    for (const name of ['real-trap.mp4', 'real-trap.webm', 'real-trap.mov']) {
+        if (await exists(M + 'footage/' + name)) return { file: M + 'footage/' + name, segments: [[0, Infinity]], label: null };
+    }
+    return null;
+}
+// Second tt of the slot -> second of the clip, through the segments in order (the last frame holds at the end)
+function clipTime(segments, tt, duration) {
+    let rest = tt;
+    for (const [from, to] of segments) {
+        const len = Math.min(to, duration) - from;
+        if (rest < len) return from + rest;
+        rest -= len;
+    }
+    const [from, to] = segments[segments.length - 1];
+    return Math.max(from, Math.min(to, duration) - 0.05);
+}
 function fieldView(s) {
     const video = place(el('video', 'abs', undefined, s), 0, 0, W, H);
     video.muted = true; video.playsInline = true; video.preload = 'auto'; video.style.objectFit = 'cover'; video.style.display = 'none';
-    place(el('div', 'abs', '<span class="chip">In the orchard · real footage</span>', s), 60, 50);
+    const real = place(el('div', 'abs', '<span class="chip">In the orchard · real footage</span>', s), 60, 50);
+    const stand = place(el('div', 'abs', `<span class="chip ph" style="font-size:24px">${PLACEHOLDER_LABEL}</span>`, s), 60, 50);
     const ph = place(el('div', 'abs', '', s), 0, 0, W, H);
     ph.innerHTML = `<div style="position:absolute;inset:0;display:grid;place-items:center;text-align:center;background:repeating-linear-gradient(45deg,#0f1a15,#0f1a15 26px,#0c1511 26px,#0c1511 52px)">
         <div><span class="chip ph">Placeholder · 30 s</span>
@@ -463,11 +496,13 @@ function fieldView(s) {
         <div class="sub" style="margin-top:16px">Real footage from the team goes here</div>
         <div class="source mono" style="margin-top:26px;font-size:22px">tools/media/film/media/footage/real-trap.mp4</div></div></div>`;
     return async (tt) => {
+        real.style.display = footage && !footage.label ? 'block' : 'none';
+        stand.style.display = footage && footage.label ? 'block' : 'none';
         if (!footage) { ph.style.display = 'block'; video.style.display = 'none'; return; }
         ph.style.display = 'none';
         video.style.display = 'block';
         if (video.dataset.src !== footage.file) { video.dataset.src = footage.file; video.src = footage.file; await new Promise(r => { video.onloadeddata = r; video.onerror = r; }); }
-        const want = Math.min((footage.from || 0) + tt, Math.max(0, (video.duration || 0) - 0.05));
+        const want = clipTime(footage.segments, tt, video.duration || 0);
         if (Math.abs(video.currentTime - want) > 0.001) {
             await new Promise(r => { const done = () => { video.removeEventListener('seeked', done); r(); }; video.addEventListener('seeked', done); video.currentTime = want; setTimeout(done, 3000); });
         }
@@ -480,10 +515,7 @@ const views = [];
 let DURATION = 0;
 async function ready() {
     try { const r = await fetch(M + 'voice/manifest.json'); if (r.ok) voice = await r.json(); } catch { /* no voice yet */ }
-    for (const name of ['real-trap.mp4', 'real-trap.webm', 'real-trap.mov']) {
-        if (await exists(M + 'footage/' + name)) { footage = { file: M + 'footage/' + name, from: 0 }; break; }
-    }
-    try { const r = await fetch(M + 'footage/footage.json'); if (r.ok) { const f = await r.json(); footage = { file: M + 'footage/' + f.file, from: f.from || 0 }; } } catch { /* none */ }
+    footage = await loadFootage();
     DURATION = buildTimeline();
     for (const sc of TIMELINE) {
         const s = el('div', 'scene', '', stage);
@@ -493,7 +525,7 @@ async function ready() {
     }
     for (const sc of TIMELINE) if (sc.rec) for (const c of EDIT[sc.id].clips) await loadRec(c.shot);
     await document.fonts.ready;
-    window.FILM = { duration: DURATION, width: W, height: H, fps: 30, cues: CUES, scenes: TIMELINE.map(s => ({ id: s.id, start: s.start, len: s.len })), footage: !!footage, maxSeconds: MAX_SECONDS };
+    window.FILM = { duration: DURATION, width: W, height: H, fps: 30, cues: CUES, scenes: TIMELINE.map(s => ({ id: s.id, start: s.start, len: s.len })), footage: footage ? FOOTAGE_SOURCE : null, maxSeconds: MAX_SECONDS };
     return window.FILM;
 }
 
