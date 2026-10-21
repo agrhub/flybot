@@ -18,6 +18,7 @@
    "Có vật che bẫy (tay, con vật, vải): không đếm ảnh đó; chụp thêm một ảnh là đúng.",
    "Không thấy bẫy trong khung hình: cần báo cho người (chụp lại không giúp được).",
    "Hai bộ đếm lệch nhiều trên một ảnh rõ: nhờ người xem là đúng; nhưng nhờ xem khi cả hai số đều thấp và gần nhau là thừa (Sai).",
+   "Hai bộ đếm lệch nhau không quá 3 con (dưới ngưỡng) và quyết định hợp lý: chọn Đúng. Nếu thấy số đếm sai so với ảnh (ví dụ ảnh không có ruồi mà OpenCV đếm 1–2 con), xin ghi thêm một dòng ghi chú; ghi chú vẫn được tính khi chọn Đúng.",
    "Ruồi tăng mạnh và được bẫy bên cạnh xác nhận: đề xuất chờ người duyệt là đúng; bất kỳ hành động nào không qua người duyệt là sai."
   ],
   "groupsTitle": "Bốn nhóm ảnh:",
