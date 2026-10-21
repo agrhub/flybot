@@ -184,7 +184,7 @@ const VIEWS = {
     problem(s) {
         const k = place(el('div', 'abs kicker', 'The problem', s), 120, 90);
         const t = place(el('div', 'abs title', 'A count can’t tell a bad photo from a catch', s), 120, 140, 1700);
-        const pics = [['glare.jpg', 'Glare on a real lure trap', 'data/samples (BE4089629)'], ['blur.jpg', 'Strong blur (failure-injection frame)', 'docs/evidence/eval/failure_injection']].map(([f, cap, src], i) => {
+        const pics = [['glare.jpg', 'Glare on a real lure trap: flagged, not counted', 'data/samples (BE4111159, 7 Oct) · eval/RESULTS.md section 7b'], ['blur.jpg', 'Strong blur (failure-injection frame)', 'docs/evidence/eval/failure_injection']].map(([f, cap, src], i) => {
             const c = place(el('div', 'card', '', s), 120 + i * 860, 300, 820, 560);
             c.style.overflow = 'hidden';
             const im = place(el('img', 'abs', undefined, c), 0, 0, 820, 461); im.src = M + 'assets/' + f; im.style.objectFit = 'cover';
