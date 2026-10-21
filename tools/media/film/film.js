@@ -219,16 +219,16 @@ const VIEWS = {
     },
     bom(s) {
         const k = place(el('div', 'abs kicker', 'The trap camera · bill of materials', s), 120, 60);
-        const t = place(el('div', 'abs title', 'Open hardware, about 1.5 million VND of parts', s), 120, 104, 1700); t.style.fontSize = '54px';
+        const t = place(el('div', 'abs title', 'Open hardware: about 790,000 VND of parts, plus a US$19.99 board', s), 120, 108, 1700); t.style.fontSize = '48px';
         const parts = [
-            ['photo', 'esp32', 'ESP32-S3 N16R8 CAM', 'OV5640 camera · 380.000 ₫'],
-            ['photo', 'modem', '4G modem SIMCom A7680C', 'TDM2309 board · 169.000 ₫'],
-            ['photo', 'gps', 'GPS ATGM336H', 'GPS + BeiDou · 173.280 ₫'],
-            ['photo', 'charger', 'Charger TP4056 + DW01', 'USB-C, protected · 6.270 ₫'],
-            ['photo', 'boost', 'Mini 5 V boost converter', 'feeds the board from the cell'],
-            ['cell', null, '18650 Li-ion cell 2000 mAh', 'cell + holder · 39.000 ₫'],
+            ['photo', 'esp32', 'Freenove ESP32-S3 CAM', 'FNK0085, OV5640 camera · US$19.99'],
+            ['photo', 'modem', '4G modem SIMCom A7680C', 'TDM2309 board · 169,000 ₫'],
+            ['photo', 'gps', 'GPS ATGM336H', 'GPS + BeiDou · 173,280 ₫'],
+            ['photo', 'charger', 'Charger TP4056 + DW01', 'USB-C, protected · 6,270 ₫'],
+            ['photo', 'boost', 'Mini 5 V boost', '5 V for the board · 12,900 ₫'],
+            ['cell', null, '18650 Li-ion cell 2000 mAh', 'cell + holder · 39,000 ₫'],
             ['housing', null, 'Solar trap housing', 'hanging, with lid · US$3 – 9.90'],
-            ['card', null, 'Yellow sticky cards', '15 × 25 cm, pack of 50 · 155.000 ₫']
+            ['card', null, 'Yellow sticky cards', '15 × 25 cm, pack of 50 · 155,000 ₫']
         ].map(([kind, key, h, p], i) => {
             const card = place(el('div', 'part', '', s), 120 + (i % 4) * 430, 200 + Math.floor(i / 4) * 345);
             const pic = el('div', 'pic', '', card);
@@ -239,7 +239,7 @@ const VIEWS = {
             el('div', 'txt', `<h4>${h}</h4><p>${p}</p>`, card);
             return card;
         });
-        const src = place(el('div', 'abs source', 'Prices read on shop pages on 17 Oct 2026 (camos-esp32-trap docs/BOM.md). Field camera with the generic board: 1.512.090 ₫ + SIM.', s), 120, 893, 1700);
+        const src = place(el('div', 'abs source', 'Prices read on shop pages on 17 Oct 2026 (4G trap wiring sheet, parts list): 788,954 ₫ + US$19.99 board + US$3.00 housing; optional parts +191,442 ₫; SIM not included.', s), 120, 893, 1700);
         return (tt) => {
             show(k, prog(tt, 0, 0.6)); show(t, prog(tt, 0.2, 0.8));
             parts.forEach((c, i) => show(c, prog(tt, 0.7 + i * 0.35, 0.7), 40, 0.92));
@@ -358,7 +358,7 @@ function wiringView(s) {
     mod('charger', 90, 400, 300, 200, 'TP4056 charger', 'with DW01 protection', 'photo', 0.2);
     mod('cell', 90, 700, 300, 150, '18650 cell', '3.7 – 4.2 V', cellSvg, 0.2);
     mod('boost', 520, 400, 270, 200, '5 V boost', 'set to 5.0 – 5.2 V', 'photo', 6.8);
-    mod('esp32', 920, 250, 400, 600, 'ESP32-S3 CAM', 'N16R8 · OV5640', 'photo', 6.8);
+    mod('esp32', 920, 250, 400, 600, 'ESP32-S3 CAM', 'Freenove FNK0085 · OV5640', 'photo', 6.8);
     mod('modem', 1460, 160, 380, 300, '4G A7680C', 'TDM2309 · nano SIM', 'photo', 12.6);
     mod('gps', 1460, 560, 380, 260, 'GPS ATGM336H', 'patch antenna faces up', 'photo', 18.2);
 
