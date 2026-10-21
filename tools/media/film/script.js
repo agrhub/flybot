@@ -71,9 +71,9 @@ export const SCENES = [
     { id: 'results', dur: 12, lines: [
         { at: 0.3, en: 'Failure injection passed 38 of 38 cases with zero false actuations. The demo costs about 17 dollars a month, and about five cents per thousand photos.',
           vi: 'Thử lỗi có chủ đích đạt 38/38 trường hợp, không có lệnh sai nào. Bản demo tốn khoảng 17 USD mỗi tháng, và khoảng 5 xu cho mỗi nghìn ảnh.' }] },
-    { id: 'end', dur: 13, lines: [
-        { at: 0.3, en: 'Our limits: no human labels yet, sticky cards measured on synthetic photos only, and no autonomous spraying. A person always decides. Try it with Guest access.',
-          vi: 'Giới hạn: chưa có nhãn do người gán, bẫy dính mới đo trên ảnh tổng hợp, và không phun thuốc tự động. Con người luôn quyết định. Hãy thử với Truy cập khách.' }] }
+    { id: 'end', dur: 16, lines: [
+        { at: 0.3, en: 'Our agronomy advisor judged 43 of 49 agent decisions correct. Our limits: no human count labels yet, sticky cards measured on synthetic photos only, and no autonomous spraying. A person always decides. Try it with Guest access.',
+          vi: 'Chuyên gia nông học đánh giá 43 trên 49 quyết định của tác tử là đúng. Giới hạn: chưa có nhãn đếm do người gán, bẫy dính mới đo trên ảnh tổng hợp, và không phun thuốc tự động. Con người luôn quyết định. Hãy thử với Truy cập khách.' }] }
 ];
 
 // The longest film the competition accepts

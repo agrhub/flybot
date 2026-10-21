@@ -325,8 +325,8 @@ const VIEWS = {
         return (tt) => { show(k, prog(tt, 0, 0.6)); show(t, prog(tt, 0.2, 0.8)); cards.forEach((c, i) => show(c, prog(tt, 0.8 + i * 1.6, 0.8), 40)); };
     },
     end(s) {
-        const limits = place(el('div', 'card stat', '<p style="font-size:30px;font-weight:800;margin:0 0 14px">Limits</p><p>0 human labels and 0 / 50 expert verdicts yet</p><p>Sticky cards measured on synthetic photos only</p><p>No autonomous spraying: a person always decides</p>', s), 360, 170, 1200, 280);
-        const endc = place(el('div', 'abs', '', s), 0, 540, W);
+        const limits = place(el('div', 'card stat', '<p style="font-size:30px;font-weight:800;margin:0 0 14px">Expert review and limits</p><p>Expert review: 43 of 49 agent decisions policy-correct (87.8 %); the 6 wrong ones were needless recaptures</p><p>0 human count labels yet · sticky cards measured on synthetic photos only</p><p>No autonomous spraying: a person always decides</p><small>eval/results/expert_review.json · REPORT.md section 6.7</small>', s), 300, 150, 1320, 330);
+        const endc = place(el('div', 'abs', '', s), 0, 560, W);
         endc.innerHTML = `<div style="text-align:center"><div class="title" style="font-size:72px">Try it: <span style="color:var(--mint)">flybot.agrhub.com</span></div><div class="sub" style="margin-top:14px">Guest access · read-only, two hours, no sign-up</div><div class="sub mono" style="margin-top:24px;font-size:28px">github.com/agrhub/flybot-aws</div><div class="kicker" style="margin-top:34px">AGRHUB · FlyBot team</div></div>`;
         return (tt) => { show(limits, prog(tt, 0.2, 0.8)); show(endc, prog(tt, 5.5, 1)); };
     }
