@@ -373,6 +373,11 @@
         "medium": "Trung bình · JPEG 640×480",
         "high": "Cao · JPEG 1024×768"
       },
+      "lowered": {
+        "weakLink": "Đường truyền quá chậm cho {chosen}: camera đã chuyển sang {running}. Hãy chọn cỡ nhỏ hơn hoặc Tự động.",
+        "refused": "Camera không chạy được {chosen} nên giữ {running}.",
+        "other": "Camera đang phát {running}, không phải {chosen}."
+      },
       "liveInfo": "Trực tiếp · {mode} {width}×{height} · {fps} khung hình/giây"
     },
     "provisioning": {

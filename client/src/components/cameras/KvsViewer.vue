@@ -22,8 +22,14 @@
       <span v-if="state === 'playing' && infoText" class="kvs-viewer__info truncate" data-test="kvs-info">{{ infoText }}</span>
       <span class="flex-1"></span>
       <el-dropdown v-if="showQuality" trigger="click" placement="top-end" @command="onQuality">
-        <el-button link class="kvs-viewer__btn kvs-viewer__quality" data-test="kvs-quality">
-          {{ choiceShort(quality) }}
+        <el-button link class="kvs-viewer__btn kvs-viewer__quality" :class="{ 'is-lowered': lowered }" data-test="kvs-quality">
+          <!-- What plays when the camera did not follow the choice, with the reason on hover -->
+          <el-tooltip v-if="lowered" :content="loweredText" placement="top">
+            <span class="flex items-center gap-1" data-test="kvs-quality-lowered">
+              <el-icon><WarningFilled /></el-icon>{{ runningShort }}
+            </span>
+          </el-tooltip>
+          <template v-else>{{ choiceShort(quality) }}</template>
         </el-button>
         <template #dropdown>
           <el-dropdown-menu>
@@ -47,7 +53,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Loading, WarningFilled, VideoPlay, VideoPause, Camera, FullScreen } from '@element-plus/icons-vue';
-import { CAMOS_CHANNEL, CHANNEL_OPTIONS, JpegAssembler, RateMeter, ackMessage, parseControl, presetFor, qualityChoices, qualityMessage, sizeOf } from '@/utils/camosLive';
+import { CAMOS_CHANNEL, CHANNEL_OPTIONS, JpegAssembler, RateMeter, ackMessage, parseControl, presetFor, qualityChoices, qualityDiffers, qualityMessage, sizeOf } from '@/utils/camosLive';
 
 /**
  * Live view of a CamOS camera over Kinesis Video Streams WebRTC: the browser joins the camera's
@@ -95,6 +101,10 @@ const jpegSize = { width: 0, height: 0 };
 
 let askTimer = null;
 let wanted = null; // the preset asked for and not confirmed yet
+// Why the camera plays something else than the choice: 'weakLink' (it lowered the quality), 'refused' (it could
+// not start the asked size), or '' (none said; then only the mismatch shows)
+const lowerReason = ref('');
+const pending = ref(false); // a quality request is out and not answered yet
 
 // The camera's answer to the channel ("hello") or a quality change ("mode"): which picture to show
 function onControl(m) {
@@ -105,21 +115,33 @@ function onControl(m) {
     if (m.t === 'hello') {
       cameraSizes.value = Array.isArray(m.sizes) ? m.sizes : null;
       askQuality();
+    } else if (m.reason === 'weak_link') {
+      lowerReason.value = 'weakLink';
+    } else if (wanted && m.mode === wanted.mode && m.w === wanted.w) {
+      wanted = null; // confirmed
+      pending.value = false;
+      lowerReason.value = '';
     }
-    else if (wanted && m.mode === wanted.mode && m.w === wanted.w) wanted = null; // confirmed
   } else if (m.t === 'error' && wanted) {
     wanted = null; // the camera keeps what runs (it could not start the asked size)
+    pending.value = false;
+    lowerReason.value = 'refused';
   }
 }
 
 // Ask for the preset of the chosen quality, again every 2 s (up to 3 times) until the camera confirms it
 function askQuality() {
   clearTimeout(askTimer);
+  lowerReason.value = '';
   wanted = presetFor(props.quality, channelOpen, cameraSizes.value);
   let tries = 0;
+  pending.value = !!wanted;
   const send = () => {
-    if (!wanted || channel?.readyState !== 'open' || tries++ >= 3) return;
-    try { channel.send(qualityMessage(wanted)); } catch { return; }
+    if (!wanted || channel?.readyState !== 'open' || tries++ >= 3) {
+      pending.value = false;
+      return;
+    }
+    try { channel.send(qualityMessage(wanted)); } catch { pending.value = false; return; }
     askTimer = setTimeout(send, 2000);
   };
   send();
@@ -209,6 +231,17 @@ const choiceShort = (q) => {
   return size ? `${size[0]}×${size[1]}` : q;
 };
 const onQuality = (q) => emit('update:quality', q);
+
+// The camera did not follow the choice (weak link, size refused, no data channel): show what plays instead
+const lowered = computed(() => state.value === 'playing' && !pending.value
+  && qualityDiffers(presetFor(props.quality, true, cameraSizes.value), lastInfo.value));
+const runningShort = computed(() => (lastInfo.value?.width
+  ? `${lastInfo.value.mode === 'jpeg' ? 'JPEG' : 'H.264'} ${lastInfo.value.width}×${lastInfo.value.height}`
+  : ''));
+const loweredText = computed(() => t(`cameras.kvs.lowered.${lowerReason.value || 'other'}`, {
+  chosen: choiceLabel(props.quality),
+  running: runningShort.value,
+}));
 
 function stopByUser() {
   stop();

@@ -69,6 +69,16 @@ export function presetFor(choice, channelOpen, sizes = null) {
   return jpegPreset(...closest(offered, AUTO_AREA));
 }
 
+/**
+ * Whether what plays ({ mode, width, height } of the viewer's info) is not the preset asked for: the camera lowered
+ * the quality on a weak link, could not start the asked size, or never opened the data channel.
+ */
+export function qualityDiffers(preset, info) {
+  if (!preset || !info?.width) return false;
+  if (info.mode !== preset.mode) return true;
+  return preset.mode === 'jpeg' && (info.width !== preset.w || info.height !== preset.h);
+}
+
 function closest(sizes, area) {
   return sizes.reduce((best, s) => (Math.abs(s[0] * s[1] - area) < Math.abs(best[0] * best[1] - area) ? s : best), sizes[0]);
 }

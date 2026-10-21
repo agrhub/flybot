@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   HEADER_LENGTH, JpegAssembler, RateMeter, QUALITY_PRESETS, ackMessage, loadQualityChoice, parseChunk, parseControl,
-  presetFor, qualityChoices, qualityMessage, saveQualityChoice, sizeOf,
+  presetFor, qualityChoices, qualityDiffers, qualityMessage, saveQualityChoice, sizeOf,
 } from '@/utils/camosLive';
 
 // One binary message as the camera sends it: 'C' 'J' 1 20 | seq | total | offset | ts, then the bytes
@@ -138,5 +138,19 @@ describe('quality from the camera sizes', () => {
     const storage = { getItem: (k) => store.get(k) ?? null, setItem: (k, v) => store.set(k, v) };
     saveQualityChoice('jpeg-800x600', storage);
     expect(loadQualityChoice(storage)).toBe('jpeg-800x600');
+  });
+});
+
+describe('what plays against the choice', () => {
+  const uxga = { mode: 'jpeg', w: 1600, h: 1200, q: 12, fps: 10 };
+  it('flags a camera that lowered JPEG to H.264 or to another size', () => {
+    expect(qualityDiffers(uxga, { mode: 'h264', width: 320, height: 240 })).toBe(true);
+    expect(qualityDiffers(uxga, { mode: 'jpeg', width: 640, height: 480 })).toBe(true);
+  });
+  it('accepts what was asked, and says nothing before the first info', () => {
+    expect(qualityDiffers(uxga, { mode: 'jpeg', width: 1600, height: 1200 })).toBe(false);
+    expect(qualityDiffers(QUALITY_PRESETS.low, { mode: 'h264', width: 320, height: 240 })).toBe(false);
+    expect(qualityDiffers(uxga, null)).toBe(false);
+    expect(qualityDiffers(null, { mode: 'h264', width: 320, height: 240 })).toBe(false);
   });
 });
