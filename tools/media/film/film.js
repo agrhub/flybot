@@ -219,18 +219,18 @@ const VIEWS = {
     },
     bom(s) {
         const k = place(el('div', 'abs kicker', 'The trap camera · bill of materials', s), 120, 60);
-        const t = place(el('div', 'abs title', 'Open hardware: about 450,000 VND of parts, plus a US$19.99 board', s), 120, 108, 1700); t.style.fontSize = '48px';
+        const t = place(el('div', 'abs title', 'Open hardware: about US$40 per trap camera', s), 120, 108, 1700); t.style.fontSize = '48px';
         const parts = [
             ['photo', 'esp32', 'Freenove ESP32-S3 CAM', 'FNK0085, OV5640 camera · US$19.99'],
-            ['photo', 'modem', '4G modem SIMCom A7680C', 'antenna included · 169,000 ₫'],
-            ['photo', 'gps', 'GPS ATGM336H', 'antenna included · 173,280 ₫'],
-            ['photo', 'charger', 'Charger TP4056 + DW01', 'USB-C, protected · 6,270 ₫'],
-            ['photo', 'boost', 'Mini 5 V boost', '5 V for the board · 12,900 ₫'],
-            ['cell', null, '18650 Li-ion cell 2000 mAh', 'cell + holder · 39,000 ₫'],
-            ['housing', null, 'Solar trap housing', 'hanging, with lid · US$3 – 9.90']
+            ['photo', 'modem', '4G modem A7680C', 'antenna included · US$6.49'],
+            ['photo', 'gps', 'GPS ATGM336H', 'antenna included · US$6.65'],
+            ['photo', 'charger', 'Charger TP4056 + DW01', 'USB-C, protected · US$0.24'],
+            ['photo', 'boost', 'Mini 5 V boost', '5 V for the board · US$0.50'],
+            ['cell', null, '18650 cell + holder', '3.7 V, 2000 mAh · US$1.50'],
+            ['housing', null, 'Solar trap housing', 'hanging, with lid · US$3.00']
         ].map(([kind, key, h, p], i) => {
             // Four cards, then three centred under them
-            const card = place(el('div', 'part', '', s), 120 + (i % 4) * 430 + (i >= 4 ? 215 : 0), 200 + Math.floor(i / 4) * 345);
+            const card = place(el('div', 'part', '', s), 120 + (i % 4) * 430 + (i >= 4 ? 215 : 0), 188 + Math.floor(i / 4) * 340);
             const pic = el('div', 'pic', '', card);
             if (kind === 'photo') crop(pic, BOARD, BW, BH, ON_BOARD[key], 400, 220);
             else if (kind === 'housing') { const im = place(el('img', 'abs', undefined, pic), 0, 0, 400, 220); im.src = M + 'photos/IMG_20261019_143502.jpg'; im.style.objectFit = 'cover'; }
@@ -238,7 +238,7 @@ const VIEWS = {
             el('div', 'txt', `<h4>${h}</h4><p>${p}</p>`, card);
             return card;
         });
-        const src = place(el('div', 'abs source', 'Prices read on shop pages on 17 Oct 2026 (4G trap wiring sheet, parts list): 448,954 ₫ + US$19.99 board + US$3.00 housing; optional parts +191,442 ₫; SIM not included.', s), 120, 893, 1700);
+        const src = place(el('div', 'abs source', 'Prices read on shop pages on 17 Oct 2026 (4G trap wiring sheet); VND prices at 26,050 ₫/USD (Vietcombank, 21 Oct 2026). Required parts ≈ US$40.22 (448,954 ₫ + US$19.99 board + US$3.00 housing); optional parts +US$7.35; SIM not included.', s), 120, 870, 1700);
         return (tt) => {
             show(k, prog(tt, 0, 0.6)); show(t, prog(tt, 0.2, 0.8));
             parts.forEach((c, i) => show(c, prog(tt, 0.7 + i * 0.35, 0.7), 40, 0.92));
