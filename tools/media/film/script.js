@@ -29,8 +29,8 @@ export const SCENES = [
         { at: 0.3, en: 'This is the real board. It goes into the lid of a solar trap housing.',
           vi: 'Đây là board thật. Nó được lắp vào nắp của vỏ bẫy năng lượng mặt trời.' }] },
     { id: 'field', dur: 30, footage: true, lines: [
-        { at: 0.8, en: 'In the orchard, the trap hangs at fruit height. The camera photographs the sticky card on a schedule and sends each photo to AWS over 4G.',
-          vi: 'Ngoài vườn, bẫy được treo ngang tầm trái. Camera chụp tấm bẫy dính theo lịch và gửi từng ảnh lên AWS qua 4G.' }] },
+        { at: 0.8, en: 'In the orchard, the trap hangs at fruit height. The camera photographs the inside of the trap on a schedule and sends each photo to AWS over 4G.',
+          vi: 'Ngoài vườn, bẫy được treo ngang tầm trái. Camera chụp bên trong bẫy theo lịch và gửi từng ảnh lên AWS qua 4G.' }] },
     { id: 'guest', dur: 12, rec: true, lines: [
         { at: 0.3, en: 'Anyone can try FlyBot: one click on Guest access opens a read-only demo for two hours, with no sign-up.',
           vi: 'Ai cũng dùng thử được FlyBot: một cú nhấp vào Truy cập khách mở bản demo chỉ xem trong hai giờ, không cần đăng ký.' }] },
