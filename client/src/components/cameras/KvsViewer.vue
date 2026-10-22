@@ -53,7 +53,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Loading, WarningFilled, VideoPlay, VideoPause, Camera, FullScreen } from '@element-plus/icons-vue';
-import { CAMOS_CHANNEL, CHANNEL_OPTIONS, JpegAssembler, RateMeter, ackMessage, parseControl, presetFor, qualityChoices, qualityDiffers, qualityMessage, sizeOf } from '@/utils/camosLive';
+import { CAMOS_CHANNEL, JpegAssembler, channelOptions, RateMeter, ackMessage, parseControl, presetFor, qualityChoices, qualityDiffers, qualityMessage, sizeOf } from '@/utils/camosLive';
 
 /**
  * Live view of a CamOS camera over Kinesis Video Streams WebRTC: the browser joins the camera's
@@ -70,6 +70,8 @@ const props = defineProps({
   config: { type: Object, required: true },
   // auto | low | medium | high (utils/camosLive.js QUALITY_PRESETS)
   quality: { type: String, default: 'auto' },
+  // The camera's uplink, 'wifi' or '4g' (its status): auto stays on H.264 over 4G
+  network: { type: String, default: '' },
   // Player control bar; the quality menu in it only where the parent handles update:quality
   controls: { type: Boolean, default: false },
   showQuality: { type: Boolean, default: false },
@@ -90,6 +92,10 @@ const stateText = computed(() => (state.value === 'error' ? error.value || t('ca
 let signaling = null;
 let pc = null;
 let waitTimer = null;
+let graceTimer = null;
+let answered = false; // the camera answered our offer: ICE is in progress, so no new offer and no signaling timeout
+// A peer connection that reports 'disconnected' often recovers (a 4G uplink, a Wi-Fi hiccup): wait this long first
+const DISCONNECT_GRACE_MS = 15000;
 let channel = null;
 let channelOpen = false;
 let assembler = null;
@@ -116,11 +122,23 @@ function onControl(m) {
       cameraSizes.value = Array.isArray(m.sizes) ? m.sizes : null;
       askQuality();
     } else if (m.reason === 'weak_link') {
+      // The camera lowered the quality: stay there until the user picks again (asking again would flip back and forth)
+      wanted = null;
+      clearTimeout(askTimer);
+      pending.value = false;
       lowerReason.value = 'weakLink';
     } else if (wanted && m.mode === wanted.mode && m.w === wanted.w) {
       wanted = null; // confirmed
       pending.value = false;
       lowerReason.value = '';
+    }
+  } else if (m.t === 'stats' && (m.mode === 'jpeg' || m.mode === 'h264')) {
+    // Every 2 s the camera says what it streams: the truth when a 'mode' message was lost on the partially
+    // reliable channel (else the page would keep the last JPEG on screen while H.264 plays)
+    mode.value = m.mode;
+    if (m.mode === 'jpeg') {
+      jpegSize.width = m.w || jpegSize.width;
+      jpegSize.height = m.h || jpegSize.height;
     }
   } else if (m.t === 'error' && wanted) {
     wanted = null; // the camera keeps what runs (it could not start the asked size)
@@ -133,7 +151,7 @@ function onControl(m) {
 function askQuality() {
   clearTimeout(askTimer);
   lowerReason.value = '';
-  wanted = presetFor(props.quality, channelOpen, cameraSizes.value);
+  wanted = presetFor(props.quality, channelOpen, cameraSizes.value, { cellular: props.network === '4g' });
   let tries = 0;
   pending.value = !!wanted;
   const send = () => {
@@ -161,7 +179,7 @@ function showJpeg(frame) {
 
 function openChannel() {
   assembler = new JpegAssembler();
-  channel = pc.createDataChannel(CAMOS_CHANNEL, CHANNEL_OPTIONS);
+  channel = pc.createDataChannel(CAMOS_CHANNEL, channelOptions(props.network === '4g'));
   channel.binaryType = 'arraybuffer';
   channel.onopen = () => { channelOpen = true; };
   channel.onclose = () => {
@@ -222,6 +240,7 @@ const cameraSizes = ref(null);
 const menuChoices = computed(() => qualityChoices(cameraSizes.value));
 const choiceLabel = (q) => {
   const size = sizeOf(q);
+  if (q === 'auto' && props.network === '4g') return t('cameras.kvs.qualityOptions.autoCellular');
   if (q === 'auto' || q === 'low') return t(`cameras.kvs.qualityOptions.${q}`);
   return size ? t('cameras.kvs.qualityOptions.jpegSize', { w: size[0], h: size[1] }) : q;
 };
@@ -234,7 +253,7 @@ const onQuality = (q) => emit('update:quality', q);
 
 // The camera did not follow the choice (weak link, size refused, no data channel): show what plays instead
 const lowered = computed(() => state.value === 'playing' && !pending.value
-  && qualityDiffers(presetFor(props.quality, true, cameraSizes.value), lastInfo.value));
+  && qualityDiffers(presetFor(props.quality, true, cameraSizes.value, { cellular: props.network === '4g' }), lastInfo.value));
 const runningShort = computed(() => (lastInfo.value?.width
   ? `${lastInfo.value.mode === 'jpeg' ? 'JPEG' : 'H.264'} ${lastInfo.value.width}×${lastInfo.value.height}`
   : ''));
@@ -315,7 +334,18 @@ async function connect() {
       setState('playing');
     });
     pc.addEventListener('connectionstatechange', () => {
-      if (['failed', 'disconnected', 'closed'].includes(pc?.connectionState)) setState('error', t('cameras.kvs.disconnected'));
+      const s = pc?.connectionState;
+      if (s === 'failed' || s === 'closed') {
+        clearTimeout(graceTimer);
+        setState('error', t('cameras.kvs.disconnected'));
+      } else if (s === 'disconnected') {
+        clearTimeout(graceTimer);
+        graceTimer = setTimeout(() => {
+          if (pc && ['disconnected', 'failed'].includes(pc.connectionState)) setState('error', t('cameras.kvs.disconnected'));
+        }, DISCONNECT_GRACE_MS);
+      } else if (s === 'connected') {
+        clearTimeout(graceTimer);
+      }
     });
     signaling = new SignalingClient({
       channelARN: cfg.channelARN,
@@ -336,26 +366,32 @@ async function connect() {
       signaling.sendSdpOffer(pc.localDescription);
       // No answer for a while: the camera is not on the channel yet (asleep, or joining after live.start, which
       // takes a few seconds on battery). KVS only delivers an offer to a MASTER that is connected, so offer again
-      // every 8 s for up to 2 minutes; the SDP already carries the gathered ICE candidates.
+      // every 8 s for up to 2 minutes; the SDP already carries the gathered ICE candidates. Over 4G the camera's answer
+      // can take more than 8 s, and a new offer then restarts its session: wait 20 s between offers there.
+      const reofferMs = props.network === '4g' ? 20000 : 8000;
       let offers = 1;
       const reoffer = () => {
-        if (state.value === 'playing' || state.value === 'error' || !pc || !signaling) return;
+        // Answered: over 4G, ICE and DTLS take 12-20 s; a new offer then would restart the camera's session
+        if (answered || state.value === 'playing' || state.value === 'error' || !pc || !signaling) return;
         if (state.value === 'connecting') setState('waiting');
         if (offers >= 15) return;
         offers++;
         try { signaling.sendSdpOffer(pc.localDescription); } catch { /* closed: the close handler reports it */ }
-        waitTimer = setTimeout(reoffer, 8000);
+        waitTimer = setTimeout(reoffer, reofferMs);
       };
-      waitTimer = setTimeout(reoffer, 8000);
+      waitTimer = setTimeout(reoffer, reofferMs);
     });
     signaling.on('sdpAnswer', async (answer) => {
+      answered = true;
+      clearTimeout(waitTimer);
       await pc.setRemoteDescription(answer);
     });
     signaling.on('iceCandidate', (candidate) => {
       pc.addIceCandidate(candidate).catch(() => {});
     });
     signaling.on('close', () => {
-      if (state.value !== 'playing') setState('error', t('cameras.kvs.disconnected'));
+      // After the answer the session no longer needs signaling: ICE goes on, and the peer connection reports failure
+      if (state.value !== 'playing' && !answered) setState('error', t('cameras.kvs.disconnected'));
     });
     signaling.on('error', (err) => {
       setState('error', err?.message || t('cameras.kvs.failed'));
@@ -371,6 +407,8 @@ async function connect() {
 
 function stop() {
   clearTimeout(waitTimer);
+  clearTimeout(graceTimer);
+  answered = false;
   clearTimeout(askTimer);
   clearInterval(infoTimer);
   try {
@@ -409,7 +447,7 @@ onBeforeUnmount(() => {
   stop();
 });
 
-defineExpose({ reconnect: connect, stop });
+defineExpose({ reconnect: connect, stop, pause: stopByUser });
 </script>
 
 <style scoped>

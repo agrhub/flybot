@@ -12,6 +12,10 @@ export const CAMOS_CHANNEL = 'camos';
 // Unordered, and a chunk not delivered within 300 ms is given up: esp_peer's fully reliable SCTP stalls for seconds
 // after a loss on a busy Wi-Fi, while a lost chunk here only costs one frame (and a lost ack, one ack timeout)
 export const CHANNEL_OPTIONS = { ordered: false, maxPacketLifeTime: 300 };
+// Over 4G the carrier NAT forces a TURN relay (the KVS channel is in Sydney): round trips of 300 ms and more, so a
+// JPEG's chunks need longer than 300 ms and would all be given up
+export const CELLULAR_CHANNEL_OPTIONS = { ordered: false, maxPacketLifeTime: 2000 };
+export const channelOptions = (cellular) => (cellular ? CELLULAR_CHANNEL_OPTIONS : CHANNEL_OPTIONS);
 export const HEADER_LENGTH = 20;
 
 /**
@@ -53,10 +57,13 @@ export function sizeOf(choice) {
   return null;
 }
 
-/** The preset a choice asks the camera for, or null for plain H.264 without a data channel. */
-export function presetFor(choice, channelOpen, sizes = null) {
+/**
+ * The preset a choice asks the camera for, or null for plain H.264 without a data channel. On a cellular uplink
+ * (`cellular`, the camera's net is 4g) `auto` takes H.264 320x240: JPEG frames do not get through a 4G uplink.
+ */
+export function presetFor(choice, channelOpen, sizes = null, { cellular = false } = {}) {
   if (!channelOpen) return null;
-  if (choice === 'low') return QUALITY_PRESETS.low;
+  if (choice === 'low' || (cellular && (choice === 'auto' || !choice))) return QUALITY_PRESETS.low;
   const offered = Array.isArray(sizes) && sizes.length ? sizes.filter((s) => Array.isArray(s) && s[0] > 320) : null;
   const asked = sizeOf(choice);
   if (asked && !offered && QUALITY_PRESETS[choice]) return QUALITY_PRESETS[choice]; // medium / high, sizes unknown

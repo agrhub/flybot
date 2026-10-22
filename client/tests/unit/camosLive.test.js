@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   HEADER_LENGTH, JpegAssembler, RateMeter, QUALITY_PRESETS, ackMessage, loadQualityChoice, parseChunk, parseControl,
-  presetFor, qualityChoices, qualityDiffers, qualityMessage, saveQualityChoice, sizeOf,
+  channelOptions, presetFor, qualityChoices, qualityDiffers, qualityMessage, saveQualityChoice, sizeOf,
 } from '@/utils/camosLive';
 
 // One binary message as the camera sends it: 'C' 'J' 1 20 | seq | total | offset | ts, then the bytes
@@ -152,5 +152,21 @@ describe('what plays against the choice', () => {
     expect(qualityDiffers(QUALITY_PRESETS.low, { mode: 'h264', width: 320, height: 240 })).toBe(false);
     expect(qualityDiffers(uxga, null)).toBe(false);
     expect(qualityDiffers(null, { mode: 'h264', width: 320, height: 240 })).toBe(false);
+  });
+});
+
+describe('auto on a cellular uplink', () => {
+  it('takes H.264 over 4G and JPEG over Wi-Fi', () => {
+    const sizes = [[640, 480], [1600, 1200]];
+    expect(presetFor('auto', true, sizes, { cellular: true })).toEqual(QUALITY_PRESETS.low);
+    expect(presetFor('auto', true, sizes).mode).toBe('jpeg');
+    expect(presetFor('jpeg-1600x1200', true, sizes, { cellular: true }).w).toBe(1600); // a size picked by hand is kept
+  });
+});
+
+describe('data channel lifetime', () => {
+  it('gives chunks 2 s over 4G (TURN relay) and 300 ms over Wi-Fi', () => {
+    expect(channelOptions(true)).toEqual({ ordered: false, maxPacketLifeTime: 2000 });
+    expect(channelOptions(false)).toEqual({ ordered: false, maxPacketLifeTime: 300 });
   });
 });

@@ -369,6 +369,7 @@
       "qualityOptions": {
         "jpegSize": "JPEG {w}×{h}",
         "auto": "Auto (JPEG)",
+        "autoCellular": "Auto (H.264 over 4G)",
         "low": "Low · H.264 320×240 (weak network)",
         "medium": "Medium · JPEG 640×480",
         "high": "High · JPEG 1024×768"

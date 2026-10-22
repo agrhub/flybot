@@ -15,7 +15,7 @@
       <!-- Live preview: see what a change does; on the Motion tab, draw the detection area on it -->
       <div class="camos-settings__preview" data-test="settings-preview">
         <div v-if="previewConfig" class="absolute inset-0">
-          <KvsViewer :config="previewConfig" quality="auto" :name="camera?.deviceSerial || 'camera'" />
+          <KvsViewer :config="previewConfig" quality="auto" :network="camera?.device?.net || ''" :name="camera?.deviceSerial || 'camera'" />
         </div>
         <img v-else-if="thumbnail" :src="thumbnail" alt="" class="absolute inset-0 w-full h-full object-contain opacity-80" />
         <div v-if="!previewConfig" class="camos-settings__preview-note">{{ previewNote }}</div>

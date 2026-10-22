@@ -369,6 +369,7 @@
       "qualityOptions": {
         "jpegSize": "JPEG {w}×{h}",
         "auto": "Tự động (JPEG)",
+        "autoCellular": "Tự động (H.264 khi dùng 4G)",
         "low": "Thấp · H.264 320×240 (mạng yếu)",
         "medium": "Trung bình · JPEG 640×480",
         "high": "Cao · JPEG 1024×768"

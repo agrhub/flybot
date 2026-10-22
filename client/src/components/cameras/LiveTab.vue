@@ -18,8 +18,10 @@
             <!-- CamOS cameras: Kinesis Video Streams WebRTC -->
             <div v-if="kvsConfig" class="absolute inset-0">
               <KvsViewer
+                ref="kvsRef"
                 v-model:quality="liveQuality"
                 :config="kvsConfig"
+                :network="camera?.device?.net || ''"
                 :name="camera?.deviceSerial || 'camera'"
                 controls
                 show-quality
@@ -283,6 +285,14 @@ const sleepText = computed(() => {
 const liveQuality = ref(loadQualityChoice())
 // camos-esp32-trap cameras (serial ESP + MAC): the web console's settings from FlyBot, for those who manage it
 const settingsVisible = ref(false)
+// The camera streams to one viewer: the settings dialog's preview takes over, so the page's player stops while the
+// dialog is open and starts again when it closes
+const kvsRef = ref(null)
+watch(settingsVisible, (open) => {
+  if (!kvsRef.value) return
+  if (open) kvsRef.value.pause()
+  else kvsRef.value.reconnect()
+})
 const hasRemoteSettings = computed(() => isCamos.value && /^ESP[0-9A-F]{12}$/.test(props.camera?.deviceSerial || '') && props.camera?.canManage !== false)
 // The quality menu sits in the player's control bar (KvsViewer)
 watch(liveQuality, (q) => saveQualityChoice(q))
@@ -845,7 +855,10 @@ onUnmounted(() => {
 }
 /* CamOS: the 4:3 picture takes the full width of its column (no side bars, no shrinking on short screens) */
 .live-tab__viewport--43 {
+  /* As wide as the column and at most 60 % of the window tall, so the status bar and Capture now stay in view;
+     the 4:3 picture is fitted inside (object-contain), with black bars at the sides when the box is wider */
   max-width: 100%;
+  max-height: 60vh;
 }
 /* Placeholder sits on top of the black video area, so it uses a dark scrim with light text in both themes */
 .live-tab__scrim {
