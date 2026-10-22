@@ -1300,6 +1300,11 @@ const CONFIRM_ACTIONS = {
         if (payload.brightness !== undefined) image.brightness = Number(payload.brightness);
         if (payload.wdr !== undefined) image.wdr = typeof payload.wdr === 'boolean' ? (payload.wdr ? 2 : 0) : Number(payload.wdr);
         if (!Object.keys(image).length) return { error: 'Nothing to change.' };
+        // Only what the camera's firmware applies (camosSettings FIELDS): the OV5640 has no WDR, and the camera would
+        // answer NOT_SUPPORTED for it in every report
+        const { isField } = require('../services/camosSettings');
+        for (const key of Object.keys(image)) if (!isField(`video.image.${key}`)) delete image[key];
+        if (!Object.keys(image).length) return { error: 'This camera has none of these image settings.' };
         await require('../platforms/camos').updateDesired(camera.deviceSerial, { video: { image } });
         return { message: `Image settings sent: ${Object.entries(image).map(([k, v]) => `${k}=${v}`).join(', ')}.` };
     },

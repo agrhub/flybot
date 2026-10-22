@@ -258,7 +258,7 @@ async function syncCamera(deviceSerial) {
     await Camera.updateMany({ deviceSerial }, { $set: { 'device.tz': { iana: zone.timezone, posix: zone.posix, source: zone.tzSource, at: new Date() } } });
     try {
         // tz for the AMB82 firmware, timezone (IANA) for camos-esp32-trap
-        await require('../platforms/camos').updateDesired(deviceSerial, { tz: { iana: zone.timezone, posix: zone.posix }, timezone: zone.timezone });
+        await require('../platforms/camos').updateDesired(deviceSerial, { tz: null, timezone: zone.timezone }); // the firmware reads timezone (an IANA name) only
     } catch (err) {
         console.warn(`⚠️ Shadow tz not updated (${deviceSerial}): ${err.message}`);
     }

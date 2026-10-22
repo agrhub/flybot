@@ -489,12 +489,12 @@ test('time: farm > GPS > IP > default, POSIX string, public IP echoed; shadow tz
 
     // gps: the camera reported a fix in Sydney (needs its token)
     await upload('ESP1234567890AB', token, { v: 1, location: { lat: -33.87, lng: 151.21 } });
-    await waitFor(() => shadowUpdates.some(u => u.desired.tz?.iana === 'Australia/Sydney'));
+    await waitFor(() => shadowUpdates.some(u => u.desired.timezone === 'Australia/Sydney'));
     t = await time(headers, '8.8.8.8');
     assert.equal(t.body.tzSource, 'gps');
     assert.equal(t.body.timezone, 'Australia/Sydney');
     assert.equal(t.body.posix, '<+10>-10<+11>,M10.1.0/2,M4.1.0/3');
-    assert.ok(shadowUpdates.some(u => u.desired.tz?.iana === 'Australia/Sydney' && u.desired.tz.posix === t.body.posix), 'GPS fix -> shadow tz');
+    assert.ok(shadowUpdates.some(u => u.desired.timezone === 'Australia/Sydney'), 'GPS fix -> shadow timezone (the firmware reads it, not tz)');
     // Without the token the camera is not looked up
     assert.equal((await time({ 'X-Device-Serial': 'ESP1234567890AB' }, '8.8.8.8')).body.tzSource, 'ip');
 
@@ -507,14 +507,14 @@ test('time: farm > GPS > IP > default, POSIX string, public IP echoed; shadow tz
     assert.equal(t.body.tzSource, 'farm');
     assert.equal(t.body.timezone, 'Asia/Tokyo');
     assert.equal(t.body.posix, '<+09>-9');
-    assert.ok(shadowUpdates.some(u => u.desired.tz?.iana === 'Asia/Tokyo'), 'claim -> shadow tz');
+    assert.ok(shadowUpdates.some(u => u.desired.timezone === 'Asia/Tokyo'), 'claim -> shadow tz');
 
     // Farm edit: the camera follows
     shadowUpdates = [];
     const edit = await json(await request(`/api/farms/${farm._id}`, { method: 'PUT', as: owner, body: { timezone: 'Asia/Bangkok' } }));
     assert.equal(edit.status, 200, JSON.stringify(edit.body));
-    await waitFor(() => shadowUpdates.some(u => u.desired.tz?.iana === 'Asia/Bangkok'));
-    assert.ok(shadowUpdates.some(u => u.desired.tz?.iana === 'Asia/Bangkok'), 'farm edit -> shadow tz');
+    await waitFor(() => shadowUpdates.some(u => u.desired.timezone === 'Asia/Bangkok'));
+    assert.ok(shadowUpdates.some(u => u.desired.timezone === 'Asia/Bangkok'), 'farm edit -> shadow tz');
     assert.equal((await json(await request(`/api/farms/${farm._id}`, { method: 'PUT', as: owner, body: { timezone: 'Mars/Olympus' } }))).status, 400);
     // No change, nothing sent
     shadowUpdates = [];

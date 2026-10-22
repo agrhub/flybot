@@ -62,14 +62,40 @@ async function getShadow(deviceSerial) {
 }
 
 /** Merge `desired` into the shadow's desired state and remember it on the camera. */
+// Desired keys FlyBot wrote once that the firmware answers NOT_SUPPORTED on every apply (shadow.c): `tz` (it reads
+// `timezone`) and `video.image.wdr` (no WDR control on the OV5640). Removed from the shadow at the next write.
+const LEGACY_DESIRED = ['tz', 'video.image.wdr'];
+
+function getAt(obj, path) {
+    return path.split('.').reduce((o, k) => (o && typeof o === 'object' ? o[k] : undefined), obj);
+}
+function setAt(obj, path, value) {
+    const keys = path.split('.');
+    let o = obj;
+    for (const k of keys.slice(0, -1)) o = (o[k] = o[k] && typeof o[k] === 'object' ? o[k] : {});
+    o[keys[keys.length - 1]] = value;
+}
+
+/** A desired document without null leaves (null asks AWS to delete a key; the camera must not see it), keeping `log: null`. */
+function pruneNulls(obj, top = true) {
+    const out = {};
+    for (const [k, v] of Object.entries(obj || {})) {
+        if (v === null) { if (top && k === 'log') out[k] = null; continue; }
+        out[k] = v && typeof v === 'object' && !Array.isArray(v) ? pruneNulls(v, false) : v;
+    }
+    return out;
+}
+
 async function updateDesired(deviceSerial, desired) {
     const camera = await Camera.findOne({ deviceSerial }).select('device.thingName device.shadow.desired').lean();
+    desired = JSON.parse(JSON.stringify(desired || {}));
+    for (const path of LEGACY_DESIRED) if (getAt(camera?.device?.shadow?.desired, path) !== undefined && getAt(desired, path) === undefined) setAt(desired, path, null);
     const { UpdateThingShadowCommand } = require('@aws-sdk/client-iot-data-plane');
     const res = await aws.getClient('iotData').send(new UpdateThingShadowCommand({
         thingName: thingNameOf(camera, deviceSerial),
         payload: Buffer.from(JSON.stringify({ state: { desired } }))
     }));
-    const merged = deepMerge(camera?.device?.shadow?.desired || {}, desired);
+    const merged = pruneNulls(deepMerge(camera?.device?.shadow?.desired || {}, desired));
     await Camera.updateMany({ deviceSerial }, { $set: { 'device.shadow.desired': merged, 'device.shadow.desiredAt': new Date() } });
     const answer = decode(res?.payload);
     // The camos-esp32-trap firmware reads its settings from camos/<serial>/shadow/desired (protocol 8), not from the

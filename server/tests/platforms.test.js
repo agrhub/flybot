@@ -424,3 +424,24 @@ test('camos presence: a disconnect of an older session does not set a reconnecte
     await camos.handleMessage('$aws/events/presence/disconnected/ESPAB12CD34EF56', { clientId: 'ESPAB12CD34EF56', timestamp: t0 + 90000, sessionIdentifier: 'new', disconnectReason: 'CONNECTION_LOST' });
     assert.equal(await status(), 0, 'the current session going away sets it offline');
 });
+
+test('camos desired: legacy keys the firmware rejects are removed, and no null reaches the camera', async () => {
+    const owner = await createUser({ role: 'user', email: 'desired-legacy@example.test' });
+    await createCamera(owner, { deviceSerial: 'ESPAB12CD34EF57', platform: 'camos', status: 1, device: { thingName: 'ESPAB12CD34EF57', shadow: { desired: { tz: { iana: 'Asia/Ho_Chi_Minh' }, timezone: 'Asia/Ho_Chi_Minh', video: { image: { brightness: -16, wdr: 2 } } } } } });
+    const aws = require('../src/platforms/aws');
+    const calls = [];
+    aws.setClient('iotData', { async send(command) { calls.push({ name: aws.commandName(command), input: command.input }); return { payload: Buffer.from('{"version":7,"state":{}}') }; } });
+    try {
+        await require('../src/platforms/camos').updateDesired('ESPAB12CD34EF57', { motion: { sensitivity: 55 } });
+        const shadow = JSON.parse(calls.find(c => c.name === 'UpdateThingShadowCommand').input.payload.toString()).state.desired;
+        assert.equal(shadow.tz, null, 'AWS deletes the legacy keys');
+        assert.equal(shadow.video.image.wdr, null);
+        const toCamera = JSON.parse(calls.find(c => c.name === 'PublishCommand').input.payload.toString());
+        assert.equal('tz' in toCamera, false, 'the camera never sees them');
+        assert.equal('wdr' in toCamera.video.image, false);
+        assert.equal(toCamera.video.image.brightness, -16);
+        assert.equal(toCamera.motion.sensitivity, 55);
+    } finally {
+        aws.setClient('iotData', null);
+    }
+});

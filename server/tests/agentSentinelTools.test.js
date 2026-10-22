@@ -150,7 +150,8 @@ test('propose_action on a CamOS camera: set_isp goes to the shadow on Confirm', 
         const r = await confirm(owner, { sessionId: 'c1', messageId: a.messageId, cardIndex: 0, decision: 'confirm' });
         assert.equal(r.status, 200, await r.text());
         const update = iot.calls.find(c => c.name === 'UpdateThingShadowCommand');
-        assert.deepEqual(JSON.parse(update.input.payload.toString()), { state: { desired: { video: { image: { brightness: 20, wdr: 2 } } } } });
+        // The camera has no WDR (not a remote setting of the firmware): only the brightness is sent
+        assert.deepEqual(JSON.parse(update.input.payload.toString()), { state: { desired: { video: { image: { brightness: 20 } } } } });
     } finally {
         aws.setClient('iotData', null);
     }
