@@ -11,7 +11,8 @@ const { TIMEZONE } = require('./captureSchedule');
  * - sharpness: variance of the Laplacian (edges); blur flattens it
  * - clipped: share of pure-white pixels
  * Blur and haze depend a lot on the scene, so they are judged against the camera's own
- * recent good photos rather than fixed numbers.
+ * recent good photos rather than fixed numbers; a camera whose every photo is out of focus
+ * would set its own baseline, so very low edges per unit of contrast are blurry whatever the baseline.
  */
 const SAMPLE_WIDTH = 320;
 const DARK_BRIGHTNESS = 35;
@@ -20,6 +21,10 @@ const CLIPPED_SHARE = 0.35;
 // Below this share of the camera's usual sharpness (edges per unit of contrast) / contrast
 const BLUR_RATIO = 0.35;
 const HAZE_RATIO = 0.5;
+// Sharpness / contrast² below this is blurry for any camera (focused traps measure 0.19 and up, an
+// out-of-focus OV5640 about 0.01), once the photo has enough contrast for the ratio to mean something
+const BLUR_FLOOR = 0.04;
+const BLUR_FLOOR_MIN_CONTRAST = 10;
 // Good photos used as the camera's reference, and how many are needed first
 const BASELINE_SIZE = 20;
 const BASELINE_MIN = 5;
@@ -152,11 +157,14 @@ function assess(m, baseline, count = 0, { daylight = true, sticky = true } = {})
     if (m.brightness < DARK_BRIGHTNESS) {
         if (daylight) issues.add('dark');
     } else if (m.brightness > BRIGHT_BRIGHTNESS || m.clipped > CLIPPED_SHARE) issues.add('overexposed');
-    else if (baseline) {
+    else {
         // A hazy lens lowers edges and contrast together; blur lowers edges much more than contrast
         const edgeRatio = (q) => (q.contrast > 0 ? q.sharpness / (q.contrast * q.contrast) : 0);
-        if (edgeRatio(baseline) > 0 && edgeRatio(m) < edgeRatio(baseline) * BLUR_RATIO) issues.add('blurry');
-        if (baseline.contrast > 0 && m.contrast < baseline.contrast * HAZE_RATIO) issues.add('low_contrast');
+        if (m.contrast >= BLUR_FLOOR_MIN_CONTRAST && edgeRatio(m) < BLUR_FLOOR) issues.add('blurry');
+        if (baseline) {
+            if (edgeRatio(baseline) > 0 && edgeRatio(m) < edgeRatio(baseline) * BLUR_RATIO) issues.add('blurry');
+            if (baseline.contrast > 0 && m.contrast < baseline.contrast * HAZE_RATIO) issues.add('low_contrast');
+        }
     }
     // Only a glue card fills up
     if (sticky && ((m.coverage !== null && m.coverage !== undefined && m.coverage >= FULL_COVERAGE) || count >= FULL_COUNT)) issues.add('card_full');

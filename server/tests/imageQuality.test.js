@@ -75,6 +75,17 @@ test('assess against the camera\'s own baseline', () => {
     assert.deepEqual(assess({ ...baseline, coverage: null }, baseline, 320), ['card_full']);
 });
 
+test('a camera whose every photo is out of focus is blurry whatever its baseline', () => {
+    // Measured on the field: a focused EZVIZ trap and an out-of-focus OV5640 board (its own baseline is as soft)
+    const ezviz = { brightness: 124, contrast: 47, sharpness: 433, clipped: 0, coverage: null };
+    const soft = { brightness: 159, contrast: 52, sharpness: 33, clipped: 0.01, coverage: null };
+    assert.deepEqual(assess(ezviz, null), []);
+    assert.deepEqual(assess(soft, null), ['blurry']);
+    assert.deepEqual(assess(soft, soft), ['blurry']);
+    // Too little contrast for the ratio to say anything (a blank card)
+    assert.deepEqual(assess({ ...soft, contrast: 6, sharpness: 0.5 }, null), []);
+});
+
 test('coverage from pixel boxes; unknown when boxes are in another scale', () => {
     assert.equal(coverageOf([{ bbox: [0, 0, 64, 48] }, { bbox: [100, 100, 164, 148] }], 640, 480), 0.02);
     assert.equal(coverageOf([{ bbox: [0, 0, 900, 900] }], 640, 480), null);
