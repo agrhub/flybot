@@ -251,6 +251,7 @@ import { useNotifications } from '@/composables/useNotifications'
 import { useI18n } from 'vue-i18n'
 import { requestErrorText } from '@/utils/requestError'
 import { loadQualityChoice, saveQualityChoice } from '@/utils/camosLive'
+import { useSimulatedBanner } from '@/composables/useSimulatedBanner'
 
 const { t } = useI18n()
 
@@ -292,6 +293,11 @@ watch(settingsVisible, (open) => {
 const hasRemoteSettings = computed(() => isCamos.value && /^ESP[0-9A-F]{12}$/.test(props.camera?.deviceSerial || '') && props.camera?.canManage !== false)
 // The quality menu sits in the player's control bar (KvsViewer)
 watch(liveQuality, (q) => saveQualityChoice(q))
+
+// A real camera's own page shows no simulated data: no simulated-data banner or tag here
+const { setInView: setSimulatedInView } = useSimulatedBanner()
+watch(() => props.camera, (c) => setSimulatedInView(!c || !!c.simulated), { immediate: true })
+onUnmounted(() => setSimulatedInView(true))
 const onKvsInfo = (info) => {
   if (!info?.width) return
   currentStreamType.value = t('cameras.kvs.liveInfo', { mode: info.mode === 'jpeg' ? 'JPEG' : 'H.264', width: info.width, height: info.height, fps: info.fps })

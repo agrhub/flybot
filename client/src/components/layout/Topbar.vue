@@ -5,7 +5,7 @@
       <img v-if="isMobile" src="/logo.png" alt="FlyBot" class="w-7 h-7 rounded-md object-contain shrink-0" />
       <span class="topbar-title truncate">{{ currentSectionTitle }}</span>
       <!-- The folded simulated-data banner: the data stays marked; a click shows the explanation again -->
-      <el-tooltip v-if="user && user.simulatedData && simBannerCollapsed" :content="t('simulated.showBanner')" placement="bottom">
+      <el-tooltip v-if="user && user.simulatedData && simInView && simBannerCollapsed" :content="t('simulated.showBanner')" placement="bottom">
         <el-tag type="warning" effect="light" round size="small" class="cursor-pointer shrink-0" role="button" tabindex="0" data-test="simulated-chip" @click="expandSimBanner" @keydown.enter="expandSimBanner">
           {{ t('simulated.tag') }}
         </el-tag>
@@ -155,7 +155,7 @@ const { t, locale } = useI18n();
 const { isDark, isAssistantOpen, toggleTheme, toggleAssistant } = useTheme();
 const { user, userName, userEmail, userInitial, logout } = useAuth();
 const { isMobile } = useBreakpoints();
-const { collapsed: simBannerCollapsed, expand: expandSimBanner } = useSimulatedBanner();
+const { collapsed: simBannerCollapsed, expand: expandSimBanner, inView: simInView } = useSimulatedBanner();
 const { start: startTour } = useAppTour();
 
 const currentSectionTitle = computed(() => {

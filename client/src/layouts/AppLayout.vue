@@ -61,7 +61,7 @@
       <!-- Simulated demo data in view (scripts/demo_sim.js): always said, never passed off as field data.
            Closing it folds it into the "Simulated" tag of the top bar, which opens it again -->
       <el-alert
-        v-if="user && user.simulatedData && !simBannerCollapsed"
+        v-if="user && user.simulatedData && simInView && !simBannerCollapsed"
         type="warning"
         closable
         :close-text="t('simulated.collapse')"
@@ -160,7 +160,7 @@ const route = useRoute();
 const { initTheme } = useTheme();
 const { t, locale } = useI18n();
 const { user, refreshUser } = useAuth();
-const { collapsed: simBannerCollapsed, collapse: collapseSimBanner } = useSimulatedBanner();
+const { collapsed: simBannerCollapsed, collapse: collapseSimBanner, inView: simInView } = useSimulatedBanner();
 const { offline, savedAt } = useOffline();
 const { items: outboxItems, pending: outboxPending, failed: outboxFailed, sending: outboxSending, flush: flushOutbox, removeItem: removeOutboxItem, reload: reloadOutbox } = useOutbox();
 const sendOutbox = async () => {
