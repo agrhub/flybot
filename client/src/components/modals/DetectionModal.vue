@@ -120,6 +120,7 @@
     </div>
 
     <template #footer>
+      <el-button :icon="Download" :disabled="imageLoading" data-test="download-photo" @click="downloadPhoto">{{ t('analytics.downloadPhoto') }}</el-button>
       <el-button :icon="ChatDotRound" @click="askAboutPhoto">{{ t('assistant.askAboutPhoto') }}</el-button>
       <el-button @click="closeModal">{{ t('analytics.closeWindow') }}</el-button>
     </template>
@@ -133,7 +134,7 @@ import api from '@/services/api'
 import { drawDetections } from '@/utils/detectionImage'
 import { useI18n } from 'vue-i18n'
 import { ElNotification } from 'element-plus'
-import { Check, EditPen, Delete, Plus, ChatDotRound } from '@element-plus/icons-vue'
+import { Check, EditPen, Delete, Plus, ChatDotRound, Download } from '@element-plus/icons-vue'
 import { useTheme } from '@/utils/theme'
 import { FRUIT_FLY, speciesName, normalizeSummary, formatSummary } from '@/utils/species'
 import { useCameras } from '@/composables/useCameras'
@@ -262,6 +263,21 @@ const drawDetection = () => {
   img.onerror = () => {
     imageLoading.value = false
   }
+}
+
+// The photo with its boxes as drawn, saved as a JPEG (the browser's "save image" on a canvas makes a large PNG)
+const downloadPhoto = () => {
+  const canvas = canvasRef.value
+  if (!canvas?.width) return
+  canvas.toBlob((blob) => {
+    if (!blob) return
+    const at = props.item?.createdAt ? new Date(props.item.createdAt).toISOString().slice(0, 16).replace(/[-:]/g, '').replace('T', '-') : 'photo'
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(blob)
+    link.download = `flybot-${props.item?.deviceSerial || 'camera'}-${at}.jpg`
+    link.click()
+    setTimeout(() => URL.revokeObjectURL(link.href), 1000)
+  }, 'image/jpeg', 0.9)
 }
 
 const renderChart = () => {
