@@ -331,6 +331,10 @@
         "powered": "Mains powered: always connected, live view on demand"
       }
     },
+    "battery": {
+      "charging": "Charging",
+      "notCharging": "Not charging"
+    },
     "sleeping": "Sleeping",
     "sleepingNextWake": "Sleeping, next wake {time}",
     "requestLive": "Request live at next wake",
@@ -1921,6 +1925,7 @@
       "resumeConfirm": "Resume {name}? It takes photos on its schedule again.",
       "resumedDone": "Camera resumed.",
       "charging": "charging",
+      "notCharging": "not charging",
       "powered": "mains power",
       "crashed": "Restarted: {reason}",
       "logOn": "Log on",
@@ -3655,6 +3660,7 @@
     "location": "Location",
     "lastSeen": "Last heard from",
     "charging": "charging",
+    "notCharging": "not charging",
     "refresh": "Refresh",
     "locate": "Get a GPS fix",
     "restart": "Restart",

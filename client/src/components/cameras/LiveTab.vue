@@ -67,7 +67,11 @@
           </el-tag>
           <el-tag :type="isCamos ? 'primary' : 'info'" effect="plain" size="small">{{ t(`cameras.platform.${camera?.platform || 'ezviz'}`) }}</el-tag>
           <el-tag v-if="isCamos && camera?.device?.power?.mode" type="info" effect="plain" size="small">{{ t(`cameras.power.${camera.device.power.mode}`) }}</el-tag>
-          <el-tag v-if="isCamos && camera?.device?.battery?.pct != null" type="info" effect="plain" size="small">{{ camera.device.battery.pct }} %</el-tag>
+          <el-tag v-if="isCamos && camera?.device?.battery?.pct != null" :type="camera.device.battery.charging ? 'success' : 'info'" effect="plain" size="small" data-test="battery-tag">
+            <span class="inline-flex items-center gap-1">
+              <el-icon v-if="camera.device.battery.charging"><Lightning /></el-icon>{{ batteryTagText(camera.device.battery, t) }}
+            </span>
+          </el-tag>
           <el-tag v-if="!isCamos" type="success" effect="plain" size="small">HD</el-tag>
           <span class="live-tab__value" data-test="live-status">{{ currentStreamType }}</span>
           <el-tag v-if="health?.imageIssues?.length" type="warning" effect="light" round size="small">{{ t('cameras.imageQuality.label') }}: {{ health.imageIssues.map(i => t(`cameras.imageQuality.issues.${i}`)).join(', ') }}</el-tag>
@@ -245,12 +249,13 @@ import CameraFirmwareCard from './CameraFirmwareCard.vue'
 import KvsViewer from './KvsViewer.vue'
 import CamosSettingsDialog from './CamosSettingsDialog.vue'
 import { ElNotification } from 'element-plus'
-import { VideoCamera, Key, Lock, EditPen, Camera, InfoFilled, Clock, Setting } from '@element-plus/icons-vue'
+import { VideoCamera, Key, Lock, EditPen, Camera, InfoFilled, Clock, Setting, Lightning } from '@element-plus/icons-vue'
 import { useBreakpoints } from '@/composables/useBreakpoints'
 import { useNotifications } from '@/composables/useNotifications'
 import { useI18n } from 'vue-i18n'
 import { requestErrorText } from '@/utils/requestError'
 import { loadQualityChoice, saveQualityChoice } from '@/utils/camosLive'
+import { batteryTagText } from '@/utils/battery'
 import { useSimulatedBanner } from '@/composables/useSimulatedBanner'
 
 const { t } = useI18n()

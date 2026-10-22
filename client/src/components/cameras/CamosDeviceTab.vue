@@ -73,7 +73,7 @@ const networkText = computed(() => {
 const batteryText = computed(() => {
   const b = props.info.battery;
   if (!b) return dash;
-  const parts = [b.pct != null ? `${b.pct} %` : null, b.mv != null ? `${(b.mv / 1000).toFixed(2)} V` : null, b.charging ? t('camosDevice.charging') : null];
+  const parts = [b.pct != null ? `${b.pct} %` : null, b.mv != null ? `${(b.mv / 1000).toFixed(2)} V` : null, b.charging === true ? t('camosDevice.charging') : b.charging === false ? t('camosDevice.notCharging') : null];
   return parts.filter(Boolean).join(' · ') || dash;
 });
 const locationText = computed(() => {

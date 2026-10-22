@@ -234,7 +234,7 @@
     <!-- 3. Card Footer -->
     <div class="grid-cam__footer px-4 py-2.5 flex items-center justify-between gap-2">
       <!-- Device Model / Type Badge -->
-      <div class="flex items-center gap-1.5 min-w-0">
+      <div class="flex items-center gap-1.5 min-w-0 overflow-hidden">
         <!-- Platform, power and stream tags live here so the header keeps the name and serial readable -->
         <!-- Camera platform (EZVIZ cloud, CamOS on AWS IoT Core) -->
         <el-tag :type="isCamos ? 'primary' : 'info'" effect="plain" size="small" class="shrink-0" data-test="platform-badge">
@@ -243,6 +243,12 @@
         <!-- CamOS: how the camera is powered -->
         <el-tooltip v-if="isCamos && powerMode" :content="t(`cameras.power.hint.${powerMode}`)" placement="top">
           <el-tag type="info" effect="plain" size="small" class="shrink-0" data-test="power-mode">{{ t(`cameras.power.${powerMode}`) }}</el-tag>
+        </el-tooltip>
+        <!-- CamOS: battery level, a bolt while charging (the full text in the tooltip: the footer is narrow) -->
+        <el-tooltip v-if="isCamos && camera.device?.battery?.pct != null" :content="batteryTagText(camera.device.battery, t)" placement="top">
+          <el-tag :type="camera.device.battery.charging ? 'success' : 'info'" effect="plain" size="small" class="shrink-0" data-test="battery-tag">
+            <span class="inline-flex items-center gap-0.5">{{ camera.device.battery.pct }} %<el-icon v-if="camera.device.battery.charging"><Lightning /></el-icon></span>
+          </el-tag>
         </el-tooltip>
         <!-- A simulated demo camera: synthetic photos, not field data -->
         <el-tooltip v-if="camera.simulated" :content="t('simulated.cameraHint')" placement="top">
@@ -272,7 +278,7 @@
       </div>
 
       <!-- Action: View Details Button -->
-      <el-button type="primary" link @click="emit('expand', camera)">
+      <el-button type="primary" link class="shrink-0" @click="emit('expand', camera)">
         {{ t('cameras.viewDetails') }}
         <el-icon class="el-icon--right"><ArrowRight /></el-icon>
       </el-button>
@@ -336,8 +342,10 @@ import {
   WarningFilled,
   ArrowRight,
   Moon,
-  Clock
+  Clock,
+  Lightning
 } from '@element-plus/icons-vue';
+import { batteryTagText } from '@/utils/battery';
 
 const props = defineProps({
   camera: {

@@ -320,7 +320,8 @@ const batteryText = (row) => {
   const parts = [];
   if (b?.pct !== undefined) parts.push(`${b.pct}%`);
   if (b?.mv !== undefined) parts.push(`${(b.mv / 1000).toFixed(2)} V`);
-  if (b?.charging) parts.push(t('admin.fleet.charging'));
+  if (b?.charging === true) parts.push(t('admin.fleet.charging'));
+  else if (b?.charging === false) parts.push(t('admin.fleet.notCharging'));
   if (row.power === 'powered') parts.push(t('admin.fleet.powered'));
   return parts.join(' · ') || '--';
 };
