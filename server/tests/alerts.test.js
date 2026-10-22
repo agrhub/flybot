@@ -55,6 +55,28 @@ test('a muted camera sends that person nothing', async () => {
     assert.deepEqual(created.map(n => String(n.userId)), [String(viewer._id)]);
 });
 
+test('the same status change arriving twice at once alerts once', async () => {
+    const owner = await createUser({ email: 'twice@example.test' });
+    await createCamera(owner, { deviceSerial: 'CAM2', deviceName: 'Twice' });
+    // Two overlapping status syncs both saw the camera online
+    const results = await Promise.all([notificationService.cameraStatusChanged('CAM2', 0), notificationService.cameraStatusChanged('CAM2', 0)]);
+    assert.equal(results.flat().length, 1);
+    assert.equal(await models.Notification.countDocuments({ type: 'camera_offline', deviceSerial: 'CAM2' }), 1);
+    assert.equal(sentMails.length, 1, 'one email');
+});
+
+test('camos: two disconnect events at once set the camera offline with one alert', async () => {
+    const owner = await createUser({ email: 'camos-twice@example.test' });
+    await createCamera(owner, { deviceSerial: 'ESPAB12CD34EF59', deviceName: 'Trap', platform: 'camos', status: 1, device: { thingName: 'ESPAB12CD34EF59' } });
+    const camos = require('../src/platforms/camos');
+    const gone = { clientId: 'ESPAB12CD34EF59', timestamp: Date.now(), disconnectReason: 'MQTT_KEEP_ALIVE_TIMEOUT' };
+    await Promise.all([camos.handleMessage('$aws/events/presence/disconnected/ESPAB12CD34EF59', gone), camos.handleMessage('$aws/events/presence/disconnected/ESPAB12CD34EF59', gone)]);
+    await new Promise(resolve => setTimeout(resolve, 300));
+    assert.equal((await models.Camera.findOne({ deviceSerial: 'ESPAB12CD34EF59' }).lean()).status, 0);
+    assert.equal(await models.Notification.countDocuments({ type: 'camera_offline' }), 1);
+    assert.equal(sentMails.length, 1);
+});
+
 async function rollup(serial, peaks) {
     // peaks[0] = today, peaks[1] = yesterday, ...
     await models.DailyStat.insertMany(peaks.map((peak, i) => ({

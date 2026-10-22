@@ -56,8 +56,12 @@ function queueMail(message) {
     const attempt = async (index) => {
         try {
             await sendMail(message);
+            if (index > 0) console.log(`📧 Email "${message.subject}" sent on attempt ${index + 1}`);
         } catch (err) {
             if (index < RETRY_DELAYS_MS.length) {
+                // A failure after the server took the message (a lost reply) makes the retry a duplicate: say so
+                const stage = [err.code, err.command, err.responseCode].filter(Boolean).join(' ');
+                console.warn(`📧 Email "${message.subject}" attempt ${index + 1} failed${stage ? ` (${stage})` : ''}: ${err.message}; retrying in ${RETRY_DELAYS_MS[index] / 1000} s`);
                 setTimeout(() => attempt(index + 1), RETRY_DELAYS_MS[index]).unref();
             } else {
                 console.error(`📧 Email "${message.subject}" failed after ${index + 1} attempts:`, err.message);

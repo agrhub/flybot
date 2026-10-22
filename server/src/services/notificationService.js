@@ -113,11 +113,23 @@ function inQuietHours(user, now = new Date()) {
     return q.start < q.end ? current >= q.start && current < q.end : current >= q.start || current < q.end;
 }
 
+// Calls for the same user, type and camera run one after the other, so a second one at the same
+// moment (two status syncs, two events) sees the first notification and stays in cooldown
+const inFlight = new Map();
+
 /**
  * Create one notification for one user (unless in cooldown), push it live and email it.
  * Returns the notification, or null when suppressed.
  */
-async function notifyUser({ userId, type, deviceSerial = '', params = {} }) {
+function notifyUser(args) {
+    const key = `${args.userId}:${args.type}:${args.deviceSerial || ''}`;
+    const run = (inFlight.get(key) || Promise.resolve()).catch(() => {}).then(() => deliver(args));
+    inFlight.set(key, run);
+    run.catch(() => {}).finally(() => { if (inFlight.get(key) === run) inFlight.delete(key); });
+    return run;
+}
+
+async function deliver({ userId, type, deviceSerial = '', params = {} }) {
     const since = new Date(Date.now() - COOLDOWN_MINUTES[type] * 60 * 1000);
     const recent = await Notification.exists({ userId, type, deviceSerial, createdAt: { $gte: since } });
     if (recent) return null;

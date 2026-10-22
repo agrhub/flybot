@@ -427,11 +427,11 @@ async function markConnected(deviceSerial, at = new Date()) {
 }
 
 async function setOnline(deviceSerial, online, at = new Date(), extra = {}) {
-    const before = await Camera.findOne({ deviceSerial, platform: PLATFORM }).select('status deviceName').lean();
-    if (!before) return false;
     const set = { status: online ? 1 : 0, lastSync: at, ...extra };
     if (online) Object.assign(set, { 'device.sleeping': false, 'device.lastSeenAt': at });
-    await Camera.updateMany({ deviceSerial }, { $set: set });
+    // Read the old status and write the new one in one step: two events at once alert only once
+    const before = await Camera.findOneAndUpdate({ deviceSerial, platform: PLATFORM }, { $set: set }, { new: false, projection: { status: 1 } }).lean();
+    if (!before) return false;
     if (Number(before.status) !== (online ? 1 : 0)) {
         require('../services/notificationService').cameraStatusChanged(deviceSerial, online ? 1 : 0)
             .catch(err => console.error(`⚠️ Status alert failed (${deviceSerial}):`, err.message));
