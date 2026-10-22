@@ -474,11 +474,32 @@ async function handleMessage(topicName, payload, { now = new Date() } = {}) {
     const presence = String(topicName || '').match(/^\$aws\/events\/presence\/(connected|disconnected)\/([A-Za-z0-9_-]{1,64})$/);
     if (presence) {
         const [, what, clientId] = presence;
-        const camera = await Camera.findOne({ platform: PLATFORM, $or: [{ deviceSerial: clientId }, { 'device.thingName': clientId }] }).select('deviceSerial').lean();
+        const camera = await Camera.findOne({ platform: PLATFORM, $or: [{ deviceSerial: clientId }, { 'device.thingName': clientId }] }).select('deviceSerial device.connectedAt device.connectedSession').lean();
         if (!camera) return { clientId, kind: 'presence', ignored: 'unknown camera' };
-        if (what === 'connected') await markConnected(camera.deviceSerial, now);
-        await setOnline(camera.deviceSerial, what === 'connected', now);
-        return { deviceSerial: camera.deviceSerial, kind: 'presence', online: what === 'connected' };
+        // IoT Core's own event time; events can arrive out of order (a short power cut: the new session's connect,
+        // then the old session's keepalive timeout)
+        const at = Number.isFinite(Number(doc?.timestamp)) && Number(doc.timestamp) > 0 ? new Date(Number(doc.timestamp)) : now;
+        const session = typeof doc?.sessionIdentifier === 'string' ? doc.sessionIdentifier.slice(0, 64) : undefined;
+        if (what === 'connected') {
+            await markConnected(camera.deviceSerial, now);
+            await Camera.updateMany({ deviceSerial: camera.deviceSerial }, { $set: { 'device.connectedAt': at, ...(session ? { 'device.connectedSession': session } : {}) } });
+            await setOnline(camera.deviceSerial, true, now);
+            console.log(`📡 ${camera.deviceSerial} connected`);
+            return { deviceSerial: camera.deviceSerial, kind: 'presence', online: true };
+        }
+        const reason = typeof doc?.disconnectReason === 'string' ? doc.disconnectReason : '';
+        const lastConnect = camera.device?.connectedAt ? new Date(camera.device.connectedAt) : null;
+        // Not the session that connected last: the camera already has a newer connection
+        const older = reason === 'DUPLICATE_CLIENTID'
+            || (session && camera.device?.connectedSession && session !== camera.device.connectedSession)
+            || (lastConnect && at < lastConnect);
+        if (older) {
+            console.log(`📡 ${camera.deviceSerial} disconnect of an older session ignored (${reason || 'stale'})`);
+            return { deviceSerial: camera.deviceSerial, kind: 'presence', ignored: 'older session' };
+        }
+        await setOnline(camera.deviceSerial, false, now);
+        console.log(`📡 ${camera.deviceSerial} disconnected (${reason || 'no reason'})`);
+        return { deviceSerial: camera.deviceSerial, kind: 'presence', online: false };
     }
     const shadow = String(topicName || '').match(/^\$aws\/things\/([A-Za-z0-9_:-]{1,128})\/shadow\/update\/(accepted|documents)$/);
     if (shadow) {

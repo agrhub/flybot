@@ -407,3 +407,20 @@ test('iotEvents: subscribes in SUBSCRIBE packets of at most 8 topic filters (AWS
         iotEvents.stop();
     }
 });
+
+test('camos presence: a disconnect of an older session does not set a reconnected camera offline', async () => {
+    const owner = await createUser({ role: 'user', email: 'presence-order@example.test' });
+    await createCamera(owner, { deviceSerial: 'ESPAB12CD34EF56', platform: 'camos', status: 0, device: { thingName: 'ESPAB12CD34EF56' } });
+    const camos = require('../src/platforms/camos');
+    const status = async () => (await models.Camera.findOne({ deviceSerial: 'ESPAB12CD34EF56' }).lean()).status;
+    const t0 = Date.parse('2026-10-22T06:55:36Z');
+    // A short power cut: the new session connects, then IoT Core drops the old one
+    await camos.handleMessage('$aws/events/presence/connected/ESPAB12CD34EF56', { clientId: 'ESPAB12CD34EF56', timestamp: t0, sessionIdentifier: 'new' });
+    assert.equal(await status(), 1);
+    await camos.handleMessage('$aws/events/presence/disconnected/ESPAB12CD34EF56', { clientId: 'ESPAB12CD34EF56', timestamp: t0 + 1000, sessionIdentifier: 'old', disconnectReason: 'DUPLICATE_CLIENTID' });
+    assert.equal(await status(), 1, 'DUPLICATE_CLIENTID: a newer session exists');
+    await camos.handleMessage('$aws/events/presence/disconnected/ESPAB12CD34EF56', { clientId: 'ESPAB12CD34EF56', timestamp: t0 + 40000, sessionIdentifier: 'old', disconnectReason: 'MQTT_KEEP_ALIVE_TIMEOUT' });
+    assert.equal(await status(), 1, 'the old session timing out later changes nothing');
+    await camos.handleMessage('$aws/events/presence/disconnected/ESPAB12CD34EF56', { clientId: 'ESPAB12CD34EF56', timestamp: t0 + 90000, sessionIdentifier: 'new', disconnectReason: 'CONNECTION_LOST' });
+    assert.equal(await status(), 0, 'the current session going away sets it offline');
+});

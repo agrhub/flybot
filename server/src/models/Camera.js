@@ -39,6 +39,10 @@ const deviceSchema = new mongoose.Schema({
     csrHash: { type: String, default: undefined },
     registeredAt: { type: Date, default: undefined },
     firstConnectAt: { type: Date, default: undefined },
+    // When IoT Core last saw this camera connect (the presence event's own timestamp): a disconnect event older than
+    // it belongs to an earlier session and must not set the camera offline
+    connectedAt: { type: Date, default: undefined },
+    connectedSession: { type: String, default: undefined },
     // Last AWS cleanup that did not finish (the hourly job tries again)
     cleanupError: { type: String, default: undefined },
     // Timezone sent to the camera (shadow tz) and where it came from: farm | gps | ip | default
