@@ -384,3 +384,26 @@ test('iotEvents: the WebSocket URL is SigV4-signed for iotdevicegateway, with th
     assert.equal(await iotEvents.start({ mqttModule: { connect: () => { throw new Error('not in tests'); } }, credentials: creds }).catch(e => e.message), 'not in tests', 'start connects once the URL is signed');
     iotEvents.stop();
 });
+
+test('iotEvents: subscribes in SUBSCRIBE packets of at most 8 topic filters (AWS IoT disconnects on more)', async () => {
+    const iotEvents = require('../src/platforms/iotEvents');
+    const { SUBSCRIPTIONS } = require('../src/platforms/camos');
+    assert.deepEqual(iotEvents.subscribeBatches(['a', 'b', 'c'], 2), [['a', 'b'], ['c']]);
+    const handlers = {};
+    const packets = [];
+    const fakeClient = {
+        on: (event, fn) => { handlers[event] = fn; },
+        subscribe: (topics, opts, cb) => { packets.push(topics); cb(null); },
+        end: () => {}
+    };
+    const creds = { accessKeyId: 'AKIATEST', secretAccessKey: 'secret' };
+    assert.equal(await iotEvents.start({ mqttModule: { connect: () => fakeClient }, credentials: creds }), true);
+    try {
+        handlers.connect();
+        assert.ok(packets.length >= 2, 'the 9+ CamOS subscriptions need more than one packet');
+        assert.ok(packets.every(p => p.length <= iotEvents.MAX_FILTERS_PER_SUBSCRIBE));
+        assert.deepEqual(packets.flat(), SUBSCRIPTIONS, 'every topic once, in order');
+    } finally {
+        iotEvents.stop();
+    }
+});

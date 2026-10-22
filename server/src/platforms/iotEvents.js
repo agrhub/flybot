@@ -16,6 +16,15 @@ const SERVICE = 'iotdevicegateway';
 // A presigned WebSocket URL is good for 5 minutes; a fresh one is kept ready for reconnects
 const URL_REFRESH_MS = 4 * 60 * 1000;
 const RECONNECT_MS = 5000;
+// AWS IoT Core accepts at most 8 topic filters in one SUBSCRIBE and disconnects the client (CLIENT_ERROR) on more
+const MAX_FILTERS_PER_SUBSCRIBE = 8;
+
+/** The subscriptions in groups of at most MAX_FILTERS_PER_SUBSCRIBE, one SUBSCRIBE packet each. */
+function subscribeBatches(topics, size = MAX_FILTERS_PER_SUBSCRIBE) {
+    const out = [];
+    for (let i = 0; i < topics.length; i += size) out.push(topics.slice(i, i + size));
+    return out;
+}
 
 let client = null;
 let refreshTimer = null;
@@ -85,10 +94,23 @@ async function start({ mqttModule = null, credentials = null } = {}) {
     });
     client.on('connect', () => {
         stats.connected = true;
-        client.subscribe(camos.SUBSCRIPTIONS, { qos: 1 }, (err) => {
-            if (err) console.error('❌ IoT subscribe failed:', err.message);
-            else console.log(`📡 IoT events: subscribed to ${camos.SUBSCRIPTIONS.length} topics on ${env.IOT_ENDPOINT}`);
-        });
+        const batches = subscribeBatches(camos.SUBSCRIPTIONS);
+        let pending = batches.length;
+        let failed = false;
+        for (const topics of batches) {
+            client.subscribe(topics, { qos: 1 }, (err) => {
+                if (err) {
+                    failed = true;
+                    console.error('❌ IoT subscribe failed:', err.message);
+                }
+                if (--pending === 0 && !failed) console.log(`📡 IoT events: subscribed to ${camos.SUBSCRIPTIONS.length} topics on ${env.IOT_ENDPOINT}`);
+            });
+        }
+    });
+    client.on('close', () => {
+        // Logged, so a connection that keeps dropping shows in the server log
+        if (stats.connected) console.warn('⚠️ IoT events: connection closed, reconnecting');
+        stats.connected = false;
     });
     client.on('message', (topicName, payload) => {
         stats.messages++;
@@ -99,7 +121,6 @@ async function start({ mqttModule = null, credentials = null } = {}) {
             console.error(`⚠️ IoT message ${topicName} failed:`, err.message);
         });
     });
-    client.on('close', () => { stats.connected = false; });
     client.on('error', (err) => {
         stats.errors++;
         stats.lastError = err.message;
@@ -125,6 +146,8 @@ function stop() {
 module.exports = {
     isEnabled,
     presignUrl,
+    subscribeBatches,
+    MAX_FILTERS_PER_SUBSCRIBE,
     start,
     stop,
     stats
