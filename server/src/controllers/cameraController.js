@@ -487,6 +487,56 @@ async function updateDeviceSettings(req, res) {
     }
 }
 
+// What the camera's web console can do remotely, as camos-esp32-trap RPCs (protocol v1): refresh its state, take a
+// GPS fix, restart, change the Wi-Fi or the 4G APN (stored now, used from the next boot). No factory reset from
+// here: it erases the camera's registration, and a camera on 4G in a field would not come back without a person.
+const SSID_RE = /^[\x20-\x7e]{1,32}$/;
+const APN_RE = /^[A-Za-z0-9._-]{1,63}$/;
+function deviceActionRequest(body) {
+    const action = String(body?.action || '');
+    if (action === 'refresh') return { method: 'state', params: {} };
+    if (action === 'locate') return { method: 'gps.fix', params: { timeoutS: 120 } };
+    if (action === 'restart') return { method: 'reboot', params: {} };
+    if (action === 'wifi') {
+        const ssid = typeof body.ssid === 'string' ? body.ssid : '';
+        const password = typeof body.password === 'string' ? body.password : '';
+        if (!SSID_RE.test(ssid)) return { error: 'BAD_SSID' };
+        if (password && (password.length < 8 || password.length > 63)) return { error: 'BAD_PASSWORD' };
+        return { method: 'net.set', params: { wifi: { ssid, password } } };
+    }
+    if (action === 'apn') {
+        const apn = typeof body.apn === 'string' ? body.apn.trim() : '';
+        if (!APN_RE.test(apn)) return { error: 'BAD_APN' };
+        return { method: 'net.set', params: { cellular: { apn } } };
+    }
+    return { error: 'BAD_ACTION' };
+}
+
+/**
+ * POST /api/cameras/:serial/device-action { action: refresh | locate | restart | wifi {ssid, password} | apn {apn} }:
+ * one RPC to a camos-esp32-trap camera that is online and awake. The audit keeps the action, never a password.
+ */
+async function deviceAction(req, res) {
+    const deviceSerial = String(req.params.serial || '');
+    try {
+        const camera = await findManageableCamera(req.user, deviceSerial);
+        if (!camera) return res.status(404).json({ success: false, code: 'NOT_FOUND', message: "Camera not found or permission denied." });
+        if (!isEsp32Trap(camera)) return res.status(400).json({ success: false, code: 'NOT_SUPPORTED', message: "This camera has no remote actions." });
+        const request = deviceActionRequest(req.body);
+        if (request.error) return res.status(400).json({ success: false, code: request.error, message: "This action or its value is not valid." });
+        const camos = require('../platforms/camos');
+        const status = await camos.getStatus(deviceSerial);
+        if (!status?.online || status.sleeping) return res.status(409).json({ success: false, code: 'OFFLINE', message: "The camera is offline or asleep: try again when it is online." });
+        const answer = await camos.rpc(deviceSerial, request.method, request.params, { wait: true, timeoutMs: 15000 })
+            .catch(err => ({ ok: false, error: err.code || 'TIMEOUT' }));
+        recordAudit(req, { action: 'camera.action', target: cameraTarget(camera), details: { action: String(req.body.action), ok: answer?.ok !== false } });
+        if (answer?.ok === false) return res.status(502).json({ success: false, code: String(answer.error?.code || answer.error || 'CAMERA_ERROR').slice(0, 40), message: "The camera did not do it." });
+        res.json({ success: true, action: String(req.body.action), result: answer?.result || null });
+    } catch (err) {
+        sendServerError(res, err, { context: 'Camera action' });
+    }
+}
+
 /** GET /api/cameras/:serial/status: online, power mode, sleeping and next wake (platform-aware). */
 async function getCameraStatus(req, res) {
     const deviceSerial = String(req.params.serial || '');
@@ -1134,6 +1184,8 @@ module.exports = {
     claimCamera,
     getDeviceSettings,
     updateDeviceSettings,
+    deviceAction,
+    deviceActionRequest,
     getPlayback,
     getCameraStatus,
     deviceView

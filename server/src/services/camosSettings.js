@@ -150,10 +150,39 @@ function view(camera) {
         fields,
         camera: cam ? { sensor: cam.sensor || null, maxW: cam.maxW || null, maxH: cam.maxH || null } : null,
         values,
-        errors: Array.isArray(reported.errors) ? reported.errors.slice(0, 50) : [],
+        // Only the errors of fields this form changes: other desired keys (a sleeping camera's capture request, older
+        // writes) are not the reader's settings, and a raw code there reads as a fault of the form
+        errors: Array.isArray(reported.errors)
+            ? reported.errors.filter(e => FIELDS.some(f => f.path === (e?.path || e?.key))).slice(0, 50)
+            : [],
         reportedAt: camera?.device?.shadow?.reportedAt || null,
-        fw: camera?.device?.fw || null
+        fw: camera?.device?.fw || null,
+        // The console's Device Information, as FlyBot last heard it (state and shadow reports)
+        info: deviceInfo(camera, cam)
     };
 }
 
-module.exports = { FIELDS, SECTIONS, checkValue, toDesired, view };
+/** Device Information of the console: identity, network, power and place, without SIM or modem identifiers. */
+function deviceInfo(camera, cam) {
+    const d = camera?.device || {};
+    return {
+        model: camera?.model || null,
+        fw: d.fw || null,
+        hw: d.hw || null,
+        mac: d.mac || null,
+        sensor: cam?.sensor || null,
+        net: d.net || null,
+        rssi: d.rssi ?? null,
+        operator: d.operator || null,
+        battery: d.battery || null,
+        power: d.power?.mode || null,
+        location: d.location || null,
+        lastSeenAt: d.lastSeenAt || null,
+        sleeping: !!d.sleeping
+    };
+}
+
+/** Whether a desired path is one of the remote settings (the firmware applies it), e.g. video.image.brightness. */
+const isField = (path) => FIELDS.some(f => f.path === path);
+
+module.exports = { FIELDS, SECTIONS, checkValue, toDesired, view, isField };

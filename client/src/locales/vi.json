@@ -3643,6 +3643,38 @@
       "generic": "Không gửi được yêu cầu. Hãy thử lại."
     }
   },
+  "camosDevice": {
+    "model": "Model",
+    "firmware": "Firmware",
+    "sensor": "Cảm biến",
+    "mac": "Địa chỉ MAC",
+    "network": "Mạng",
+    "signal": "Sóng",
+    "battery": "Pin",
+    "power": "Chế độ nguồn",
+    "location": "Vị trí",
+    "lastSeen": "Lần báo gần nhất",
+    "charging": "đang sạc",
+    "refresh": "Cập nhật",
+    "locate": "Lấy vị trí GPS",
+    "restart": "Khởi động lại",
+    "restartConfirm": "Khởi động lại camera ngay? Khoảng một phút sau camera chạy lại; xem trực tiếp đang mở sẽ dừng.",
+    "networkHint": "Camera lưu mạng mới ngay và dùng từ lần khởi động sau. Sai mật khẩu hoặc APN có thể làm camera ngoài vườn mất kết nối: hãy kiểm tra kỹ trước.",
+    "wifiSsid": "Mạng Wi-Fi (SSID)",
+    "wifiPassword": "Mật khẩu Wi-Fi",
+    "sendWifi": "Gửi mạng Wi-Fi",
+    "apn": "APN 4G",
+    "apnPlaceholder": "để trống = tự lấy theo SIM",
+    "sendApn": "Gửi APN",
+    "failed": "Camera chưa thực hiện được.",
+    "done": {
+      "refresh": "Đã yêu cầu camera gửi trạng thái.",
+      "locate": "Camera đang lấy vị trí GPS (tối đa 2 phút).",
+      "restart": "Camera đang khởi động lại.",
+      "wifi": "Đã gửi mạng Wi-Fi: dùng từ lần khởi động sau.",
+      "apn": "Đã gửi APN: dùng từ lần khởi động sau."
+    }
+  },
   "camosSettings": {
     "open": "Cài đặt camera",
     "title": "Cài đặt camera: {name}",
@@ -3656,6 +3688,12 @@
     "loadFailed": "Không tải được cài đặt của camera.",
     "invalid": "Không hợp lệ: {list}",
     "cameraErrors": "Camera không áp dụng được: {list}",
+    "errorCodes": {
+      "NOT_SUPPORTED": "camera này không hỗ trợ",
+      "BAD_VALUE": "giá trị ngoài khoảng cho phép",
+      "BAD_PARAMS": "cài đặt không hợp lệ",
+      "BUSY": "camera đang bận, sẽ thử lại"
+    },
     "reportedAt": "Lần báo gần nhất của camera: {time}",
     "neverReported": "Camera chưa báo cài đặt của nó.",
     "window": {
@@ -3667,7 +3705,11 @@
       "image": "Hình ảnh",
       "motion": "Chuyển động",
       "power": "Nguồn điện",
-      "device": "Thiết bị"
+      "device": "Thiết bị",
+      "firmware": "Firmware",
+      "log": "Nhật ký camera",
+      "info": "Thông tin thiết bị",
+      "network": "Mạng"
     },
     "fields": {
       "capture": {

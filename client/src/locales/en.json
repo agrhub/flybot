@@ -3643,6 +3643,38 @@
       "generic": "The request could not be sent. Try again."
     }
   },
+  "camosDevice": {
+    "model": "Model",
+    "firmware": "Firmware",
+    "sensor": "Sensor",
+    "mac": "MAC address",
+    "network": "Network",
+    "signal": "Signal",
+    "battery": "Battery",
+    "power": "Power mode",
+    "location": "Location",
+    "lastSeen": "Last heard from",
+    "charging": "charging",
+    "refresh": "Refresh",
+    "locate": "Get a GPS fix",
+    "restart": "Restart",
+    "restartConfirm": "Restart the camera now? It is back in about a minute; a live view in progress stops.",
+    "networkHint": "The camera stores the new network now and uses it from its next start. A wrong password or APN can leave a camera in the field without a connection: check it first.",
+    "wifiSsid": "Wi-Fi network (SSID)",
+    "wifiPassword": "Wi-Fi password",
+    "sendWifi": "Send the Wi-Fi network",
+    "apn": "4G APN",
+    "apnPlaceholder": "empty = automatic from the SIM",
+    "sendApn": "Send the APN",
+    "failed": "The camera did not do it.",
+    "done": {
+      "refresh": "Asked the camera for its state.",
+      "locate": "The camera is taking a GPS fix (up to 2 minutes).",
+      "restart": "The camera is restarting.",
+      "wifi": "Wi-Fi network sent: used from the next start.",
+      "apn": "APN sent: used from the next start."
+    }
+  },
   "camosSettings": {
     "open": "Camera settings",
     "title": "Camera settings: {name}",
@@ -3656,6 +3688,12 @@
     "loadFailed": "The camera settings could not be loaded.",
     "invalid": "Not valid: {list}",
     "cameraErrors": "The camera did not apply: {list}",
+    "errorCodes": {
+      "NOT_SUPPORTED": "not supported by this camera",
+      "BAD_VALUE": "value out of range",
+      "BAD_PARAMS": "invalid setting",
+      "BUSY": "the camera was busy, it will retry"
+    },
     "reportedAt": "Last report from the camera: {time}",
     "neverReported": "The camera has not reported its settings yet.",
     "window": {
@@ -3667,7 +3705,11 @@
       "image": "Picture",
       "motion": "Motion",
       "power": "Power",
-      "device": "Device"
+      "device": "Device",
+      "firmware": "Firmware",
+      "log": "Camera log",
+      "info": "Device information",
+      "network": "Network"
     },
     "fields": {
       "capture": {

@@ -60,6 +60,7 @@ router.put('/cameras/:serial/firmware/auto', cameraController.setFirmwareAuto);
 // camos-esp32-trap cameras: the web console's settings, from FlyBot (services/camosSettings.js)
 router.get('/cameras/:serial/device-settings', cameraController.getDeviceSettings);
 router.put('/cameras/:serial/device-settings', express.json({ limit: '16kb' }), cameraController.updateDeviceSettings);
+router.post('/cameras/:serial/device-action', express.json({ limit: '4kb' }), cameraController.deviceAction);
 
 // Stream & playback routes
 router.post('/live', cameraController.getLiveStream);

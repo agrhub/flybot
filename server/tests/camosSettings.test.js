@@ -88,3 +88,36 @@ test('camosSettings: photo sizes come from the camera; flip and mirror are setti
     assert.deepEqual(ok.desired, { capture: { resolution: '2592x1944' }, video: { image: { vflip: true, hmirror: false } } });
     assert.equal(settings.toDesired({ 'capture.resolution': 'huge' }).errors[0].error, 'not_allowed');
 });
+
+test('device actions: valid requests become RPCs; an offline camera and bad values are refused; errors only for form fields', async () => {
+    const { deviceActionRequest } = require('../src/controllers/cameraController');
+    assert.deepEqual(deviceActionRequest({ action: 'restart' }), { method: 'reboot', params: {} });
+    assert.deepEqual(deviceActionRequest({ action: 'locate' }), { method: 'gps.fix', params: { timeoutS: 120 } });
+    assert.deepEqual(deviceActionRequest({ action: 'apn', apn: ' m-wap ' }), { method: 'net.set', params: { cellular: { apn: 'm-wap' } } });
+    assert.deepEqual(deviceActionRequest({ action: 'wifi', ssid: 'Farm', password: 'secret12' }), { method: 'net.set', params: { wifi: { ssid: 'Farm', password: 'secret12' } } });
+    assert.equal(deviceActionRequest({ action: 'wifi', ssid: 'Farm', password: 'short' }).error, 'BAD_PASSWORD');
+    assert.equal(deviceActionRequest({ action: 'apn', apn: 'bad apn!' }).error, 'BAD_APN');
+    assert.equal(deviceActionRequest({ action: 'factory_reset' }).error, 'BAD_ACTION', 'no factory reset from FlyBot');
+
+    const owner = await createUser({ role: 'user', email: 'action-owner@example.test' });
+    await createCamera(owner, {
+        deviceSerial: 'ESP0A1B2C3D4E60', platform: 'camos', status: 0,
+        device: { thingName: 'ESP0A1B2C3D4E60', fw: '0.8.0', net: '4g', operator: 'MobiFone', shadow: { reported: { errors: [
+            { path: 'video.image.wdr', code: 'NOT_SUPPORTED' }, { path: 'capture.requestNow', code: 'NOT_SUPPORTED' }, { path: 'video.image.brightness', code: 'BAD_VALUE' }
+        ] } } }
+    });
+    const iot = fakeIot();
+    aws.setClient('iotData', iot);
+    try {
+        const off = await json(await request('/api/cameras/ESP0A1B2C3D4E60/device-action', { method: 'POST', as: owner, body: { action: 'restart' } }));
+        assert.equal(off.status, 409);
+        assert.equal(off.body.code, 'OFFLINE');
+        assert.equal(iot.calls.length, 0, 'nothing sent to an offline camera');
+        const read = await json(await request('/api/cameras/ESP0A1B2C3D4E60/device-settings', { as: owner }));
+        assert.deepEqual(read.body.errors.map(e => e.path), ['video.image.brightness'], 'only the errors of form fields');
+        assert.equal(read.body.info.net, '4g');
+        assert.equal(read.body.info.operator, 'MobiFone');
+    } finally {
+        aws.setClient('iotData', null);
+    }
+});

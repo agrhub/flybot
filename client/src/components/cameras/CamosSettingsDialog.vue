@@ -24,7 +24,7 @@
       <p v-if="data.camera?.sensor" class="camos-settings__hint">{{ t('camosSettings.sensor', { sensor: data.camera.sensor, w: data.camera.maxW, h: data.camera.maxH }) }}</p>
       <p class="camos-settings__hint">{{ t('camosSettings.intro') }}</p>
       <el-alert v-if="data.errors?.length" type="warning" :closable="false" show-icon class="mb-3"
-        :title="t('camosSettings.cameraErrors', { list: data.errors.map(e => `${e.path || e.key}: ${e.code || e.error}`).join(', ') })" />
+        :title="t('camosSettings.cameraErrors', { list: data.errors.map(errorText).join(', ') })" />
       <el-tabs v-model="section">
         <el-tab-pane v-for="s in data.sections" :key="s" :name="s" :label="t(`camosSettings.sections.${s}`)">
           <el-form label-position="left" label-width="auto" size="small" @submit.prevent>
@@ -60,6 +60,20 @@
             </el-form-item>
           </el-form>
         </el-tab-pane>
+        <!-- The rest of the camera's web console: Device Information with its actions, and the Network page -->
+        <el-tab-pane name="info" :label="t('camosSettings.sections.info')" data-test="settings-info">
+          <CamosDeviceTab :camera="camera" :info="data.info || {}" section="info" @done="onDeviceAction" />
+        </el-tab-pane>
+        <el-tab-pane name="network" :label="t('camosSettings.sections.network')" data-test="settings-network">
+          <CamosDeviceTab :camera="camera" :info="data.info || {}" section="network" />
+        </el-tab-pane>
+        <!-- The camera's firmware and its console log: kept with the settings, off the camera page -->
+        <el-tab-pane name="firmware" :label="t('camosSettings.sections.firmware')" data-test="settings-firmware">
+          <CameraFirmwareCard :camera="camera" />
+        </el-tab-pane>
+        <el-tab-pane v-if="camera?.access !== 'demo'" name="log" :label="t('camosSettings.sections.log')" data-test="settings-log">
+          <CameraLogCard :camera="camera" />
+        </el-tab-pane>
       </el-tabs>
       <p class="camos-settings__hint mt-2">{{ data.reportedAt ? t('camosSettings.reportedAt', { time: new Date(data.reportedAt).toLocaleString() }) : t('camosSettings.neverReported') }}</p>
     </template>
@@ -73,13 +87,16 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { ElNotification } from 'element-plus';
 import { Loading } from '@element-plus/icons-vue';
 import api from '@/services/api';
 import KvsViewer from './KvsViewer.vue';
 import AreaSelector from './AreaSelector.vue';
+import CameraFirmwareCard from './CameraFirmwareCard.vue';
+import CamosDeviceTab from './CamosDeviceTab.vue';
+import CameraLogCard from './CameraLogCard.vue';
 import { requestErrorText } from '@/utils/requestError';
 import { changedSettings, effectiveValue } from '@/utils/camosSettingsForm';
 
@@ -94,6 +111,14 @@ const props = defineProps({
 });
 const emit = defineEmits(['update:modelValue']);
 const { t, te } = useI18n();
+// "Brightness: not supported by this camera" rather than "video.image.brightness: NOT_SUPPORTED"
+const errorText = (e) => {
+  const path = e?.path || e?.key || '';
+  const code = e?.code || e?.error || '';
+  const field = te(`camosSettings.fields.${path}`) ? t(`camosSettings.fields.${path}`) : path;
+  const reason = te(`camosSettings.errorCodes.${code}`) ? t(`camosSettings.errorCodes.${code}`) : code;
+  return `${field}: ${reason}`;
+};
 
 const loading = ref(false);
 const saving = ref(false);
@@ -181,12 +206,44 @@ async function load() {
   }
 }
 
+// A refreshed state comes back over MQTT a moment later: read the settings view again
+function onDeviceAction(action) {
+  if (action === 'refresh' || action === 'locate') setTimeout(() => { if (props.modelValue) reload(); }, action === 'locate' ? 30000 : 3000);
+}
+async function reload() {
+  try {
+    const res = await api.getDeviceSettings(props.camera.deviceSerial);
+    data.value = { ...data.value, info: res.data.info, reportedAt: res.data.reportedAt };
+  } catch { /* the next open loads it */ }
+}
+
+// After a save the camera reports what it applied a few seconds later (over MQTT): read the view again every 3 s for
+// up to 45 s while something is still waiting, so the "Waiting for the camera" tags clear without reopening
+let followTimer = null;
+const anyPending = () => Object.values(data.value?.values || {}).some((v) => v?.pending);
+function followReports(tries = 15) {
+  clearTimeout(followTimer);
+  if (tries <= 0 || !anyPending()) return;
+  followTimer = setTimeout(async () => {
+    if (!props.modelValue || !data.value) return;
+    try {
+      const res = await api.getDeviceSettings(props.camera.deviceSerial);
+      // Unsaved edits stay as typed: then only the applied values, errors and report time are taken
+      if (changedCount.value === 0) fill(res.data);
+      else data.value = { ...data.value, values: res.data.values, errors: res.data.errors, reportedAt: res.data.reportedAt, info: res.data.info };
+    } catch { /* the next try, or the next open */ }
+    followReports(tries - 1);
+  }, 3000);
+}
+watch(() => props.modelValue, (open) => { if (!open) clearTimeout(followTimer); });
+
 async function save() {
   saving.value = true;
   try {
     const res = await api.updateDeviceSettings(props.camera.deviceSerial, changes.value);
     fill(res.data);
     ElNotification({ title: t('common.success'), message: t('camosSettings.saved'), type: 'success' });
+    followReports();
   } catch (err) {
     const list = err.response?.data?.errors;
     const message = Array.isArray(list) && list.length

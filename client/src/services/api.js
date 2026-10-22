@@ -608,6 +608,10 @@ export default {
   updateDeviceSettings(deviceSerial, changes) {
     return apiClient.put(`/cameras/${encodeURIComponent(deviceSerial)}/device-settings`, { changes });
   },
+  // One console action on a camos-esp32-trap camera: refresh | locate | restart | wifi {ssid, password} | apn {apn}
+  cameraDeviceAction(deviceSerial, body) {
+    return apiClient.post(`/cameras/${encodeURIComponent(deviceSerial)}/device-action`, body);
+  },
   // Firmware: running and latest version, check, confirmed install, automatic updates
   getCameraFirmware(deviceSerial) {
     return apiClient.get(`/cameras/${encodeURIComponent(deviceSerial)}/firmware`);
