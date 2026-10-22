@@ -359,6 +359,12 @@ async function getStatus(deviceSerial, now = new Date()) {
 const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : undefined);
 const dateOf = (ms) => (Number.isFinite(Number(ms)) && Number(ms) > 0 ? new Date(Number(ms)) : undefined);
 const strip = (obj) => Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined));
+// Where a position came from: "gps", or "cell" (the 4G module's cell-tower estimate when the GPS has no fix),
+// and its radius in metres; older firmware sends neither (a GPS fix)
+const locationSource = (loc) => strip({
+    source: ['gps', 'cell'].includes(loc?.source) ? loc.source : undefined,
+    accuracyM: num(loc?.accuracyM) > 0 ? Math.round(num(loc.accuracyM)) : undefined
+});
 
 /** Fields of Camera.device from a state / telemetry / reported-shadow document. */
 function deviceFieldsOf(doc) {
@@ -368,7 +374,7 @@ function deviceFieldsOf(doc) {
         : undefined;
     const gps = doc.location || doc.gps;
     const location = gps && typeof gps === 'object' && num(gps.lat) !== undefined
-        ? strip({ lat: num(gps.lat), lng: num(gps.lng ?? gps.lon), fixAt: gps.fixAt ? new Date(gps.fixAt) : dateOf(gps.ts) })
+        ? strip({ lat: num(gps.lat), lng: num(gps.lng ?? gps.lon), fixAt: gps.fixAt ? new Date(gps.fixAt) : dateOf(gps.ts), ...locationSource(gps) })
         : undefined;
     const net = typeof doc.net === 'string' ? doc.net : (doc.net && typeof doc.net === 'object' ? doc.net.type : undefined);
     const rssi = num(doc.rssi ?? doc.net?.rssi);
@@ -555,6 +561,7 @@ const SUBSCRIPTIONS = [
 module.exports = {
     PLATFORM,
     SUBSCRIPTIONS,
+    locationSource,
     RPC_TIMEOUT_MS,
     SNAPSHOT_TIMEOUT_MS,
     thingNameOf,

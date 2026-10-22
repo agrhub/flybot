@@ -46,6 +46,7 @@ import { ElMessageBox, ElNotification } from 'element-plus';
 import { Location, Refresh, SwitchButton } from '@element-plus/icons-vue';
 import api from '@/services/api';
 import { requestErrorText } from '@/utils/requestError';
+import { locationText as formatLocation } from '@/utils/location';
 import { useBreakpoints } from '@/composables/useBreakpoints';
 
 /**
@@ -76,10 +77,7 @@ const batteryText = computed(() => {
   const parts = [b.pct != null ? `${b.pct} %` : null, b.mv != null ? `${(b.mv / 1000).toFixed(2)} V` : null, b.charging === true ? t('camosDevice.charging') : b.charging === false ? t('camosDevice.notCharging') : null];
   return parts.filter(Boolean).join(' · ') || dash;
 });
-const locationText = computed(() => {
-  const l = props.info.location;
-  return l?.lat != null && l?.lng != null ? `${l.lat.toFixed(5)}, ${l.lng.toFixed(5)}` : dash;
-});
+const locationText = computed(() => formatLocation(props.info.location, t) || dash);
 
 async function run(action, extra = {}) {
   busy.value = action;

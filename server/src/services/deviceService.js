@@ -125,7 +125,7 @@ function readMeta(raw) {
         ? strip({ mv: num(meta.battery.mv), pct: num(meta.battery.pct), charging: typeof meta.battery.charging === 'boolean' ? meta.battery.charging : undefined, solarMv: num(meta.battery.solarMv) })
         : undefined;
     const location = meta.location && typeof meta.location === 'object' && num(meta.location.lat) !== undefined && num(meta.location.lng) !== undefined
-        ? strip({ lat: num(meta.location.lat), lng: num(meta.location.lng), fixAt: meta.location.fixAt && !isNaN(new Date(meta.location.fixAt)) ? new Date(meta.location.fixAt) : undefined })
+        ? strip({ lat: num(meta.location.lat), lng: num(meta.location.lng), fixAt: meta.location.fixAt && !isNaN(new Date(meta.location.fixAt)) ? new Date(meta.location.fixAt) : undefined, ...require('../platforms/camos').locationSource(meta.location) })
         : undefined;
     return {
         value: strip({

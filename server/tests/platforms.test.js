@@ -425,6 +425,16 @@ test('camos presence: a disconnect of an older session does not set a reconnecte
     assert.equal(await status(), 0, 'the current session going away sets it offline');
 });
 
+test('camos location: a 4G cell estimate keeps its source and radius', async () => {
+    const owner = await createUser({ role: 'user', email: 'cell-location@example.test' });
+    await createCamera(owner, { deviceSerial: 'ESPAB12CD34EF58', platform: 'camos', status: 1, device: { thingName: 'ESPAB12CD34EF58' } });
+    const location = async () => (await models.Camera.findOne({ deviceSerial: 'ESPAB12CD34EF58' }).lean()).device.location;
+    await camos.handleMessage('camos/ESPAB12CD34EF58/shadow/reported', { location: { lat: 10.2, lng: 106.0, source: 'cell', accuracyM: 550.4 } });
+    assert.deepEqual(await location(), { lat: 10.2, lng: 106.0, source: 'cell', accuracyM: 550 });
+    await camos.handleMessage('camos/ESPAB12CD34EF58/shadow/reported', { location: { lat: 10.2, lng: 106.0, source: 'wifi', accuracyM: -1 } });
+    assert.deepEqual(await location(), { lat: 10.2, lng: 106.0 }, 'unknown source and a bad radius are dropped');
+});
+
 test('camos desired: legacy keys the firmware rejects are removed, and no null reaches the camera', async () => {
     const owner = await createUser({ role: 'user', email: 'desired-legacy@example.test' });
     await createCamera(owner, { deviceSerial: 'ESPAB12CD34EF57', platform: 'camos', status: 1, device: { thingName: 'ESPAB12CD34EF57', shadow: { desired: { tz: { iana: 'Asia/Ho_Chi_Minh' }, timezone: 'Asia/Ho_Chi_Minh', video: { image: { brightness: -16, wdr: 2 } } } } } });

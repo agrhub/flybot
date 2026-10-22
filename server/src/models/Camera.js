@@ -80,7 +80,7 @@ const deviceSchema = new mongoose.Schema({
         reason: { type: String, default: undefined },
         fw: { type: String, default: undefined }
     },
-    location: { type: mongoose.Schema.Types.Mixed, default: undefined }, // { lat, lng, fixAt }
+    location: { type: mongoose.Schema.Types.Mixed, default: undefined }, // { lat, lng, fixAt, source: gps | cell, accuracyM }
     power: { type: mongoose.Schema.Types.Mixed, default: undefined }, // { mode: auto | battery | powered }
     sleeping: { type: Boolean, default: undefined },
     wakeAt: { type: Date, default: undefined },

@@ -239,6 +239,7 @@ import 'leaflet/dist/leaflet.css';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import { loadEzuikit } from '@/utils/lazyLibs';
+import { approximateRadius } from '@/utils/location';
 
 const { t } = useI18n();
 const { isDark } = useTheme();
@@ -250,6 +251,8 @@ let streetLayer = null;
 let earthLayer = null;
 const markersMap = new Map();
 let clusterGroup = null;
+// Circles around cameras placed by their 4G cell estimate (utils/location.js)
+let accuracyLayer = null;
 let heatLayer = null;
 const showHeatmap = ref(false);
 // Plot boundaries (farms)
@@ -728,6 +731,8 @@ const renderMarkers = () => {
   // Clear existing markers & any running popup player
   stopPopupPlayer();
   clusterGroup?.clearLayers();
+  if (!accuracyLayer) accuracyLayer = L.layerGroup().addTo(map);
+  accuracyLayer.clearLayers();
   markersMap.clear();
   renderHeatmap();
 
@@ -752,8 +757,17 @@ const renderMarkers = () => {
     });
     clusterGroup.addLayer(marker);
 
+    // Placed by the camera's 4G cell estimate: show how far off it may be
+    const radius = approximateRadius(cam);
+    const circle = radius
+      ? L.circle([lat, lng], { radius, color: RISK_COLOR.moderate, weight: 1, fillOpacity: 0.08, interactive: false }).addTo(accuracyLayer)
+      : null;
+    if (circle) marker.bindTooltip(t('map.approxLocation', { m: radius }));
+
     // Draggable event
     marker.on('dragend', async (e) => {
+      // Set by hand: no longer an estimate
+      if (circle) accuracyLayer.removeLayer(circle);
       const position = e.target.getLatLng();
       cam.latitude = position.lat;
       cam.longitude = position.lng;
