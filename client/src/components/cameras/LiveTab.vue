@@ -62,18 +62,14 @@
       <!-- Under the video: what is playing, and the camera actions -->
       <div class="flex flex-wrap items-center justify-between gap-2">
         <div class="flex flex-wrap items-center gap-2">
-          <el-tag :type="camera?.device?.sleeping ? 'warning' : camera?.status === 1 ? 'success' : 'info'" effect="light" round size="small">
-            {{ camera?.device?.sleeping ? sleepText : camera?.status === 1 ? t('common.online') : t('common.offline') }}
+          <!-- What the player shows (live, playback, connecting): online / offline is next to the camera's name -->
+          <el-tag :type="streamTagType" effect="light" round size="small" data-test="live-status">
+            {{ camera?.device?.sleeping ? sleepText : currentStreamType }}
           </el-tag>
           <el-tag :type="isCamos ? 'primary' : 'info'" effect="plain" size="small">{{ t(`cameras.platform.${camera?.platform || 'ezviz'}`) }}</el-tag>
-          <el-tag v-if="isCamos && camera?.device?.power?.mode" type="info" effect="plain" size="small">{{ t(`cameras.power.${camera.device.power.mode}`) }}</el-tag>
-          <el-tag v-if="isCamos && camera?.device?.battery?.pct != null" :type="camera.device.battery.charging ? 'success' : 'info'" effect="plain" size="small" data-test="battery-tag">
-            <span class="inline-flex items-center gap-1">
-              <el-icon v-if="camera.device.battery.charging"><Lightning /></el-icon>{{ batteryTagText(camera.device.battery, t) }}
-            </span>
-          </el-tag>
           <el-tag v-if="!isCamos" type="success" effect="plain" size="small">HD</el-tag>
-          <span class="live-tab__value" data-test="live-status">{{ currentStreamType }}</span>
+          <el-tag v-if="isCamos && playingTier" type="info" effect="plain" size="small" data-test="live-tier">{{ playingTier }}</el-tag>
+          <DeviceSignal v-if="isCamos && camera?.device" :device="camera.device" />
           <el-tag v-if="health?.imageIssues?.length" type="warning" effect="light" round size="small">{{ t('cameras.imageQuality.label') }}: {{ health.imageIssues.map(i => t(`cameras.imageQuality.issues.${i}`)).join(', ') }}</el-tag>
         </div>
         <div class="flex flex-wrap items-center gap-2">
@@ -249,13 +245,13 @@ import CameraFirmwareCard from './CameraFirmwareCard.vue'
 import KvsViewer from './KvsViewer.vue'
 import CamosSettingsDialog from './CamosSettingsDialog.vue'
 import { ElNotification } from 'element-plus'
-import { VideoCamera, Key, Lock, EditPen, Camera, InfoFilled, Clock, Setting, Lightning } from '@element-plus/icons-vue'
+import { VideoCamera, Key, Lock, EditPen, Camera, InfoFilled, Clock, Setting } from '@element-plus/icons-vue'
 import { useBreakpoints } from '@/composables/useBreakpoints'
 import { useNotifications } from '@/composables/useNotifications'
 import { useI18n } from 'vue-i18n'
 import { requestErrorText } from '@/utils/requestError'
-import { loadQualityChoice, saveQualityChoice } from '@/utils/camosLive'
-import { batteryTagText } from '@/utils/battery'
+import { loadQualityChoice, saveQualityChoice, tierOf } from '@/utils/camosLive'
+import DeviceSignal from './DeviceSignal.vue'
 import { useSimulatedBanner } from '@/composables/useSimulatedBanner'
 
 const { t } = useI18n()
@@ -303,11 +299,13 @@ watch(liveQuality, (q) => saveQualityChoice(q))
 const { setInView: setSimulatedInView } = useSimulatedBanner()
 watch(() => props.camera, (c) => setSimulatedInView(!c || !!c.simulated), { immediate: true })
 onUnmounted(() => setSimulatedInView(true))
+// The tier of what the CamOS player shows (240p ... 2K); its mode, size and frame rate are on the player itself
+const playingTier = ref('')
 const onKvsInfo = (info) => {
-  if (!info?.width) return
-  currentStreamType.value = t('cameras.kvs.liveInfo', { mode: info.mode === 'jpeg' ? 'JPEG' : 'H.264', width: info.width, height: info.height, fps: info.fps })
+  if (info?.width) playingTier.value = tierOf(info.width, info.height)
 }
 const onKvsState = (state) => {
+  if (state !== 'playing') playingTier.value = ''
   if (state === 'playing') {
     isPlaceholderVisible.value = false
     currentStreamType.value = t('cameras.live')
@@ -317,6 +315,16 @@ const onKvsState = (state) => {
     currentStreamType.value = t('cameras.streamError')
   }
 }
+// SD card playback in the EZVIZ player (false again when live starts)
+const playingBack = ref(false)
+const streamTagType = computed(() => {
+  if (props.camera?.device?.sleeping) return 'warning'
+  const s = currentStreamType.value
+  if (playingBack.value) return 'primary'
+  if (s === t('cameras.live')) return 'success'
+  if ([t('cameras.streamError'), t('cameras.player.disconnected')].includes(s)) return 'danger'
+  return 'info'
+})
 const requestLive = async () => {
   requestingLive.value = true
   try {
@@ -704,6 +712,7 @@ const initEzOpen = async (url, accessToken, areaDomain, customCode) => {
 
 const playLiveStream = async () => {
   resetPlayer()
+  playingBack.value = false
   if (!props.camera) {
     placeholderText.value = t('cameras.noCameraSelected')
     currentStreamType.value = t('cameras.player.noDevice')
@@ -792,6 +801,7 @@ const handlePlayPlayback = async ({ startTime, stopTime }) => {
         initEzOpen(data.data.url, data.data.accessToken, data.data.areaDomain, data.data.validateCode || props.camera.validateCode)
       }
       currentStreamType.value = t('cameras.player.playbackRange', { start: startTime.slice(11, 16), end: stopTime.slice(11, 16) })
+      playingBack.value = true
     } else {
       ElNotification({ title: t('common.error'), message: data.msg || t('cameras.player.playbackUnavailable'), type: 'error' })
       placeholderText.value = t('cameras.player.playbackSegmentFailed')

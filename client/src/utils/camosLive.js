@@ -39,12 +39,39 @@ export function jpegPreset(w, h) {
   return { mode: 'jpeg', w, h, q: 12, fps: w * h <= AUTO_AREA ? 15 : 10 };
 }
 
-/** The menu for a camera's live sizes ([[w, h], ...] from its hello): auto, low, then each JPEG size, small first. */
+/**
+ * Video tiers as a phone names them, by picture area: the size each stands for and the largest area it takes
+ * (about halfway to the next one). 4:3 sizes fall in by area: 800x600 is 480p, 1024x768 HD, 1600x1200 FullHD.
+ */
+export const TIERS = [
+  { label: '240p', w: 320, h: 240, maxArea: 120000 },
+  { label: '360p', w: 640, h: 360, maxArea: 265000 },
+  { label: '480p', w: 640, h: 480, maxArea: 600000 },
+  { label: 'HD', w: 1280, h: 720, maxArea: 1450000 },
+  { label: 'FullHD', w: 1920, h: 1080, maxArea: 2800000 },
+  { label: '2K', w: 2560, h: 1440, maxArea: Infinity },
+];
+
+/** The tier label of a picture size ('480p', 'HD', ...), or '' without a size. */
+export function tierOf(w, h) {
+  if (!(w > 0 && h > 0)) return '';
+  return TIERS.find((tier) => w * h <= tier.maxArea).label;
+}
+
+/**
+ * The menu for a camera's live sizes ([[w, h], ...] from its hello): auto, low (H.264 240p), then one JPEG size per
+ * tier the camera streams, the one closest to the tier's own size. Without sizes, the older fixed choices.
+ */
 export function qualityChoices(sizes) {
-  const jpeg = (Array.isArray(sizes) ? sizes : [])
-    .filter((s) => Array.isArray(s) && s[0] > 320 && s[1] > 0)
-    .sort((a, b) => a[0] * a[1] - b[0] * b[1])
-    .map(([w, h]) => `jpeg-${w}x${h}`);
+  const byTier = new Map();
+  for (const s of Array.isArray(sizes) ? sizes : []) {
+    if (!Array.isArray(s) || !(s[0] > 320 && s[1] > 0)) continue;
+    const tier = TIERS.find((x) => x.label === tierOf(s[0], s[1]));
+    const best = byTier.get(tier.label);
+    const off = (size) => Math.abs(size[0] * size[1] - tier.w * tier.h);
+    if (!best || off(s) < off(best)) byTier.set(tier.label, s);
+  }
+  const jpeg = TIERS.filter((tier) => byTier.has(tier.label)).map((tier) => `jpeg-${byTier.get(tier.label).join('x')}`);
   return jpeg.length ? ['auto', 'low', ...jpeg] : QUALITY_CHOICES;
 }
 

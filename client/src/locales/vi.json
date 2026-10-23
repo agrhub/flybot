@@ -351,10 +351,7 @@
         "exitFullscreen": "Thoát toàn màn hình"
       },
       "qualityShort": {
-        "auto": "Tự động",
-        "low": "Thấp",
-        "medium": "Trung bình",
-        "high": "Cao"
+        "auto": "Tự động"
       },
       "connecting": "Đang kết nối camera (WebRTC)...",
       "waiting": "Đang chờ camera vào kênh. Có thể camera đang ngủ: hãy yêu cầu xem trực tiếp lần thức tới.",
@@ -370,20 +367,12 @@
       "notSupportedShort": "Không xem trực tiếp qua Internet",
       "quality": "Chất lượng xem trực tiếp",
       "qualityHint": "Trung bình và Cao gửi ảnh JPEG của chính camera qua kênh dữ liệu (rõ hơn, cần đường truyền tốt); Thấp gửi H.264, camera nào cũng gửi được.",
-      "qualityOptions": {
-        "jpegSize": "JPEG {w}×{h}",
-        "auto": "Tự động (JPEG)",
-        "autoCellular": "Tự động (H.264 khi dùng 4G)",
-        "low": "Thấp · H.264 320×240 (mạng yếu)",
-        "medium": "Trung bình · JPEG 640×480",
-        "high": "Cao · JPEG 1024×768"
-      },
       "lowered": {
         "weakLink": "Đường truyền quá chậm cho {chosen}: camera đã chuyển sang {running}. Hãy chọn cỡ nhỏ hơn hoặc Tự động.",
         "refused": "Camera không chạy được {chosen} nên giữ {running}.",
         "other": "Camera đang phát {running}, không phải {chosen}."
       },
-      "liveInfo": "Trực tiếp · {mode} {width}×{height} · {fps} khung hình/giây"
+      "liveInfo": "Trực tiếp · {fps} khung hình/giây"
     },
     "provisioning": {
       "copyQr": "Sao chép nội dung QR",

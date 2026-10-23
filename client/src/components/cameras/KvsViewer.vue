@@ -53,7 +53,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Loading, WarningFilled, VideoPlay, VideoPause, Camera, FullScreen } from '@element-plus/icons-vue';
-import { CAMOS_CHANNEL, JpegAssembler, channelOptions, RateMeter, ackMessage, parseControl, presetFor, qualityChoices, qualityDiffers, qualityMessage, sizeOf } from '@/utils/camosLive';
+import { CAMOS_CHANNEL, JpegAssembler, QUALITY_PRESETS, channelOptions, RateMeter, ackMessage, parseControl, presetFor, qualityChoices, qualityDiffers, qualityMessage, sizeOf, tierOf } from '@/utils/camosLive';
 
 /**
  * Live view of a CamOS camera over Kinesis Video Streams WebRTC: the browser joins the camera's
@@ -213,9 +213,8 @@ async function videoFps() {
 }
 
 const lastInfo = ref(null);
-const infoText = computed(() => (lastInfo.value?.width
-  ? t('cameras.kvs.liveInfo', { mode: lastInfo.value.mode === 'jpeg' ? 'JPEG' : 'H.264', width: lastInfo.value.width, height: lastInfo.value.height, fps: lastInfo.value.fps })
-  : ''));
+// Live and the frame rate; the tier (FullHD, 480p, ...) is on the quality button
+const infoText = computed(() => (lastInfo.value?.width ? t('cameras.kvs.liveInfo', { fps: lastInfo.value.fps }) : ''));
 
 function startInfo() {
   clearInterval(infoTimer);
@@ -238,25 +237,20 @@ const isStopped = computed(() => state.value === 'stopped' || state.value === 'e
 // The JPEG sizes this camera streams (its hello), for the quality menu
 const cameraSizes = ref(null);
 const menuChoices = computed(() => qualityChoices(cameraSizes.value));
+// Named as a phone names video: Auto, 240p (H.264 for a weak link), 480p, HD, FullHD, 2K
 const choiceLabel = (q) => {
+  if (q === 'auto') return t('cameras.kvs.qualityShort.auto');
+  if (q === 'low') return tierOf(QUALITY_PRESETS.low.w, QUALITY_PRESETS.low.h);
   const size = sizeOf(q);
-  if (q === 'auto' && props.network === '4g') return t('cameras.kvs.qualityOptions.autoCellular');
-  if (q === 'auto' || q === 'low') return t(`cameras.kvs.qualityOptions.${q}`);
-  return size ? t('cameras.kvs.qualityOptions.jpegSize', { w: size[0], h: size[1] }) : q;
+  return size ? tierOf(size[0], size[1]) : q;
 };
-const choiceShort = (q) => {
-  const size = sizeOf(q);
-  if (q === 'auto' || q === 'low') return t(`cameras.kvs.qualityShort.${q}`);
-  return size ? `${size[0]}×${size[1]}` : q;
-};
+const choiceShort = choiceLabel;
 const onQuality = (q) => emit('update:quality', q);
 
 // The camera did not follow the choice (weak link, size refused, no data channel): show what plays instead
 const lowered = computed(() => state.value === 'playing' && !pending.value
   && qualityDiffers(presetFor(props.quality, true, cameraSizes.value, { cellular: props.network === '4g' }), lastInfo.value));
-const runningShort = computed(() => (lastInfo.value?.width
-  ? `${lastInfo.value.mode === 'jpeg' ? 'JPEG' : 'H.264'} ${lastInfo.value.width}×${lastInfo.value.height}`
-  : ''));
+const runningShort = computed(() => tierOf(lastInfo.value?.width, lastInfo.value?.height));
 const loweredText = computed(() => t(`cameras.kvs.lowered.${lowerReason.value || 'other'}`, {
   chosen: choiceLabel(props.quality),
   running: runningShort.value,

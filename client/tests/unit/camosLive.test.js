@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   HEADER_LENGTH, JpegAssembler, RateMeter, QUALITY_PRESETS, ackMessage, loadQualityChoice, parseChunk, parseControl,
-  channelOptions, presetFor, qualityChoices, qualityDiffers, qualityMessage, saveQualityChoice, sizeOf,
+  channelOptions, presetFor, tierOf, qualityChoices, qualityDiffers, qualityMessage, saveQualityChoice, sizeOf,
 } from '@/utils/camosLive';
 
 // One binary message as the camera sends it: 'C' 'J' 1 20 | seq | total | offset | ts, then the bytes
@@ -115,8 +115,11 @@ describe('RateMeter', () => {
 
 describe('quality from the camera sizes', () => {
   const sizes = [[320, 240], [640, 480], [800, 600], [1024, 768], [1280, 720]];
-  it('lists auto, low and every JPEG size above 320x240, small first', () => {
-    expect(qualityChoices(sizes)).toEqual(['auto', 'low', 'jpeg-640x480', 'jpeg-800x600', 'jpeg-1024x768', 'jpeg-1280x720']);
+  it('lists auto, low (240p) and one JPEG size per tier, the one closest to the tier', () => {
+    expect(qualityChoices(sizes)).toEqual(['auto', 'low', 'jpeg-640x480', 'jpeg-1280x720']);
+    // Vinh Long's OV5640: 480p, HD, FullHD (1600x1200); no 360p or 2K offered, so none listed
+    expect(qualityChoices([[640, 480], [800, 600], [1024, 768], [1280, 720], [1280, 1024], [1600, 1200]])).toEqual(['auto', 'low', 'jpeg-640x480', 'jpeg-1280x720', 'jpeg-1600x1200']);
+    expect(qualityChoices([[640, 360], [1920, 1080], [2560, 1920]])).toEqual(['auto', 'low', 'jpeg-640x360', 'jpeg-1920x1080', 'jpeg-2560x1920']);
     expect(qualityChoices(null)).toEqual(['auto', 'low', 'medium', 'high']);
   });
   it('auto takes 640x480, or the size closest to it', () => {
@@ -168,5 +171,13 @@ describe('data channel lifetime', () => {
   it('gives chunks 2 s over 4G (TURN relay) and 300 ms over Wi-Fi', () => {
     expect(channelOptions(true)).toEqual({ ordered: false, maxPacketLifeTime: 2000 });
     expect(channelOptions(false)).toEqual({ ordered: false, maxPacketLifeTime: 300 });
+  });
+});
+
+describe('tiers', () => {
+  it('names sizes as a phone does', () => {
+    expect([[320, 240], [640, 360], [640, 480], [800, 600], [1024, 768], [1280, 720], [1280, 1024], [1600, 1200], [1920, 1080], [2560, 1440], [2560, 1920]].map(([w, h]) => tierOf(w, h)))
+      .toEqual(['240p', '360p', '480p', '480p', 'HD', 'HD', 'HD', 'FullHD', 'FullHD', '2K', '2K']);
+    expect(tierOf(0, 0)).toBe('');
   });
 });

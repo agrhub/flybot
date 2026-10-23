@@ -240,16 +240,8 @@
         <el-tag :type="isCamos ? 'primary' : 'info'" effect="plain" size="small" class="shrink-0" data-test="platform-badge">
           {{ t(`cameras.platform.${platform}`) }}
         </el-tag>
-        <!-- CamOS: how the camera is powered -->
-        <el-tooltip v-if="isCamos && powerMode" :content="t(`cameras.power.hint.${powerMode}`)" placement="top">
-          <el-tag type="info" effect="plain" size="small" class="shrink-0" data-test="power-mode">{{ t(`cameras.power.${powerMode}`) }}</el-tag>
-        </el-tooltip>
-        <!-- CamOS: battery level, a bolt while charging (the full text in the tooltip: the footer is narrow) -->
-        <el-tooltip v-if="isCamos && camera.device?.battery?.pct != null" :content="batteryTagText(camera.device.battery, t)" placement="top">
-          <el-tag :type="camera.device.battery.charging ? 'success' : 'info'" effect="plain" size="small" class="shrink-0" data-test="battery-tag">
-            <span class="inline-flex items-center gap-0.5">{{ camera.device.battery.pct }} %<el-icon v-if="camera.device.battery.charging"><Lightning /></el-icon></span>
-          </el-tag>
-        </el-tooltip>
+        <!-- CamOS: uplink with its signal bars, and the battery (power mode in its tooltip), as on a phone -->
+        <DeviceSignal v-if="isCamos && camera.device" :device="camera.device" class="shrink-0" />
         <!-- A simulated demo camera: synthetic photos, not field data -->
         <el-tooltip v-if="camera.simulated" :content="t('simulated.cameraHint')" placement="top">
           <el-tag type="warning" effect="dark" size="small" class="shrink-0" data-test="simulated-badge">{{ t('simulated.tag') }}</el-tag>
@@ -342,10 +334,9 @@ import {
   WarningFilled,
   ArrowRight,
   Moon,
-  Clock,
-  Lightning
+  Clock
 } from '@element-plus/icons-vue';
-import { batteryTagText } from '@/utils/battery';
+import DeviceSignal from './DeviceSignal.vue';
 
 const props = defineProps({
   camera: {
@@ -367,7 +358,6 @@ const copiedSn = ref(false);
 // Platform: EZVIZ cloud camera (default) or a CamOS trap camera on AWS IoT Core
 const platform = computed(() => props.camera?.platform || 'ezviz');
 const isCamos = computed(() => platform.value === 'camos' || platform.value === 'kinesis');
-const powerMode = computed(() => (isCamos.value ? props.camera?.device?.power?.mode || 'auto' : null));
 const sleeping = computed(() => !!props.camera?.device?.sleeping);
 const nextWakeAt = computed(() => props.camera?.device?.nextWakeAt || props.camera?.device?.wakeAt || null);
 const nextWakeText = computed(() => (nextWakeAt.value

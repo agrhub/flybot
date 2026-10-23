@@ -351,10 +351,7 @@
         "exitFullscreen": "Exit full screen"
       },
       "qualityShort": {
-        "auto": "Auto",
-        "low": "Low",
-        "medium": "Medium",
-        "high": "High"
+        "auto": "Auto"
       },
       "connecting": "Connecting to the camera (WebRTC)...",
       "waiting": "Waiting for the camera to join. It may be asleep: request live at its next wake.",
@@ -370,20 +367,12 @@
       "notSupportedShort": "No live view over the internet",
       "quality": "Live quality",
       "qualityHint": "Medium and High send the camera's own JPEG pictures over a data channel (more detail, needs a good uplink); Low sends H.264, which every camera can do.",
-      "qualityOptions": {
-        "jpegSize": "JPEG {w}×{h}",
-        "auto": "Auto (JPEG)",
-        "autoCellular": "Auto (H.264 over 4G)",
-        "low": "Low · H.264 320×240 (weak network)",
-        "medium": "Medium · JPEG 640×480",
-        "high": "High · JPEG 1024×768"
-      },
       "lowered": {
         "weakLink": "The connection was too slow for {chosen}: the camera switched to {running}. Choose a smaller size or Auto.",
         "refused": "The camera could not start {chosen} and kept {running}.",
         "other": "The camera plays {running}, not {chosen}."
       },
-      "liveInfo": "Live · {mode} {width}×{height} · {fps} fps"
+      "liveInfo": "Live · {fps} fps"
     },
     "provisioning": {
       "copyQr": "Copy the QR text",
