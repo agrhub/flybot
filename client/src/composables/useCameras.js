@@ -67,7 +67,7 @@ export function useCameras() {
 
   const selectCameraAndGoToLive = (camera) => {
     selectedCamera.value = camera;
-    if (router) router.push('/cameras');
+    if (router) router.push(camera?.deviceSerial ? { name: 'camera-detail', params: { serial: camera.deviceSerial } } : '/cameras');
   };
 
   const openAddCameraModal = () => {

@@ -167,7 +167,7 @@
 <script setup>
 import { ref, reactive, computed, watch, onUnmounted, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { Plus, Back, ArrowLeft, ArrowRight, VideoCamera, Connection, Menu, Search } from '@element-plus/icons-vue';
 import { filterCameras } from '@/utils/cameraFilter';
 import { useCameras } from '@/composables/useCameras';
@@ -182,6 +182,7 @@ import DetectionHistory from '@/components/history/DetectionHistory.vue';
 const { t } = useI18n();
 const { cameras, selectedCamera, selectCamera, openAddCameraModal } = useCameras();
 const router = useRouter();
+const route = useRoute();
 const { canManageCameras } = useAuth();
 // One camera per row on phones: the 2x2/3x3 switch does not apply
 const { isMobile } = useBreakpoints();
@@ -193,9 +194,11 @@ if (typeof window !== 'undefined') window.addEventListener('resize', onResize, {
 onUnmounted(() => { if (typeof window !== 'undefined') window.removeEventListener('resize', onResize); });
 const isWide = computed(() => viewportWidth.value >= 1280);
 
-// Sub-page state: 'grid' (default: all cameras grid) or 'detail' (single camera sub-page)
-const subPage = ref('grid');
-const currentDetailCamera = ref(selectedCamera.value || null);
+// Sub-page from the URL: /cameras is the grid, /cameras/:serial one camera's page (so Back and the browser's back
+// both return to the grid)
+const routeSerial = computed(() => (typeof route.params.serial === 'string' ? route.params.serial : ''));
+const subPage = computed(() => (routeSerial.value ? 'detail' : 'grid'));
+const currentDetailCamera = ref(selectedCamera.value?.deviceSerial === routeSerial.value ? selectedCamera.value : null);
 // Stable props for the camera's history table (new arrays on every render would reset its filters)
 const HISTORY_RANGE = { preset: '7d' };
 const historySerials = computed(() => (currentDetailCamera.value?.deviceSerial ? [currentDetailCamera.value.deviceSerial] : []));
@@ -289,24 +292,37 @@ const stopAllStreams = () => {
 const openCameraDetail = (cam) => {
   stopAllStreams();
   currentDetailCamera.value = cam;
-  subPage.value = 'detail';
   selectCamera(cam);
+  router.push({ name: 'camera-detail', params: { serial: cam.deviceSerial } });
 };
 
+// Back to the grid this page came from (as the browser's back does), or to the grid when the page was opened directly
 const backToGrid = () => {
-  subPage.value = 'grid';
-  nextTick(() => {
-    playAllStreams();
-  });
+  if (window.history.state?.back === router.resolve({ name: 'cameras' }).fullPath) router.back();
+  else router.push({ name: 'cameras' });
 };
 
+// Another camera from the list beside the video: same page, so it replaces this one in the history
 const handleSelectDetailCamera = (serial) => {
+  if (cameras.value.some(c => c.deviceSerial === serial)) router.replace({ name: 'camera-detail', params: { serial } });
+};
+
+// The URL decides what shows: the camera it names (once the list has loaded), or the grid with its streams playing
+watch([routeSerial, () => cameras.value.length], ([serial], [before] = []) => {
+  if (!serial) {
+    if (before) nextTick(() => playAllStreams());
+    return;
+  }
   const found = cameras.value.find(c => c.deviceSerial === serial);
   if (found) {
+    if (currentDetailCamera.value?.deviceSerial !== serial) stopAllStreams();
     currentDetailCamera.value = found;
     selectCamera(found);
+  } else if (cameras.value.length) {
+    // Not a camera this person can see
+    router.replace({ name: 'cameras' });
   }
-};
+}, { immediate: true });
 
 // Leave page or switch tab: Stop all cameras
 onUnmounted(() => {

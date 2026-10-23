@@ -105,6 +105,12 @@ const router = createRouter({
           component: () => import('@/pages/cameras/index.vue'),
         },
         {
+          // One camera's page (live, recordings, history): Back and the browser's back return to the grid
+          path: 'cameras/:serial',
+          name: 'camera-detail',
+          component: () => import('@/pages/cameras/index.vue'),
+        },
+        {
           path: 'reports',
           name: 'reports',
           component: () => import('@/pages/dashboards/index.vue'),
