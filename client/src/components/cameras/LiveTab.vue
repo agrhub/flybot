@@ -29,7 +29,9 @@
                 @info="onKvsInfo"
               />
             </div>
-            <div v-if="!camera || (isPlaceholderVisible && !kvsConfig)" class="live-tab__scrim absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
+            <!-- A simulated camera has no live view: its latest photo fills the player -->
+            <img v-if="simulatedPhoto" :src="simulatedPhoto" :alt="camera?.deviceName || ''" class="absolute inset-0 w-full h-full object-contain" data-test="simulated-photo" />
+            <div v-if="!camera || (isPlaceholderVisible && !kvsConfig && !simulatedPhoto)" class="live-tab__scrim absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
               <el-icon :size="48" class="live-tab__scrim-icon mb-3"><VideoCamera /></el-icon>
               <p class="text-sm font-medium max-w-md">{{ placeholderText }}</p>
               <!-- No cloud live view on this camera: its own page on the same Wi-Fi has a live stream -->
@@ -67,8 +69,8 @@
             {{ camera?.device?.sleeping ? sleepText : currentStreamType }}
           </el-tag>
           <el-tag :type="isCamos ? 'primary' : 'info'" effect="plain" size="small">{{ t(`cameras.platform.${camera?.platform || 'ezviz'}`) }}</el-tag>
-          <el-tag v-if="!isCamos" type="success" effect="plain" size="small">HD</el-tag>
           <el-tag v-if="isCamos && playingTier" type="info" effect="plain" size="small" data-test="live-tier">{{ playingTier }}</el-tag>
+          <el-tag v-if="!isCamos && !camera?.simulated" type="success" effect="plain" size="small">HD</el-tag>
           <DeviceSignal v-if="isCamos && camera?.device" :device="camera.device" />
           <el-tag v-if="health?.imageIssues?.length" type="warning" effect="light" round size="small">{{ t('cameras.imageQuality.label') }}: {{ health.imageIssues.map(i => t(`cameras.imageQuality.issues.${i}`)).join(', ') }}</el-tag>
         </div>
@@ -272,6 +274,11 @@ const currentStreamId = ref('')
 const isCamos = computed(() => ['camos', 'kinesis'].includes(props.camera?.platform))
 // A read-only demo camera whose live view the administrator has not opened to visitors
 const liveClosed = computed(() => props.camera?.liveOpen === false)
+// A simulated camera's latest photo, shown in place of a live view
+const simulatedPhoto = computed(() => {
+  const url = props.camera?.simulated ? props.camera.thumbnailUrl || props.camera.picUrl : ''
+  return url ? api.getImageUrl(url) : ''
+})
 const kvsConfig = ref(null)
 const kvsLoading = ref(false)
 const requestingLive = ref(false)
@@ -720,7 +727,7 @@ const playLiveStream = async () => {
   }
   if (liveClosed.value) {
     placeholderText.value = props.camera.simulated ? t('simulated.noLive') : t('cameras.demo.liveClosed')
-    currentStreamType.value = props.camera.simulated ? t('simulated.tag') : t('cameras.demo.tag')
+    currentStreamType.value = props.camera.simulated ? t('cameras.player.latestPhoto') : t('cameras.demo.tag')
     return
   }
 

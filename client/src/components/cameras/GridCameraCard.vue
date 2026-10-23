@@ -107,7 +107,7 @@
           :src="cameraThumbnail"
           :alt="camera.deviceName"
           class="absolute inset-0 w-full h-full object-cover transition-opacity duration-300 z-0 pointer-events-none"
-          :class="isPlaying && !hasError ? 'opacity-0' : 'opacity-70'"
+          :class="camera.simulated ? 'opacity-100' : isPlaying && !hasError ? 'opacity-0' : 'opacity-70'"
           @error="thumbError = true"
         />
 
@@ -188,7 +188,7 @@
         </div>
 
         <!-- CamOS: the camera sleeps between photos; live view is asked for its next wake -->
-        <div v-if="isCamos && !loading && !isPlaying && !kvsConfig" class="grid-cam__scrim grid-cam__scrim--strong absolute inset-0 flex flex-col items-center justify-center p-5 text-center z-20" data-test="camos-overlay">
+        <div v-if="isCamos && !camera.simulated && !loading && !isPlaying && !kvsConfig" class="grid-cam__scrim grid-cam__scrim--strong absolute inset-0 flex flex-col items-center justify-center p-5 text-center z-20" data-test="camos-overlay">
           <el-icon :size="26" class="mb-2"><Moon v-if="sleeping" /><VideoCamera v-else /></el-icon>
           <p class="text-xs font-medium max-w-xs leading-relaxed">{{ liveClosed ? liveClosedText : sleeping ? nextWakeText : (camera.status === 1 ? t('cameras.kvs.liveOnRequest') : t('cameras.deviceOffline')) }}</p>
           <div v-if="!liveClosed" class="flex items-center gap-2 mt-3">
@@ -237,7 +237,8 @@
       <div class="flex items-center gap-1.5 min-w-0 overflow-hidden">
         <!-- Platform, power and stream tags live here so the header keeps the name and serial readable -->
         <!-- Camera platform (EZVIZ cloud, CamOS on AWS IoT Core) -->
-        <el-tag :type="isCamos ? 'primary' : 'info'" effect="plain" size="small" class="shrink-0" data-test="platform-badge">
+        <!-- (a simulated camera shows only its Simulated tag) -->
+        <el-tag v-if="!camera.simulated" :type="isCamos ? 'primary' : 'info'" effect="plain" size="small" class="shrink-0" data-test="platform-badge">
           {{ t(`cameras.platform.${platform}`) }}
         </el-tag>
         <!-- CamOS: uplink with its signal bars, and the battery (power mode in its tooltip), as on a phone -->
@@ -490,6 +491,8 @@ const startCamosLive = async () => {
 };
 
 const startLiveStream = async () => {
+  // A simulated camera has no live view: its latest photo stays on the card (the Simulated tag says why)
+  if (props.camera?.simulated) return;
   if (isCamos.value) return startCamosLive();
   if (liveClosed.value) {
     hasError.value = true;

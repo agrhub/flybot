@@ -1,8 +1,8 @@
 import { ref } from 'vue';
 
 /**
- * The simulated-data banner can fold into a "Simulated" tag in the top bar (and open again from it), remembered per
- * browser. The data stays marked either way: trap names, tags and the top-bar tag.
+ * The simulated-data banner can be hidden, remembered per browser. The data stays marked either way: each simulated
+ * trap has "SIM ·" in its name and a Simulated tag.
  */
 const KEY = 'flybot.simulatedBanner.collapsed';
 
@@ -10,7 +10,7 @@ const read = () => {
   try { return localStorage.getItem(KEY) === '1'; } catch { return false; }
 };
 const collapsed = ref(read());
-// False while a page shows only real items (e.g. a real camera's own page): no banner and no tag there
+// False while a page shows only real items (e.g. a real camera's own page): no banner there
 const inView = ref(true);
 
 const save = (value) => {
