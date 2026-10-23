@@ -127,3 +127,29 @@ test('capture now requires owning the camera', async () => {
     const res = await app.request('/api/user/camera/capture', { method: 'POST', headers: bearer(BOB), body: { deviceSerial: 'CAMA' } });
     assert.equal(res.status, 404);
 });
+
+test('playback: clip times from the record list are sent in the format the address API takes', async () => {
+    const axios = require('axios');
+    const { playbackTime } = ezvizService;
+    assert.equal(playbackTime('2026-10-07T10:18:30'), '2026-10-07 10:18:30');
+    assert.equal(playbackTime('2026-10-07T10:18:30.000'), '2026-10-07 10:18:30');
+    assert.equal(playbackTime('2026-10-07 10:18:30'), '2026-10-07 10:18:30');
+    assert.equal(playbackTime(1791627510000), 1791627510000, 'anything else is passed on');
+
+    const originalPost = axios.post;
+    let body = '';
+    let result;
+    // The token request and the address request both go through axios.post: keep the last body
+    axios.post = async (url, params) => { body = params; return { data: { code: '200', data: { url: 'ezopen://open.ezviz.com/CAMA/1.hd.local.rec' } } }; };
+    try {
+        result = await ezvizService.getPlaybackAddress({ deviceSerial: 'CAMA', startTime: '2026-10-07T10:18:30', stopTime: '2026-10-07T10:18:57' });
+    } finally {
+        axios.post = originalPost;
+    }
+    const sent = new URLSearchParams(body);
+    assert.equal(sent.get('startTime'), '2026-10-07 10:18:30');
+    assert.equal(sent.get('stopTime'), '2026-10-07 10:18:57');
+    // The address API leaves the time span out of the ezopen URL; the player needs it
+    assert.equal(result.responseData.data.url, 'ezopen://open.ezviz.com/CAMA/1.hd.local.rec?begin=20261007101830&end=20261007101857');
+    assert.equal(ezvizService.withPlaybackRange('ezopen://x/1.rec?begin=1', 'a', 'b'), 'ezopen://x/1.rec?begin=1', 'a URL with its own query is kept');
+});

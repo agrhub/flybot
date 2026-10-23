@@ -28,6 +28,29 @@ const toFormData = (obj) => {
 };
 
 /**
+ * A clip time as the playback address API takes it, "yyyy-MM-dd HH:mm:ss" in the camera's own time.
+ * The v3 record list gives "2026-10-07T10:18:30" (sometimes with milliseconds), which that API refuses
+ * with "illegal parameter startTime". Anything else is passed on as it is.
+ */
+const playbackTime = (value) => {
+    const m = typeof value === 'string' && value.match(/^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2}:\d{2})/);
+    return m ? `${m[1]} ${m[2]}` : value;
+};
+
+/**
+ * The ezopen playback URL with the clip's time span. The address API returns ".../1.hd.local.rec" without one,
+ * and the stream server then refuses the playback (6103, "Service exception"); EZUIKit reads it from
+ * "?begin=yyyyMMddHHmmss&end=yyyyMMddHHmmss".
+ */
+const withPlaybackRange = (url, startTime, stopTime) => {
+    const compact = (value) => String(playbackTime(value) || '').replace(/\D/g, '');
+    const begin = compact(startTime);
+    const end = compact(stopTime);
+    if (typeof url !== 'string' || !/\.rec$/.test(url) || begin.length !== 14 || end.length !== 14) return url;
+    return `${url}?begin=${begin}&end=${end}`;
+};
+
+/**
  * Fetch new Access Token from EZVIZ Open Platform
  */
 async function updateAccessToken() {
@@ -331,8 +354,8 @@ async function getPlaybackAddress({ deviceSerial, code = '', startTime, stopTime
         validateCode: code,
         validCode: code,
         verifyCode: code,
-        startTime: startTime,
-        stopTime: stopTime,
+        startTime: playbackTime(startTime),
+        stopTime: playbackTime(stopTime),
     });
 
 
@@ -341,6 +364,7 @@ async function getPlaybackAddress({ deviceSerial, code = '', startTime, stopTime
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
     });
 
+    if (response.data?.data?.url) response.data.data.url = withPlaybackRange(response.data.data.url, startTime, stopTime);
     return { responseData: response.data, token, areaDomain: cachedToken.areaDomain };
 }
 
@@ -402,6 +426,8 @@ async function disableLiveAddress({ deviceSerial, channelNo = 1, urlId = '' }) {
 
 module.exports = {
     toFormData,
+    playbackTime,
+    withPlaybackRange,
     updateAccessToken,
     getValidToken,
     getCachedToken,

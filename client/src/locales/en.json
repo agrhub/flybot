@@ -485,6 +485,7 @@
       "encryptedWithCode": "Video encryption is on. Decryption failed with code [{code}]. Use \"Change Code\" to update it.",
       "permissionError": "EZVIZ: no permission to view this device (error 5411). Check the device sharing permissions or the verification code.",
       "streamServiceError": "EZVIZ could not start the live stream for this camera (error 5556). A battery or 4G camera may be asleep, or EZVIZ's live service is briefly unavailable. Try again in a few minutes, or view it in the EZVIZ app.",
+      "playbackServiceError": "EZVIZ could not open this SD card recording (error {code}): its playback service failed. Try again later, or play it in the EZVIZ app.",
       "invalidParams": "Invalid ezopen stream parameters (error 10001).",
       "connectionError": "Could not connect to the camera stream.",
       "initError": "Player initialization error: {error}",

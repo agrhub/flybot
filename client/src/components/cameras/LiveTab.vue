@@ -624,8 +624,9 @@ const initEzOpen = async (url, accessToken, areaDomain, customCode) => {
   // Ensure initial URL is clean, NO validCode in URL
   const cleanUrl = url;
 
-  // Use proper areaDomain
-  let targetDomain = 'https://open.ezvizlife.com';
+  // The account's own region (VN accounts: ivnopen.ezvizlife.com): the global domain answers 503 for its tokens,
+  // which the player shows as "Service exception"
+  const targetDomain = areaDomain || 'https://open.ezvizlife.com';
   try {
     const playerOptions = {
       id: 'ezopen-video',
@@ -668,6 +669,10 @@ const initEzOpen = async (url, accessToken, areaDomain, customCode) => {
         } else if (String(error.retcode ?? error.code) === '5411') {
           isPlaceholderVisible.value = true
           placeholderText.value = t('cameras.player.permissionError')
+        } else if (isPlayback && /^(610[1-4]|39610[1-4])$/.test(String(error.retcode ?? error.code ?? error.data?.code))) {
+          // EZVIZ's stream server refused the SD card playback (seen in the VN region while the EZVIZ app plays it)
+          isPlaceholderVisible.value = true
+          placeholderText.value = t('cameras.player.playbackServiceError', { code: error.retcode ?? error.code ?? error.data?.code })
         } else if (String(error.retcode ?? error.code) === '5556') {
           // EZVIZ cloud could not pull the live stream (sleeping battery/4G cam, or EZVIZ service)
           isPlaceholderVisible.value = true

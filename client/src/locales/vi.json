@@ -485,6 +485,7 @@
       "encryptedWithCode": "Video đang được mã hoá. Giải mã bằng mã [{code}] không thành công. Hãy dùng \"Đổi mã\" để cập nhật.",
       "permissionError": "EZVIZ: không có quyền xem thiết bị này (lỗi 5411). Hãy kiểm tra quyền chia sẻ thiết bị hoặc mã xác minh.",
       "streamServiceError": "EZVIZ chưa phát được luồng cho camera này (lỗi 5556). Camera pin/4G có thể đang ngủ, hoặc dịch vụ phát trực tiếp của EZVIZ tạm gián đoạn. Thử lại sau ít phút, hoặc xem bằng app EZVIZ.",
+      "playbackServiceError": "EZVIZ chưa mở được đoạn ghi trên thẻ SD này (lỗi {code}): dịch vụ phát lại của EZVIZ bị lỗi. Thử lại sau, hoặc xem bằng app EZVIZ.",
       "invalidParams": "Tham số luồng ezopen không hợp lệ (lỗi 10001).",
       "connectionError": "Không kết nối được luồng camera.",
       "initError": "Lỗi khởi tạo trình phát: {error}",
