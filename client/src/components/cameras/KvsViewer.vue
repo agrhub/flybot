@@ -7,7 +7,7 @@
       <el-icon v-if="state === 'connecting' || state === 'waiting'" :size="26" class="is-loading"><Loading /></el-icon>
       <el-icon v-else :size="26"><WarningFilled /></el-icon>
       <span class="text-xs font-medium" data-test="kvs-state">{{ stateText }}</span>
-      <el-button v-if="controls && (state === 'stopped' || state === 'error')" type="primary" size="small" :icon="VideoPlay" class="mt-1" data-test="kvs-play-center" @click.stop="connect">
+      <el-button v-if="controls && (state === 'stopped' || state === 'error')" type="primary" size="small" :icon="VideoPlay" class="mt-1" data-test="kvs-play-center" @click.stop="play">
         {{ t('cameras.kvs.controls.play') }}
       </el-button>
     </div>
@@ -17,7 +17,7 @@
       <el-tooltip :content="isStopped ? t('cameras.kvs.controls.play') : t('cameras.kvs.controls.stop')" placement="top">
         <el-button link :icon="isStopped ? VideoPlay : VideoPause" class="kvs-viewer__btn" data-test="kvs-toggle"
           :aria-label="isStopped ? t('cameras.kvs.controls.play') : t('cameras.kvs.controls.stop')"
-          @click="isStopped ? connect() : stopByUser()" />
+          @click="isStopped ? play() : stopByUser()" />
       </el-tooltip>
       <span v-if="state === 'playing' && infoText" class="kvs-viewer__info truncate" data-test="kvs-info">{{ infoText }}</span>
       <span class="flex-1"></span>
@@ -77,6 +77,9 @@ const props = defineProps({
   showQuality: { type: Boolean, default: false },
   // File name prefix of a screenshot (the camera serial)
   name: { type: String, default: 'camera' },
+  // Play after a stop or an error: fetch a new live session (the camera leaves the channel when the one it was given
+  // ends, so the old config cannot reach it). Without it, Play reconnects with the same config.
+  refresh: { type: Function, default: null },
 });
 // info: { mode: 'h264' | 'jpeg', width, height, fps } about once a second while playing
 const emit = defineEmits(['state', 'info', 'update:quality']);
@@ -296,6 +299,13 @@ const setState = (next, message = '') => {
   error.value = message;
   emit('state', next);
 };
+
+function play() {
+  if (props.refresh) {
+    stop();
+    props.refresh();
+  } else connect();
+}
 
 async function connect() {
   stop();

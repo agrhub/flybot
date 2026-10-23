@@ -25,6 +25,7 @@
                 :name="camera?.deviceSerial || 'camera'"
                 controls
                 show-quality
+                :refresh="playKvs"
                 @state="onKvsState"
                 @info="onKvsInfo"
               />
@@ -291,12 +292,12 @@ const liveQuality = ref(loadQualityChoice())
 // camos-esp32-trap cameras (serial ESP + MAC): the web console's settings from FlyBot, for those who manage it
 const settingsVisible = ref(false)
 // The camera streams to one viewer: the settings dialog's preview takes over, so the page's player stops while the
-// dialog is open and starts again when it closes
+// dialog is open and starts again when it closes, with a new live session (the old one may have ended meanwhile)
 const kvsRef = ref(null)
 watch(settingsVisible, (open) => {
   if (!kvsRef.value) return
   if (open) kvsRef.value.pause()
-  else kvsRef.value.reconnect()
+  else playKvs()
 })
 const hasRemoteSettings = computed(() => isCamos.value && /^ESP[0-9A-F]{12}$/.test(props.camera?.deviceSerial || '') && props.camera?.canManage !== false)
 // The quality menu sits in the player's control bar (KvsViewer)
