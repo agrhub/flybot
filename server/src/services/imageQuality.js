@@ -13,6 +13,8 @@ const { TIMEZONE } = require('./captureSchedule');
  * Blur and haze depend a lot on the scene, so they are judged against the camera's own
  * recent good photos rather than fixed numbers; a camera whose every photo is out of focus
  * would set its own baseline, so very low edges per unit of contrast are blurry whatever the baseline.
+ * CamOS 0.9.0+ sends these measurements with the photo (meta.quality, computed on the camera the same way), so its
+ * photos are not decoded here; every photo also gets `change`, how much it differs from the camera's previous one.
  */
 const SAMPLE_WIDTH = 320;
 const DARK_BRIGHTNESS = 35;
@@ -110,6 +112,64 @@ function metricsOf({ width, height, gray }) {
     };
 }
 
+// How much a photo changed from the camera's previous one: a THUMB_W x THUMB_H grey thumbnail, cells that moved
+// more than CHANGE_LEVEL once the overall brightness shift is taken out, per mille (same as camos-esp32-trap quality.c)
+const THUMB_W = 40;
+const THUMB_H = 30;
+const CHANGE_LEVEL = 16;
+
+/** The THUMB_W x THUMB_H box average of a grayscale sample, as bytes. */
+function thumbnailOf({ width, height, gray }) {
+    const thumb = new Uint8Array(THUMB_W * THUMB_H);
+    for (let ty = 0; ty < THUMB_H; ty++) {
+        const y0 = Math.floor((ty * height) / THUMB_H);
+        const y1 = Math.max(y0 + 1, Math.floor(((ty + 1) * height) / THUMB_H));
+        for (let tx = 0; tx < THUMB_W; tx++) {
+            const x0 = Math.floor((tx * width) / THUMB_W);
+            const x1 = Math.max(x0 + 1, Math.floor(((tx + 1) * width) / THUMB_W));
+            let sum = 0;
+            for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) sum += gray[y * width + x];
+            thumb[ty * THUMB_W + tx] = Math.round(sum / ((y1 - y0) * (x1 - x0)));
+        }
+    }
+    return thumb;
+}
+
+/** Per mille (0-1000) of the thumbnail's cells that changed from `previous`; null without a previous one. */
+function changeOf(thumb, previous) {
+    if (!previous || previous.length !== thumb.length) return null;
+    let shift = 0;
+    for (let i = 0; i < thumb.length; i++) shift += thumb[i] - previous[i];
+    shift /= thumb.length;
+    let changed = 0;
+    for (let i = 0; i < thumb.length; i++) if (Math.abs(thumb[i] - previous[i] - shift) > CHANGE_LEVEL) changed++;
+    return Math.round((changed * 1000) / thumb.length);
+}
+
+/** Width and height from a JPEG's frame header, without decoding it; null if not found. */
+function jpegSize(buffer) {
+    if (!buffer || buffer.length < 4 || buffer[0] !== 0xff || buffer[1] !== 0xd8) return null;
+    let i = 2;
+    while (i + 9 < buffer.length) {
+        if (buffer[i] !== 0xff) return null;
+        const marker = buffer[i + 1];
+        const length = buffer.readUInt16BE(i + 2);
+        // SOF0-SOF15, except DHT (C4), JPG (C8) and DAC (CC)
+        if (marker >= 0xc0 && marker <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(marker)) {
+            return { width: buffer.readUInt16BE(i + 7), height: buffer.readUInt16BE(i + 5) };
+        }
+        i += 2 + length;
+    }
+    return null;
+}
+
+/** The camera's own measurements (meta.quality of CamOS 0.9.0+), in the stored form; null when it sent none. */
+function cameraMetrics(q) {
+    if (!q || ![q.brightness, q.contrast, q.sharpness, q.clipped].every(Number.isFinite)) return null;
+    const round1 = (v) => Math.round(v * 10) / 10;
+    return { brightness: round1(q.brightness), contrast: round1(q.contrast), sharpness: round1(q.sharpness), clipped: Math.round(q.clipped * 1000) / 1000 };
+}
+
 /** Share of the photo covered by detection boxes (pixel [xmin, ymin, xmax, ymax]); null if unknown. */
 function coverageOf(insects, imageWidth, imageHeight) {
     if (!imageWidth || !imageHeight || !Array.isArray(insects) || !insects.length) return insects?.length === 0 ? 0 : null;
@@ -177,15 +237,30 @@ function assess(m, baseline, count = 0, { daylight = true, sticky = true } = {})
  * Returns the stored quality, or null if the photo could not be read.
  */
 async function checkSnapshot(snapshot, buffer, { count = 0 } = {}) {
-    const sample = grayscale(buffer);
-    if (!sample) return null;
-    const metrics = metricsOf(sample);
-    metrics.coverage = coverageOf(snapshot.aiResults?.insects, sample.imageWidth, sample.imageHeight);
+    const camera = await Camera.findOne({ deviceSerial: snapshot.deviceSerial }).select('trapKind +qualityThumb').lean();
+    // A CamOS camera (0.9.0+) measured its own photo with these formulas: no decode here. Any other camera
+    // (EZVIZ, older CamOS) is measured here, with the change from its previous photo's thumbnail.
+    let metrics = cameraMetrics(snapshot.meta?.quality);
+    let size;
+    let change = null;
+    let thumb = null;
+    if (metrics) {
+        size = jpegSize(buffer);
+        if (Number.isInteger(snapshot.meta.quality.change)) change = snapshot.meta.quality.change;
+    } else {
+        const sample = grayscale(buffer);
+        if (!sample) return null;
+        metrics = metricsOf(sample);
+        size = { width: sample.imageWidth, height: sample.imageHeight };
+        thumb = thumbnailOf(sample);
+        change = changeOf(thumb, camera?.qualityThumb ? Buffer.from(camera.qualityThumb, 'base64') : null);
+    }
+    metrics.coverage = coverageOf(snapshot.aiResults?.insects, size?.width, size?.height);
     const baseline = await baselineFor(snapshot.deviceSerial);
     const hour = Number(new Intl.DateTimeFormat('en-GB', { timeZone: TIMEZONE, hour: '2-digit', hourCycle: 'h23' }).format(snapshot.createdAt || new Date()));
-    const sticky = !(await Camera.exists({ deviceSerial: snapshot.deviceSerial, trapKind: 'lure' }));
+    const sticky = camera?.trapKind !== 'lure';
     const issues = assess(metrics, baseline, count, { daylight: hour >= DAYLIGHT_HOURS[0] && hour < DAYLIGHT_HOURS[1], sticky });
-    const quality = { ...metrics, issues, checkedAt: new Date() };
+    const quality = { ...metrics, ...(change !== null ? { change } : {}), source: thumb ? 'server' : 'camera', issues, checkedAt: new Date() };
 
     const previous = await Snapshot.findOne({
         deviceSerial: snapshot.deviceSerial,
@@ -198,7 +273,9 @@ async function checkSnapshot(snapshot, buffer, { count = 0 } = {}) {
         .lean();
     await Promise.all([
         Snapshot.updateOne({ _id: snapshot._id }, { $set: { quality } }),
-        Camera.updateMany({ deviceSerial: snapshot.deviceSerial }, { $set: { imageQuality: { issues, checkedAt: quality.checkedAt } } })
+        Camera.updateMany({ deviceSerial: snapshot.deviceSerial }, {
+            $set: { imageQuality: { issues, checkedAt: quality.checkedAt }, ...(thumb ? { qualityThumb: Buffer.from(thumb).toString('base64') } : {}) }
+        })
     ]);
 
     // One bad photo can be a passing shadow or a bird: alert when it repeats
@@ -217,6 +294,10 @@ module.exports = {
     ISSUES,
     grayscale,
     metricsOf,
+    thumbnailOf,
+    changeOf,
+    jpegSize,
+    cameraMetrics,
     coverageOf,
     assess,
     baselineFor,

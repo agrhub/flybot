@@ -86,6 +86,10 @@ const snapshotSchema = new mongoose.Schema({
         sharpness: { type: Number, default: undefined },
         clipped: { type: Number, default: undefined },
         coverage: { type: Number, default: undefined },
+        // Per mille (0-1000) of a 40x30 thumbnail that differs from the camera's previous photo; absent for a first photo
+        change: { type: Number, default: undefined },
+        // Who measured it: 'camera' (CamOS 0.9.0+ sends meta.quality, same formulas) or 'server'
+        source: { type: String, default: undefined },
         issues: { type: [String], default: undefined },
         checkedAt: { type: Date, default: undefined }
     },

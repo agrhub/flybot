@@ -107,6 +107,26 @@ async function authenticate(serial, token) {
 const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : undefined);
 const strip = (obj) => Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined));
 
+/**
+ * The photo's quality as CamOS 0.9.0+ measures it (the formulas of services/imageQuality.js on a 1/8 decode):
+ * kept only when the four measurements are there and in range; change (0-1000) and ms when valid.
+ */
+function qualityOf(q) {
+    if (!q || typeof q !== 'object') return undefined;
+    // The camera sends float32 values (0.10000000149): kept to 3 decimals
+    const inRange = (v, lo, hi) => (num(v) !== undefined && num(v) >= lo && num(v) <= hi ? Math.round(num(v) * 1000) / 1000 : undefined);
+    const value = strip({
+        brightness: inRange(q.brightness, 0, 255),
+        contrast: inRange(q.contrast, 0, 255),
+        sharpness: inRange(q.sharpness, 0, 1e6),
+        edgeRatio: inRange(q.edgeRatio, 0, 1e4),
+        clipped: inRange(q.clipped, 0, 1),
+        change: Number.isInteger(num(q.change)) ? inRange(q.change, 0, 1000) : undefined,
+        ms: inRange(q.ms, 0, 600000)
+    });
+    return ['brightness', 'contrast', 'sharpness', 'clipped'].every(k => value[k] !== undefined) ? value : undefined;
+}
+
 /** The `meta` part, checked and trimmed to what FlyBot stores. */
 function readMeta(raw) {
     let meta = {};
@@ -137,6 +157,7 @@ function readMeta(raw) {
             net: ['wifi', '4g'].includes(meta.net) ? meta.net : undefined,
             rssi: num(meta.rssi),
             location,
+            quality: qualityOf(meta.quality),
             fw: typeof meta.fw === 'string' ? meta.fw.slice(0, 40) : undefined,
             model: typeof meta.model === 'string' && /^[A-Za-z0-9._-]{1,64}$/.test(meta.model) ? meta.model : undefined
         })

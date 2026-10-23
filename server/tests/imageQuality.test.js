@@ -2,7 +2,7 @@ const { test, before, after, beforeEach } = require('node:test');
 const assert = require('node:assert/strict');
 const jpeg = require('jpeg-js');
 const { models, sentMails, startDb, stopDb, clearDb, createUser, createCamera, request, json } = require('./dbHelpers');
-const { grayscale, metricsOf, coverageOf, assess, checkSnapshot } = require('../src/services/imageQuality');
+const { grayscale, metricsOf, coverageOf, assess, checkSnapshot, thumbnailOf, changeOf, jpegSize } = require('../src/services/imageQuality');
 
 before(startDb);
 after(stopDb);
@@ -118,4 +118,39 @@ test('a snapshot is checked, stored on the camera, and a repeated problem alerts
     assert.deepEqual(stored.quality.issues, ['blurry']);
     const health = await json(await request('/api/user/cameras/health', { as: owner }));
     assert.deepEqual(health.body.health.find(h => h.deviceSerial === 'Q1').imageIssues, ['blurry']);
+});
+
+test('change: the same scene is about 0, an object in front is most of the frame, a brightness shift is ignored', () => {
+    const base = thumbnailOf(grayscale(photo()));
+    assert.equal(base.length, 1200);
+    assert.equal(changeOf(base, null), null, 'no previous photo');
+    assert.equal(changeOf(thumbnailOf(grayscale(photo())), base), 0);
+    assert.ok(changeOf(thumbnailOf(grayscale(photo({ light: 0.85 }))), base) < 50, 'darker light, same scene');
+    // Something covering the left two thirds
+    const covered = Uint8Array.from(base, (v, i) => (i % 40 < 27 ? 20 : v));
+    assert.ok(changeOf(covered, base) > 500, String(changeOf(covered, base)));
+    assert.deepEqual(jpegSize(photo()), { width: 640, height: 480 });
+    assert.equal(jpegSize(Buffer.from('not a jpeg')), null);
+});
+
+test('a CamOS photo with meta.quality is not decoded; other photos get change from the previous thumbnail', async () => {
+    const owner = await createUser({ role: 'manager' });
+    await createCamera(owner, { deviceSerial: 'ESPQ', platform: 'camos', trapKind: 'lure' });
+    await createCamera(owner, { deviceSerial: 'EZQ' });
+    // The camera's numbers win: a blurry reading on a sharp picture is what gets stored
+    const cam = await models.Snapshot.create({ deviceSerial: 'ESPQ', imageUrl: 'x', s3Key: 'x', meta: { quality: { brightness: 190, contrast: 24.2, sharpness: 9, edgeRatio: 0.015, clipped: 0, change: 3 } } });
+    const q = await checkSnapshot(cam, photo());
+    assert.equal(q.source, 'camera');
+    assert.equal(q.sharpness, 9);
+    assert.equal(q.change, 3);
+    assert.deepEqual(q.issues, ['blurry']);
+
+    const first = await checkSnapshot(await models.Snapshot.create({ deviceSerial: 'EZQ', imageUrl: 'x', s3Key: 'x' }), photo());
+    assert.equal(first.source, 'server');
+    assert.equal(first.change, undefined, 'first photo: nothing to compare with');
+    const second = await checkSnapshot(await models.Snapshot.create({ deviceSerial: 'EZQ', imageUrl: 'x', s3Key: 'x' }), photo());
+    assert.equal(second.change, 0);
+    // The thumbnail stays on the server
+    const list = await json(await request('/api/user/cameras', { as: owner }));
+    assert.ok(!JSON.stringify(list.body).includes('qualityThumb'));
 });

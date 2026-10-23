@@ -172,6 +172,9 @@ const cameraSchema = new mongoose.Schema({
         issues: { type: [String], default: undefined },
         checkedAt: { type: Date, default: undefined }
     },
+    // 40x30 grey thumbnail of the latest photo (base64, 1200 bytes), to measure how much the next one changed.
+    // Not selected by default: it never leaves the server
+    qualityThumb: { type: String, default: undefined, select: false },
     // Last automatic or manual capture attempt for this device
     lastCaptureAt: { type: Date, default: null },
     // FlyBot Sentinel: a temporary capture interval that replaces captureIntervalMinutes until
