@@ -3905,6 +3905,17 @@
       "beta": "test builds before they reach every camera",
       "stable": "tested releases for every camera"
     },
+    "fromFile": "Install from file",
+    "fromFileTitle": "Install a firmware file on {name}",
+    "fromFileHint": "For administrators. The file (the -update.bin build) is stored as an Alpha build, not made the current one, and installed on this camera only.",
+    "file": "Firmware file",
+    "pickFile": "Choose a .bin file",
+    "version": "Version",
+    "versionHint": "Read from the file; change it if needed.",
+    "notImage": "This is not an ESP32 firmware image (use the -update.bin file).",
+    "otherFile": "Version {v} is already stored with another file: give this file another version.",
+    "fromFileSent": "Firmware {v} is on its way to the camera.",
+    "fromFileSkipped": "The camera did not take it: {reason}",
     "onChannel": "{channel} channel"
   },
   "cameraLog": {

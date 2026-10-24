@@ -15,6 +15,7 @@
           <el-button v-if="info?.canUpdate" type="primary" size="small" :icon="Upload" :loading="starting" data-test="firmware-update" @click="install">
             {{ t('firmware.install', { v: info.latest.version }) }}
           </el-button>
+          <el-button v-if="canInstallFile" size="small" :icon="FolderOpened" data-test="firmware-from-file" @click="openFileDialog">{{ t('firmware.fromFile') }}</el-button>
         </div>
       </div>
     </template>
@@ -61,6 +62,28 @@
       <p v-if="info.platform === 'camos' && canManage" class="fw-meta mt-2">{{ t('firmware.batteryHint', { pct: info.latest?.minBatteryPct ?? 40 }) }}</p>
     </template>
     <el-empty v-else-if="!loading" :description="t('firmware.none')" :image-size="48" />
+
+    <!-- Admin: one build from a file, for this camera only (stored as Alpha, never made current here) -->
+    <el-dialog v-model="fileDialog" :title="t('firmware.fromFileTitle', { name: camera.deviceName || camera.deviceSerial })" width="480px" append-to-body data-test="firmware-file-dialog">
+      <el-alert type="info" :closable="false" show-icon :title="t('firmware.fromFileHint')" class="mb-4" />
+      <el-form label-position="top" @submit.prevent>
+        <el-form-item :label="t('firmware.file')" :error="fileError">
+          <el-upload :auto-upload="false" :show-file-list="true" :limit="1" accept=".bin" :file-list="fileList" :on-change="pickFile" :on-remove="clearFile">
+            <el-button :icon="FolderOpened">{{ t('firmware.pickFile') }}</el-button>
+          </el-upload>
+        </el-form-item>
+        <el-form-item :label="t('firmware.version')">
+          <el-input v-model="fileVersion" class="font-mono" placeholder="0.9.2" data-test="firmware-file-version" />
+          <p class="fw-meta mt-1">{{ t('firmware.versionHint') }}</p>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="fileDialog = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" :icon="Upload" :loading="sendingFile" :disabled="!fileBytes || !fileVersion.trim() || !!fileError" data-test="firmware-file-install" @click="installFile">
+          {{ t('firmware.installNow') }}
+        </el-button>
+      </template>
+    </el-dialog>
   </el-card>
 </template>
 
@@ -68,14 +91,16 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { Refresh, Upload } from '@element-plus/icons-vue';
+import { FolderOpened, Refresh, Upload } from '@element-plus/icons-vue';
 import api from '@/services/api';
-import { isOpenUpdate, updateProgress, updateTagType, channelTagType } from '@/utils/firmware';
+import { isOpenUpdate, updateProgress, updateTagType, channelTagType, imageVersion } from '@/utils/firmware';
 import { requestErrorText } from '@/utils/requestError';
+import { useAuth } from '@/composables/useAuth';
 
 /**
  * The camera's firmware: running and latest version, release notes, a check, a confirmed install (sent when the
  * camera is awake and charged), and automatic updates at a chosen hour. EZVIZ cameras show their version only.
+ * An administrator can also install a build from a file on this one camera.
  */
 const props = defineProps({
   camera: { type: Object, required: true }
@@ -96,6 +121,8 @@ const recentEnd = computed(() => {
   return !!u?.finishedAt && Date.now() - new Date(u.finishedAt).getTime() < 24 * 3600 * 1000;
 });
 const progress = computed(() => updateProgress(info.value?.update));
+const { isAdmin } = useAuth();
+const canInstallFile = computed(() => isAdmin.value && info.value?.platform === 'camos' && !!(info.value.model || props.camera?.model));
 const errorText = (code) => (te(`firmware.errors.${code}`) ? t(`firmware.errors.${code}`) : code);
 
 async function load({ quiet = false } = {}) {
@@ -156,6 +183,80 @@ async function saveAuto(enabled, hour) {
     ElMessage.error(requestErrorText(t, err));
   } finally {
     savingAuto.value = false;
+  }
+}
+
+// ---------- Install from file (admin) ----------
+
+const fileDialog = ref(false);
+const fileList = ref([]);
+const fileBytes = ref(null);
+const fileName = ref('');
+const fileVersion = ref('');
+const fileError = ref('');
+const sendingFile = ref(false);
+
+function openFileDialog() {
+  clearFile();
+  fileDialog.value = true;
+}
+function clearFile() {
+  fileList.value = [];
+  fileBytes.value = null;
+  fileName.value = '';
+  fileVersion.value = '';
+  fileError.value = '';
+}
+async function pickFile(file) {
+  fileList.value = [file];
+  fileName.value = file.name;
+  const bytes = new Uint8Array(await file.raw.arrayBuffer());
+  // The image header magic (the server checks it too)
+  fileError.value = bytes[0] === 0xe9 ? '' : t('firmware.notImage');
+  fileBytes.value = fileError.value ? null : bytes;
+  fileVersion.value = imageVersion(bytes);
+}
+async function sha256Hex(bytes) {
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  return Array.from(new Uint8Array(digest), (x) => x.toString(16).padStart(2, '0')).join('');
+}
+
+// Store the build (or reuse the same file stored before under that version), then an update for this camera only
+async function installFile() {
+  const model = info.value.model || props.camera.model;
+  const version = fileVersion.value.trim().replace(/^v/i, '');
+  sendingFile.value = true;
+  try {
+    let releaseId = null;
+    try {
+      const form = new FormData();
+      form.append('model', model);
+      form.append('version', version);
+      form.append('channel', 'alpha');
+      form.append('file', new Blob([fileBytes.value], { type: 'application/octet-stream' }), fileName.value || `${model}-${version}.bin`);
+      releaseId = (await api.adminAddFirmware(form)).data.release.id;
+    } catch (err) {
+      if (err?.response?.data?.code !== 'EXISTS') throw err;
+      const known = ((await api.adminFirmware()).data.releases || []).find((r) => r.model === model && r.version === version);
+      if (!known || known.sha256 !== (await sha256Hex(fileBytes.value))) {
+        ElMessage.error(t('firmware.otherFile', { v: version }));
+        return;
+      }
+      releaseId = known.id;
+    }
+    const res = await api.adminRolloutFirmware(releaseId, { serials: [props.camera.deviceSerial], outdatedOnly: false });
+    if (res.data.created) {
+      ElMessage.success(t('firmware.fromFileSent', { v: version }));
+      fileDialog.value = false;
+    } else {
+      const reason = res.data.skipped?.[0]?.reason;
+      ElMessage.warning(t('firmware.fromFileSkipped', { reason: reason && te(`admin.firmware.skip.${reason}`) ? t(`admin.firmware.skip.${reason}`) : reason || '?' }));
+    }
+    await load({ quiet: true });
+  } catch (err) {
+    ElMessage.error(requestErrorText(t, err));
+  } finally {
+    sendingFile.value = false;
   }
 }
 

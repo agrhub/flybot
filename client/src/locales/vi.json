@@ -3905,6 +3905,17 @@
       "beta": "bản thử trước khi đến mọi camera",
       "stable": "bản đã kiểm tra, dành cho mọi camera"
     },
+    "fromFile": "Cài từ file",
+    "fromFileTitle": "Cài file firmware lên {name}",
+    "fromFileHint": "Dành cho quản trị viên. File (bản -update.bin) được lưu là bản Alpha, không đặt làm bản hiện hành, và chỉ cài lên camera này.",
+    "file": "File firmware",
+    "pickFile": "Chọn file .bin",
+    "version": "Phiên bản",
+    "versionHint": "Đọc từ file; sửa nếu cần.",
+    "notImage": "Đây không phải file firmware ESP32 (dùng file -update.bin).",
+    "otherFile": "Phiên bản {v} đã có với một file khác: hãy đặt phiên bản khác cho file này.",
+    "fromFileSent": "Firmware {v} đang được gửi tới camera.",
+    "fromFileSkipped": "Camera không nhận: {reason}",
     "onChannel": "Kênh {channel}"
   },
   "cameraLog": {

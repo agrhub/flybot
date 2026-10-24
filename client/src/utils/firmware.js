@@ -71,3 +71,17 @@ export function updateProgress(update) {
   if (update.state === 'sent') return 2;
   return null;
 }
+
+/**
+ * The version an ESP32 application image carries (esp_app_desc_t.version, right after the image and first segment
+ * headers), or '' when the bytes are not such an image. A leading "v" is dropped.
+ */
+export function imageVersion(bytes) {
+  const b = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes || []);
+  if (b.length < 80 || b[0] !== 0xe9) return '';
+  // esp_app_desc_t.magic_word 0xABCD5432 (little endian) at 32, version[32] at 48
+  if (b[32] !== 0x32 || b[33] !== 0x54 || b[34] !== 0xcd || b[35] !== 0xab) return '';
+  let end = 48;
+  while (end < 80 && b[end] !== 0) end++;
+  return String.fromCharCode(...b.subarray(48, end)).trim().replace(/^v/i, '');
+}
