@@ -141,10 +141,11 @@ export const SHOTS = [
             await a.move(send, 600);
             await a.js(`window.__filmRipple(${send.x}, ${send.y}); document.querySelector('#smart-trap-assistant-sidebar form').requestSubmit(); return true;`);
             let last = '', still = 0;
-            for (let i = 0; i < 120 && still < 8; i++) {
+            for (let i = 0; i < 180 && still < 8; i++) {
                 await a.sleep(500);
                 const now = await a.js(`return document.getElementById('smart-trap-assistant-sidebar').innerText;`);
-                still = now === last ? still + 1 : 0;
+                // "The assistant is looking into it..." does not change either: wait for the answer itself
+                still = now === last && !/looking into it/i.test(now) ? still + 1 : 0;
                 last = now;
             }
             await a.js(`const b = document.querySelector('#smart-trap-assistant-sidebar .overflow-y-auto'); if (b) b.scrollTo({ top: b.scrollHeight, behavior: 'smooth' }); return true;`);
@@ -171,7 +172,10 @@ export const SHOTS = [
             await a.goto('/reports', 6000);
             await a.move({ x: 900, y: 500 }, 800);
             await a.sleep(1500);
-            await a.click({ sel: '.el-card, .report-card, a[href*="/reports/"]', index: 0 }, { after: 6000 });
+            await a.click({ sel: '.el-card, .report-card, a[href*="/reports/"]', index: 0 }, { after: 1500 });
+            // The figures of 114 traps take a few seconds: the film cuts that wait out (edit.js)
+            await a.find({ text: 'Flies caught' }, { timeout: 45000 });
+            await a.sleep(1200);
             // A report shared with the guest: its public link to pass on
             await a.move({ text: 'Copy the public link', sel: 'button' }, 900);
             await a.sleep(1800);

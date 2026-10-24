@@ -8,6 +8,7 @@
 // 3. both encoded by ../tvc/encode.html (WebCodecs) and written by ../tvc/mux-mp4.mjs, index in front.
 // Also writes <out>.en.srt and <out>.vi.srt for the video site. Fails if the film runs over 5:00.
 // FLYBOT_FILM_KEEP=1 keeps the frames; FLYBOT_FILM_REUSE=1 encodes the frames already there (sound is mixed again).
+// FLYBOT_FILM_JPEG: quality of the frames in the work folder (90; 80 needs about 1.5 GB instead of 2.5 GB).
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -28,6 +29,7 @@ if (footage === 'placeholder' && !/-placeholder\.mp4$/i.test(out)) throw new Err
 if (footage !== 'placeholder' && /-placeholder\.mp4$/i.test(out)) throw new Error('only --footage placeholder cuts are named *-placeholder.mp4');
 const FPS = 30;
 const BITRATE = Number(process.env.FLYBOT_FILM_BITRATE) || 8000000;
+const JPEG_QUALITY = Math.min(Math.max(Number(process.env.FLYBOT_FILM_JPEG) || 90, 50), 100);
 const reuse = process.env.FLYBOT_FILM_REUSE === '1';
 // One long call: the whole encode
 process.env.FLYBOT_CDP_TIMEOUT ||= String(40 * 60 * 1000);
@@ -58,7 +60,7 @@ try {
     const started = Date.now();
     for (let i = 0; i < (reuse ? 0 : count); i++) {
         await page.send('Runtime.evaluate', { expression: `window.renderAt(${i / FPS})`, awaitPromise: true });
-        const { data } = await page.send('Page.captureScreenshot', { format: 'jpeg', quality: 90 });
+        const { data } = await page.send('Page.captureScreenshot', { format: 'jpeg', quality: JPEG_QUALITY });
         fs.writeFileSync(path.join(work, `f${String(i).padStart(5, '0')}.jpg`), Buffer.from(data, 'base64'));
         if (i % 300 === 0) console.log(`frame ${i}/${count} (${Math.round((Date.now() - started) / 1000)} s)`);
     }
