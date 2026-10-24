@@ -184,6 +184,10 @@
           </el-form>
         </el-tab-pane>
       </el-tabs>
+      <div class="mb-3">
+        <el-checkbox v-model="addForm.makeCurrent" data-test="firmware-add-current">{{ t('admin.firmware.addAsCurrent') }}</el-checkbox>
+        <p class="admin-meta">{{ t('admin.firmware.addAsCurrentHint') }}</p>
+      </div>
       <el-form v-if="addMode !== 'github'" label-position="top" @submit.prevent>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
           <el-form-item :label="t('admin.fleet.model')">
@@ -416,9 +420,9 @@ const addVisible = ref(false);
 const addMode = ref('github');
 const adding = ref(false);
 const githubResults = ref(null);
-const addForm = reactive({ githubTag: '', repo: '', file: null, url: '', sha256: '', model: '', version: '', notesVi: '', notesEn: '', channel: '' });
+const addForm = reactive({ githubTag: '', repo: '', file: null, url: '', sha256: '', model: '', version: '', notesVi: '', notesEn: '', channel: '', makeCurrent: false });
 const openAdd = () => {
-  Object.assign(addForm, { githubTag: '', repo: '', file: null, url: '', sha256: '', model: knownModels.value[0] || '', version: '', notesVi: '', notesEn: '', channel: '' });
+  Object.assign(addForm, { githubTag: '', repo: '', file: null, url: '', sha256: '', model: knownModels.value[0] || '', version: '', notesVi: '', notesEn: '', channel: '', makeCurrent: false });
   githubResults.value = null;
   addVisible.value = true;
 };
@@ -454,7 +458,23 @@ async function submitAdd() {
     } else {
       res = await api.adminAddFirmware({ url: addForm.url.trim(), model: addForm.model, version: addForm.version.trim(), ...(addForm.sha256.trim() ? { sha256: addForm.sha256.trim().toLowerCase() } : {}), notes: { vi: addForm.notesVi, en: addForm.notesEn }, channel: addForm.channel || 'stable' });
     }
-    ElMessage.success(t('admin.saved'));
+    // Make the build(s) current: a GitHub release that was imported before counts too
+    let announced = null;
+    if (addForm.makeCurrent) {
+      let ids = res.data.release ? [res.data.release.id] : (res.data.results || []).filter((r) => r.id).map((r) => r.id);
+      const known = (res.data.results || []).filter((r) => r.status === 'exists');
+      if (known.length) {
+        const releases = (await api.adminFirmware()).data.releases || [];
+        ids = ids.concat(known.map((r) => releases.find((x) => x.model === r.model && x.version === r.version)?.id).filter(Boolean));
+      }
+      announced = { notified: 0, scheduled: 0 };
+      for (const id of ids) {
+        const a = (await api.adminUpdateFirmware(id, { current: true })).data.announced;
+        announced.notified += a?.notified || 0;
+        announced.scheduled += a?.scheduled || 0;
+      }
+    }
+    ElMessage.success(announced ? t('admin.firmware.announced', announced) : t('admin.saved'));
     if (addMode.value !== 'github') addVisible.value = false;
     loadReleases();
     return res;

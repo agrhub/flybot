@@ -2009,6 +2009,8 @@
       "cameras": "Số camera đang chạy",
       "added": "Ngày thêm",
       "makeCurrent": "Đặt làm hiện hành",
+      "addAsCurrent": "Đặt làm bản hiện hành của kênh",
+      "addAsCurrentHint": "Chủ các camera trên kênh đó đang chạy bản cũ hơn sẽ được báo, và camera bật tự động cập nhật sẽ cài bản này.",
       "makeCurrentConfirm": "Đặt {model} {version} làm bản hiện hành của kênh {channel}? Chủ các camera trên kênh này đang chạy firmware cũ sẽ được báo, và camera bật tự động cập nhật sẽ tự cài.",
       "announced": "Đã đặt bản hiện hành: báo cho {notified} chủ camera, lên lịch {scheduled} lần tự cập nhật.",
       "rolloutModel": "Cập nhật camera",

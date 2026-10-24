@@ -2009,6 +2009,8 @@
       "cameras": "Cameras on it",
       "added": "Added",
       "makeCurrent": "Make current",
+      "addAsCurrent": "Make it the current release of its channel",
+      "addAsCurrentHint": "Owners of cameras on that channel with older firmware are told, and cameras with automatic updates install it.",
       "makeCurrentConfirm": "Make {model} {version} the current release of the {channel} channel? Owners of cameras on that channel with older firmware are told, and cameras with automatic updates install it.",
       "announced": "Current release set: {notified} owners told, {scheduled} automatic updates scheduled.",
       "rolloutModel": "Update cameras",
