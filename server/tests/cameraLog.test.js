@@ -15,7 +15,14 @@ let published;
 const fakeIotData = {
     send: async (command) => {
         if (aws.commandName(command) === 'PublishCommand') {
-            published.push({ topic: command.input.topic, message: JSON.parse(Buffer.from(command.input.payload).toString()) });
+            const message = JSON.parse(Buffer.from(command.input.payload).toString());
+            published.push({ topic: command.input.topic, message });
+            // The camera answers log.start with its log state
+            const serial = command.input.topic.match(/^camos\/([^/]+)\/rpc\/req$/)?.[1];
+            if (serial && message.method === 'log.start') {
+                const until = new Date(Date.now() + message.params.minutes * 60000).toISOString();
+                setImmediate(() => camos.handleMessage(`camos/${serial}/rpc/res`, { id: message.id, ok: true, result: { log: { on: true, level: message.params.level, until, sent: 0, session: 'a1b2c3d4' } } }));
+            }
         }
         return {};
     }
@@ -73,6 +80,10 @@ test('owner turns the log on: shadow log {level, until} and RPC log.start for an
     const rpc = published.find(p => p.topic === `camos/${SERIAL}/rpc/req`).message;
     assert.equal(rpc.method, 'log.start');
     assert.deepEqual(rpc.params, { level: 'warn', minutes: 20, backlog: true });
+    // On at once from the camera's answer, before any line or shadow report
+    const state = (await json(await request(`/api/cameras/${SERIAL}/log`, { as: owner }))).body.state;
+    assert.equal(state.on, true);
+    assert.equal(state.level, 'warn');
     for (let i = 0; i < 50 && !(await models.AuditLog.exists({ action: 'camera.log_started' })); i++) await new Promise(r => setTimeout(r, 20));
     assert.ok(await models.AuditLog.exists({ action: 'camera.log_started' }));
 

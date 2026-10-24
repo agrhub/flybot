@@ -19,6 +19,7 @@ const MAX_LINE = 500;
 const MAX_LINES_PER_BATCH = 400;
 const WATCH_MS = 90 * 1000;
 const TRIM_EVERY = 20;
+const LOG_START_WAIT_MS = 8000; // how long start() waits for the camera's answer to log.start
 
 const levelOf = (name) => LEVELS.indexOf(name) + 1;
 
@@ -167,10 +168,22 @@ async function start(camera, { level = 'info', minutes = 15 } = {}, now = new Da
     await camos.updateDesired(camera.deviceSerial, { log: { level, until: until.toISOString() } });
     let sent = false;
     const status = await camos.getStatus(camera.deviceSerial, now);
+    const set = { 'device.log.requestedLevel': level, 'device.log.requestedUntil': until };
     if (status?.online && !status.sleeping) {
-        sent = await camos.rpc(camera.deviceSerial, 'log.start', { level, minutes, backlog: true }).then(() => true, () => false);
+        // The camera answers log.start with its log state (result.log); the shadow reports it only later. No answer
+        // in time still means the request went out.
+        const answer = await camos.rpc(camera.deviceSerial, 'log.start', { level, minutes, backlog: true }, { wait: true, timeoutMs: LOG_START_WAIT_MS })
+            .catch(err => (err?.code === 'TIMEOUT' ? { timedOut: true } : null));
+        sent = !!answer && answer.ok !== false;
+        const log = answer?.result?.log;
+        if (log?.on === true) {
+            set['device.log.on'] = true;
+            if (typeof log.level === 'string') set['device.log.level'] = log.level.slice(0, 8);
+            if (log.until && !isNaN(new Date(log.until))) set['device.log.until'] = new Date(log.until);
+            if (typeof log.session === 'string') set['device.log.session'] = log.session.slice(0, 24);
+        }
     }
-    await Camera.updateMany({ deviceSerial: camera.deviceSerial }, { $set: { 'device.log.requestedLevel': level, 'device.log.requestedUntil': until } });
+    await Camera.updateMany({ deviceSerial: camera.deviceSerial }, { $set: set });
     return { status: 200, body: { success: true, level, until, sent, nextWakeAt: status?.nextWakeAt || null } };
 }
 
