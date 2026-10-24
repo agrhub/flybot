@@ -333,7 +333,13 @@
     },
     "battery": {
       "charging": "Đang sạc",
-      "notCharging": "Không sạc"
+      "notCharging": "Không sạc",
+      "chargingSlow": "Đang sạc chậm"
+    },
+    "powerLevel": {
+      "full": "Đủ nguồn",
+      "eco": "Tiết kiệm: xem trực tiếp tối đa 480p",
+      "saver": "Siêu tiết kiệm: ngủ giữa các lần chụp"
     },
     "sleeping": "Đang ngủ",
     "sleepingNextWake": "Đang ngủ, thức lúc {time}",
@@ -3657,6 +3663,7 @@
     "lastSeen": "Lần báo gần nhất",
     "charging": "đang sạc",
     "notCharging": "không sạc",
+    "chargingSlow": "đang sạc chậm",
     "refresh": "Cập nhật",
     "locate": "Lấy vị trí GPS",
     "restart": "Khởi động lại",

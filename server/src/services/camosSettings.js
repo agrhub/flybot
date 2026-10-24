@@ -176,6 +176,7 @@ function deviceInfo(camera, cam) {
         operator: d.operator || null,
         battery: d.battery || null,
         power: d.power?.mode || null,
+        powerLevel: d.power?.level || null,
         location: d.location || null,
         lastSeenAt: d.lastSeenAt || null,
         sleeping: !!d.sleeping

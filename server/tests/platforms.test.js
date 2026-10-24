@@ -152,6 +152,15 @@ test('camos: shadow and RPC go through the IoT data plane; snapshot waits for th
     }
 });
 
+test('camos: a slow charge and the power level (0.9.2) are kept; unknown values are not', () => {
+    const f = camos.deviceFieldsOf({ battery: { mv: 3790, pct: 47, charging: true, charge: 'slow', solarMv: 3900 }, power: { mode: 'auto', level: 'eco' } });
+    assert.deepEqual(f['device.battery'], { mv: 3790, pct: 47, charging: true, charge: 'slow', solarMv: 3900 });
+    assert.deepEqual(f['device.power'], { mode: 'auto', level: 'eco' });
+    const odd = camos.deviceFieldsOf({ battery: { pct: 50, charge: 'fast' }, power: { mode: 'battery', level: 'turbo' } });
+    assert.deepEqual(odd['device.battery'], { pct: 50 });
+    assert.deepEqual(odd['device.power'], { mode: 'battery' });
+});
+
 test('camos: messages from the camera update its status, power, battery and sleep (MQTT or IoT rule)', async () => {
     const owner = await createUser({ role: 'manager' });
     await createCamera(owner, { deviceSerial: 'ESP2', platform: 'camos', status: 0, device: { thingName: 'ESP2' } });

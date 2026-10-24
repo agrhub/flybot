@@ -141,9 +141,7 @@ function readMeta(raw) {
     }
     const capturedAt = meta.capturedAt ? new Date(meta.capturedAt) : null;
     const trigger = ['schedule', 'rpc', 'boot'].includes(meta.trigger) ? meta.trigger : undefined;
-    const battery = meta.battery && typeof meta.battery === 'object'
-        ? strip({ mv: num(meta.battery.mv), pct: num(meta.battery.pct), charging: typeof meta.battery.charging === 'boolean' ? meta.battery.charging : undefined, solarMv: num(meta.battery.solarMv) })
-        : undefined;
+    const battery = require('../platforms/camos').batteryOf(meta.battery);
     const location = meta.location && typeof meta.location === 'object' && num(meta.location.lat) !== undefined && num(meta.location.lng) !== undefined
         ? strip({ lat: num(meta.location.lat), lng: num(meta.location.lng), fixAt: meta.location.fixAt && !isNaN(new Date(meta.location.fixAt)) ? new Date(meta.location.fixAt) : undefined, ...require('../platforms/camos').locationSource(meta.location) })
         : undefined;

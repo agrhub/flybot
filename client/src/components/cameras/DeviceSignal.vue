@@ -44,8 +44,9 @@ const batteryText = computed(() => {
   return [
     `${b.pct} %`,
     b.mv != null ? `${(b.mv / 1000).toFixed(2)} V` : null,
-    b.charging === true ? t('cameras.battery.charging') : b.charging === false ? t('cameras.battery.notCharging') : null,
+    b.charge === 'slow' ? t('cameras.battery.chargingSlow') : b.charging === true ? t('cameras.battery.charging') : b.charging === false ? t('cameras.battery.notCharging') : null,
     props.device?.power?.mode ? t(`cameras.power.${props.device.power.mode}`) : null,
+    props.device?.power?.level ? t(`cameras.powerLevel.${props.device.power.level}`) : null,
   ].filter(Boolean).join(' · ');
 });
 </script>

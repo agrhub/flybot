@@ -9,7 +9,7 @@
       <el-descriptions-item :label="t('camosDevice.network')">{{ networkText }}</el-descriptions-item>
       <el-descriptions-item :label="t('camosDevice.signal')">{{ info.rssi != null ? `${info.rssi} dBm` : dash }}</el-descriptions-item>
       <el-descriptions-item :label="t('camosDevice.battery')">{{ batteryText }}</el-descriptions-item>
-      <el-descriptions-item :label="t('camosDevice.power')">{{ info.power ? t(`cameras.power.${info.power}`) : dash }}</el-descriptions-item>
+      <el-descriptions-item :label="t('camosDevice.power')">{{ powerText }}</el-descriptions-item>
       <el-descriptions-item :label="t('camosDevice.location')">{{ locationText }}</el-descriptions-item>
       <el-descriptions-item :label="t('camosDevice.lastSeen')">{{ info.lastSeenAt ? new Date(info.lastSeenAt).toLocaleString() : dash }}</el-descriptions-item>
     </el-descriptions>
@@ -74,9 +74,10 @@ const networkText = computed(() => {
 const batteryText = computed(() => {
   const b = props.info.battery;
   if (!b) return dash;
-  const parts = [b.pct != null ? `${b.pct} %` : null, b.mv != null ? `${(b.mv / 1000).toFixed(2)} V` : null, b.charging === true ? t('camosDevice.charging') : b.charging === false ? t('camosDevice.notCharging') : null];
+  const parts = [b.pct != null ? `${b.pct} %` : null, b.mv != null ? `${(b.mv / 1000).toFixed(2)} V` : null, b.charge === 'slow' ? t('camosDevice.chargingSlow') : b.charging === true ? t('camosDevice.charging') : b.charging === false ? t('camosDevice.notCharging') : null];
   return parts.filter(Boolean).join(' · ') || dash;
 });
+const powerText = computed(() => [props.info.power ? t(`cameras.power.${props.info.power}`) : null, props.info.powerLevel ? t(`cameras.powerLevel.${props.info.powerLevel}`) : null].filter(Boolean).join(' · ') || dash);
 const locationText = computed(() => formatLocation(props.info.location, t) || dash);
 
 async function run(action, extra = {}) {

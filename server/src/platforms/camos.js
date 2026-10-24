@@ -335,7 +335,7 @@ async function getStatus(deviceSerial, now = new Date()) {
     return {
         platform: PLATFORM,
         online: Number(camera.status) === 1 && !stale && !sleeping,
-        power: { mode: d.power?.mode || 'auto' },
+        power: { mode: d.power?.mode || 'auto', level: d.power?.level || null },
         sleeping,
         wakeAt: sleeping ? d.wakeAt || null : null,
         nextWakeAt: sleeping || Number(camera.status) !== 1 ? nextWakeOf(camera, now) : null,
@@ -365,20 +365,25 @@ const locationSource = (loc) => strip({
     source: ['gps', 'cell'].includes(loc?.source) ? loc.source : undefined,
     accuracyM: num(loc?.accuracyM) > 0 ? Math.round(num(loc.accuracyM)) : undefined
 });
+// The battery as a camera reports it; `charge` (0.9.2): normal, slow (a small or shaded panel) or none
+const batteryOf = (b) => (b && typeof b === 'object'
+    ? strip({ mv: num(b.mv), pct: num(b.pct), charging: typeof b.charging === 'boolean' ? b.charging : undefined, charge: ['normal', 'slow', 'none'].includes(b.charge) ? b.charge : undefined, solarMv: num(b.solarMv) })
+    : undefined);
 
 /** Fields of Camera.device from a state / telemetry / reported-shadow document. */
 function deviceFieldsOf(doc) {
     if (!doc || typeof doc !== 'object') return {};
-    const battery = doc.battery && typeof doc.battery === 'object'
-        ? strip({ mv: num(doc.battery.mv), pct: num(doc.battery.pct), charging: typeof doc.battery.charging === 'boolean' ? doc.battery.charging : undefined, solarMv: num(doc.battery.solarMv) })
-        : undefined;
+    const battery = batteryOf(doc.battery);
     const gps = doc.location || doc.gps;
     const location = gps && typeof gps === 'object' && num(gps.lat) !== undefined
         ? strip({ lat: num(gps.lat), lng: num(gps.lng ?? gps.lon), fixAt: gps.fixAt ? new Date(gps.fixAt) : dateOf(gps.ts), ...locationSource(gps) })
         : undefined;
     const net = typeof doc.net === 'string' ? doc.net : (doc.net && typeof doc.net === 'object' ? doc.net.type : undefined);
     const rssi = num(doc.rssi ?? doc.net?.rssi);
-    const power = doc.power && typeof doc.power === 'object' && ['auto', 'battery', 'powered'].includes(doc.power.mode) ? { mode: doc.power.mode } : undefined;
+    // power.level (0.9.2): full, eco (live view up to the 480p tier) or saver (deep sleep between photos)
+    const power = doc.power && typeof doc.power === 'object' && ['auto', 'battery', 'powered'].includes(doc.power.mode)
+        ? strip({ mode: doc.power.mode, level: ['full', 'eco', 'saver'].includes(doc.power.level) ? doc.power.level : undefined })
+        : undefined;
     // 4G modem (state net.cell, protocol 4; firmware 0.7.0+ also top-level modem.*): kept while on Wi-Fi again
     const cell = (doc.net && typeof doc.net === 'object' && doc.net.cell && typeof doc.net.cell === 'object') ? doc.net.cell : (doc.modem && typeof doc.modem === 'object' ? doc.modem : {});
     const ident = (v, re) => (typeof v === 'string' && re.test(v.trim()) ? v.trim() : undefined);
@@ -562,6 +567,7 @@ module.exports = {
     PLATFORM,
     SUBSCRIPTIONS,
     locationSource,
+    batteryOf,
     RPC_TIMEOUT_MS,
     SNAPSHOT_TIMEOUT_MS,
     thingNameOf,

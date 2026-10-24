@@ -333,7 +333,13 @@
     },
     "battery": {
       "charging": "Charging",
-      "notCharging": "Not charging"
+      "notCharging": "Not charging",
+      "chargingSlow": "Charging slowly"
+    },
+    "powerLevel": {
+      "full": "Full power",
+      "eco": "Eco: live view up to 480p",
+      "saver": "Saver: sleeps between photos"
     },
     "sleeping": "Sleeping",
     "sleepingNextWake": "Sleeping, next wake {time}",
@@ -3657,6 +3663,7 @@
     "lastSeen": "Last heard from",
     "charging": "charging",
     "notCharging": "not charging",
+    "chargingSlow": "charging slowly",
     "refresh": "Refresh",
     "locate": "Get a GPS fix",
     "restart": "Restart",
