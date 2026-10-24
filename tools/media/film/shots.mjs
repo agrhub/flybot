@@ -127,6 +127,12 @@ export const SHOTS = [
         async run(a) {
             await a.goto('/dashboard', 6000);
             await a.click({ text: 'Assistant', sel: 'button' }, { after: 1800 });
+            // Something over the top bar can take the mouse click: open the panel from the page then
+            const open = await a.js(`return !!document.querySelector('#smart-trap-assistant-sidebar input')?.offsetParent;`);
+            if (!open) {
+                await a.js(`[...document.querySelectorAll('button')].find(b => b.innerText.trim() === 'Assistant').click(); return true;`);
+                await a.sleep(1500);
+            }
             await a.click({ sel: 'input', text: 'Ask the FlyBot assistant' }, { after: 300 });
             await a.type('How many flies on the traps this week?', 55);
             await a.sleep(500);
@@ -166,12 +172,15 @@ export const SHOTS = [
             await a.move({ x: 900, y: 500 }, 800);
             await a.sleep(1500);
             await a.click({ sel: '.el-card, .report-card, a[href*="/reports/"]', index: 0 }, { after: 6000 });
+            // A report shared with the guest: its public link to pass on
+            await a.move({ text: 'Copy the public link', sel: 'button' }, 900);
+            await a.sleep(1800);
             await a.scroll(700, { ms: 2000 });
             await a.sleep(2000);
         }
     },
     {
-        // The ESP32-S3 trap camera: live view at JPEG 640x480, then its remote log
+        // The ESP32-S3 trap camera: live view at 480p (JPEG 640x480), then its remote log
         name: 'esp32-live', session: 'owner',
         async run(a) {
             await a.goto('/cameras', 6000);
@@ -179,7 +188,7 @@ export const SHOTS = [
             await a.sleep(1500);
             await a.click({ text: 'Details', sel: 'a, button, span', exact: true }, { after: 4000 });
             await a.click({ sel: '.kvs-viewer__quality' }, { after: 900 });
-            await a.click({ sel: '.el-dropdown-menu__item', text: '640' }, { after: 1000 });
+            await a.click({ sel: '.el-dropdown-menu__item', text: '480p' }, { after: 1000 });
             for (let i = 0; i < 90; i++) {
                 const playing = await a.js(`return [...document.querySelectorAll('video, canvas, img.kvs-viewer__jpeg')].some(v => (v.videoWidth || v.naturalWidth || 0) > 0);`);
                 if (playing) break;
