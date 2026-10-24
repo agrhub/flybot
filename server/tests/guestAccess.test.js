@@ -199,3 +199,41 @@ test('admin settings: guest access and the audience are validated', async () => 
     assert.equal(saved.body.settings.demoViewAudience, 'since');
     assert.equal(saved.body.settings.guestAccessEnabled, true);
 });
+
+// ---------- Sample reports ----------
+
+test('reports: the simulated farm\'s sample reports are shared with the guest, who reads them and copies the public link', async () => {
+    const demoSim = require('../src/services/demoSim');
+    const owner = await createUser({ email: demoSim.SYSTEM_EMAIL });
+    const org = await models.Organization.create({ simulated: true, name: demoSim.ORG_NAME, kind: 'organization', members: [{ userId: owner._id, email: owner.email, role: 'owner', addedBy: owner._id }] });
+    const mango = await models.Farm.create({ simulated: true, ownerId: owner._id, orgId: org._id, name: 'Cái Bè mango orchard (simulated)', description: 'Hòa Lộc mango, Đồng Tháp. Simulated data.' });
+    const pomelo = await models.Farm.create({ simulated: true, ownerId: owner._id, orgId: org._id, name: 'Chợ Lách pomelo orchard (simulated)', description: 'Green-skin pomelo, Vĩnh Long. Simulated data.' });
+    await createCamera(owner, { deviceSerial: 'SIM-A', simulated: true, platform: 'simulated', orgId: org._id, farmId: mango._id, trapKind: 'sticky', status: 1 });
+    await createCamera(owner, { deviceSerial: 'SIM-B', simulated: true, platform: 'simulated', orgId: org._id, farmId: pomelo._id, trapKind: 'lure', status: 1 });
+    await settingsService.updateSettings({ guestAccessEnabled: true, demoViewSimulated: true }, null);
+
+    assert.deepEqual(await demoSim.ensureReports({ force: true }), { created: 3, updated: 0 });
+    assert.deepEqual(await demoSim.ensureReports({ force: true }), { created: 0, updated: 3 }, 'kept up to date, never doubled');
+    assert.equal(await demoSim.ensureReports(), null, 'checked at most every 10 minutes');
+    const kinds = await models.Dashboard.findOne({ simKey: 'kinds' }).lean();
+    assert.deepEqual(kinds.widgets.filter(w => w.title).map(w => [w.title, w.cameraSerials]), [['Sticky traps', ['SIM-A']], ['Lure traps', ['SIM-B']]]);
+    assert.deepEqual((await models.Dashboard.findOne({ simKey: 'mango' }).lean()).cameraSerials, ['SIM-A'], 'mango orchards only');
+    assert.equal(kinds.schedule.frequency, 'off', 'nothing is ever sent');
+
+    const h = withToken((await json(await guestLogin())).body.token);
+    const list = (await json(await request('/api/dashboards', { headers: h }))).body.dashboards;
+    assert.equal(list.length, 3);
+    const overview = list.find(d => d.name.startsWith('Weekly'));
+    const detail = (await json(await request(`/api/dashboards/${overview.id}`, { headers: h }))).body.dashboard;
+    assert.equal(detail.access, 'shared');
+    assert.equal(detail.canEdit, false);
+    assert.ok(detail.publicToken, 'a shared viewer gets the public link to pass on');
+    assert.equal(detail.sharedWith, undefined, 'but not the share list');
+    assert.equal((await request(`/api/dashboards/${overview.id}/data`, { headers: h })).status, 200);
+    assert.equal((await request(`/api/public/dashboards/${detail.publicToken}`)).status, 200);
+    assert.equal((await request(`/api/dashboards/${overview.id}`, { method: 'PUT', headers: h, body: { name: 'Mine' } })).status, 403, 'read-only');
+    assert.equal((await request(`/api/dashboards/${overview.id}/share`, { method: 'POST', headers: h, body: { email: 'a@example.test' } })).status, 403);
+
+    const counts = await demoSim.remove({ dryRun: true });
+    assert.equal(counts.reports, 3);
+});

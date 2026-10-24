@@ -102,6 +102,8 @@ function toDetail(dashboard, user) {
             active: (sc.frequency || 'off') !== 'off' && sc.recipients === 'all',
             muted: !!share?.scheduleMuted
         };
+        // A public report's link may be passed on by anyone who can read it; changing it stays with the owner
+        if (dashboard.visibility === 'public' && dashboard.publicToken) detail.publicToken = dashboard.publicToken;
     }
     // Share list and public link only for people who can change them
     if (detail.canEdit) {

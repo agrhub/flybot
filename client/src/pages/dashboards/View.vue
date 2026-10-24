@@ -14,9 +14,11 @@
             <el-button :icon="Back" @click="router.push('/reports')">{{ t('dashboards.backToList') }}</el-button>
             <el-button :icon="Refresh" :loading="loadingData" @click="loadData">{{ t('common.refresh') }}</el-button>
             <el-button :icon="Download" :loading="exporting" :disabled="!widgetData || !dashboard.widgets.length" @click="exportPdf">{{ t('dashboards.exportPdf') }}</el-button>
-            <el-tooltip :content="t('dashboards.sendNowHint')" placement="bottom">
+            <el-tooltip v-if="!user?.guest" :content="t('dashboards.sendNowHint')" placement="bottom">
               <el-button :icon="Message" :loading="sending" :disabled="!dashboard.widgets.length" @click="sendNow">{{ t('dashboards.sendNow') }}</el-button>
             </el-tooltip>
+            <!-- Shared with me and public: I can pass its link on (changing it stays with the owner) -->
+            <el-button v-if="!dashboard.canEdit && publicUrl" :icon="Share" data-test="copy-public-link" @click="copyPublicLink">{{ t('dashboards.copyPublicLink') }}</el-button>
             <template v-if="dashboard.canEdit">
               <el-button :icon="Share" @click="shareVisible = true">{{ t('share.button') }}</el-button>
               <el-button type="primary" :icon="Edit" @click="startEditing">{{ t('dashboards.edit') }}</el-button>
@@ -198,6 +200,7 @@ import {
   Back, Refresh, Share, Edit, Delete, MoreFilled, Check, Plus, Top, Bottom, Setting, Download, Message, AlarmClock,
 } from '@element-plus/icons-vue';
 import api from '@/services/api';
+import { useAuth } from '@/composables/useAuth';
 import { useCameras } from '@/composables/useCameras';
 import PageHeader from '@/components/common/PageHeader.vue';
 import DashboardGrid from '@/components/dashboards/DashboardGrid.vue';
@@ -216,6 +219,7 @@ const route = useRoute();
 const router = useRouter();
 const { t, locale } = useI18n();
 const { cameras } = useCameras();
+const { user } = useAuth();
 
 const dashboard = ref(null);
 const dashboardCameras = ref([]);
@@ -225,6 +229,15 @@ const loading = ref(false);
 const loadingData = ref(false);
 const notFound = ref(false);
 const shareVisible = ref(false);
+const publicUrl = computed(() => (dashboard.value?.publicToken ? `${window.location.origin}/d/${dashboard.value.publicToken}` : ''));
+const copyPublicLink = async () => {
+  try {
+    await navigator.clipboard.writeText(publicUrl.value);
+    ElMessage.success(t('dashboards.share.copied'));
+  } catch {
+    ElMessage.warning(t('dashboards.share.copyFailed'));
+  }
+};
 // Range shown now (starts at the report's saved range) and the days the server used
 const viewRange = ref({ preset: '7d' });
 const dataRange = ref(null);

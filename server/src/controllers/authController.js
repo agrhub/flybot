@@ -242,6 +242,8 @@ async function guestLogin(req, res) {
         }
         const guestAccess = require('../services/guestAccess');
         const user = await guestAccess.guestUser();
+        // The simulated farm's sample reports, shared with the guest (at most every 10 minutes)
+        await require('../services/demoSim').ensureReports().catch(err => console.warn(`⚠️ Demo reports: ${err.message}`));
         const sessionId = await createSession(user._id, req, { ttlMs: guestAccess.GUEST_SESSION_MS });
         const token = signToken(user, sessionId);
         setAuthCookie(res, token);

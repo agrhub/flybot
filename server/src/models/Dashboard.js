@@ -62,6 +62,8 @@ const dashboardSchema = new mongoose.Schema({
     visibility: { type: String, enum: ['private', 'public'], default: 'private' },
     publicToken: { type: String, default: undefined },
     sharedWith: { type: [dashboardShareSchema], default: [] },
+    // A sample report of the simulated demo farm (services/demoSim.js ensureReports), by its stable key
+    simKey: { type: String, default: undefined },
     // Default time range of the report; viewers can pick another one
     range: {
         preset: { type: String, enum: RANGE_PRESETS, default: '7d' },

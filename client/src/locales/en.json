@@ -2275,6 +2275,7 @@
       "month": "Month"
     },
     "sendNow": "Email me",
+    "copyPublicLink": "Copy the public link",
     "sendNowHint": "Send the report with its PDF to your email now",
     "sentNow": "Sending the report to {email}.",
     "schedule": {

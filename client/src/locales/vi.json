@@ -2275,6 +2275,7 @@
       "month": "Tháng"
     },
     "sendNow": "Gửi email",
+    "copyPublicLink": "Sao chép link công khai",
     "sendNowHint": "Gửi báo cáo kèm file PDF tới email của bạn ngay",
     "sentNow": "Đang gửi báo cáo tới {email}.",
     "schedule": {

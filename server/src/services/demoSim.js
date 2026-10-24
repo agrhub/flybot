@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const env = require('../config/env');
-const { User, Organization, Farm, Plot, Camera, Snapshot, Treatment, MaintenanceEvent, SentinelProposal, DailyStat, ChatSession, Notification } = require('../models');
+const { User, Organization, Farm, Plot, Camera, Snapshot, Treatment, MaintenanceEvent, SentinelProposal, DailyStat, ChatSession, Notification, Dashboard } = require('../models');
 const world = require('./demoSimWorld');
 
 /**
@@ -263,7 +263,99 @@ async function ensureWorld({ dryRun = true } = {}) {
         }
     }
     require('./demoView').clearCache();
+    plan.reports = await ensureReports({ force: true });
     return { ...plan, farmsList: farms, traps };
+}
+
+// ---------- Sample reports ----------
+
+// Reports of the simulated farm, shared with the guest account (the first one also has a public link), so a
+// visitor opens, reads and passes on a report without making one. [type, width, height, extra] per widget.
+const REPORTS = [
+    {
+        key: 'overview',
+        name: 'Weekly fruit-fly report: all simulated farms',
+        description: 'Every simulated trap over the last 7 days: catches, trend, species and the traps that catch most. Simulated data.',
+        visibility: 'public',
+        range: '7d',
+        cameras: () => true,
+        widgets: [['kpi', 24, 4], ['trend', 16, 5], ['species', 8, 5], ['catchesByTrap', 24, 5], ['cameraRanking', 12, 5], ['dailyTable', 12, 5]]
+    },
+    {
+        key: 'mango',
+        name: 'Mango orchards: the last 30 days',
+        description: 'Every simulated mango orchard by week, with the latest photos. Simulated data.',
+        visibility: 'private',
+        range: '30d',
+        cameras: (camera, farm) => /mango/i.test(farm?.description || ''),
+        widgets: [['kpi', 24, 4], ['trend', 24, 5, { granularity: 'week' }], ['catchesByTrap', 12, 5], ['latestSnapshot', 12, 5]]
+    },
+    {
+        key: 'kinds',
+        name: 'Sticky and lure traps compared',
+        description: 'Yellow sticky cards and lure traps side by side over 30 days. Simulated data.',
+        visibility: 'private',
+        range: '30d',
+        cameras: () => true,
+        widgets: [['trend', 12, 5, { title: 'Sticky traps', kind: 'sticky' }], ['trend', 12, 5, { title: 'Lure traps', kind: 'lure' }], ['cameraRanking', 24, 5], ['activity', 24, 5]]
+    }
+];
+const REPORTS_CHECK_MS = 10 * 60 * 1000;
+let reportsCheckedAt = 0;
+
+/**
+ * Create or bring up to date the sample reports (by Dashboard.simKey), owned by the simulation's system
+ * account and shared with the guest account. Never scheduled: nothing is ever sent. Checked at most every
+ * 10 minutes (guest sign-in, the daily job); force for the seed. Returns { created, updated } or null when
+ * the simulated farm does not exist.
+ */
+async function ensureReports({ force = false, now = Date.now() } = {}) {
+    if (!force && now - reportsCheckedAt < REPORTS_CHECK_MS) return null;
+    const owner = await User.findOne({ email: SYSTEM_EMAIL });
+    const org = await findOrg();
+    if (!owner || !org) return null;
+    reportsCheckedAt = now;
+    const cameras = await Camera.find({ simulated: true, orgId: org._id }).select('deviceSerial trapKind farmId').lean();
+    if (!cameras.length) return null;
+    const farms = new Map((await Farm.find({ orgId: org._id, simulated: true }).select('description').lean()).map(f => [String(f._id), f]));
+    const guest = await require('./guestAccess').guestUser();
+    const done = { created: 0, updated: 0 };
+    // The last one written is listed first: the weekly report with its public link on top
+    for (const r of [...REPORTS].reverse()) {
+        const mine = cameras.filter(c => r.cameras(c, farms.get(String(c.farmId))));
+        const serials = mine.map(c => c.deviceSerial);
+        if (!serials.length) continue;
+        const widgets = r.widgets.map(([type, w, h, extra = {}], i) => ({
+            id: `sim-${r.key}-${i}`,
+            type,
+            title: extra.title || '',
+            cameraSerials: extra.kind ? mine.filter(c => c.trapKind === extra.kind).map(c => c.deviceSerial) : [],
+            granularity: extra.granularity || 'auto',
+            layout: { x: 0, y: i, w, h }
+        }));
+        const fields = {
+            ownerId: owner._id, orgId: org._id, name: r.name, description: r.description, cameraSerials: serials, widgets,
+            visibility: r.visibility, range: { preset: r.range }, 'schedule.frequency': 'off'
+        };
+        const share = { userId: guest._id, email: guest.email, sharedAt: new Date(now) };
+        const existing = await Dashboard.findOne({ ownerId: owner._id, simKey: r.key }).select('publicToken sharedWith').lean();
+        if (!existing) {
+            const { 'schedule.frequency': off, ...doc } = fields;
+            await Dashboard.create({
+                ...doc, schedule: { frequency: off }, simKey: r.key, sharedWith: [share],
+                ...(r.visibility === 'public' ? { publicToken: crypto.randomBytes(18).toString('base64url') } : {})
+            });
+            done.created += 1;
+            continue;
+        }
+        const update = { $set: fields };
+        if (r.visibility === 'public' && !existing.publicToken) update.$set.publicToken = crypto.randomBytes(18).toString('base64url');
+        if (r.visibility !== 'public' && existing.publicToken) update.$unset = { publicToken: 1 };
+        if (!(existing.sharedWith || []).some(s => s.userId && String(s.userId) === String(guest._id))) update.$push = { sharedWith: share };
+        await Dashboard.updateOne({ _id: existing._id }, update);
+        done.updated += 1;
+    }
+    return done;
 }
 
 // ---------- Photos ----------
@@ -496,7 +588,8 @@ async function remove({ dryRun = true } = {}) {
         treatments: await Treatment.countDocuments({ simulated: true }),
         maintenance: await MaintenanceEvent.countDocuments({ simulated: true }),
         proposals: await SentinelProposal.countDocuments({ simulated: true }),
-        dailyStats: serials.length ? await DailyStat.countDocuments({ deviceSerial: { $in: serials } }) : 0
+        dailyStats: serials.length ? await DailyStat.countDocuments({ deviceSerial: { $in: serials } }) : 0,
+        reports: owner ? await Dashboard.countDocuments({ ownerId: owner._id, simKey: { $exists: true } }) : 0
     };
     if (dryRun) return counts;
     const keys = (await Snapshot.find({ simulated: true }).select('s3Key').lean()).map(s => s.s3Key).filter(k => /^snapshots\/SIM-/.test(k));
@@ -511,6 +604,7 @@ async function remove({ dryRun = true } = {}) {
     await Farm.deleteMany({ simulated: true });
     if (org) await Organization.deleteOne({ _id: org._id, simulated: true });
     if (owner) {
+        await Dashboard.deleteMany({ ownerId: owner._id, simKey: { $exists: true } });
         await ChatSession.deleteMany({ userId: owner._id });
         await Notification.deleteMany({ userId: owner._id });
         await User.deleteOne({ _id: owner._id, email: SYSTEM_EMAIL });
@@ -531,6 +625,7 @@ async function runDaily(now = new Date()) {
     if (!(await findOrg())) return null;
     // Only the last two days: earlier ones were filled by the seed or earlier runs
     const from = world.addDays(world.dayKeyOf(until), -1);
+    await ensureReports().catch(err => console.warn(`⚠️ Demo reports: ${err.message}`));
     return simulate({ until, from, dryRun: false });
 }
 
@@ -544,6 +639,7 @@ module.exports = {
     loadPool,
     pickPhoto,
     ensureWorld,
+    ensureReports,
     duePhotos,
     simulate,
     decideOldProposals,
