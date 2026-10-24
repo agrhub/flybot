@@ -1,6 +1,12 @@
 <template>
   <!-- A phone's status bar for a CamOS camera: its uplink with signal bars, and its battery -->
   <span class="device-signal inline-flex items-center gap-3" data-test="device-signal">
+    <!-- A GPS fix: the camera turns its 4G radio off for up to 5 minutes -->
+    <el-tooltip v-if="device?.locating" :content="t('cameras.locatingHint')" placement="top">
+      <el-tag type="warning" effect="light" round size="small" data-test="device-locating">
+        <el-icon class="mr-1"><Location /></el-icon>{{ t('cameras.locating') }}
+      </el-tag>
+    </el-tooltip>
     <el-tooltip v-if="netLabel" :content="signalText" placement="top">
       <span class="inline-flex items-center gap-1" data-test="device-net">
         <span class="device-signal__net">{{ netLabel }}</span>
@@ -24,11 +30,11 @@
 <script setup>
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { Lightning } from '@element-plus/icons-vue';
+import { Lightning, Location } from '@element-plus/icons-vue';
 import { signalBars } from '@/utils/battery';
 
 const props = defineProps({
-  // camera.device: { net: 'wifi' | '4g', rssi (dBm), battery: { pct, mv, charging }, power: { mode } }
+  // camera.device: { net: 'wifi' | '4g', rssi (dBm), battery: { pct, mv, charging, charge }, power: { mode, level }, locating }
   device: { type: Object, default: () => ({}) },
 });
 const { t } = useI18n();

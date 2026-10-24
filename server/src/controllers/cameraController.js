@@ -32,6 +32,7 @@ function deviceView(camera, now = new Date()) {
         nextWakeAt: sleeping || Number(camera.status) !== 1 ? camosPlatform.nextWakeOf(camera, now) : null,
         lastSeenAt: d.lastSeenAt || null,
         liveRequested: !!d.liveRequested,
+        locating: !!d.locatingUntil && new Date(d.locatingUntil) > now,
         // false only when the camera reports no cloud live view (shadow live.supported)
         liveSupported: d.shadow?.reported?.live?.supported !== false,
         kvsChannelName: d.kvsChannelName || null,
@@ -492,10 +493,12 @@ async function updateDeviceSettings(req, res) {
 // here: it erases the camera's registration, and a camera on 4G in a field would not come back without a person.
 const SSID_RE = /^[\x20-\x7e]{1,32}$/;
 const APN_RE = /^[A-Za-z0-9._-]{1,63}$/;
+// How long a GPS fix may take (the camera adds platforms/camos.js GPS_REDIAL_S to dial 4G again and answer)
+const GPS_FIX_S = 300;
 function deviceActionRequest(body) {
     const action = String(body?.action || '');
     if (action === 'refresh') return { method: 'state', params: {} };
-    if (action === 'locate') return { method: 'gps.fix', params: { timeoutS: 120 } };
+    if (action === 'locate') return { method: 'gps.fix', params: { timeoutS: GPS_FIX_S }, noWait: true };
     if (action === 'restart') return { method: 'reboot', params: {} };
     if (action === 'wifi') {
         const ssid = typeof body.ssid === 'string' ? body.ssid : '';
@@ -515,6 +518,8 @@ function deviceActionRequest(body) {
 /**
  * POST /api/cameras/:serial/device-action { action: refresh | locate | restart | wifi {ssid, password} | apn {apn} }:
  * one RPC to a camos-esp32-trap camera that is online and awake. The audit keeps the action, never a password.
+ * A GPS fix takes up to 5 minutes: it is sent without waiting, and the location comes with the camera's answer. The
+ * camera turns its 4G radio off meanwhile, so it is marked locating: its disconnect is not an outage.
  */
 async function deviceAction(req, res) {
     const deviceSerial = String(req.params.serial || '');
@@ -527,8 +532,13 @@ async function deviceAction(req, res) {
         const camos = require('../platforms/camos');
         const status = await camos.getStatus(deviceSerial);
         if (!status?.online || status.sleeping) return res.status(409).json({ success: false, code: 'OFFLINE', message: "The camera is offline or asleep: try again when it is online." });
-        const answer = await camos.rpc(deviceSerial, request.method, request.params, { wait: true, timeoutMs: 15000 })
-            .catch(err => ({ ok: false, error: err.code || 'TIMEOUT' }));
+        const answer = request.noWait
+            ? await camos.rpc(deviceSerial, request.method, request.params).then((r) => ({ ok: true, id: r.id, result: { pending: true } }), err => ({ ok: false, error: err.code || 'NOT_SENT' }))
+            : await camos.rpc(deviceSerial, request.method, request.params, { wait: true, timeoutMs: 15000 })
+                .catch(err => ({ ok: false, error: err.code || 'TIMEOUT' }));
+        if (request.method === 'gps.fix' && answer?.ok !== false) {
+            await Camera.updateMany({ deviceSerial }, { $set: { 'device.locatingUntil': new Date(Date.now() + (GPS_FIX_S + camos.GPS_REDIAL_S) * 1000), 'device.locatingRpcId': answer.id } });
+        }
         recordAudit(req, { action: 'camera.action', target: cameraTarget(camera), details: { action: String(req.body.action), ok: answer?.ok !== false } });
         if (answer?.ok === false) return res.status(502).json({ success: false, code: String(answer.error?.code || answer.error || 'CAMERA_ERROR').slice(0, 40), message: "The camera did not do it." });
         res.json({ success: true, action: String(req.body.action), result: answer?.result || null });

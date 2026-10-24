@@ -161,6 +161,43 @@ test('camos: a slow charge and the power level (0.9.2) are kept; unknown values 
     assert.deepEqual(odd['device.power'], { mode: 'battery' });
 });
 
+test('camos: the position in a gps.fix answer nobody waits for becomes the camera location', async () => {
+    const owner = await createUser({ role: 'manager' });
+    await createCamera(owner, { deviceSerial: 'ESP3', platform: 'camos', status: 1, device: { thingName: 'ESP3' } });
+    await camos.handleMessage('camos/ESP3/rpc/res', { v: 1, id: 'late-answer', ok: true, result: { location: { lat: 10.5, lng: 106.5, fixAt: '2026-10-24T05:40:00Z', source: 'cell', accuracyM: 550 }, sats: 0 } });
+    const cam = await models.Camera.findOne({ deviceSerial: 'ESP3' }).lean();
+    assert.deepEqual(cam.device.location, { lat: 10.5, lng: 106.5, fixAt: new Date('2026-10-24T05:40:00Z'), source: 'cell', accuracyM: 550 });
+    await camos.handleMessage('camos/ESP3/rpc/res', { v: 1, id: 'failed', ok: false, error: { code: 'TIMEOUT' } });
+    assert.equal((await models.Camera.findOne({ deviceSerial: 'ESP3' }).lean()).device.location.lat, 10.5);
+});
+
+test('camos: a disconnect during a GPS fix (4G radio off) is not an outage; the fix answer ends it', async () => {
+    const owner = await createUser({ role: 'manager' });
+    const until = new Date(Date.now() + 6 * 60 * 1000);
+    await createCamera(owner, { deviceSerial: 'ESP4', platform: 'camos', status: 1, device: { thingName: 'ESP4', lastSeenAt: new Date(), locatingUntil: until, locatingRpcId: 'fix-1' } });
+    const r = await camos.handleMessage('$aws/events/presence/disconnected/ESP4', { clientId: 'ESP4', disconnectReason: 'MQTT_KEEP_ALIVE_TIMEOUT' });
+    assert.equal(r.locating, true);
+    let cam = await models.Camera.findOne({ deviceSerial: 'ESP4' }).lean();
+    assert.equal(cam.status, 1, 'still online while it takes the fix');
+    assert.equal((await camos.getStatus('ESP4')).locating, true);
+    assert.equal(await models.Notification.countDocuments({ type: 'camera_offline' }), 0);
+    // Back, and the answer without a position (no fix): locating ends
+    await camos.handleMessage('camos/ESP4/rpc/res', { v: 1, id: 'fix-1', ok: false, error: { code: 'TIMEOUT' } });
+    cam = await models.Camera.findOne({ deviceSerial: 'ESP4' }).lean();
+    assert.equal(cam.device.locatingUntil, undefined);
+    assert.equal((await camos.getStatus('ESP4')).locating, false);
+    // A disconnect now is an outage again
+    await camos.handleMessage('$aws/events/presence/disconnected/ESP4', { clientId: 'ESP4', disconnectReason: 'CONNECTION_LOST' });
+    assert.equal((await models.Camera.findOne({ deviceSerial: 'ESP4' }).lean()).status, 0);
+
+    // A fix the camera starts itself announces the window; its end clears it
+    await camos.handleMessage('camos/ESP4/event', { v: 1, type: 'gps_fix', state: 'started', seconds: 300 });
+    cam = await models.Camera.findOne({ deviceSerial: 'ESP4' }).lean();
+    assert.ok(new Date(cam.device.locatingUntil) > new Date(Date.now() + 380 * 1000));
+    await camos.handleMessage('camos/ESP4/event', { v: 1, type: 'gps_fix', state: 'done' });
+    assert.equal((await models.Camera.findOne({ deviceSerial: 'ESP4' }).lean()).device.locatingUntil, undefined);
+});
+
 test('camos: messages from the camera update its status, power, battery and sleep (MQTT or IoT rule)', async () => {
     const owner = await createUser({ role: 'manager' });
     await createCamera(owner, { deviceSerial: 'ESP2', platform: 'camos', status: 0, device: { thingName: 'ESP2' } });

@@ -92,7 +92,7 @@ test('camosSettings: photo sizes come from the camera; flip and mirror are setti
 test('device actions: valid requests become RPCs; an offline camera and bad values are refused; errors only for form fields', async () => {
     const { deviceActionRequest } = require('../src/controllers/cameraController');
     assert.deepEqual(deviceActionRequest({ action: 'restart' }), { method: 'reboot', params: {} });
-    assert.deepEqual(deviceActionRequest({ action: 'locate' }), { method: 'gps.fix', params: { timeoutS: 120 } });
+    assert.deepEqual(deviceActionRequest({ action: 'locate' }), { method: 'gps.fix', params: { timeoutS: 300 }, noWait: true });
     assert.deepEqual(deviceActionRequest({ action: 'apn', apn: ' m-wap ' }), { method: 'net.set', params: { cellular: { apn: 'm-wap' } } });
     assert.deepEqual(deviceActionRequest({ action: 'wifi', ssid: 'Farm', password: 'secret12' }), { method: 'net.set', params: { wifi: { ssid: 'Farm', password: 'secret12' } } });
     assert.equal(deviceActionRequest({ action: 'wifi', ssid: 'Farm', password: 'short' }).error, 'BAD_PASSWORD');

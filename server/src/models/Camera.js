@@ -88,6 +88,9 @@ const deviceSchema = new mongoose.Schema({
     // FlyBot asked for a live session at the next wake (shadow desired live.requested)
     liveRequested: { type: Boolean, default: undefined },
     liveRequestedAt: { type: Date, default: undefined },
+    // A GPS fix in progress: the camera turns its 4G radio off meanwhile (firmware 0.9.2), so a disconnect is expected
+    locatingUntil: { type: Date, default: undefined },
+    locatingRpcId: { type: String, default: undefined },
     shadow: {
         reported: { type: mongoose.Schema.Types.Mixed, default: undefined },
         desired: { type: mongoose.Schema.Types.Mixed, default: undefined },

@@ -24,6 +24,8 @@ const RPC_TIMEOUT_MS = 20000;
 const SNAPSHOT_TIMEOUT_MS = 70000;
 // A camera that said nothing for this long is shown offline
 const OFFLINE_AFTER_MS = 2 * 60 * 60 * 1000;
+// After a GPS fix (4G radio off) the camera dials again and answers: this long on top of the fix time
+const GPS_REDIAL_S = 90;
 
 const thingNameOf = (camera, deviceSerial) => camera?.device?.thingName || deviceSerial;
 const topic = (deviceSerial, suffix) => `camos/${deviceSerial}/${suffix}`;
@@ -346,6 +348,7 @@ async function getStatus(deviceSerial, now = new Date()) {
         location: d.location || null,
         fw: d.fw || null,
         liveRequested: !!d.liveRequested,
+        locating: !!d.locatingUntil && new Date(d.locatingUntil) > now,
         // false only when the camera reports it (shadow live.supported); cameras that do not report it keep live view
         liveSupported: d.shadow?.reported?.live?.supported !== false,
         localUrl: localConsoleUrl(deviceSerial, d.fw),
@@ -444,6 +447,15 @@ async function setOnline(deviceSerial, online, at = new Date(), extra = {}) {
     return true;
 }
 
+/** After a GPS fix: offline when nothing came from the camera since it went away (`since`) and it is not connected. */
+async function offlineUnlessBack(deviceSerial, since) {
+    const camera = await Camera.findOne({ deviceSerial, platform: PLATFORM }).select('device.lastSeenAt device.connectedAt').lean();
+    if (!camera) return;
+    const back = [camera.device?.lastSeenAt, camera.device?.connectedAt].some(t => t && new Date(t) > since);
+    await Camera.updateMany({ deviceSerial, platform: PLATFORM }, { $unset: { 'device.locatingUntil': 1, 'device.locatingRpcId': 1 } });
+    if (!back) await setOnline(deviceSerial, false, new Date());
+}
+
 /**
  * One message from a camera (MQTT subscriber or the IoT rule webhook). `topic` is the MQTT
  * topic, `payload` the JSON (object, string or bytes). Returns what was done, or null when the
@@ -467,7 +479,13 @@ async function handleMessage(topicName, payload, { now = new Date() } = {}) {
                 pendingRpc.delete(String(doc.id));
                 waiter.resolve({ ok: doc.ok !== false, result: doc.result ?? null, error: doc.error ?? null });
             }
-            await Camera.updateMany({ deviceSerial, platform: PLATFORM }, { $set: { 'device.lastSeenAt': now } });
+            // A position in the answer (gps.fix, sent without waiting: it takes minutes) is the camera's new location
+            const location = doc.ok !== false && doc.result?.location ? deviceFieldsOf({ location: doc.result.location })['device.location'] : undefined;
+            await Camera.updateMany({ deviceSerial, platform: PLATFORM }, { $set: { 'device.lastSeenAt': now, ...(location ? { 'device.location': location } : {}) } });
+            // The answer to the GPS fix, with or without a position: the camera is no longer locating
+            if (location || doc.id) {
+                await Camera.updateMany({ deviceSerial, platform: PLATFORM, ...(location ? {} : { 'device.locatingRpcId': String(doc.id) }) }, { $unset: { 'device.locatingUntil': 1, 'device.locatingRpcId': 1 } });
+            }
             return { deviceSerial, kind, answered: !!waiter };
         }
         if (kind === 'state') {
@@ -491,6 +509,14 @@ async function handleMessage(topicName, payload, { now = new Date() } = {}) {
         // event
         const type = String(doc.type || '');
         const set = { 'device.lastSeenAt': now, ...deviceFieldsOf(doc) };
+        // A GPS fix the camera starts itself (event gps_fix {state: started, seconds}): its 4G goes off meanwhile
+        if (type === 'gps_fix' && doc.state === 'started') {
+            const seconds = Math.min(Math.max(num(doc.seconds) || 300, 30), 600);
+            set['device.locatingUntil'] = new Date(now.getTime() + (seconds + GPS_REDIAL_S) * 1000);
+        }
+        if (type === 'gps_fix' && doc.state && doc.state !== 'started') {
+            await Camera.updateMany({ deviceSerial, platform: PLATFORM }, { $unset: { 'device.locatingUntil': 1, 'device.locatingRpcId': 1 } });
+        }
         if (type === 'goodbye' || doc.sleeping === true) {
             const wakeAt = dateOf(doc.wakeAt);
             await Camera.updateMany({ deviceSerial, platform: PLATFORM }, { $set: { ...set, 'device.sleeping': true, 'device.wakeAt': wakeAt, status: 0 } });
@@ -511,7 +537,7 @@ async function handleMessage(topicName, payload, { now = new Date() } = {}) {
     const presence = String(topicName || '').match(/^\$aws\/events\/presence\/(connected|disconnected)\/([A-Za-z0-9_-]{1,64})$/);
     if (presence) {
         const [, what, clientId] = presence;
-        const camera = await Camera.findOne({ platform: PLATFORM, $or: [{ deviceSerial: clientId }, { 'device.thingName': clientId }] }).select('deviceSerial device.connectedAt device.connectedSession').lean();
+        const camera = await Camera.findOne({ platform: PLATFORM, $or: [{ deviceSerial: clientId }, { 'device.thingName': clientId }] }).select('deviceSerial device.connectedAt device.connectedSession device.locatingUntil').lean();
         if (!camera) return { clientId, kind: 'presence', ignored: 'unknown camera' };
         // IoT Core's own event time; events can arrive out of order (a short power cut: the new session's connect,
         // then the old session's keepalive timeout)
@@ -533,6 +559,14 @@ async function handleMessage(topicName, payload, { now = new Date() } = {}) {
         if (older) {
             console.log(`📡 ${camera.deviceSerial} disconnect of an older session ignored (${reason || 'stale'})`);
             return { deviceSerial: camera.deviceSerial, kind: 'presence', ignored: 'older session' };
+        }
+        // A GPS fix with the 4G radio off: expected. Offline only if the camera is not back when the fix time is over
+        const locatingUntil = camera.device?.locatingUntil ? new Date(camera.device.locatingUntil) : null;
+        if (locatingUntil && locatingUntil > now) {
+            console.log(`📡 ${camera.deviceSerial} disconnected while taking a GPS fix (${reason || 'no reason'}): offline only if it is not back by ${locatingUntil.toISOString()}`);
+            const timer = setTimeout(() => offlineUnlessBack(camera.deviceSerial, now).catch(err => console.warn(`⚠️ GPS fix check ${camera.deviceSerial}: ${err.message}`)), locatingUntil - now);
+            timer.unref?.();
+            return { deviceSerial: camera.deviceSerial, kind: 'presence', locating: true };
         }
         await setOnline(camera.deviceSerial, false, now);
         console.log(`📡 ${camera.deviceSerial} disconnected (${reason || 'no reason'})`);
@@ -568,6 +602,7 @@ module.exports = {
     SUBSCRIPTIONS,
     locationSource,
     batteryOf,
+    GPS_REDIAL_S,
     RPC_TIMEOUT_MS,
     SNAPSHOT_TIMEOUT_MS,
     thingNameOf,

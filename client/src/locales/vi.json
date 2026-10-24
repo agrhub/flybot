@@ -342,6 +342,8 @@
       "saver": "Siêu tiết kiệm: ngủ giữa các lần chụp"
     },
     "sleeping": "Đang ngủ",
+    "locating": "Đang lấy vị trí GPS",
+    "locatingHint": "Camera tạm tắt 4G trong lúc tìm vệ tinh và kết nối lại trong khoảng 5 phút.",
     "sleepingNextWake": "Đang ngủ, thức lúc {time}",
     "requestLive": "Yêu cầu xem trực tiếp lần thức tới",
     "liveRequested": "Đã yêu cầu xem trực tiếp lần thức tới",
@@ -3678,7 +3680,7 @@
     "failed": "Camera chưa thực hiện được.",
     "done": {
       "refresh": "Đã yêu cầu camera gửi trạng thái.",
-      "locate": "Camera đang lấy vị trí GPS (tối đa 2 phút).",
+      "locate": "Camera đang lấy vị trí GPS (tối đa 5 phút): vị trí sẽ hiện ở đây khi có.",
       "restart": "Camera đang khởi động lại.",
       "wifi": "Đã gửi mạng Wi-Fi: dùng từ lần khởi động sau.",
       "apn": "Đã gửi APN: dùng từ lần khởi động sau."

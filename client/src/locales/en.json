@@ -342,6 +342,8 @@
       "saver": "Saver: sleeps between photos"
     },
     "sleeping": "Sleeping",
+    "locating": "Taking a GPS fix",
+    "locatingHint": "The camera turns its 4G off while it looks for satellites and is back within about 5 minutes.",
     "sleepingNextWake": "Sleeping, next wake {time}",
     "requestLive": "Request live at next wake",
     "liveRequested": "Live requested for the next wake",
@@ -3678,7 +3680,7 @@
     "failed": "The camera did not do it.",
     "done": {
       "refresh": "Asked the camera for its state.",
-      "locate": "The camera is taking a GPS fix (up to 2 minutes).",
+      "locate": "The camera is taking a GPS fix (up to 5 minutes): the location shows here when it has one.",
       "restart": "The camera is restarting.",
       "wifi": "Wi-Fi network sent: used from the next start.",
       "apn": "APN sent: used from the next start."

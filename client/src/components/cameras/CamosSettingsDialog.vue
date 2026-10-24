@@ -206,9 +206,21 @@ async function load() {
   }
 }
 
-// A refreshed state comes back over MQTT a moment later: read the settings view again
+// A refreshed state comes back over MQTT a moment later: read the settings view again. A GPS fix takes up to
+// 5 minutes, so read it every 30 s until the location changes or the 5 minutes are over
+let locateTimer = null;
 function onDeviceAction(action) {
-  if (action === 'refresh' || action === 'locate') setTimeout(() => { if (props.modelValue) reload(); }, action === 'locate' ? 30000 : 3000);
+  if (action === 'refresh') setTimeout(() => { if (props.modelValue) reload(); }, 3000);
+  if (action === 'locate') followLocation(locationKey());
+}
+const locationKey = () => JSON.stringify(data.value?.info?.location || null);
+function followLocation(before, tries = 10) {
+  clearTimeout(locateTimer);
+  locateTimer = setTimeout(async () => {
+    if (!props.modelValue) return;
+    await reload();
+    if (locationKey() === before && tries > 1) followLocation(before, tries - 1);
+  }, 30000);
 }
 async function reload() {
   try {
@@ -235,7 +247,7 @@ function followReports(tries = 15) {
     followReports(tries - 1);
   }, 3000);
 }
-watch(() => props.modelValue, (open) => { if (!open) clearTimeout(followTimer); });
+watch(() => props.modelValue, (open) => { if (!open) { clearTimeout(followTimer); clearTimeout(locateTimer); } });
 
 async function save() {
   saving.value = true;
