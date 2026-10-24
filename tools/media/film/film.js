@@ -51,17 +51,23 @@ function crop(parent, src, natW, natH, [x0, y0, x1, y1], w, h, fit = 'contain') 
     }
     return box;
 }
-const BOARD = M + 'photos/IMG_20261019_150930.jpg';
-const BW = 2592, BH = 4608;
-// Where each module sits on the board photo (fractions of the photo)
-const ON_BOARD = {
-    esp32: [0.234, 0.505, 0.914, 0.684],
-    modem: [0.319, 0.347, 0.592, 0.504],
-    charger: [0.592, 0.402, 0.889, 0.5],
-    gps: [0.306, 0.689, 0.464, 0.789],
-    boost: [0.482, 0.694, 0.737, 0.766],
-    antenna: [0.161, 0.69, 0.243, 0.827]
+// The finished build (24 Oct 2026): the ESP32-S3 N16R8 board in the trap lid, its OV5640 with the wide-angle lens.
+// Every part shown on its own (parts list, wiring) is cut out of this photo.
+const BUILD = M + 'photos/IMG_20261024_143114_539.jpg';
+const UW = 4160, UH = 3120;
+const ON_BUILD = {
+    esp32: [0.415, 0.373, 0.6, 0.667],
+    esp32cam: [0.405, 0.18, 0.61, 0.67],
+    lens: [0.425, 0.187, 0.595, 0.393],
+    modem: [0.598, 0.25, 0.748, 0.443],
+    charger: [0.62, 0.453, 0.733, 0.667],
+    gps: [0.306, 0.243, 0.405, 0.363],
+    reg: [0.299, 0.383, 0.389, 0.543],
+    antenna: [0.678, 0.147, 0.71, 0.247]
 };
+// The assembled trap, and its lid from above
+const TRAP = 'IMG_20261024_144403_702.jpg';
+const LID = 'IMG_20261024_144519_297.jpg';
 
 // ---------------------------------------------------------------- the timeline
 let voice = {};
@@ -221,24 +227,25 @@ const VIEWS = {
         const k = place(el('div', 'abs kicker', 'The trap camera · bill of materials', s), 120, 60);
         const t = place(el('div', 'abs title', 'Open hardware: about US$40 per trap camera', s), 120, 108, 1700); t.style.fontSize = '48px';
         const parts = [
-            ['photo', 'esp32', 'Freenove ESP32-S3 CAM', 'FNK0085, OV5640 camera · US$19.99'],
+            ['photo', 'esp32', 'ESP32-S3 N16R8 CAM board', 'sold without a camera · US$6.91'],
+            ['photo', 'lens', 'OV5640, wide-angle lens', '5 MP; the lens turns to focus · US$9.20'],
             ['photo', 'modem', '4G modem A7680C', 'antenna included · US$6.49'],
             ['photo', 'gps', 'GPS ATGM336H', 'antenna included · US$6.65'],
             ['photo', 'charger', 'Charger TP4056 + DW01', 'USB-C, protected · US$0.24'],
-            ['photo', 'boost', 'Mini 5 V boost', '5 V for the board · US$0.50'],
-            ['cell', null, '18650 cell + holder', '3.7 V, 2000 mAh · US$1.50'],
-            ['housing', null, 'Solar trap housing', 'hanging, with lid · US$3.00']
+            ['photo', 'reg', '3.3 V buck-boost regulator', 'feeds the board’s 3V3 pin · US$0.89'],
+            ['cell', null, 'LiPo pouch cell 103450', '3.7 V, 2000 mAh, flat: fits the lid · US$2.76'],
+            ['housing', null, 'Solar trap housing + lure', 'hanging, with lid · US$3.00 + US$0.34']
         ].map(([kind, key, h, p], i) => {
-            // Four cards, then three centred under them
-            const card = place(el('div', 'part', '', s), 120 + (i % 4) * 430 + (i >= 4 ? 215 : 0), 188 + Math.floor(i / 4) * 340);
+            // Two rows of four cards
+            const card = place(el('div', 'part', '', s), 120 + (i % 4) * 430, 188 + Math.floor(i / 4) * 340);
             const pic = el('div', 'pic', '', card);
-            if (kind === 'photo') crop(pic, BOARD, BW, BH, ON_BOARD[key], 400, 220);
-            else if (kind === 'housing') { const im = place(el('img', 'abs', undefined, pic), 0, 0, 400, 220); im.src = M + 'photos/IMG_20261019_143502.jpg'; im.style.objectFit = 'cover'; }
-            else if (kind === 'cell') pic.innerHTML = '<svg width="400" height="220"><rect x="70" y="70" width="240" height="80" rx="16" fill="#2f7d4f" stroke="#9fe3bd" stroke-width="3"/><rect x="310" y="92" width="18" height="36" rx="4" fill="#9fe3bd"/><text x="190" y="122" font-size="30" font-weight="800" fill="#eafff3" text-anchor="middle" font-family="Be Vietnam Pro">18650 · 3.7 V</text></svg>';
+            if (kind === 'photo') crop(pic, BUILD, UW, UH, ON_BUILD[key], 400, 220);
+            else if (kind === 'housing') { const im = place(el('img', 'abs', undefined, pic), 0, 0, 400, 220); im.src = M + 'photos/' + TRAP; im.style.objectFit = 'cover'; }
+            else if (kind === 'cell') pic.innerHTML = '<svg width="400" height="220"><rect x="70" y="70" width="240" height="80" rx="16" fill="#2f7d4f" stroke="#9fe3bd" stroke-width="3"/><rect x="310" y="92" width="18" height="36" rx="4" fill="#9fe3bd"/><text x="190" y="122" font-size="30" font-weight="800" fill="#eafff3" text-anchor="middle" font-family="Be Vietnam Pro">LiPo · 3.7 V</text></svg>';
             el('div', 'txt', `<h4>${h}</h4><p>${p}</p>`, card);
             return card;
         });
-        const src = place(el('div', 'abs source', 'Prices read on shop pages on 17 Oct 2026 (4G trap wiring sheet); VND prices at 26,050 ₫/USD (Vietcombank, 21 Oct 2026). Required parts ≈ US$40.22 (448,954 ₫ + US$19.99 board + US$3.00 housing); optional parts +US$7.35; SIM not included.', s), 120, 870, 1700);
+        const src = place(el('div', 'abs source', 'Prices read on shop pages on 17 and 24 Oct 2026 (camos-esp32-trap docs/BOM.md, the field camera in the hanging solar trap); VND prices at 26,050 ₫/USD (Vietcombank, 21 Oct 2026). Total ≈ US$39.93 (962,160 ₫ + US$3.00 housing), with the 4G power switch, resistors, capacitors, prototype board and terminals (US$3.45); SIM not included.', s), 120, 870, 1700);
         return (tt) => {
             show(k, prog(tt, 0, 0.6)); show(t, prog(tt, 0.2, 0.8));
             parts.forEach((c, i) => show(c, prog(tt, 0.7 + i * 0.35, 0.7), 40, 0.92));
@@ -250,17 +257,21 @@ const VIEWS = {
         const k = place(el('div', 'abs kicker', 'The real build', s), 120, 70);
         const t = place(el('div', 'abs title', 'Wired on a perfboard, mounted in the trap lid', s), 120, 112, 1700); t.style.fontSize = '50px';
         const frame = place(el('div', 'card', '', s), 140, 210, 640, 736); frame.style.overflow = 'hidden';
-        const R = [0.1, 0.3, 0.95, 0.85];
+        // The lid, cut to the frame's 640:736 shape so that the marks land on their modules
+        const R = [0.267, 0.09, 0.763, 0.85];
         const inner = place(el('div', 'abs', '', frame), 0, 0, 640, 736);
-        crop(inner, BOARD, BW, BH, R, 640, 736, 'cover');
+        crop(inner, BUILD, UW, UH, R, 640, 736, 'cover');
         const toFrame = ([x0, y0, x1, y1]) => [((x0 + x1) / 2 - R[0]) / (R[2] - R[0]) * 640, ((y0 + y1) / 2 - R[1]) / (R[3] - R[1]) * 736];
-        const tags = [['esp32', 'ESP32-S3 + OV5640'], ['modem', '4G A7680C'], ['charger', 'TP4056 charger'], ['gps', 'GPS ATGM336H'], ['boost', '5 V boost'], ['antenna', 'LTE antenna']].map(([key, label], i) => {
-            const [x, y] = toFrame(ON_BOARD[key]);
+        // Where each label is centred from its mark: above it, or below where a neighbour's label would cover it
+        const OFFSET = { gps: [0, 50], reg: [0, 50], charger: [0, 50], antenna: [-120, -46] };
+        const tags = [['esp32', 'ESP32-S3 N16R8'], ['lens', 'OV5640, wide-angle lens'], ['modem', '4G A7680C'], ['charger', 'TP4056 charger'], ['gps', 'GPS ATGM336H'], ['reg', '3.3 V regulator'], ['antenna', 'LTE antenna']].map(([key, label], i) => {
+            const [x, y] = toFrame(ON_BUILD[key]);
+            const [dx, dy] = OFFSET[key] || [0, -46];
             const d = place(el('div', 'dotmark', '', s), 140 + x, 210 + y);
-            const tag = place(el('div', 'tag', label, s), 140 + x + (key === 'antenna' ? 40 : 0), 210 + y + (key === 'gps' ? 50 : -46));
+            const tag = place(el('div', 'tag', label, s), 140 + x + dx, 210 + y + dy);
             return { d, tag, i };
         });
-        const housing = [['IMG_20261019_143502.jpg', 'The lid: its solar panel on top, the board inside'], ['IMG_20261019_143550.jpg', 'The clear trap body under the lid']].map(([f, cap], i) => {
+        const housing = [[TRAP, 'The finished trap: the camera looks down into the clear body'], [LID, 'The lid from above: its solar panel charges the cell']].map(([f, cap], i) => {
             const c = place(el('div', 'card', '', s), 880 + i * 470, 210, 440, 736); c.style.overflow = 'hidden';
             const im = place(el('img', 'abs', undefined, c), 0, 0, 440, 620); im.src = M + 'photos/' + f; im.style.objectFit = 'cover';
             place(el('div', 'abs', `<div style="font-size:24px;font-weight:700;line-height:1.3">${cap}</div>`, c), 22, 638, 400);
@@ -332,32 +343,34 @@ const VIEWS = {
 };
 
 // ---------------------------------------------------------------- wiring animation (4G build)
-// Modules and pins follow camos-esp32-trap "Sơ đồ đấu nối bẫy 4G": the cell feeds the charger, a boost converter
-// feeds the board's 5V pin, the modem runs from the cell, the GPS from the board's 3V3, a divider on GPIO1.
+// Modules and pins follow camos-esp32-trap docs/WIRING.md (24 Oct 2026), the hanging trap's wiring: the panel and the
+// LiPo on the charger, a 3.3 V buck-boost regulator on the board's 3V3 pin, the modem from the cell through its power
+// switch on GPIO47, the GPS also from the cell with its ground switched on GPIO21, a divider on GPIO1. Only the wiring is
+// shown.
 function wiringView(s) {
     const STEPS = [
         [0, '1', 'Cell, charger and solar panel'],
-        [6.6, '2', '5 V boost converter → board 5V'],
-        [12.4, '3', '4G modem: power from the cell, UART on GPIO41 / 42'],
-        [18.0, '4', 'GPS: 3V3, TX → GPIO14 · battery divider → GPIO1']
+        [6.6, '2', '3.3 V buck-boost regulator → board 3V3'],
+        [12.4, '3', '4G modem: from the cell through its switch, UART on GPIO41 / 42'],
+        [18.0, '4', 'GPS: from the cell, TX → GPIO14 · battery divider → GPIO1']
     ];
     const step = place(el('div', 'step', '<i></i><span></span>', s), 90, 34);
     const mods = {};
     const mod = (key, x, y, w, h, name, sub, pic, at) => {
         const m = place(el('div', 'mod', '', s), x, y, w, h);
         const p = place(el('div', 'pic', '', m), 0, 0, w, h - 74);
-        if (pic === 'photo') crop(p, BOARD, BW, BH, ON_BOARD[key], w, h - 74);
+        if (pic === 'photo') crop(p, BUILD, UW, UH, ON_BUILD[key === 'esp32' ? 'esp32cam' : key], w, h - 74);
         else p.innerHTML = pic;
         el('div', 'name', `${name}<small>${sub}</small>`, m);
         mods[key] = { m, at };
     };
     const panelSvg = `<svg width="300" height="96"><rect x="20" y="12" width="260" height="72" rx="6" fill="#1b3358" stroke="#6eaaff" stroke-width="2"/>${[...Array(5)].map((_, i) => `<line x1="${20 + (i + 1) * 43}" y1="12" x2="${20 + (i + 1) * 43}" y2="84" stroke="#6eaaff" stroke-width="1"/>`).join('')}<line x1="20" y1="48" x2="280" y2="48" stroke="#6eaaff" stroke-width="1"/></svg>`;
-    const cellSvg = `<svg width="300" height="76"><rect x="40" y="16" width="200" height="48" rx="10" fill="#2f7d4f" stroke="#9fe3bd" stroke-width="2"/><rect x="240" y="30" width="14" height="20" rx="3" fill="#9fe3bd"/><text x="140" y="48" font-size="22" font-weight="800" fill="#eafff3" text-anchor="middle" font-family="Be Vietnam Pro">18650</text></svg>`;
+    const cellSvg = `<svg width="300" height="76"><rect x="40" y="16" width="200" height="48" rx="10" fill="#2f7d4f" stroke="#9fe3bd" stroke-width="2"/><rect x="240" y="30" width="14" height="20" rx="3" fill="#9fe3bd"/><text x="140" y="48" font-size="22" font-weight="800" fill="#eafff3" text-anchor="middle" font-family="Be Vietnam Pro">LiPo</text></svg>`;
     mod('solar', 90, 150, 300, 170, 'Solar panel 6 V 2 W', 'optional', panelSvg, 0.6);
     mod('charger', 90, 400, 300, 200, 'TP4056 charger', 'with DW01 protection', 'photo', 0.2);
-    mod('cell', 90, 700, 300, 150, '18650 cell', '3.7 – 4.2 V', cellSvg, 0.2);
-    mod('boost', 520, 400, 270, 200, '5 V boost', 'set to 5.0 – 5.2 V', 'photo', 6.8);
-    mod('esp32', 920, 250, 400, 600, 'ESP32-S3 CAM', 'Freenove FNK0085 · OV5640', 'photo', 6.8);
+    mod('cell', 90, 700, 300, 150, 'LiPo cell', '3.7 – 4.2 V, flat', cellSvg, 0.2);
+    mod('reg', 520, 400, 270, 200, '3.3 V buck-boost', 'EN tied to VIN', 'photo', 6.8);
+    mod('esp32', 920, 250, 400, 600, 'ESP32-S3 CAM', 'N16R8 · OV5640 wide-angle', 'photo', 6.8);
     mod('modem', 1460, 160, 380, 300, '4G A7680C', 'TDM2309 · nano SIM', 'photo', 12.6);
     mod('gps', 1460, 560, 380, 260, 'GPS ATGM336H', 'patch antenna faces up', 'photo', 18.2);
 
@@ -365,10 +378,10 @@ function wiringView(s) {
     const pins = [
         ['IN+', 150, 400, 'b', 0.6], ['IN−', 330, 400, 'b', 0.6], ['B+', 150, 600, 'u', 0.2], ['B−', 330, 600, 'u', 0.2], ['OUT+', 390, 450, 'r', 0.2], ['OUT−', 390, 500, 'r', 0.2],
         ['IN+', 520, 450, 'l', 6.8], ['IN−', 520, 500, 'l', 6.8], ['OUT+', 790, 450, 'r', 6.8], ['OUT−', 790, 500, 'r', 6.8],
-        ['5V', 920, 330, 'l', 6.8], ['GND', 920, 390, 'l', 6.8], ['GPIO1', 920, 760, 'l', 18.2],
-        ['GPIO41', 1320, 320, 'r', 12.6], ['GPIO42', 1320, 370, 'r', 12.6], ['3V3', 1320, 620, 'r', 18.2], ['GPIO14', 1320, 690, 'r', 18.2],
+        ['3V3', 920, 330, 'l', 6.8], ['GND', 920, 390, 'l', 6.8], ['GPIO1', 920, 760, 'l', 18.2],
+        ['GPIO47', 1320, 270, 'r', 12.6], ['GPIO41', 1320, 320, 'r', 12.6], ['GPIO42', 1320, 370, 'r', 12.6], ['GPIO14', 1320, 690, 'r', 18.2], ['GPIO21', 1320, 814, 'r', 18.2],
         ['VCC', 1460, 210, 'l', 12.6], ['GND', 1460, 260, 'l', 12.6], ['RXD', 1460, 320, 'l', 12.6], ['TXD', 1460, 370, 'l', 12.6],
-        ['VCC', 1460, 620, 'l', 18.2], ['TX', 1460, 690, 'l', 18.2], ['GND', 1460, 750, 'l', 18.2]
+        ['VCC', 1840, 600, 'r', 18.2], ['TX', 1460, 690, 'l', 18.2], ['GND', 1460, 750, 'l', 18.2]
     ].map(([label, x, y, side, at]) => {
         const p = el('div', 'pin', label, s);
         p.style.top = y + 'px';
@@ -385,10 +398,12 @@ function wiringView(s) {
         ['bat', [[150, 700], [150, 600]], 0.9, 0.8], ['gnd', [[330, 700], [330, 600]], 1.3, 0.8],
         ['solar', [[150, 320], [150, 400]], 2.2, 0.8, true], ['gnd', [[330, 320], [330, 400]], 2.5, 0.8, true],
         ['bat', [[390, 450], [520, 450]], 7.4, 0.8], ['gnd', [[390, 500], [520, 500]], 7.8, 0.8],
-        ['v5', [[790, 450], [855, 450], [855, 330], [920, 330]], 8.6, 1.0], ['gnd', [[790, 500], [875, 500], [875, 390], [920, 390]], 9.2, 1.0],
+        ['v33', [[790, 450], [855, 450], [855, 330], [920, 330]], 8.6, 1.0], ['gnd', [[790, 500], [875, 500], [875, 390], [920, 390]], 9.2, 1.0],
         ['bat', [[455, 450], [455, 120], [1410, 120], [1410, 210], [1460, 210]], 13.0, 1.6], ['gnd', [[1460, 260], [1420, 260], [1420, 290]], 14.4, 0.5],
+        ['sense', [[1320, 270], [1360, 270], [1360, 170], [1190, 170], [1190, 146]], 14.2, 0.8, true],
         ['uart', [[1320, 320], [1460, 320]], 15.0, 0.7], ['uart', [[1460, 370], [1320, 370]], 15.6, 0.7],
-        ['v33', [[1320, 620], [1460, 620]], 18.6, 0.7], ['gps', [[1460, 690], [1320, 690]], 19.2, 0.7], ['gnd', [[1460, 750], [1420, 750], [1420, 780]], 19.8, 0.5],
+        ['bat', [[1410, 120], [1880, 120], [1880, 600], [1840, 600]], 18.6, 1.0], ['gps', [[1460, 690], [1320, 690]], 19.2, 0.7],
+        ['gnd', [[1460, 750], [1420, 750], [1420, 866]], 19.8, 0.5], ['sense', [[1320, 814], [1336, 814], [1336, 890], [1350, 890]], 20.2, 0.5, true],
         ['bat', [[455, 450], [455, 700], [560, 700]], 21.0, 0.8], ['gnd', [[680, 700], [680, 792]], 22.0, 0.4], ['sense', [[680, 700], [860, 700], [860, 760], [920, 760]], 22.2, 0.9]
     ];
     const svgNS = 'http://www.w3.org/2000/svg';
@@ -414,15 +429,21 @@ function wiringView(s) {
         <line x1="650" y1="700" x2="680" y2="700" stroke="var(--w-sense)" stroke-width="5"/>
         <rect x="666" y="722" width="28" height="50" rx="6" fill="#0f1c17" stroke="var(--w-sense)" stroke-width="3"/><text x="704" y="754" fill="#fff" font-size="18" font-family="JetBrains Mono, Consolas">100k</text>
         <circle cx="680" cy="700" r="7" fill="#fff"/>
-        ${[[680, 792], [1420, 290], [1420, 780]].map(([x, y]) => `<g stroke="var(--w-gnd)" stroke-width="4"><line x1="${x}" y1="${y}" x2="${x}" y2="${y + 2}"/><line x1="${x - 16}" y1="${y + 4}" x2="${x + 16}" y2="${y + 4}"/><line x1="${x - 10}" y1="${y + 11}" x2="${x + 10}" y2="${y + 11}"/><line x1="${x - 4}" y1="${y + 18}" x2="${x + 4}" y2="${y + 18}"/></g>`).join('')}
+        ${[[680, 792], [1420, 290], [1435, 922]].map(([x, y]) => `<g stroke="var(--w-gnd)" stroke-width="4"><line x1="${x}" y1="${y}" x2="${x}" y2="${y + 2}"/><line x1="${x - 16}" y1="${y + 4}" x2="${x + 16}" y2="${y + 4}"/><line x1="${x - 10}" y1="${y + 11}" x2="${x + 10}" y2="${y + 11}"/><line x1="${x - 4}" y1="${y + 18}" x2="${x + 4}" y2="${y + 18}"/></g>`).join('')}
         </svg>`, s), 0, 0, W, H);
     extras.style.pointerEvents = 'none';
+    // The two power switches: a P-MOSFET in the 4G supply, a C1815 in the GPS ground
+    const switches = [
+        [13.0, 1060, 96, 260, '4G switch · GPIO47', 'AO3401A + C1815'],
+        [19.8, 1350, 866, 170, 'C1815', 'GPS ground']
+    ].map(([at, x, y, w, h, sub]) => ({ b: place(el('div', 'note', `${h}<br><span style="font-size:16px;font-weight:500">${sub}</span>`, s), x, y, w), at }));
+    switches.forEach(({ b }) => { b.style.padding = '4px 12px'; b.style.fontSize = '18px'; b.style.background = '#0f1c17'; b.style.textAlign = 'center'; });
     const notes = [
-        [7.4, 9, 'Measure 5.0 – 5.2 V at the boost output before it touches the board', 470, 640, 400],
+        [7.4, 9, 'Boards with an EN pin: tie EN to VIN, or the regulator stays off', 470, 640, 400],
         [13.0, 7, 'Modem VCC from the cell (3.7 – 4.2 V), never 5 V or 3.3 V; 1000 µF + 100 nF at VCC', 930, 880, 900],
-        [22.6, 3.4, 'All grounds common · every pin as the firmware expects, no rebuild', 470, 880, 900]
+        [22.6, 3.4, 'All grounds common · wire it as drawn', 470, 880, 860]
     ].map(([at, len, text, x, y, w]) => ({ n: place(el('div', 'note', text, s), x, y, w), at, len }));
-    const legend = place(el('div', 'abs source', 'Drawn by function, not by position on the board · camos-esp32-trap docs/WIRING.md and the 4G wiring sheet', s), 162, 98, 1300);
+    const legend = place(el('div', 'abs source', 'Drawn by function, not by position on the board · camos-esp32-trap docs/WIRING.md (24 Oct 2026)', s), 162, 98, 1300);
     return (tt) => {
         const cur = STEPS.filter(x => tt >= x[0]).pop();
         step.querySelector('i').textContent = cur[1];
@@ -444,6 +465,7 @@ function wiringView(s) {
             dot.style.opacity = p > 0 ? (done ? 0.75 : 1) : 0;
         });
         extras.style.opacity = prog(tt, 21.6, 0.6);
+        switches.forEach(({ b, at }) => { b.style.opacity = prog(tt, at, 0.5); });
         notes.forEach(({ n, at, len }) => { n.style.opacity = clamp((tt - at) / 0.4) * clamp((at + len - tt) / 0.4); });
         legend.style.opacity = prog(tt, 1, 0.8) * 0.9;
     };
