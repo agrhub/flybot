@@ -110,6 +110,7 @@ const jpegSize = { width: 0, height: 0 };
 
 let askTimer = null;
 let wanted = null; // the preset asked for and not confirmed yet
+let fixedRetried = false; // a picked size the camera lowered was asked for once more
 // Why the camera plays something else than the choice: 'weakLink' (it lowered the quality), 'refused' (it could
 // not start the asked size), or '' (none said; then only the mismatch shows)
 const lowerReason = ref('');
@@ -125,10 +126,17 @@ function onControl(m) {
       cameraSizes.value = Array.isArray(m.sizes) ? m.sizes : null;
       askQuality();
     } else if (m.reason === 'weak_link') {
-      // The camera lowered the quality: stay there until the user picks again (asking again would flip back and forth)
+      // The camera lowered the quality on a slow link. Auto may change; a size the person picked is kept: ask for it
+      // once more (a camera that knows `fixed` keeps it), then show that it plays something else rather than flip
+      // back and forth
       wanted = null;
       clearTimeout(askTimer);
       pending.value = false;
+      if (props.quality !== 'auto' && !fixedRetried) {
+        fixedRetried = true;
+        askQuality({ keepRetry: true });
+        return;
+      }
       lowerReason.value = 'weakLink';
     } else if (wanted && m.mode === wanted.mode && m.w === wanted.w) {
       wanted = null; // confirmed
@@ -151,10 +159,12 @@ function onControl(m) {
 }
 
 // Ask for the preset of the chosen quality, again every 2 s (up to 3 times) until the camera confirms it
-function askQuality() {
+function askQuality({ keepRetry = false } = {}) {
   clearTimeout(askTimer);
   lowerReason.value = '';
-  wanted = presetFor(props.quality, channelOpen, cameraSizes.value, { cellular: props.network === '4g' });
+  if (!keepRetry) fixedRetried = false;
+  wanted = presetFor(props.quality, channelOpen, cameraSizes.value);
+  const fixed = props.quality !== 'auto';
   let tries = 0;
   pending.value = !!wanted;
   const send = () => {
@@ -162,7 +172,7 @@ function askQuality() {
       pending.value = false;
       return;
     }
-    try { channel.send(qualityMessage(wanted)); } catch { pending.value = false; return; }
+    try { channel.send(qualityMessage(wanted, { fixed })); } catch { pending.value = false; return; }
     askTimer = setTimeout(send, 2000);
   };
   send();
@@ -252,7 +262,7 @@ const onQuality = (q) => emit('update:quality', q);
 
 // The camera did not follow the choice (weak link, size refused, no data channel): show what plays instead
 const lowered = computed(() => state.value === 'playing' && !pending.value
-  && qualityDiffers(presetFor(props.quality, true, cameraSizes.value, { cellular: props.network === '4g' }), lastInfo.value));
+  && qualityDiffers(presetFor(props.quality, true, cameraSizes.value), lastInfo.value));
 const runningShort = computed(() => tierOf(lastInfo.value?.width, lastInfo.value?.height));
 const loweredText = computed(() => t(`cameras.kvs.lowered.${lowerReason.value || 'other'}`, {
   chosen: choiceLabel(props.quality),

@@ -158,12 +158,13 @@ describe('what plays against the choice', () => {
   });
 });
 
-describe('auto on a cellular uplink', () => {
-  it('takes H.264 over 4G and JPEG over Wi-Fi', () => {
+describe('auto and picked sizes', () => {
+  it('auto starts at 480p on any link; a picked size is asked as it is and marked fixed', () => {
     const sizes = [[640, 480], [1600, 1200]];
-    expect(presetFor('auto', true, sizes, { cellular: true })).toEqual(QUALITY_PRESETS.low);
-    expect(presetFor('auto', true, sizes).mode).toBe('jpeg');
-    expect(presetFor('jpeg-1600x1200', true, sizes, { cellular: true }).w).toBe(1600); // a size picked by hand is kept
+    expect(presetFor('auto', true, sizes)).toEqual({ mode: 'jpeg', w: 640, h: 480, q: 12, fps: 15 });
+    expect(presetFor('jpeg-1600x1200', true, sizes).w).toBe(1600);
+    expect(JSON.parse(qualityMessage(presetFor('jpeg-1600x1200', true, sizes), { fixed: true })).fixed).toBe(true);
+    expect('fixed' in JSON.parse(qualityMessage(presetFor('auto', true, sizes)))).toBe(false);
   });
 });
 

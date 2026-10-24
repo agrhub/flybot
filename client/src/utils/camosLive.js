@@ -85,12 +85,12 @@ export function sizeOf(choice) {
 }
 
 /**
- * The preset a choice asks the camera for, or null for plain H.264 without a data channel. On a cellular uplink
- * (`cellular`, the camera's net is 4g) `auto` takes H.264 320x240: JPEG frames do not get through a 4G uplink.
+ * The preset a choice asks the camera for, or null for plain H.264 without a data channel. Auto takes 480p on Wi-Fi
+ * and 4G alike (the camera lowers it to H.264 240p when the link cannot carry it); a picked size is asked as it is.
  */
-export function presetFor(choice, channelOpen, sizes = null, { cellular = false } = {}) {
+export function presetFor(choice, channelOpen, sizes = null) {
   if (!channelOpen) return null;
-  if (choice === 'low' || (cellular && (choice === 'auto' || !choice))) return QUALITY_PRESETS.low;
+  if (choice === 'low') return QUALITY_PRESETS.low;
   const offered = Array.isArray(sizes) && sizes.length ? sizes.filter((s) => Array.isArray(s) && s[0] > 320) : null;
   const asked = sizeOf(choice);
   if (asked && !offered && QUALITY_PRESETS[choice]) return QUALITY_PRESETS[choice]; // medium / high, sizes unknown
@@ -117,9 +117,13 @@ function closest(sizes, area) {
   return sizes.reduce((best, s) => (Math.abs(s[0] * s[1] - area) < Math.abs(best[0] * best[1] - area) ? s : best), sizes[0]);
 }
 
-export function qualityMessage(preset) {
+/**
+ * The quality request. `fixed` (a size the person picked, not Auto): the camera keeps it and does not fall back to
+ * H.264 on a slow link (camos-esp32-trap 0.9.1+; older firmware ignores the key).
+ */
+export function qualityMessage(preset, { fixed = false } = {}) {
   const { mode, w, h, q, fps } = preset;
-  return JSON.stringify({ t: 'quality', mode, w, h, ...(q ? { q } : {}), fps });
+  return JSON.stringify({ t: 'quality', mode, w, h, ...(q ? { q } : {}), fps, ...(fixed ? { fixed: true } : {}) });
 }
 
 export const ackMessage = (seq) => JSON.stringify({ t: 'ack', seq });
