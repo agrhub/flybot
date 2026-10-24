@@ -65,10 +65,8 @@
       <!-- Under the video: what is playing, and the camera actions -->
       <div class="flex flex-wrap items-center justify-between gap-2">
         <div class="flex flex-wrap items-center gap-2">
-          <!-- What the player shows (live, playback, connecting): online / offline is next to the camera's name -->
-          <el-tag :type="streamTagType" effect="light" round size="small" data-test="live-status">
-            {{ camera?.device?.sleeping ? sleepText : currentStreamType }}
-          </el-tag>
+          <!-- Live or Playback only: connecting, errors and sleep are on the player, online / offline next to the name -->
+          <el-tag :type="streamTagType" effect="light" round size="small" data-test="live-status">{{ streamTagText }}</el-tag>
           <el-tag :type="isCamos ? 'primary' : 'info'" effect="plain" size="small">{{ t(`cameras.platform.${camera?.platform || 'ezviz'}`) }}</el-tag>
           <el-tag v-if="isCamos && playingTier" type="info" effect="plain" size="small" data-test="live-tier">{{ playingTier }}</el-tag>
           <el-tag v-if="!isCamos && !camera?.simulated" type="success" effect="plain" size="small">HD</el-tag>
@@ -325,13 +323,14 @@ const onKvsState = (state) => {
 }
 // SD card playback in the EZVIZ player (false again when live starts)
 const playingBack = ref(false)
+// The tag under the video names the source only: green while live plays, grey until then
+const streamTagText = computed(() => {
+  if (props.camera?.simulated) return t('cameras.player.latestPhoto')
+  return playingBack.value ? t('cameras.player.playback') : t('cameras.live')
+})
 const streamTagType = computed(() => {
-  if (props.camera?.device?.sleeping) return 'warning'
-  const s = currentStreamType.value
   if (playingBack.value) return 'primary'
-  if (s === t('cameras.live')) return 'success'
-  if ([t('cameras.streamError'), t('cameras.player.disconnected')].includes(s)) return 'danger'
-  return 'info'
+  return currentStreamType.value === t('cameras.live') ? 'success' : 'info'
 })
 const requestLive = async () => {
   requestingLive.value = true
