@@ -217,9 +217,7 @@ async function storeDeviceSnapshot(camera, { image, meta: rawMeta, imageType }, 
     Promise.resolve(m.fw ? firmware.versionReported(camera.deviceSerial, m.fw, now) : null)
         .then(() => firmware.cameraAwake(camera.deviceSerial))
         .catch(err => console.warn(`⚠️ Firmware check ${camera.deviceSerial}: ${err.message}`));
-    if (m.location && (camera.latitude === null || camera.latitude === undefined)) {
-        await Camera.updateMany({ deviceSerial: camera.deviceSerial, latitude: null }, { $set: { latitude: m.location.lat, longitude: m.location.lng } }).catch(() => {});
-    }
+    if (m.location) await require('../platforms/camos').followLocation(camera.deviceSerial, m.location).catch(() => {});
     // A GPS fix in another timezone: the shadow's tz follows (no-op when it did not change)
     if (m.location) require('./timezoneService').syncCamera(camera.deviceSerial).catch(() => {});
     // Whoever asked for this photo (platforms/camos.js snapshot) gets it now

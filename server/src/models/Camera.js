@@ -91,6 +91,8 @@ const deviceSchema = new mongoose.Schema({
     // A GPS fix in progress: the camera turns its 4G radio off meanwhile (firmware 0.9.2), so a disconnect is expected
     locatingUntil: { type: Date, default: undefined },
     locatingRpcId: { type: String, default: undefined },
+    // A GPS fix asked for while the camera was offline or asleep: sent at its next state message
+    locateRequestedAt: { type: Date, default: undefined },
     shadow: {
         reported: { type: mongoose.Schema.Types.Mixed, default: undefined },
         desired: { type: mongoose.Schema.Types.Mixed, default: undefined },
@@ -150,6 +152,8 @@ const cameraSchema = new mongoose.Schema({
     isEncrypt: { type: Number, default: 0 }, // 1: Encrypted, 0: Unencrypted
     latitude: { type: Number, default: null }, // GPS Latitude
     longitude: { type: Number, default: null }, // GPS Longitude
+    // The user placed the point by hand (map or location editor): a GPS fix from the camera no longer moves it
+    locationPinned: { type: Boolean, default: undefined },
     locationAddress: { type: String, default: '' }, // Orchard address or plot name
     trapType: { type: String, default: 'Yellow Sticky Trap' }, // Trap modality (free text)
     // How counts behave (constants/trap.js): "sticky" glue card (counts accumulate) or

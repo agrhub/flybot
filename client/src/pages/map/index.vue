@@ -243,9 +243,9 @@ import 'leaflet/dist/leaflet.css';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import { loadEzuikit } from '@/utils/lazyLibs';
-import { approximateRadius } from '@/utils/location';
+import { approximateRadius, fixSummary } from '@/utils/location';
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const { isDark } = useTheme();
 const { cameras } = useCameras();
 
@@ -841,7 +841,10 @@ const renderMarkers = () => {
           <div><b>${t('map.popupToday')}:</b> ${cam.today ?? '--'} · <b>${t('map.popupFtd')}:</b> ${cam.ftd7 ?? '--'}</div>
           <div><b>${t('map.cropType')}:</b> ${escapeHtml(cam.cropType)}</div>
           <div class="map-popup__ellipsis"><b>${t('map.orchardAddress')}:</b> ${escapeHtml(cam.locationAddress || t('map.noAddress'))}</div>
+          <div id="popup-fix-${escapeHtml(cam.deviceSerial)}" class="map-popup__fix">${escapeHtml(fixLine(cam))}</div>
         </div>
+
+        ${canLocate(cam) ? `<button id="update-location-${escapeHtml(cam.deviceSerial)}" class="map-popup__btn map-popup__btn--plain">${t('map.updateLocation')}</button>` : ''}
 
         <!-- In-place live view button -->
         <button id="view-stream-${escapeHtml(cam.deviceSerial)}" class="map-popup__btn" data-state="idle">
@@ -862,6 +865,10 @@ const renderMarkers = () => {
           playPopupStream(cam);
         };
       }
+
+      // Update location: the saved position is shown already; a new GPS fix goes on in the background
+      const locateBtn = document.getElementById(`update-location-${escapeHtml(cam.deviceSerial)}`);
+      if (locateBtn) locateBtn.onclick = () => updateLocation(cam, marker, locateBtn);
 
       // Click thumbnail box directly to start stream
       const mediaBox = document.getElementById(`popup-media-box-${escapeHtml(cam.deviceSerial)}`);
@@ -885,6 +892,60 @@ const renderMarkers = () => {
     const bounds = L.latLngBounds(latLngs);
     map.fitBounds(bounds, { padding: [60, 60], maxZoom: 16 });
   }
+};
+
+// ---- The trap's own position: its last fix, and a new GPS fix on request (CamOS traps the user manages)
+const canLocate = (cam) => cam.platform === 'camos' && !cam.simulated && cam.canManage !== false && cam.access !== 'demo';
+const fixLine = (cam) => fixSummary(cam.device?.location, t, { pinned: !!cam.locationPinned, locale: locale.value })
+  || (cam.platform === 'camos' ? t('map.noFix') : '');
+const locateTimers = new Set();
+// A fix takes up to 5 minutes, then the camera dials 4G again: look for the new position every 30 s for 7 minutes
+const LOCATE_POLL_MS = 30000;
+const LOCATE_TRIES = 14;
+const updateLocation = async (cam, marker, btn) => {
+  btn.disabled = true;
+  let queued = false;
+  try {
+    queued = !!(await api.cameraDeviceAction(cam.deviceSerial, { action: 'locate' })).data?.queued;
+  } catch (err) {
+    btn.disabled = false;
+    ElNotification({ title: t('common.error'), message: requestErrorText(t, err, err.message), type: 'error' });
+    return;
+  }
+  // Away: the request waits for the camera's next connection; the point moves when its fix arrives
+  if (queued) {
+    btn.disabled = false;
+    ElNotification({ title: cam.deviceName || cam.deviceSerial, message: t('map.locateQueued'), type: 'success' });
+    return;
+  }
+  ElNotification({ title: cam.deviceName || cam.deviceSerial, message: t('map.locatingStarted'), type: 'info' });
+  const before = JSON.stringify(cam.device?.location || null);
+  const check = (tries) => {
+    const timer = setTimeout(async () => {
+      locateTimers.delete(timer);
+      let status = null;
+      try { status = (await api.getCameraStatus(cam.deviceSerial)).data?.status; } catch { /* next try */ }
+      const fix = status?.location;
+      if (fix && JSON.stringify(fix) !== before) {
+        cam.device = { ...(cam.device || {}), location: fix };
+        // A GPS fix moves the point unless it was pinned by hand (the server keeps the same rule)
+        if (!cam.locationPinned && fix.source !== 'cell') {
+          cam.latitude = fix.lat;
+          cam.longitude = fix.lng;
+          marker.setLatLng([fix.lat, fix.lng]);
+        }
+        const line = document.getElementById(`popup-fix-${escapeHtml(cam.deviceSerial)}`);
+        if (line) line.textContent = fixLine(cam);
+        btn.disabled = false;
+        ElNotification({ title: cam.deviceName || cam.deviceSerial, message: t(fix.source === 'cell' ? 'map.locatedCell' : 'map.locatedGps'), type: 'success' });
+        return;
+      }
+      if (tries > 1) check(tries - 1);
+      else btn.disabled = false;
+    }, LOCATE_POLL_MS);
+    locateTimers.add(timer);
+  };
+  check(LOCATE_TRIES);
 };
 
 const focusCamera = (cam) => {
@@ -1014,6 +1075,8 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
+  locateTimers.forEach((timer) => clearTimeout(timer));
+  locateTimers.clear();
   stopPopupPlayer();
   if (map) {
     map.remove();
@@ -1269,6 +1332,21 @@ onUnmounted(() => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.map-popup__fix {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--el-text-color-secondary);
+}
+.map-popup__btn--plain {
+  margin-top: 6px;
+  color: var(--el-color-primary);
+  background: transparent;
+  border-color: var(--el-color-primary);
+}
+.map-popup__btn--plain:disabled {
+  opacity: 0.6;
+  cursor: wait;
 }
 .map-popup__btn {
   width: 100%;

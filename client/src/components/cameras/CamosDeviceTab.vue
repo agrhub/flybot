@@ -85,8 +85,10 @@ const locationText = computed(() => formatLocation(props.info.location, t) || da
 async function run(action, extra = {}) {
   busy.value = action;
   try {
-    await api.cameraDeviceAction(props.camera.deviceSerial, { action, ...extra });
-    ElNotification({ title: t('common.success'), message: t(`camosDevice.done.${action}`), type: 'success' });
+    const res = await api.cameraDeviceAction(props.camera.deviceSerial, { action, ...extra });
+    // A GPS fix for a camera that is away waits for its next connection
+    const queued = action === 'locate' && res.data?.queued;
+    ElNotification({ title: t('common.success'), message: queued ? t('camosDevice.locateQueued') : t(`camosDevice.done.${action}`), type: 'success' });
     if (action === 'wifi') wifi.password = '';
     emit('done', action);
   } catch (err) {

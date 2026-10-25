@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
 process.env.IOT_ENDPOINT = 'a38gtest-ats.iot.ap-southeast-2.amazonaws.com';
 process.env.KVS_VIEWER_ROLE_ARN = 'arn:aws:iam::123456789012:role/flybot-kvs-viewer';
 
-const { models, startDb, stopDb, clearDb, createUser, createCamera } = require('./dbHelpers');
+const { models, startDb, stopDb, clearDb, createUser, createCamera, request } = require('./dbHelpers');
 const env = require('../src/config/env');
 const platforms = require('../src/platforms');
 const aws = require('../src/platforms/aws');
@@ -500,4 +500,28 @@ test('camos desired: legacy keys the firmware rejects are removed, and no null r
     } finally {
         aws.setClient('iotData', null);
     }
+});
+
+test('camos: a GPS fix moves the map point unless it was pinned by hand; a 4G cell estimate only fills an empty one', async () => {
+    const owner = await createUser({ role: 'manager' });
+    await createCamera(owner, { deviceSerial: 'ESP5', platform: 'camos', status: 1, device: { thingName: 'ESP5' } });
+    const at = async () => { const c = await models.Camera.findOne({ deviceSerial: 'ESP5' }).lean(); return [c.latitude, c.longitude]; };
+    await camos.handleMessage('camos/ESP5/state', { v: 1, online: true, location: { lat: 10.5, lng: 106.5, source: 'cell', accuracyM: 550 } });
+    assert.deepEqual(await at(), [10.5, 106.5], 'a cell estimate fills an empty point');
+    await camos.handleMessage('camos/ESP5/state', { v: 1, online: true, location: { lat: 10.6, lng: 106.6, source: 'cell', accuracyM: 900 } });
+    assert.deepEqual(await at(), [10.5, 106.5], 'but does not move a placed one');
+    await camos.handleMessage('camos/ESP5/rpc/res', { v: 1, id: 'x', ok: true, result: { location: { lat: 10.71, lng: 106.71, source: 'gps', accuracyM: 6 } } });
+    assert.deepEqual(await at(), [10.71, 106.71], 'a GPS fix moves it');
+
+    // Moved by hand: pinned, the next GPS fix leaves it; pinned: false hands it back to the GPS
+    const moved = await request('/api/user/camera/location', { method: 'PUT', as: owner, body: { deviceSerial: 'ESP5', latitude: 10.8, longitude: 106.8 } });
+    assert.equal(moved.status, 200);
+    await camos.handleMessage('camos/ESP5/state', { v: 1, online: true, location: { lat: 10.72, lng: 106.72, source: 'gps', accuracyM: 5 } });
+    assert.deepEqual(await at(), [10.8, 106.8]);
+    assert.equal((await models.Camera.findOne({ deviceSerial: 'ESP5' }).lean()).locationPinned, true);
+    await request('/api/user/camera/location', { method: 'PUT', as: owner, body: { deviceSerial: 'ESP5', latitude: 10.8, longitude: 106.8, locationAddress: 'Plot 2' } });
+    assert.equal((await models.Camera.findOne({ deviceSerial: 'ESP5' }).lean()).locationAddress, 'Plot 2', 'an address edit alone changes nothing else');
+    await request('/api/user/camera/location', { method: 'PUT', as: owner, body: { deviceSerial: 'ESP5', pinned: false } });
+    assert.deepEqual(await at(), [10.72, 106.72], 'back to the last GPS fix');
+    assert.equal((await models.Camera.findOne({ deviceSerial: 'ESP5' }).lean()).locationPinned, false);
 });

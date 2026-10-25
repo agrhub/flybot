@@ -24,8 +24,11 @@ const RPC_TIMEOUT_MS = 20000;
 const SNAPSHOT_TIMEOUT_MS = 70000;
 // A camera that said nothing for this long is shown offline
 const OFFLINE_AFTER_MS = 2 * 60 * 60 * 1000;
-// After a GPS fix (4G radio off) the camera dials again and answers: this long on top of the fix time
+// How long a GPS fix may take, and after it (4G radio off) how long the camera takes to dial again and answer
+const GPS_FIX_S = 300;
 const GPS_REDIAL_S = 90;
+// A GPS fix asked for while the camera was away is sent at its next state message within this time
+const LOCATE_QUEUE_MS = 24 * 60 * 60 * 1000;
 
 const thingNameOf = (camera, deviceSerial) => camera?.device?.thingName || deviceSerial;
 const topic = (deviceSerial, suffix) => `camos/${deviceSerial}/${suffix}`;
@@ -368,6 +371,46 @@ const locationSource = (loc) => strip({
     source: ['gps', 'cell'].includes(loc?.source) ? loc.source : undefined,
     accuracyM: num(loc?.accuracyM) > 0 ? Math.round(num(loc.accuracyM)) : undefined
 });
+/**
+ * Ask for a GPS fix now, without waiting (it takes minutes), and mark the camera locating until the answer or the
+ * end of the fix time. Returns { ok, id } or { ok: false, error }.
+ */
+async function startLocate(deviceSerial, now = new Date()) {
+    const sent = await rpc(deviceSerial, 'gps.fix', { timeoutS: GPS_FIX_S }).then(r => ({ ok: true, id: r.id }), err => ({ ok: false, error: err.code || 'NOT_SENT' }));
+    if (sent.ok) {
+        await Camera.updateMany({ deviceSerial }, {
+            $set: { 'device.locatingUntil': new Date(now.getTime() + (GPS_FIX_S + GPS_REDIAL_S) * 1000), 'device.locatingRpcId': sent.id },
+            $unset: { 'device.locateRequestedAt': 1 }
+        });
+    }
+    return sent;
+}
+
+/** Offline or asleep: keep the request; the camera's next state message sends it (sendQueuedLocate). */
+async function queueLocate(deviceSerial, now = new Date()) {
+    await Camera.updateMany({ deviceSerial }, { $set: { 'device.locateRequestedAt': now } });
+}
+
+/** At a state message: a GPS fix asked for in the last day goes out now, once (taken in one step). */
+async function sendQueuedLocate(deviceSerial, now = new Date()) {
+    const taken = await Camera.findOneAndUpdate(
+        { deviceSerial, platform: PLATFORM, 'device.locateRequestedAt': { $gt: new Date(now.getTime() - LOCATE_QUEUE_MS) } },
+        { $unset: { 'device.locateRequestedAt': 1 } }
+    ).select('_id').lean();
+    return taken ? startLocate(deviceSerial, now) : null;
+}
+
+/**
+ * A position from the camera moves its map point: a GPS fix always (an older firmware sends no source: a GPS
+ * fix), unless the user pinned the point by hand; a 4G cell estimate only fills an empty point.
+ */
+async function followLocation(deviceSerial, location) {
+    if (!location || !Number.isFinite(location.lat) || !Number.isFinite(location.lng)) return;
+    const gps = !location.source || location.source === 'gps';
+    const filter = gps ? { deviceSerial, locationPinned: { $ne: true } } : { deviceSerial, latitude: null };
+    await Camera.updateMany(filter, { $set: { latitude: location.lat, longitude: location.lng } });
+}
+
 // The battery as a camera reports it; `charge` (0.9.2): normal, slow (a small or shaded panel) or none
 const batteryOf = (b) => (b && typeof b === 'object'
     ? strip({ mv: num(b.mv), pct: num(b.pct), charging: typeof b.charging === 'boolean' ? b.charging : undefined, charge: ['normal', 'slow', 'none'].includes(b.charge) ? b.charge : undefined, solarMv: num(b.solarMv) })
@@ -482,6 +525,7 @@ async function handleMessage(topicName, payload, { now = new Date() } = {}) {
             // A position in the answer (gps.fix, sent without waiting: it takes minutes) is the camera's new location
             const location = doc.ok !== false && doc.result?.location ? deviceFieldsOf({ location: doc.result.location })['device.location'] : undefined;
             await Camera.updateMany({ deviceSerial, platform: PLATFORM }, { $set: { 'device.lastSeenAt': now, ...(location ? { 'device.location': location } : {}) } });
+            if (location) await followLocation(deviceSerial, location);
             // The answer to the GPS fix, with or without a position: the camera is no longer locating
             if (location || doc.id) {
                 await Camera.updateMany({ deviceSerial, platform: PLATFORM, ...(location ? {} : { 'device.locatingRpcId': String(doc.id) }) }, { $unset: { 'device.locatingUntil': 1, 'device.locatingRpcId': 1 } });
@@ -494,6 +538,8 @@ async function handleMessage(topicName, payload, { now = new Date() } = {}) {
             if (online) await setOnline(deviceSerial, true, now, fields);
             else await setOnline(deviceSerial, false, now, { ...fields, ...(doc.sleeping ? { 'device.sleeping': true, 'device.wakeAt': dateOf(doc.wakeAt) } : {}) });
             if (online) firmwareAware(deviceSerial, fields['device.fw'], now);
+            if (fields['device.location']) await followLocation(deviceSerial, fields['device.location']);
+            if (online) await sendQueuedLocate(deviceSerial, now).catch(err => console.warn(`⚠️ Queued GPS fix (${deviceSerial}): ${err.message}`));
             return { deviceSerial, kind, online };
         }
         if (kind === 'telemetry' || kind === 'shadow/reported') {
@@ -504,6 +550,7 @@ async function handleMessage(topicName, payload, { now = new Date() } = {}) {
             if (kind === 'shadow/reported') await settleLiveRequest(deviceSerial, doc).catch(err => console.warn(`⚠️ Live request not reset (${deviceSerial}): ${err.message}`));
             await Camera.updateMany({ deviceSerial, platform: PLATFORM }, { $set: set });
             firmwareAware(deviceSerial, fields['device.fw'], now);
+            if (fields['device.location']) await followLocation(deviceSerial, fields['device.location']);
             return { deviceSerial, kind };
         }
         // event
@@ -524,6 +571,7 @@ async function handleMessage(topicName, payload, { now = new Date() } = {}) {
         }
         if (type === 'boot') await setOnline(deviceSerial, true, now, set);
         else await Camera.updateMany({ deviceSerial, platform: PLATFORM }, { $set: set });
+        if (set['device.location']) await followLocation(deviceSerial, set['device.location']);
         // How the previous boot ended (crash, watchdog, brownout): kept for the camera's log page
         if (type === 'crash') {
             await require('../services/cameraLogService').ingestCrash(deviceSerial, doc, { now })
@@ -601,7 +649,12 @@ module.exports = {
     PLATFORM,
     SUBSCRIPTIONS,
     locationSource,
+    followLocation,
+    startLocate,
+    queueLocate,
+    sendQueuedLocate,
     batteryOf,
+    GPS_FIX_S,
     GPS_REDIAL_S,
     RPC_TIMEOUT_MS,
     SNAPSHOT_TIMEOUT_MS,

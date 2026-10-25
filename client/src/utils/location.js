@@ -23,3 +23,19 @@ export function approximateRadius(camera) {
   const same = Math.abs(Number(camera.latitude) - l.lat) < 1e-6 && Math.abs(Number(camera.longitude) - l.lng) < 1e-6;
   return same ? l.accuracyM : 0;
 }
+
+/**
+ * The camera's last reported position in one line: "Last position 25/10 14:03 · GPS · ±6 m", the source as GPS or
+ * 4G cell, and "pinned by hand" when the map point no longer follows it. '' without a position.
+ */
+export function fixSummary(location, t, { pinned = false, locale = 'en' } = {}) {
+  if (location?.lat == null || location?.lng == null) return '';
+  const at = location.fixAt ? new Date(location.fixAt) : null;
+  const when = at && !isNaN(at) ? at.toLocaleString(locale === 'vi' ? 'vi-VN' : 'en-US', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+  return [
+    when ? t('map.lastFix', { time: when }) : t('map.lastFixNoTime'),
+    t(isCellLocation(location) ? 'map.fixSourceCell' : 'map.fixSourceGps'),
+    location.accuracyM ? t('map.fixAccuracy', { m: location.accuracyM }) : null,
+    pinned ? t('map.fixPinned') : null
+  ].filter(Boolean).join(' · ');
+}

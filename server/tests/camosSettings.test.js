@@ -113,6 +113,21 @@ test('device actions: valid requests become RPCs; an offline camera and bad valu
         assert.equal(off.status, 409);
         assert.equal(off.body.code, 'OFFLINE');
         assert.equal(iot.calls.length, 0, 'nothing sent to an offline camera');
+        // A GPS fix is kept for the camera's next connection instead, and sent once when it reports in
+        const queued = await json(await request('/api/cameras/ESP0A1B2C3D4E60/device-action', { method: 'POST', as: owner, body: { action: 'locate' } }));
+        assert.equal(queued.status, 202);
+        assert.equal(queued.body.queued, true);
+        assert.equal(iot.calls.length, 0, 'still nothing sent while it is away');
+        assert.ok((await models.Camera.findOne({ deviceSerial: 'ESP0A1B2C3D4E60' }).lean()).device.locateRequestedAt);
+        const camos = require('../src/platforms/camos');
+        await camos.handleMessage('camos/ESP0A1B2C3D4E60/state', { v: 1, online: true, fw: '0.8.0' });
+        await camos.handleMessage('camos/ESP0A1B2C3D4E60/state', { v: 1, online: true, fw: '0.8.0' });
+        const fixes = iot.calls.filter(c => String(c.input?.topic || '').endsWith('/rpc/req') && JSON.parse(Buffer.from(c.input.payload).toString()).method === 'gps.fix');
+        assert.equal(fixes.length, 1, 'sent once at the next state message');
+        const cam = (await models.Camera.findOne({ deviceSerial: 'ESP0A1B2C3D4E60' }).lean()).device;
+        assert.equal(cam.locateRequestedAt, undefined);
+        assert.ok(new Date(cam.locatingUntil) > new Date(), 'and the camera is marked locating');
+        await models.Camera.updateOne({ deviceSerial: 'ESP0A1B2C3D4E60' }, { $set: { status: 0 } });
         const read = await json(await request('/api/cameras/ESP0A1B2C3D4E60/device-settings', { as: owner }));
         assert.deepEqual(read.body.errors.map(e => e.path), ['video.image.brightness'], 'only the errors of form fields');
         assert.equal(read.body.info.net, '4g');

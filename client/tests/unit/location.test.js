@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { approximateRadius, locationText } from '@/utils/location';
+import { approximateRadius, locationText, fixSummary } from '@/utils/location';
 
 const t = (key, params) => ({ 'camosDevice.locationCell': `4G cell, ±${params?.m} m`, 'camosDevice.locationCellNoRadius': '4G cell' })[key];
 
@@ -28,5 +28,16 @@ describe('approximateRadius', () => {
   it('is 0 for a position set by hand or a GPS fix', () => {
     expect(approximateRadius({ latitude: 10.2, longitude: 106.5, device: { location: cell } })).toBe(0);
     expect(approximateRadius({ latitude: 10.1, longitude: 106.5, device: { location: { ...cell, source: 'gps' } } })).toBe(0);
+  });
+});
+
+describe('fixSummary', () => {
+  const t = (key, p = {}) => `${key}${Object.keys(p).length ? JSON.stringify(p) : ''}`;
+  it('says when, from what and how precise, and whether the point is pinned', () => {
+    const line = fixSummary({ lat: 10.1, lng: 106.1, fixAt: '2026-10-25T07:03:00Z', source: 'gps', accuracyM: 6 }, t, { pinned: true });
+    expect(line).toMatch(/^map\.lastFix\{"time":".+"\} · map\.fixSourceGps · map\.fixAccuracy\{"m":6\} · map\.fixPinned$/);
+    expect(fixSummary({ lat: 10.1, lng: 106.1, source: 'cell', accuracyM: 550 }, t)).toBe('map.lastFixNoTime · map.fixSourceCell · map.fixAccuracy{"m":550}');
+    expect(fixSummary({ lat: 10.1, lng: 106.1 }, t)).toBe('map.lastFixNoTime · map.fixSourceGps');
+    expect(fixSummary(null, t)).toBe('');
   });
 });
