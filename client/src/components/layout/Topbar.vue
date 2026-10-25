@@ -86,13 +86,13 @@
 
       <!-- Profile menu -->
       <el-dropdown trigger="click" placement="bottom-end">
-        <el-avatar shape="square" :size="32" class="profile-avatar cursor-pointer" data-tour="profile" :src="user?.avatar || undefined">
+        <el-avatar shape="square" :size="32" class="profile-avatar cursor-pointer" data-tour="profile" :src="avatarSrc">
           {{ userInitial }}
         </el-avatar>
 
         <template #dropdown>
           <div class="profile-header px-4 py-3 flex items-center gap-3">
-            <el-avatar shape="square" :size="40" class="profile-avatar shrink-0" :src="user?.avatar || undefined">{{ userInitial }}</el-avatar>
+            <el-avatar shape="square" :size="40" class="profile-avatar shrink-0" :src="avatarSrc">{{ userInitial }}</el-avatar>
             <div class="min-w-0 flex-1">
               <p class="profile-name truncate">{{ userName }}</p>
               <p class="profile-email truncate">{{ userEmail }}</p>
@@ -147,6 +147,8 @@ const router = useRouter();
 const { t, locale } = useI18n();
 const { isDark, isAssistantOpen, toggleTheme, toggleAssistant } = useTheme();
 const { user, userName, userEmail, userInitial, logout } = useAuth();
+// The shared guest account has no photo of its own: the app logo stands for it
+const avatarSrc = computed(() => user.value?.avatar || (user.value?.guest ? '/logo.png' : undefined));
 const { isMobile } = useBreakpoints();
 const { start: startTour } = useAppTour();
 
