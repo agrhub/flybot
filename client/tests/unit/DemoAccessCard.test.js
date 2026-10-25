@@ -84,6 +84,30 @@ describe('Demo access: per-camera permissions', () => {
   }, 20000);
 });
 
+describe('Demo access: who sees the cameras', () => {
+  beforeEach(() => api.updateAdminSettings.mockClear());
+
+  it('"guest only" is one switch off, not a Demo switch that does nothing', async () => {
+    // Saved before: Demo access on with the guest-only audience (the same as off for other accounts)
+    const wrapper = await mountCard();
+    expect(wrapper.find('[data-test="demo-enabled"]').classes()).not.toContain('is-checked');
+    expect(wrapper.find('[data-test="demo-audience"]').exists()).toBe(false);
+    expect(wrapper.find('[data-test="guest-switch"]').classes()).toContain('is-checked');
+    await wrapper.find('[data-test="demo-save"]').trigger('click');
+    await flushPromises();
+    expect(api.updateAdminSettings.mock.calls[0][0]).toMatchObject({ demoViewEnabled: false, demoViewAudience: 'guest', demoViewSince: null, guestAccessEnabled: true });
+
+    // Other accounts too: every account by default
+    await wrapper.find('[data-test="demo-enabled"]').trigger('click');
+    await flushPromises();
+    expect(wrapper.find('[data-test="demo-audience"]').exists()).toBe(true);
+    await wrapper.find('[data-test="demo-save"]').trigger('click');
+    await flushPromises();
+    expect(api.updateAdminSettings.mock.calls[1][0]).toMatchObject({ demoViewEnabled: true, demoViewAudience: 'all', demoViewSince: null });
+    wrapper.unmount();
+  }, 20000);
+});
+
 describe('what a visitor may see of a camera', () => {
   it('follows camera.demo, and allows everything on other cameras', () => {
     expect(demoAllows({ access: 'owner' }, 'device')).toBe(true);

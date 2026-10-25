@@ -1854,8 +1854,8 @@
       "paid": "Đã thanh toán"
     },
     "demo": {
-      "title": "Quyền xem trình diễn cho khách",
-      "desc": "Cho khách (ví dụ giám khảo cuộc thi) xem một vài camera ngay sau khi đăng ký, không cần ai chia sẻ thủ công. Khách xem được ảnh, số đếm, biểu đồ, nhật ký và đề xuất của tác tử, và có thể hỏi trợ lý về các camera này.",
+      "title": "Camera trình diễn cho khách",
+      "desc": "Các camera (và, ở dưới, vườn mô phỏng) mà khách như giám khảo cuộc thi được xem, chỉ xem, không cần ai chia sẻ thủ công: ảnh, số đếm, biểu đồ, nhật ký và đề xuất của tác tử, trợ lý, cùng những gì bạn mở cho từng camera.",
       "cameras": "Camera được chia sẻ",
       "camerasPlaceholder": "Thêm camera: chọn hoặc nhập số sê-ri",
       "camerasDesc": "Tối đa 20 camera. Chủ camera vẫn toàn quyền; khách không được biết ai là chủ. Đặt cho từng camera những gì khách được xem.",
@@ -1864,7 +1864,7 @@
       "audienceSince": "Tài khoản tạo từ một ngày",
       "sincePlaceholder": "Chọn ngày",
       "sinceRequired": "Hãy chọn ngày bắt đầu tính tài khoản mới.",
-      "audienceDesc": "Quản trị viên luôn thấy mọi camera. Khách không nhận cảnh báo, email hay báo cáo về camera trình diễn.",
+      "audienceDesc": "Tài khoản khách thấy các camera này khi bật Truy cập cho khách. Tài khoản khác chỉ thấy khi bạn mở thêm ở dưới. Quản trị viên luôn thấy mọi camera; khách không nhận cảnh báo, email hay báo cáo về các camera này.",
       "live": "Xem trực tiếp cho camera mới thêm",
       "liveDesc": "Giá trị ban đầu của Xem trực tiếp và Xem lại video khi thêm camera. Các công tắc của từng camera mới là quyết định cuối cùng.",
       "readOnly": "Khách không thay đổi được gì trên camera trình diễn: không cài đặt, chụp, xoá, chia sẻ, bảo trì, ghi phun thuốc hay duyệt đề xuất. Hãy tắt khi buổi trình diễn kết thúc; quyền xem dừng trong vòng một phút.",
@@ -1877,8 +1877,7 @@
       "simDailyDesc": "Thêm ảnh mô phỏng của từng ngày (được quy trình nhận diện phân tích) và nhật ký đồng ruộng cho đến ngày kết thúc. Chỉ vườn mô phỏng thay đổi.",
       "simUntil": "Đến ngày",
       "guest": "Truy cập cho khách",
-      "guestDesc": "Hiện nút \"Vào xem với tư cách khách\" ở trang đăng nhập. Nút này mở một tài khoản dùng chung, chỉ xem, trong 2 giờ; tài khoản đó thấy camera trình diễn và (nếu bật) vườn mô phỏng, nên tài khoản khách hàng không cần thấy phần trình diễn.",
-      "audienceGuest": "Chỉ tài khoản khách",
+      "guestDesc": "Hiện nút \"Vào xem với tư cách khách\" ở trang đăng nhập. Nút này mở một tài khoản dùng chung, chỉ xem, trong 2 giờ; tài khoản đó thấy các camera ở trên và (nếu bật) vườn mô phỏng. Tài khoản của khách hàng không thấy chúng.",
       "camera": "Camera",
       "remove": "Ngừng chia sẻ camera này",
       "noShares": "Chưa chia sẻ camera nào.",
@@ -1895,7 +1894,9 @@
         "deviceDesc": "Thanh trạng thái (pin, sóng, mạng), phiên bản phần mềm và nhật ký của camera, chỉ xem.",
         "realSerial": "Số sê-ri thật",
         "realSerialDesc": "Hiện số sê-ri thật của camera. Tắt: khách thấy một tên DEMO- thay thế, kể cả trong đường dẫn."
-      }
+      },
+      "others": "Cả các tài khoản khác",
+      "othersDesc": "Tắt: chỉ tài khoản khách được xem. Bật: mọi tài khoản, hoặc các tài khoản tạo từ một ngày, cũng được xem, chỉ xem."
     },
     "fleet": {
       "title": "Đội camera",

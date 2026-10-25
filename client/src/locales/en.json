@@ -1854,8 +1854,8 @@
       "paid": "Paid"
     },
     "demo": {
-      "title": "Demo access for visitors",
-      "desc": "Let visitors (for example competition judges) look at a few cameras right after they sign up, without anyone sharing them by hand. They see photos, counts, charts, the agent's traces and proposals, and can ask the chatbot about them.",
+      "title": "Demo cameras for visitors",
+      "desc": "Cameras (and, below, the simulated farm) that visitors such as competition judges see read-only, without anyone sharing them by hand: photos, counts, charts, the agent's traces and proposals, and the chatbot, plus what you open for each camera.",
       "cameras": "Shared cameras",
       "camerasPlaceholder": "Add a camera: choose one or type a serial",
       "camerasDesc": "Up to 20. Their owner keeps full control; visitors are not told who owns them. Set for each camera what visitors may see.",
@@ -1864,7 +1864,7 @@
       "audienceSince": "Accounts created from a date",
       "sincePlaceholder": "Pick a date",
       "sinceRequired": "Pick the date accounts must be created from.",
-      "audienceDesc": "Administrators always see every camera. Visitors get no alerts, emails or reports about demo cameras.",
+      "audienceDesc": "The guest account sees them while Guest access is on. Other accounts see them only if you also open them below. Administrators always see every camera; visitors get no alerts, emails or reports about these cameras.",
       "live": "Live view for newly added cameras",
       "liveDesc": "The first value of Live view and Recorded video when you add a camera. Each camera's own switches decide.",
       "readOnly": "Visitors never change anything on a demo camera: no settings, captures, deleting, sharing, maintenance, treatments or approvals. Turn this off when the demo ends; access stops within a minute.",
@@ -1877,8 +1877,7 @@
       "simDailyDesc": "Adds each day's simulated photos (analyzed by the vision pipeline) and field-log entries until the end date. Only the simulated farm changes.",
       "simUntil": "Until",
       "guest": "Guest access",
-      "guestDesc": "Shows a Guest access button on the sign-in page. It opens one shared, read-only account for 2 hours that sees the demo cameras and, if shown, the simulated farm, so customer accounts need not see the demo.",
-      "audienceGuest": "Only the guest account",
+      "guestDesc": "Shows a Guest access button on the sign-in page. It opens one shared, read-only account for 2 hours that sees the cameras above and, if shown, the simulated farm. Customers' own accounts do not see them.",
       "camera": "Camera",
       "remove": "Stop sharing this camera",
       "noShares": "No camera is shared yet.",
@@ -1895,7 +1894,9 @@
         "deviceDesc": "The status bar (battery, signal, network), the firmware version and the camera's log, read-only.",
         "realSerial": "Real serial",
         "realSerialDesc": "Show the camera's real serial number. Off: visitors see a DEMO- name instead, in links too."
-      }
+      },
+      "others": "Other accounts too",
+      "othersDesc": "Off: only the guest account sees them. On: every account, or the accounts created from a date, see them as well, read-only."
     },
     "fleet": {
       "title": "Camera fleet",
