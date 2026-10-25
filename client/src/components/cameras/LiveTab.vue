@@ -70,7 +70,7 @@
           <el-tag :type="isCamos ? 'primary' : 'info'" effect="plain" size="small">{{ t(`cameras.platform.${camera?.platform || 'ezviz'}`) }}</el-tag>
           <el-tag v-if="isCamos && playingTier" type="info" effect="plain" size="small" data-test="live-tier">{{ playingTier }}</el-tag>
           <el-tag v-if="!isCamos && !camera?.simulated" type="success" effect="plain" size="small">HD</el-tag>
-          <DeviceSignal v-if="isCamos && camera?.device" :device="camera.device" />
+          <DeviceSignal v-if="isCamos && camera?.device" :device="camera.device" :online="camera.status === 1" />
           <el-tag v-if="health?.imageIssues?.length" type="warning" effect="light" round size="small">{{ t('cameras.imageQuality.label') }}: {{ health.imageIssues.map(i => t(`cameras.imageQuality.issues.${i}`)).join(', ') }}</el-tag>
         </div>
         <div class="flex flex-wrap items-center gap-2">

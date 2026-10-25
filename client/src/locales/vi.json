@@ -342,6 +342,8 @@
       "saver": "Siêu tiết kiệm: ngủ giữa các lần chụp"
     },
     "sleeping": "Đang ngủ",
+    "lastReport": "Lần báo gần nhất {time}",
+    "lastReportNoTime": "Lần báo gần nhất",
     "locating": "Đang lấy vị trí GPS",
     "locatingHint": "Camera tạm tắt 4G trong lúc tìm vệ tinh và kết nối lại trong khoảng 5 phút.",
     "sleepingNextWake": "Đang ngủ, thức lúc {time}",

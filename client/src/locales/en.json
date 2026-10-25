@@ -342,6 +342,8 @@
       "saver": "Saver: sleeps between photos"
     },
     "sleeping": "Sleeping",
+    "lastReport": "Last report {time}",
+    "lastReportNoTime": "Last report",
     "locating": "Taking a GPS fix",
     "locatingHint": "The camera turns its 4G off while it looks for satellites and is back within about 5 minutes.",
     "sleepingNextWake": "Sleeping, next wake {time}",

@@ -1,6 +1,6 @@
 <template>
   <!-- A phone's status bar for a CamOS camera: its uplink with signal bars, and its battery -->
-  <span class="device-signal inline-flex items-center gap-3" data-test="device-signal">
+  <span class="device-signal inline-flex items-center gap-3" :class="{ 'is-stale': !online }" data-test="device-signal">
     <!-- A GPS fix: the camera turns its 4G radio off for up to 5 minutes -->
     <el-tooltip v-if="device?.locating" :content="t('cameras.locatingHint')" placement="top">
       <el-tag type="warning" effect="light" round size="small" data-test="device-locating">
@@ -21,7 +21,7 @@
           <i :style="{ width: `${Math.max(0, Math.min(100, battery.pct))}%` }" />
         </span>
         <span class="device-signal__pct">{{ battery.pct }} %</span>
-        <el-icon v-if="battery.charging" class="device-signal__charging" data-test="device-charging"><Lightning /></el-icon>
+        <el-icon v-if="battery.charging && online" class="device-signal__charging" data-test="device-charging"><Lightning /></el-icon>
       </span>
     </el-tooltip>
   </span>
@@ -36,18 +36,28 @@ import { signalBars } from '@/utils/battery';
 const props = defineProps({
   // camera.device: { net: 'wifi' | '4g', rssi (dBm), battery: { pct, mv, charging, charge }, power: { mode, level }, locating }
   device: { type: Object, default: () => ({}) },
+  // Offline: the bars and the battery are the last report, greyed, and nothing blinks
+  online: { type: Boolean, default: true },
 });
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
 const battery = computed(() => props.device?.battery || null);
 const netLabel = computed(() => (props.device?.net === '4g' ? '4G' : props.device?.net === 'wifi' ? 'Wi-Fi' : ''));
 const bars = computed(() => signalBars(props.device?.net, props.device?.rssi));
 const barsLevel = computed(() => (bars.value <= 1 ? 'low' : 'ok'));
-const signalText = computed(() => [netLabel.value, props.device?.rssi != null ? `${t('camosDevice.signal')} ${props.device.rssi} dBm` : null].filter(Boolean).join(' · '));
-const batteryLevel = computed(() => (battery.value?.charging ? 'charging' : battery.value?.pct <= 20 ? 'low' : 'ok'));
+// Offline: the values are the camera's last report, said so first
+const lastReport = computed(() => {
+  if (props.online) return null;
+  const at = props.device?.lastSeenAt ? new Date(props.device.lastSeenAt) : null;
+  const time = at && !isNaN(at) ? at.toLocaleString(locale.value === 'vi' ? 'vi-VN' : 'en-US', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+  return time ? t('cameras.lastReport', { time }) : t('cameras.lastReportNoTime');
+});
+const signalText = computed(() => [lastReport.value, netLabel.value, props.device?.rssi != null ? `${t('camosDevice.signal')} ${props.device.rssi} dBm` : null].filter(Boolean).join(' · '));
+const batteryLevel = computed(() => (!props.online ? 'stale' : battery.value?.charging ? 'charging' : battery.value?.pct <= 20 ? 'low' : 'ok'));
 const batteryText = computed(() => {
   const b = battery.value || {};
   return [
+    lastReport.value,
     `${b.pct} %`,
     b.mv != null ? `${(b.mv / 1000).toFixed(2)} V` : null,
     b.charge === 'slow' ? t('cameras.battery.chargingSlow') : b.charging === true ? t('cameras.battery.charging') : b.charging === false ? t('cameras.battery.notCharging') : null,
@@ -112,6 +122,10 @@ const batteryText = computed(() => {
 }
 .device-signal__battery.is-charging i { background: var(--el-color-success); }
 .device-signal__battery.is-low i { background: var(--el-color-danger); }
+/* Offline: the last report, greyed */
+.device-signal.is-stale { color: var(--el-text-color-secondary); }
+.device-signal.is-stale .device-signal__bars i.on,
+.device-signal__battery.is-stale i { background: var(--el-text-color-placeholder); }
 .device-signal__charging {
   color: var(--el-color-success);
   animation: device-signal-blink 1.2s ease-in-out infinite;
