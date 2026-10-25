@@ -16,13 +16,18 @@ const { User } = require('../models');
 const GUEST_EMAIL = 'guest@flybot.invalid';
 const GUEST_SESSION_MS = 2 * 3600 * 1000;
 
-// What a guest may still send (path without the query): sign out, the assistant, and the
-// dashboard's AI diagnosis (a POST only for its options; it computes and saves nothing)
+// What a guest may still send (path without the query): sign out, the assistant, the dashboard's
+// AI diagnosis (a POST only for its options; it computes and saves nothing), and opening a stream
 const GUEST_WRITES = [
     /^\/api\/auth\/logout$/,
     /^\/api\/ai\/chat(\/stream)?$/,
     /^\/api\/ai\/chat\/(feedback|clear)$/,
-    /^\/api\/ai\/diagnose$/
+    /^\/api\/ai\/diagnose$/,
+    // Live view and recorded video of the demo cameras the admin opened them for (each checks the
+    // camera's permissions, services/demoView.js): they start and stop a stream, they change nothing
+    /^\/api\/live(\/disable)?$/,
+    /^\/api\/(records|playback)$/,
+    /^\/api\/cameras\/[A-Za-z0-9_-]{1,64}\/live\/request$/
 ];
 // Reads that hand out the account itself
 const GUEST_BLOCKED_READS = [

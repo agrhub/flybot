@@ -41,8 +41,9 @@ const camerasOf = async (user) => (await json(await request('/api/user/cameras',
 test('accessFor: off, empty, admins and accounts older than the date get nothing', () => {
     const user = { role: 'user', createdAt: new Date('2026-10-25T00:00:00Z') };
     const on = { demoViewEnabled: true, demoViewAudience: 'all', demoViewCameras: ['A'], demoViewSince: null, demoViewLive: false };
-    assert.deepEqual(accessFor(user, on), { serials: ['A'], orgId: null, live: false });
-    assert.deepEqual(accessFor(user, { ...on, demoViewCameras: [], demoViewSimulated: true }, 'org1'), { serials: [], orgId: 'org1', live: false });
+    // Settings saved before per-camera permissions: today's behaviour for each listed camera
+    assert.deepEqual(accessFor(user, on), { serials: ['A'], shares: { A: { live: false, playback: false, location: true, device: true, realSerial: true } }, orgId: null, live: false });
+    assert.deepEqual(accessFor(user, { ...on, demoViewCameras: [], demoViewSimulated: true }, 'org1'), { serials: [], shares: {}, orgId: 'org1', live: false });
     assert.equal(accessFor(user, { ...on, demoViewSimulated: true }, null).orgId, null, 'no simulated farm yet');
     assert.deepEqual(accessFor(user, { ...on, demoViewEnabled: false }).serials, []);
     assert.deepEqual(accessFor(user, { ...on, demoViewCameras: [] }).serials, []);
@@ -51,6 +52,13 @@ test('accessFor: off, empty, admins and accounts older than the date get nothing
     assert.deepEqual(accessFor(user, { ...on, demoViewAudience: 'since', demoViewSince: '2026-10-25T00:00:00.000Z' }).serials, ['A']);
     assert.deepEqual(accessFor({ role: 'user' }, { ...on, demoViewAudience: 'since', demoViewSince: '2026-10-25T00:00:00.000Z' }).serials, [], 'no creation date: no access');
     assert.equal(accessFor(user, { ...on, demoViewLive: true }).live, true);
+    assert.deepEqual(accessFor(user, { ...on, demoViewLive: true }).shares.A, { live: true, playback: true, location: true, device: true, realSerial: true });
+    // Per-camera permissions win over the list
+    const shares = [{ deviceSerial: 'B', live: false, playback: true, location: false, device: true, realSerial: false }];
+    const access = accessFor(user, { ...on, demoViewLive: true, demoViewShares: shares });
+    assert.deepEqual(access.serials, ['B']);
+    assert.deepEqual(access.shares.B, { live: false, playback: true, location: false, device: true, realSerial: false });
+    assert.equal(access.live, false);
 });
 
 test('off by default: a new account sees no demo camera', async () => {
@@ -154,10 +162,10 @@ test('a visitor cannot change, capture, share, delete or maintain a demo camera'
 test('live view and SD playback stay closed unless the admin opens them', async () => {
     const { visitor } = await demoFarm();
     await enable();
-    for (const path of ['/api/live', '/api/records', '/api/playback']) {
+    for (const [path, message] of [['/api/live', 'Live view of this demo camera is not open to visitors.'], ['/api/records', 'Recorded video of this demo camera is not open to visitors.'], ['/api/playback', 'Recorded video of this demo camera is not open to visitors.']]) {
         const res = await json(await request(path, { method: 'POST', as: visitor, body: { deviceSerial: 'DEMO1' } }));
         assert.equal(res.status, 403, path);
-        assert.equal(res.body.msg, 'Live view of this demo camera is not open to visitors.');
+        assert.equal(res.body.msg, message);
     }
     for (const [method, path] of [['GET', '/api/cameras/DEMO1/live'], ['GET', '/api/cameras/DEMO2/live'], ['POST', '/api/cameras/DEMO2/live/request'], ['GET', '/api/cameras/DEMO1/playback']]) {
         const res = await json(await request(path, { method, as: visitor, body: method === 'POST' ? {} : undefined }));

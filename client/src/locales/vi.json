@@ -1856,17 +1856,17 @@
     "demo": {
       "title": "Quyền xem trình diễn cho khách",
       "desc": "Cho khách (ví dụ giám khảo cuộc thi) xem một vài camera ngay sau khi đăng ký, không cần ai chia sẻ thủ công. Khách xem được ảnh, số đếm, biểu đồ, nhật ký và đề xuất của tác tử, và có thể hỏi trợ lý về các camera này.",
-      "cameras": "Camera trình diễn",
-      "camerasPlaceholder": "Chọn camera hoặc nhập số sê-ri",
-      "camerasDesc": "Tối đa 20 camera. Chủ camera vẫn toàn quyền; khách không được biết ai là chủ.",
+      "cameras": "Camera được chia sẻ",
+      "camerasPlaceholder": "Thêm camera: chọn hoặc nhập số sê-ri",
+      "camerasDesc": "Tối đa 20 camera. Chủ camera vẫn toàn quyền; khách không được biết ai là chủ. Đặt cho từng camera những gì khách được xem.",
       "audience": "Ai được xem",
       "audienceAll": "Mọi tài khoản",
       "audienceSince": "Tài khoản tạo từ một ngày",
       "sincePlaceholder": "Chọn ngày",
       "sinceRequired": "Hãy chọn ngày bắt đầu tính tài khoản mới.",
       "audienceDesc": "Quản trị viên luôn thấy mọi camera. Khách không nhận cảnh báo, email hay báo cáo về camera trình diễn.",
-      "live": "Cho xem trực tiếp",
-      "liveDesc": "Khách được xem trực tiếp và xem lại bản ghi của các camera này. Tắt: khách chỉ xem ảnh.",
+      "live": "Xem trực tiếp cho camera mới thêm",
+      "liveDesc": "Giá trị ban đầu của Xem trực tiếp và Xem lại video khi thêm camera. Các công tắc của từng camera mới là quyết định cuối cùng.",
       "readOnly": "Khách không thay đổi được gì trên camera trình diễn: không cài đặt, chụp, xoá, chia sẻ, bảo trì, ghi phun thuốc hay duyệt đề xuất. Hãy tắt khi buổi trình diễn kết thúc; quyền xem dừng trong vòng một phút.",
       "simTitle": "Vườn mô phỏng",
       "simStatus": "{farms} vườn, {cameras} bẫy, {photos} ảnh; ảnh mới nhất lúc {time}.",
@@ -1878,7 +1878,24 @@
       "simUntil": "Đến ngày",
       "guest": "Truy cập cho khách",
       "guestDesc": "Hiện nút \"Vào xem với tư cách khách\" ở trang đăng nhập. Nút này mở một tài khoản dùng chung, chỉ xem, trong 2 giờ; tài khoản đó thấy camera trình diễn và (nếu bật) vườn mô phỏng, nên tài khoản khách hàng không cần thấy phần trình diễn.",
-      "audienceGuest": "Chỉ tài khoản khách"
+      "audienceGuest": "Chỉ tài khoản khách",
+      "camera": "Camera",
+      "remove": "Ngừng chia sẻ camera này",
+      "noShares": "Chưa chia sẻ camera nào.",
+      "photosAlways": "Ảnh, số đếm và phân tích của camera được chia sẻ luôn hiển thị. Số sê-ri bị ẩn sẽ hiện với khách bằng một tên DEMO-, trong ứng dụng và trong mọi phản hồi của máy chủ.",
+      "rawSerialWarning": "{names}: xem trực tiếp và xem lại video vẫn đưa số sê-ri thật cho trình phát video của khách (EZVIZ và AWS cần số này), dù trang hiển thị số sê-ri đã ẩn.",
+      "perm": {
+        "live": "Xem trực tiếp",
+        "liveDesc": "Xem camera trực tiếp (EZVIZ, hoặc KVS WebRTC với camera CamOS; camera đang ngủ sẽ được đánh thức ở lần kết nối kế tiếp).",
+        "playback": "Xem lại video",
+        "playbackDesc": "Xem lại bản ghi trên thẻ nhớ của camera hoặc trên đám mây.",
+        "location": "Vị trí",
+        "locationDesc": "Vị trí trên bản đồ, địa chỉ và toạ độ GPS hoặc trạm 4G. Tắt: camera không hiện trên bản đồ.",
+        "device": "Thông tin thiết bị",
+        "deviceDesc": "Thanh trạng thái (pin, sóng, mạng), phiên bản phần mềm và nhật ký của camera, chỉ xem.",
+        "realSerial": "Số sê-ri thật",
+        "realSerialDesc": "Hiện số sê-ri thật của camera. Tắt: khách thấy một tên DEMO- thay thế, kể cả trong đường dẫn."
+      }
     },
     "fleet": {
       "title": "Đội camera",
@@ -4220,5 +4237,10 @@
       "brownout": "sụt nguồn",
       "software": "khởi động lại phần mềm"
     }
+  },
+  "demoDevice": {
+    "open": "Thông tin thiết bị",
+    "title": "Thông tin thiết bị: {name}",
+    "readOnly": "Camera được chia sẻ để trình diễn: bạn xem được thông tin, phần mềm và nhật ký của camera, nhưng không thay đổi được."
   }
 }

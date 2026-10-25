@@ -41,15 +41,30 @@ function deviceView(camera, now = new Date()) {
     };
 }
 const thresholdService = require('../services/thresholdService');
-const { viewFilter, viewableCameras, findViewableCamera, findManageableCamera, findOwnedCamera, canManageCamera, isDemoOnly, canWatchLive } = require('../utils/ownership');
+const { viewFilter, viewableCameras, findViewableCamera, findManageableCamera, findOwnedCamera, canManageCamera, isDemoOnly, demoPermsOf, canSeeLocation, canSeeDevice, canWatchLive, canWatchPlayback } = require('../utils/ownership');
 
-// Live view / SD playback refused: a simulated demo camera (no device), or a demo camera seen only
-// through demo access while demoViewLive is off
+// Live view / recorded video refused: a simulated demo camera (no device), or a demo camera seen only
+// through demo access whose live view / playback the admin did not open (services/demoView.js)
 const DEMO_LIVE_CLOSED = { success: false, code: 'DEMO_READ_ONLY', message: 'Live view of this demo camera is not open to visitors.' };
+const DEMO_PLAYBACK_CLOSED = { success: false, code: 'DEMO_READ_ONLY', message: 'Recorded video of this demo camera is not open to visitors.' };
 const SIMULATED_NO_LIVE = { success: false, code: 'SIMULATED_CAMERA', message: 'A simulated camera has no live view.' };
 // ...or a camera an admin paused (services/fleetService.js)
 const CAMERA_DISABLED = { success: false, code: 'CAMERA_DISABLED', message: 'This camera is paused by an administrator.' };
 const liveClosed = (camera) => (camera?.adminDisabled?.at ? CAMERA_DISABLED : camera?.simulated ? SIMULATED_NO_LIVE : DEMO_LIVE_CLOSED);
+const playbackClosed = (camera) => (camera?.adminDisabled?.at || camera?.simulated ? liveClosed(camera) : DEMO_PLAYBACK_CLOSED);
+
+// What the status of a camera shows a demo visitor without its device details: online, asleep, next wake
+const STATUS_WITHOUT_DEVICE = ['platform', 'online', 'sleeping', 'wakeAt', 'nextWakeAt', 'lastSeenAt', 'lastPhotoAt', 'captureIntervalMinutes', 'liveRequested', 'liveSupported'];
+function visibleStatus(user, camera, status) {
+    if (!status || typeof status !== 'object') return status;
+    const shown = canSeeDevice(user, camera) ? { ...status } : Object.fromEntries(STATUS_WITHOUT_DEVICE.filter(k => k in status).map(k => [k, status[k]]));
+    if (!canSeeLocation(user, camera)) delete shown.location;
+    return shown;
+}
+
+// Coordinates in a log line (a GPS fix, a cell estimate), for visitors who may not see the location
+const COORDINATE_RE = /-?\d{1,3}\.\d{4,}/g;
+const withoutCoordinates = (value) => JSON.parse(JSON.stringify(value).replace(COORDINATE_RE, '…'));
 
 /**
  * Camera as returned to a given user: viewers never see the verification code or the
@@ -68,12 +83,35 @@ function toClientCamera(camera, user) {
     const sharedWithMe = (obj.sharedWith || []).some(sh => String(sh.userId) === String(user.id));
     // 'admin' = visible only because the viewer is an admin; 'demo' = a read-only demo camera
     obj.access = isOwner ? 'owner' : (sharedWithMe ? 'shared' : (demoOnly ? 'demo' : 'admin'));
-    if (demoOnly || obj.simulated) obj.liveOpen = canWatchLive(user, { ...obj, userId: ownerId });
+    if (demoOnly || obj.simulated) {
+        obj.liveOpen = canWatchLive(user, { ...obj, userId: ownerId });
+        obj.playbackOpen = canWatchPlayback(user, { ...obj, userId: ownerId });
+    }
+    // A demo camera: what the admin opened to visitors (services/demoView.js), and nothing else
+    const perms = demoPermsOf(user, { ...obj, userId: ownerId });
+    if (perms) {
+        obj.demo = { ...perms };
+        if (!perms.location) {
+            obj.latitude = null;
+            obj.longitude = null;
+            obj.locationAddress = '';
+            if (obj.device) delete obj.device.location;
+        }
+        if (!perms.device) {
+            delete obj.deviceVersion;
+            delete obj.model;
+            delete obj.deviceType;
+            delete obj.firmware;
+        }
+    }
     obj.canManage = canManage;
     obj.cardDueAt = cardDueAt(obj);
     obj.platform = platforms.platformOf(obj);
-    // CamOS cameras: what the device reported, never its token hashes or raw shadow
+    // CamOS cameras: what the device reported, never its token hashes or raw shadow; a demo
+    // visitor without the device details sees only whether it sleeps and when it wakes
     obj.device = obj.device ? deviceView(obj) : undefined;
+    if (obj.device && perms && !perms.device) obj.device = Object.fromEntries(Object.entries(obj.device).filter(([k]) => STATUS_WITHOUT_DEVICE.includes(k)));
+    if (obj.device && perms && !perms.location) delete obj.device.location;
     // Paused by an admin: when and why (never who)
     obj.adminDisabled = obj.adminDisabled?.at ? { at: obj.adminDisabled.at, reason: obj.adminDisabled.reason || '' } : undefined;
     if (canManage) {
@@ -384,7 +422,10 @@ async function getLive(req, res) {
         }
         const minutes = await require('../services/registrationService').liveMinutes(camera, req.user, 5);
         const session = await platforms.get(camera).liveSession(deviceSerial, { user: req.user, minutes });
+        if (session?.camera) session.camera = visibleStatus(req.user, camera, session.camera);
         res.setHeader('Cache-Control', 'no-store');
+        // The viewer needs the real KVS channel (its name holds the serial), even when the serial is hidden
+        res.locals.demoRawSerial = true;
         res.json({ success: true, ...session });
     } catch (err) {
         if (err.code === 'LIVE_NOT_CONFIGURED') return res.status(503).json({ success: false, code: err.code, message: err.message });
@@ -436,7 +477,7 @@ async function getPlayback(req, res) {
         const camera = await findViewableCamera(req.user, deviceSerial);
         if (!camera) return res.status(404).json({ success: false, code: 'NOT_FOUND', message: "Camera not found or permission denied." });
         // EZVIZ playback reads the camera's SD card; CamOS playback is the photo timeline
-        if (platforms.platformOf(camera) === 'ezviz' && !canWatchLive(req.user, camera)) return res.status(403).json(liveClosed(camera));
+        if (platforms.platformOf(camera) === 'ezviz' && !canWatchPlayback(req.user, camera)) return res.status(403).json(playbackClosed(camera));
         const { from, to } = req.query;
         const result = await platforms.get(camera).playback(deviceSerial, { from: from ? String(from) : undefined, to: to ? String(to) : undefined });
         res.json({ success: true, ...result });
@@ -553,7 +594,7 @@ async function getCameraStatus(req, res) {
     try {
         const camera = await findViewableCamera(req.user, deviceSerial);
         if (!camera) return res.status(404).json({ success: false, code: 'NOT_FOUND', message: "Camera not found or permission denied." });
-        const status = await platforms.get(camera).getStatus(deviceSerial);
+        const status = visibleStatus(req.user, camera, await platforms.get(camera).getStatus(deviceSerial));
         res.json({ success: true, status });
     } catch (err) {
         sendServerError(res, err, { context: 'Camera status' });
@@ -730,6 +771,8 @@ async function getLiveStream(req, res) {
             return res.status(403).json({ code: "403", msg: "You do not have permission to access this camera." });
         }
         if (!canWatchLive(req.user, camera)) return res.status(403).json({ code: "403", msg: liveClosed(camera).message });
+        // The EZVIZ player's address holds the real serial, even when it is hidden from a demo visitor
+        res.locals.demoRawSerial = true;
 
         let code = (camera.validateCode || '').trim();
         // check camera setting first
@@ -842,7 +885,7 @@ async function getRecords(req, res) {
         if (!camera) {
             return res.status(403).json({ code: "403", msg: "You do not have permission to access this camera." });
         }
-        if (!canWatchLive(req.user, camera)) return res.status(403).json({ code: "403", msg: liveClosed(camera).message });
+        if (!canWatchPlayback(req.user, camera)) return res.status(403).json({ code: "403", msg: playbackClosed(camera).message });
 
         const data = await ezvizService.getLocalRecords({ deviceSerial, startTime, endTime });
         res.json(data);
@@ -864,7 +907,9 @@ async function getPlaybackStream(req, res) {
         if (!camera) {
             return res.status(403).json({ code: "403", msg: "You do not have permission to access this camera." });
         }
-        if (!canWatchLive(req.user, camera)) return res.status(403).json({ code: "403", msg: liveClosed(camera).message });
+        if (!canWatchPlayback(req.user, camera)) return res.status(403).json({ code: "403", msg: playbackClosed(camera).message });
+        // The EZVIZ player's address holds the real serial, even when it is hidden from a demo visitor
+        res.locals.demoRawSerial = true;
 
         console.log("startTime: ", startTime, "stopTime: ", stopTime);
 
@@ -919,24 +964,34 @@ async function disableStream(req, res) {
 // ---------- Remote console log (services/cameraLogService.js) ----------
 
 /**
- * Admins, and owners / managers of the camera (never people it is shared with, demo visitors or support).
- * Returns the camera (lean) or null after answering 404.
+ * Admins, and owners / managers of the camera (never people it is shared with or support); with
+ * `read`, also demo visitors of a shared camera whose device details the admin opened (they read
+ * the log, never start, stop or watch it). Returns the camera (lean) or null after answering 404.
  */
-async function logCamera(req, res) {
-    const camera = await findManageableCamera(req.user, String(req.params.serial || ''));
-    if (!camera || isDemoOnly(req.user, camera)) {
+async function logCamera(req, res, { read = false } = {}) {
+    const serial = String(req.params.serial || '');
+    let camera = await findManageableCamera(req.user, serial);
+    if (camera && isDemoOnly(req.user, camera)) camera = null;
+    if (!camera && read) {
+        const seen = await findViewableCamera(req.user, serial);
+        if (seen && !seen.simulated && isDemoOnly(req.user, seen) && canSeeDevice(req.user, seen)) camera = seen;
+    }
+    if (!camera) {
         res.status(404).json({ success: false, code: 'NOT_FOUND', message: "Camera not found or permission denied." });
         return null;
     }
     return camera.toObject ? camera.toObject() : camera;
 }
 
+// A demo visitor who may not see the camera's location reads its log without coordinates
+const logFor = (req, camera, value) => (canSeeLocation(req.user, camera) ? value : withoutCoordinates(value));
+
 async function getCameraLog(req, res) {
     try {
-        const camera = await logCamera(req, res);
+        const camera = await logCamera(req, res, { read: true });
         if (!camera) return;
         res.setHeader('Cache-Control', 'no-store');
-        res.json(await require('../services/cameraLogService').list(camera, req.query));
+        res.json(logFor(req, camera, await require('../services/cameraLogService').list(camera, req.query)));
     } catch (err) {
         sendServerError(res, err, { context: 'Camera log' });
     }
@@ -944,9 +999,9 @@ async function getCameraLog(req, res) {
 
 async function downloadCameraLog(req, res) {
     try {
-        const camera = await logCamera(req, res);
+        const camera = await logCamera(req, res, { read: true });
         if (!camera) return;
-        const body = await require('../services/cameraLogService').text(camera);
+        const body = logFor(req, camera, await require('../services/cameraLogService').text(camera));
         const name = `${camera.deviceSerial}-log-${new Date().toISOString().slice(0, 16).replace(/[:T]/g, '')}.txt`;
         res.setHeader('Content-Type', 'text/plain; charset=utf-8');
         res.setHeader('Content-Disposition', `attachment; filename="${name}"`);
@@ -959,9 +1014,9 @@ async function downloadCameraLog(req, res) {
 
 async function getCameraCrashes(req, res) {
     try {
-        const camera = await logCamera(req, res);
+        const camera = await logCamera(req, res, { read: true });
         if (!camera) return;
-        res.json(await require('../services/cameraLogService').crashes(camera));
+        res.json(logFor(req, camera, await require('../services/cameraLogService').crashes(camera)));
     } catch (err) {
         sendServerError(res, err, { context: 'Camera crashes' });
     }
@@ -1018,7 +1073,8 @@ const languageOf = (req) => (String(req.get('X-Language') || req.user?.language 
 async function getFirmware(req, res) {
     try {
         const camera = await findViewableCamera(req.user, String(req.params.serial || '')).lean();
-        if (!camera) return res.status(404).json({ success: false, code: 'NOT_FOUND', message: "Camera not found or permission denied." });
+        // A demo camera whose device details are closed to visitors: not even its firmware version
+        if (!camera || !canSeeDevice(req.user, camera)) return res.status(404).json({ success: false, code: 'NOT_FOUND', message: "Camera not found or permission denied." });
         const canManage = canManageCamera(req.user, camera) && !isDemoOnly(req.user, camera);
         res.json(await require('../services/firmwareService').statusFor(camera, { canManage, language: languageOf(req) }));
     } catch (err) {
@@ -1031,7 +1087,7 @@ async function checkFirmware(req, res) {
     try {
         const serial = String(req.params.serial || '');
         let camera = await findViewableCamera(req.user, serial).lean();
-        if (!camera) return res.status(404).json({ success: false, code: 'NOT_FOUND', message: "Camera not found or permission denied." });
+        if (!camera || !canSeeDevice(req.user, camera)) return res.status(404).json({ success: false, code: 'NOT_FOUND', message: "Camera not found or permission denied." });
         if (platforms.platformOf(camera) === 'ezviz' && !camera.simulated) {
             await ezvizService.syncCameraStatus(serial).catch(err => console.warn(`⚠️ EZVIZ version check ${serial}: ${err.message}`));
             camera = await findViewableCamera(req.user, serial).lean();

@@ -52,6 +52,8 @@ app.use((req, res, next) => {
     next();
 });
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+// A demo camera's alias (shown to visitors instead of its serial) back to the serial
+app.use(require('./middlewares/demoMask').unaliasRequest);
 
 // API Routes
 app.use(routes);

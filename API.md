@@ -522,11 +522,22 @@ The admin can open a few cameras to every account, read-only, so visitors such a
 | Field | Value | Environment default |
 |---|---|---|
 | `demoViewEnabled` | `true` / `false` | `DEMO_VIEW_ENABLED` (`false`) |
-| `demoViewCameras` | up to 20 serials | `DEMO_VIEW_CAMERAS` (comma-separated) |
+| `demoViewShares` | up to 20 `{ deviceSerial, live, playback, location, device, realSerial }` (booleans, missing = `false`): each shared camera and what visitors may do with it | from `demoViewCameras` |
+| `demoViewCameras` | up to 20 serials (follows `demoViewShares`; saved alone, it keeps the permissions of the cameras still listed) | `DEMO_VIEW_CAMERAS` (comma-separated) |
 | `demoViewSince` | `"YYYY-MM-DD"`: only accounts created on or after it; `null`: every account | `DEMO_VIEW_SINCE` |
-| `demoViewLive` | `true` also opens live view and SD playback | `DEMO_VIEW_LIVE` (`false`) |
+| `demoViewLive` | live view and playback of a newly added camera (admin page); saved without `demoViewShares` it opens or closes them for every camera | `DEMO_VIEW_LIVE` (`false`) |
 
-Such a camera behaves as if it were shared with the visitor: the camera list (`access: "demo"`, `canManage: false`, no `owner`, `liveOpen`), photos, statistics, dashboards, the Sentinel screen and the assistant include it. Every change (settings, capture, delete, share, maintenance, treatments, approvals) answers `403`/`404` as for any camera the person does not manage; live view and playback answer `403 {"code":"DEMO_READ_ONLY"}` while `demoViewLive` is off. Only signed-in requests get the access: alerts, emails, reports and webhooks never mention demo cameras to visitors. Admins are not affected. Nothing is stored on the cameras or accounts, so turning it off ends the access within the settings cache (30 s). `GET /api/auth/config` carries `demoView: true` while it is offered (the sign-up form says so) and `GET /api/auth/me` `demoView: { cameras, live }`.
+Until `demoViewShares` is saved, each camera of `demoViewCameras` has live view and playback as `demoViewLive` says and shows its location, device details and serial (`GET /api/admin/settings` returns the entries built that way). Photos and counts of a shared camera are always shown; each permission opens one more thing:
+
+| Permission | Opens | Closed |
+|---|---|---|
+| `live` | Live view (`POST /api/live`, `GET /api/cameras/{serial}/live`, the live request of a sleeping CamOS camera) | `403 {"code":"DEMO_READ_ONLY"}` |
+| `playback` | Recorded video (`POST /api/records`, `POST /api/playback`, EZVIZ `GET /api/cameras/{serial}/playback`) | `403 {"code":"DEMO_READ_ONLY"}` |
+| `location` | `latitude`, `longitude`, `locationAddress`, the GPS / cell fix | the fields are dropped from every answer (camera list, map data, Sentinel, the assistant), coordinates are removed from the camera log |
+| `device` | The CamOS status (battery, signal, network, power), firmware version and model, `GET /api/cameras/{serial}/firmware`, the camera log (`GET .../log`, `.../log/download`, `.../crashes`; never start, stop or watch) | the fields are dropped (`device` keeps only sleep and wake), firmware and log answer `404` |
+| `realSerial` | The real serial | every answer shows an alias `DEMO-` + 10 hex digits instead (also in photo paths, file names, events and the assistant); requests may use the alias. The live and playback answers keep the real serial for the player (EZVIZ and KVS need it) |
+
+Such a camera behaves as if it were shared with the visitor: the camera list (`access: "demo"`, `canManage: false`, no `owner`, `liveOpen`, `playbackOpen`, `demo`: its permissions), photos, statistics, dashboards, the Sentinel screen and the assistant include it. Every change (settings, capture, delete, share, maintenance, treatments, approvals) answers `403`/`404` as for any camera the person does not manage. Only signed-in requests get the access: alerts, emails, reports and webhooks never mention demo cameras to visitors. Admins are not affected. Nothing is stored on the cameras or accounts, so turning it off ends the access within the settings cache (30 s). `GET /api/auth/config` carries `demoView: true` while it is offered (the sign-up form says so) and `GET /api/auth/me` `demoView: { cameras, live }`.
 
 #### Guest access
 

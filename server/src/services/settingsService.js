@@ -2,6 +2,9 @@ const { SystemSetting } = require('../models');
 const { ALLOW_REGISTRATION, RETENTION_CYCLE, DEMO_VIEW_ENABLED, DEMO_VIEW_CAMERAS, DEMO_VIEW_SINCE, DEMO_VIEW_LIVE, DEMO_VIEW_SIMULATED, DEMO_SIM_ENABLED, DEMO_SIM_UNTIL, DEMO_VIEW_AUDIENCE, GUEST_ACCESS, REGISTRY_MODE } = require('../config/env');
 const { DEFAULT_ALERT_THRESHOLD } = require('../constants/risk');
 
+// Lazy: services/demoView.js reads the settings too
+const demoView = () => require('./demoView');
+
 // Short cache: settings are read on every registration/cleanup but change rarely
 const CACHE_MS = 30 * 1000;
 let cached = null;
@@ -15,6 +18,8 @@ const defaults = () => ({
     // Read-only demo cameras for visitors (services/demoView.js)
     demoViewEnabled: DEMO_VIEW_ENABLED,
     demoViewCameras: [...DEMO_VIEW_CAMERAS],
+    // Each shared camera and what visitors may do with it; unset: demoViewCameras with demoViewLive
+    demoViewShares: null,
     demoViewSince: DEMO_VIEW_SINCE,
     demoViewLive: DEMO_VIEW_LIVE,
     demoViewAudience: DEMO_VIEW_AUDIENCE,
@@ -41,6 +46,9 @@ async function getSettings() {
         if (doc && doc[key] !== undefined && (doc[key] !== null || NULLABLE.has(key))) merged[key] = doc[key];
     }
     for (const key of NULLABLE) merged[key] = merged[key] ? new Date(merged[key]).toISOString() : null;
+    merged.demoViewShares = Array.isArray(merged.demoViewShares)
+        ? merged.demoViewShares.map(demoView().normalizeShare)
+        : demoView().sharesFromList(merged.demoViewCameras, merged.demoViewLive);
     merged.updatedAt = doc?.updatedAt || null;
     cached = merged;
     cachedAt = Date.now();
@@ -57,6 +65,8 @@ const SETTING_RULES = {
     // A date (accounts created on or after it) or null (every account)
     demoViewSince: (v) => v === null || (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}/.test(v) && !Number.isNaN(Date.parse(v))),
     demoViewLive: (v) => typeof v === 'boolean',
+    // One entry per camera, each serial once (services/demoView.js PERMISSIONS)
+    demoViewShares: (v) => demoView().isShareList(v) && new Set(v.map(e => e.deviceSerial.trim())).size === v.length,
     demoViewSimulated: (v) => typeof v === 'boolean',
     demoViewAudience: (v) => ['guest', 'all', 'since'].includes(v),
     guestAccessEnabled: (v) => typeof v === 'boolean',
@@ -67,6 +77,7 @@ const SETTING_RULES = {
 };
 const normalize = (key, value) => {
     if (key === 'demoViewCameras') return [...new Set(value)];
+    if (key === 'demoViewShares') return value.map(demoView().normalizeShare);
     if (NULLABLE.has(key)) return value ? new Date(value) : null;
     return value;
 };
@@ -82,6 +93,23 @@ async function updateSettings(patch, userId) {
         if (!rule) return { error: `Unknown setting "${key}".` };
         if (!rule(value)) return { error: `Invalid value for "${key}".` };
         update[key] = normalize(key, value);
+    }
+    // The camera list follows the shares (older clients and the environment use it), and a new list
+    // keeps the permissions of the cameras still on it (new ones: the old defaults, live from demoViewLive)
+    if (update.demoViewShares) {
+        update.demoViewCameras = update.demoViewShares.map(e => e.deviceSerial);
+    } else if (update.demoViewCameras || update.demoViewLive !== undefined) {
+        // Saved the old way (list and live switch): the switch opens or closes live view and
+        // playback of every camera, as it did
+        const current = await getSettings();
+        const bySerial = new Map(current.demoViewShares.map(e => [e.deviceSerial, e]));
+        const live = update.demoViewLive ?? current.demoViewLive;
+        const fresh = (serial) => demoView().sharesFromList([serial], live)[0];
+        update.demoViewShares = (update.demoViewCameras || current.demoViewCameras).map(serial => {
+            const kept = bySerial.get(serial);
+            if (!kept) return fresh(serial);
+            return update.demoViewLive === undefined ? kept : { ...kept, live, playback: live };
+        });
     }
     await SystemSetting.updateOne(
         { key: 'global' },

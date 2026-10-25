@@ -70,7 +70,7 @@
           <el-tag :type="isCamos ? 'primary' : 'info'" effect="plain" size="small">{{ t(`cameras.platform.${camera?.platform || 'ezviz'}`) }}</el-tag>
           <el-tag v-if="isCamos && playingTier" type="info" effect="plain" size="small" data-test="live-tier">{{ playingTier }}</el-tag>
           <el-tag v-if="!isCamos && !camera?.simulated" type="success" effect="plain" size="small">HD</el-tag>
-          <DeviceSignal v-if="isCamos && camera?.device" :device="camera.device" :online="camera.status === 1" />
+          <DeviceSignal v-if="isCamos && camera?.device && demoAllows(camera, 'device')" :device="camera.device" :online="camera.status === 1" />
           <el-tag v-if="health?.imageIssues?.length" type="warning" effect="light" round size="small">{{ t('cameras.imageQuality.label') }}: {{ health.imageIssues.map(i => t(`cameras.imageQuality.issues.${i}`)).join(', ') }}</el-tag>
         </div>
         <div class="flex flex-wrap items-center gap-2" data-tour="camera-actions">
@@ -86,6 +86,7 @@
             {{ t('cameras.captureNow') }}
           </el-button>
           <el-button v-if="hasRemoteSettings" size="small" :icon="Setting" data-test="camos-settings-open" @click="settingsVisible = true">{{ t('camosSettings.open') }}</el-button>
+          <el-button v-if="isCamos && showsDemoDevice(camera)" size="small" :icon="Cpu" data-test="demo-device-open" @click="demoDeviceVisible = true">{{ t('demoDevice.open') }}</el-button>
           <el-button size="small" :icon="InfoFilled" :disabled="!camera" @click="infoVisible = true">{{ t('cameras.quickInfo') }}</el-button>
         </div>
       </div>
@@ -93,6 +94,7 @@
 
     <!-- Camera details, on demand -->
     <CamosSettingsDialog v-if="hasRemoteSettings" v-model="settingsVisible" :camera="camera" />
+    <DemoDeviceDialog v-if="isCamos && showsDemoDevice(camera)" v-model="demoDeviceVisible" :camera="camera" />
     <el-dialog v-model="infoVisible" :title="`${t('cameras.quickInfo')}: ${camera?.deviceName || ''}`" width="min(720px, 94vw)" append-to-body>
       <el-descriptions :column="isMobile ? 1 : 2" size="small" border>
         <el-descriptions-item :label="t('cameras.status')">
@@ -195,7 +197,7 @@
     <TrapMaintenanceCard v-if="camera" :camera="camera" data-tour="camera-upkeep" />
 
     <!-- Firmware of an EZVIZ camera; a CamOS camera's firmware and console log are tabs of its Camera settings -->
-    <CameraFirmwareCard v-if="camera && !camera.simulated && !isCamos" :camera="camera" />
+    <CameraFirmwareCard v-if="camera && !camera.simulated && !isCamos && demoAllows(camera, 'device')" :camera="camera" />
 
     <!-- Verification Code Dialog -->
     <el-dialog
@@ -246,8 +248,10 @@ import TrapMaintenanceCard from './TrapMaintenanceCard.vue'
 import CameraFirmwareCard from './CameraFirmwareCard.vue'
 import KvsViewer from './KvsViewer.vue'
 import CamosSettingsDialog from './CamosSettingsDialog.vue'
+import DemoDeviceDialog from './DemoDeviceDialog.vue'
+import { demoAllows, showsDemoDevice } from '@/utils/demoCamera'
 import { ElNotification } from 'element-plus'
-import { VideoCamera, Key, Lock, EditPen, Camera, InfoFilled, Clock, Setting } from '@element-plus/icons-vue'
+import { VideoCamera, Key, Lock, EditPen, Camera, InfoFilled, Clock, Setting, Cpu } from '@element-plus/icons-vue'
 import { useBreakpoints } from '@/composables/useBreakpoints'
 import { useNotifications } from '@/composables/useNotifications'
 import { useI18n } from 'vue-i18n'
@@ -290,6 +294,8 @@ const sleepText = computed(() => {
 const liveQuality = ref(loadQualityChoice())
 // camos-esp32-trap cameras (serial ESP + MAC): the web console's settings from FlyBot, for those who manage it
 const settingsVisible = ref(false)
+// A visitor's demo camera with its device details open: the same details, read-only
+const demoDeviceVisible = ref(false)
 // The camera streams to one viewer: the settings dialog's preview takes over, so the page's player stops while the
 // dialog is open and starts again when it closes, with a new live session (the old one may have ended meanwhile)
 const kvsRef = ref(null)

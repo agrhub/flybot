@@ -10,23 +10,57 @@
       </div>
     </template>
 
-    <el-form label-position="top" class="max-w-xl" @submit.prevent="save">
+    <el-form label-position="top" class="max-w-3xl" @submit.prevent="save">
+      <!-- The shared cameras, each with what visitors may do with it (photos and counts: always) -->
       <el-form-item :label="t('admin.demo.cameras')">
         <el-select
-          v-model="form.demoViewCameras"
-          multiple
+          v-model="adding"
           filterable
           allow-create
           default-first-option
-          :reserve-keyword="false"
-          :multiple-limit="20"
+          :disabled="shares.length >= MAX_SHARES"
           :placeholder="t('admin.demo.camerasPlaceholder')"
           class="w-full"
           data-test="demo-cameras"
+          @change="addShare"
         >
-          <el-option v-for="c in cameras" :key="c.deviceSerial" :label="`${c.deviceName || c.deviceSerial} (${c.deviceSerial})`" :value="c.deviceSerial" />
+          <el-option v-for="c in addable" :key="c.deviceSerial" :label="`${c.deviceName || c.deviceSerial} (${c.deviceSerial})`" :value="c.deviceSerial" />
         </el-select>
         <p class="admin-meta w-full mt-1">{{ t('admin.demo.camerasDesc') }}</p>
+        <el-table v-if="shares.length" :data="shares" size="small" class="w-full mt-2" data-test="demo-shares">
+          <el-table-column :label="t('admin.demo.camera')" min-width="150">
+            <template #default="{ row }">
+              <div class="admin-label truncate">{{ nameOf(row.deviceSerial) }}</div>
+              <div class="admin-meta font-mono truncate">{{ row.deviceSerial }}</div>
+            </template>
+          </el-table-column>
+          <el-table-column v-for="p in PERMISSIONS" :key="p" align="center" min-width="92">
+            <template #header>
+              <el-tooltip :content="t(`admin.demo.perm.${p}Desc`)" placement="top">
+                <span>{{ t(`admin.demo.perm.${p}`) }}</span>
+              </el-tooltip>
+            </template>
+            <template #default="{ row }">
+              <el-switch v-model="row[p]" size="small" :aria-label="`${t(`admin.demo.perm.${p}`)}: ${nameOf(row.deviceSerial)}`" :data-test="`share-${row.deviceSerial}-${p}`" />
+            </template>
+          </el-table-column>
+          <el-table-column width="56" align="center">
+            <template #default="{ row }">
+              <el-button link type="danger" :icon="Delete" :aria-label="t('admin.demo.remove')" :data-test="`share-${row.deviceSerial}-remove`" @click="removeShare(row.deviceSerial)" />
+            </template>
+          </el-table-column>
+        </el-table>
+        <p v-else class="admin-meta w-full mt-2">{{ t('admin.demo.noShares') }}</p>
+        <p v-if="shares.length" class="admin-meta w-full mt-1">{{ t('admin.demo.photosAlways') }}</p>
+        <el-alert
+          v-if="rawSerialNames.length"
+          class="mt-2"
+          type="warning"
+          :closable="false"
+          show-icon
+          :title="t('admin.demo.rawSerialWarning', { names: rawSerialNames.join(', ') })"
+          data-test="demo-raw-serial"
+        />
       </el-form-item>
 
       <el-form-item>
@@ -99,10 +133,10 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { ElMessage } from 'element-plus';
-import { Check } from '@element-plus/icons-vue';
+import { Check, Delete } from '@element-plus/icons-vue';
 import api from '@/services/api';
 import { adminErrorText } from './adminErrors';
 
@@ -110,7 +144,25 @@ const { t, locale } = useI18n();
 const loading = ref(false);
 const saving = ref(false);
 const cameras = ref([]);
-const form = reactive({ demoViewEnabled: false, demoViewCameras: [], demoViewLive: false, demoViewSimulated: false, demoSimEnabled: false, guestAccessEnabled: false });
+const form = reactive({ demoViewEnabled: false, demoViewLive: false, demoViewSimulated: false, demoSimEnabled: false, guestAccessEnabled: false });
+// What visitors may do with each shared camera besides its photos and counts (server: services/demoView.js)
+const PERMISSIONS = ['live', 'playback', 'location', 'device', 'realSerial'];
+const MAX_SHARES = 20;
+const shares = ref([]);
+const adding = ref('');
+const nameOf = (serial) => cameras.value.find(c => c.deviceSerial === serial)?.deviceName || serial;
+const addable = computed(() => cameras.value.filter(c => !shares.value.some(s => s.deviceSerial === c.deviceSerial)));
+// A new camera: live view and recordings as the default switch says; its place, device and serial stay
+// hidden until the admin opens them
+const addShare = (value) => {
+  const serial = String(value || '').trim();
+  adding.value = '';
+  if (!/^[A-Za-z0-9_-]{1,64}$/.test(serial) || shares.value.some(s => s.deviceSerial === serial) || shares.value.length >= MAX_SHARES) return;
+  shares.value.push({ deviceSerial: serial, live: form.demoViewLive, playback: form.demoViewLive, location: false, device: false, realSerial: false });
+};
+const removeShare = (serial) => { shares.value = shares.value.filter(s => s.deviceSerial !== serial); };
+// Live view and recordings hand the viewer's player the real serial (EZVIZ and AWS need it)
+const rawSerialNames = computed(() => shares.value.filter(s => !s.realSerial && (s.live || s.playback)).map(s => nameOf(s.deviceSerial)));
 const sim = ref(null);
 const simUntil = ref('');
 const formatDateTime = (value) => new Date(value).toLocaleString(locale.value === 'vi' ? 'vi-VN' : 'en-US');
@@ -121,7 +173,8 @@ const since = ref('');
 
 const apply = (settings) => {
   form.demoViewEnabled = !!settings.demoViewEnabled;
-  form.demoViewCameras = [...(settings.demoViewCameras || [])];
+  shares.value = (settings.demoViewShares || (settings.demoViewCameras || []).map(deviceSerial => ({ deviceSerial, live: !!settings.demoViewLive, playback: !!settings.demoViewLive, location: true, device: true, realSerial: true })))
+    .map(s => ({ deviceSerial: s.deviceSerial, ...Object.fromEntries(PERMISSIONS.map(p => [p, !!s[p]])) }));
   form.demoViewLive = !!settings.demoViewLive;
   form.demoViewSimulated = !!settings.demoViewSimulated;
   form.demoSimEnabled = !!settings.demoSimEnabled;
@@ -155,7 +208,7 @@ const save = async () => {
   try {
     const res = await api.updateAdminSettings({
       ...form,
-      demoViewCameras: form.demoViewCameras.map(s => String(s).trim()).filter(Boolean),
+      demoViewShares: shares.value.map(s => ({ deviceSerial: s.deviceSerial, ...Object.fromEntries(PERMISSIONS.map(p => [p, !!s[p]])) })),
       demoViewAudience: audience.value,
       demoViewSince: audience.value === 'since' ? since.value : null,
       demoSimUntil: form.demoSimEnabled && simUntil.value ? `${simUntil.value}T23:59:59+07:00` : null

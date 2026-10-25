@@ -242,7 +242,7 @@
           {{ t(`cameras.platform.${platform}`) }}
         </el-tag>
         <!-- CamOS: uplink with its signal bars, and the battery (power mode in its tooltip), as on a phone -->
-        <DeviceSignal v-if="isCamos && camera.device" :device="camera.device" :online="camera.status === 1" class="shrink-0" />
+        <DeviceSignal v-if="isCamos && camera.device && demoAllows(camera, 'device')" :device="camera.device" :online="camera.status === 1" class="shrink-0" />
         <!-- A simulated demo camera: synthetic photos, not field data -->
         <el-tooltip v-if="camera.simulated" :content="t('simulated.cameraHint')" placement="top">
           <el-tag type="warning" effect="dark" size="small" class="shrink-0" data-test="simulated-badge">{{ t('simulated.tag') }}</el-tag>
@@ -338,6 +338,7 @@ import {
   Clock
 } from '@element-plus/icons-vue';
 import DeviceSignal from './DeviceSignal.vue';
+import { demoAllows } from '@/utils/demoCamera';
 
 const props = defineProps({
   camera: {

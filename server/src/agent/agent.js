@@ -7,6 +7,7 @@ const { allFunctionDeclarations, allExecutors } = require('./tools');
 const { getAgentInstruction } = require('./prompts');
 const { checkRateLimit, beforeTool, afterTool } = require('./shared_libraries/callbacks');
 const { translate, normalizeLanguage } = require('../utils/i18n');
+const demoMasks = require('../middlewares/demoMask');
 
 // One model call, and a whole question with its tool calls
 const MODEL_TIMEOUT_MS = 30000;
@@ -99,6 +100,9 @@ async function chatWithAgent({
     userId = null,
     // req.user ({ id, role }); tools apply the same camera access rules as the API
     user = null,
+    // What a demo visitor may not see (req.demoMask, middlewares/demoMask.js): the model works with
+    // the cameras' aliases and never reads a withheld field, so it cannot repeat them
+    demoMask = null,
     onEvent = () => {}
 }) {
     if (!userId) {
@@ -129,7 +133,7 @@ async function chatWithAgent({
     const tabStr = tab ? `Current View: "${tab}"` : 'View: dashboard';
     const cameraStr = camera && camera !== 'all' ? `Selected Camera: "${camera}"` : 'Camera: all';
     const photoStr = typeof uiContext.snapshotId === 'string' && /^[a-f0-9]{24}$/.test(uiContext.snapshotId) ? `, Selected Photo: "${uiContext.snapshotId}"` : '';
-    const userPrompt = `[UI Context | ${tabStr}, ${cameraStr}${photoStr}]\n${message}`;
+    const userPrompt = demoMasks.aliasText(`[UI Context | ${tabStr}, ${cameraStr}${photoStr}]\n${message}`, demoMask);
 
     const historyLengthBefore = sessionHistory.length;
     sessionHistory.push({ role: 'user', parts: [{ text: userPrompt }] });
@@ -146,10 +150,10 @@ async function chatWithAgent({
     const toolExecutions = [];
     // UI actions and result cards raised by tools during this request only
     const actions = [];
-    const addAction = (type, payload) => actions.push({ type, payload });
+    const addAction = (type, payload) => actions.push({ type, payload: demoMasks.maskData(payload, demoMask) });
     const cards = [];
     const addCard = (card) => {
-        if (cards.length < MAX_CARDS) cards.push(card);
+        if (cards.length < MAX_CARDS) cards.push(demoMasks.maskData(card, demoMask));
     };
     const startedAt = Date.now();
 
@@ -213,7 +217,8 @@ async function chatWithAgent({
                 try {
                     const executor = allExecutors[name];
                     if (executor) {
-                        result = await executor({ ...(args || {}), userId, user: user || { id: userId }, addAction, addCard });
+                        const realArgs = demoMask ? demoMasks.unaliasData(args || {}, demoMask.byAlias) : (args || {});
+                        result = demoMasks.maskData(await executor({ ...realArgs, userId, user: user || { id: userId }, addAction, addCard }), demoMask, realArgs.deviceSerial);
                         afterTool(name, result);
                     } else {
                         result = { error: `Tool "${name}" does not exist.` };

@@ -189,7 +189,7 @@ const searchRecords = async () => {
   try {
     const [response, dayPhotos] = await Promise.all([
       // A read-only demo camera whose recordings are not open to visitors: its photos only
-      props.camera.liveOpen === false
+      props.camera.playbackOpen === false
         ? Promise.resolve({ data: { data: [] } })
         : api.getRecords(props.camera.deviceSerial, `${day} 00:00:00`, `${day} 23:59:59`),
       loadPhotos(),

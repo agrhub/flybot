@@ -75,8 +75,10 @@ async function syncPolicy(doc, serials) {
 async function playerTokenFor(user, appToken) {
     if (!enabled() || isAdmin(user)) return appToken;
     const doc = await ensureAccount(user);
-    // Demo cameras (services/demoView.js) only while their live view is open to visitors
-    await syncPolicy(doc, await getViewableSerials(user?.demoLive ? user : { ...user, demoSerials: [] }));
+    // Demo cameras (services/demoView.js) only those whose live view or recorded video is open to visitors
+    const shares = user?.demoShares || {};
+    const demoSerials = (user?.demoSerials || []).filter(serial => shares[serial] ? shares[serial].live || shares[serial].playback : !!user?.demoLive);
+    await syncPolicy(doc, await getViewableSerials({ ...user, demoSerials }));
     const key = String(doc._id);
     const cached = tokenCache.get(key);
     if (cached && Date.now() < cached.expireTime - EXPIRY_MARGIN_MS) return cached.accessToken;

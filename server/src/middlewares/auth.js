@@ -88,10 +88,15 @@ async function authenticate(req, res, next) {
         // The current workspace (X-Workspace-Id, else the saved one, else the personal one)
         await require('../services/workspaceService').attach(req, user);
         // Read-only demo cameras this account may view (services/demoView.js)
-        const demo = await require('../services/demoView').demoAccessOf(user);
+        const demoView = require('../services/demoView');
+        const demo = await demoView.demoAccessOf(user);
         req.user.demoSerials = demo.serials;
+        req.user.demoShares = demo.shares;
         req.user.demoOrgId = demo.orgId;
         req.user.demoLive = demo.live;
+        // What this visitor may not see of them (hidden serials, location, device details) leaves every answer
+        req.demoMask = demo.serials.length ? await demoView.maskFor(user, demo) : null;
+        require('./demoMask').maskResponse(req, res, req.demoMask);
         req.sessionId = sessionId;
         req.authToken = token;
         return next();

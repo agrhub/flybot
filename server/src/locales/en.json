@@ -541,6 +541,7 @@
     "orgsOffB2c": "Organizations are off in this mode (APP_MODE=b2c).",
     "allowPersonalBool": "allowMemberPersonalWorkspaces must be true or false.",
     "demo_live_closed": "Live view of this demo camera is not open to visitors.",
+    "demo_playback_closed": "Recorded video of this demo camera is not open to visitors.",
     "simulated_no_live": "A simulated camera has no live view.",
     "simulated_no_capture": "A simulated camera takes no photos on request.",
     "simulated_decided": "Simulated proposals are decided by the simulation.",

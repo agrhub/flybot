@@ -13,16 +13,18 @@
           </el-tag>
         </div>
         <div class="flex flex-wrap items-center gap-2">
-          <el-select v-model="level" size="small" class="!w-32" :aria-label="t('cameraLog.level')">
-            <el-option v-for="l in LEVELS" :key="l" :value="l" :label="t(`cameraLog.levels.${l}`)" />
-          </el-select>
-          <el-select v-model="minutes" size="small" class="!w-28" :aria-label="t('cameraLog.duration')">
-            <el-option v-for="m in [5, 15, 30, 60]" :key="m" :value="m" :label="t('cameraLog.minutes', { n: m })" />
-          </el-select>
-          <el-button type="primary" size="small" :icon="VideoPlay" :loading="starting" data-test="log-start" @click="start">
-            {{ state.on || state.requested ? t('cameraLog.extend') : t('cameraLog.start') }}
-          </el-button>
-          <el-button v-if="state.on || state.requested" size="small" :icon="VideoPause" :loading="stopping" @click="stop">{{ t('cameraLog.stop') }}</el-button>
+          <template v-if="!readOnly">
+            <el-select v-model="level" size="small" class="!w-32" :aria-label="t('cameraLog.level')">
+              <el-option v-for="l in LEVELS" :key="l" :value="l" :label="t(`cameraLog.levels.${l}`)" />
+            </el-select>
+            <el-select v-model="minutes" size="small" class="!w-28" :aria-label="t('cameraLog.duration')">
+              <el-option v-for="m in [5, 15, 30, 60]" :key="m" :value="m" :label="t('cameraLog.minutes', { n: m })" />
+            </el-select>
+            <el-button type="primary" size="small" :icon="VideoPlay" :loading="starting" data-test="log-start" @click="start">
+              {{ state.on || state.requested ? t('cameraLog.extend') : t('cameraLog.start') }}
+            </el-button>
+            <el-button v-if="state.on || state.requested" size="small" :icon="VideoPause" :loading="stopping" @click="stop">{{ t('cameraLog.stop') }}</el-button>
+          </template>
           <el-button size="small" :icon="Download" :disabled="!lines.length" @click="download">{{ t('cameraLog.download') }}</el-button>
         </div>
       </div>
@@ -91,7 +93,9 @@ import { mergeLogLines } from '@/utils/cameraLog';
  * download, and how the previous boot ended when it crashed. Secrets are removed on the camera.
  */
 const props = defineProps({
-  camera: { type: Object, required: true }
+  camera: { type: Object, required: true },
+  // A visitor's demo camera: the lines (new ones every 15 s), never start, stop or watch
+  readOnly: { type: Boolean, default: false }
 });
 const { t, te, locale } = useI18n();
 const { onStreamEvent } = useNotifications();
@@ -200,8 +204,10 @@ function follow() {
     if (data.end) state.on = false;
     if (data.crash) state.lastCrash = { at: data.crash.at, reason: data.crash.reason, fw: data.crash.fw };
   });
-  heartbeat();
-  watchTimer = setInterval(() => !document.hidden && heartbeat(), 60000);
+  if (!props.readOnly) {
+    heartbeat();
+    watchTimer = setInterval(() => !document.hidden && heartbeat(), 60000);
+  }
   pollTimer = setInterval(() => !document.hidden && (state.on || state.requested) && poll(), 15000);
 }
 function stopFollowing() {
@@ -270,7 +276,7 @@ watch(() => serial(), () => {
 }, { immediate: true });
 onBeforeUnmount(() => {
   stopFollowing();
-  if (serial()) api.watchCameraLog(serial(), false).catch(() => {});
+  if (serial() && !props.readOnly) api.watchCameraLog(serial(), false).catch(() => {});
 });
 </script>
 

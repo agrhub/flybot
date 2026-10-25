@@ -5,7 +5,8 @@ const { isAdmin, roleOf } = require('../constants/roles');
  * Camera access rules (one place for every controller, job and agent tool):
  *  - view:   the owner, people it is shared with, admins, and (signed-in requests only) the
  *            read-only demo cameras of services/demoView.js (req.user.demoSerials, and every camera
- *            of the simulated demo organization, req.user.demoOrgId)
+ *            of the simulated demo organization, req.user.demoOrgId), with what each one opens to
+ *            them (req.user.demoShares, demoPermsOf)
  *  - manage: admins, and managers who own it or are owner/manager of its organization
  *            (role "user" never manages; demo access never manages)
  * `user` is req.user ({ id, role }) or a User document.
@@ -17,6 +18,7 @@ const { isAdmin, roleOf } = require('../constants/roles');
 const idOf = (user) => String(user?.id ?? user?._id ?? '');
 const demoSerialsOf = (user) => (Array.isArray(user?.demoSerials) ? user.demoSerials : []);
 const demoOrgOf = (user) => (user?.demoOrgId ? String(user.demoOrgId) : null);
+const demoSharesOf = (user) => (user?.demoShares && typeof user.demoShares === 'object' ? user.demoShares : {});
 // middlewares/auth.js always sets demoSerials on req.user; a User document has none
 const isRequestUser = (user) => Array.isArray(user?.demoSerials);
 const realOnly = (filter) => ({ $and: [filter, { simulated: { $ne: true } }] });
@@ -43,7 +45,7 @@ function viewFilter(user) {
 
 /**
  * Does this person see the camera only through demo access (not its owner, not shared with
- * them, not an admin)? Such a viewer never manages it and opens live view only with demoLive.
+ * them, not an admin)? Such a viewer never manages it and opens only what demoPermsOf allows.
  */
 function isDemoOnly(user, camera) {
     if (!camera || isAdmin(user)) return false;
@@ -56,11 +58,36 @@ function isDemoOnly(user, camera) {
     return !(camera.sharedWith || []).some(sh => sh.userId && String(sh.userId?._id ?? sh.userId) === id);
 }
 
+// A simulated demo camera (made-up data, no device): everything but live view and recorded video
+const SIMULATED_PERMS = Object.freeze({ live: false, playback: false, location: true, device: true, realSerial: true });
+const NO_PERMS = Object.freeze({ live: false, playback: false, location: false, device: false, realSerial: false });
+
 /**
- * May this person open live view / SD playback of the camera? Never for a simulated camera (there is
- * no device); demo viewers only when demoLive is on.
+ * What a person who sees the camera only through demo access may do with it (services/demoView.js
+ * PERMISSIONS), or null for everyone else (owner, shared with them, admins): they have it all.
  */
-const canWatchLive = (user, camera) => !camera?.simulated && !camera?.adminDisabled?.at && (!isDemoOnly(user, camera) || !!user?.demoLive);
+function demoPermsOf(user, camera) {
+    if (!isDemoOnly(user, camera)) return null;
+    const shared = demoSharesOf(user)[camera.deviceSerial];
+    if (shared) return shared;
+    // Through the simulated organization only
+    if (camera.simulated) return SIMULATED_PERMS;
+    // An older request user with the serial list only
+    return { ...NO_PERMS, live: !!user?.demoLive, playback: !!user?.demoLive, location: true, device: true, realSerial: true };
+}
+
+/** May this person see the camera's position, address and GPS fix? */
+const canSeeLocation = (user, camera) => demoPermsOf(user, camera)?.location !== false;
+/** ...its device details (CamOS status, battery, signal, network, firmware, log)? */
+const canSeeDevice = (user, camera) => demoPermsOf(user, camera)?.device !== false;
+
+/**
+ * May this person open live view of the camera? Never for a simulated camera (there is no device)
+ * or one an admin paused; demo viewers only when the admin opened it for that camera.
+ */
+const canWatchLive = (user, camera) => !camera?.simulated && !camera?.adminDisabled?.at && demoPermsOf(user, camera)?.live !== false;
+/** ...its recorded video (EZVIZ SD card and cloud records)? Same rule, with the playback permission. */
+const canWatchPlayback = (user, camera) => !camera?.simulated && !camera?.adminDisabled?.at && demoPermsOf(user, camera)?.playback !== false;
 
 function viewableCameras(user, extra = {}) {
     return Camera.find({ ...extra, ...viewFilter(user) });
@@ -120,7 +147,11 @@ async function canManageSerial(user, deviceSerial) {
 module.exports = {
     viewFilter,
     isDemoOnly,
+    demoPermsOf,
+    canSeeLocation,
+    canSeeDevice,
     canWatchLive,
+    canWatchPlayback,
     viewableCameras,
     getViewableSerials,
     canViewSerial,

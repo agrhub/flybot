@@ -631,6 +631,12 @@ const playPopupStream = async (cam) => {
     stopPopupPlayer();
   }
 
+  // A read-only demo camera whose live view the administrator has not opened to visitors
+  if (cam.liveOpen === false) {
+    ElNotification({ title: t('cameras.demo.liveClosed'), type: 'info' });
+    return;
+  }
+
   if (cam.status !== 1) {
     ElNotification({
       title: t('cameras.deviceOffline'),

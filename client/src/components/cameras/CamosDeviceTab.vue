@@ -13,7 +13,7 @@
       <el-descriptions-item :label="t('camosDevice.location')">{{ locationText }}</el-descriptions-item>
       <el-descriptions-item :label="t('camosDevice.lastSeen')">{{ info.lastSeenAt ? new Date(info.lastSeenAt).toLocaleString() : dash }}</el-descriptions-item>
     </el-descriptions>
-    <div v-if="section === 'info'" class="flex flex-wrap gap-2">
+    <div v-if="section === 'info' && !readOnly" class="flex flex-wrap gap-2">
       <el-button size="small" :icon="Refresh" :loading="busy === 'refresh'" data-test="device-refresh" @click="run('refresh')">{{ t('camosDevice.refresh') }}</el-button>
       <el-button size="small" :icon="Location" :loading="busy === 'locate'" data-test="device-locate" @click="run('locate')">{{ t('camosDevice.locate') }}</el-button>
       <el-button size="small" type="warning" plain :icon="SwitchButton" :loading="busy === 'restart'" data-test="device-restart" @click="restart">{{ t('camosDevice.restart') }}</el-button>
@@ -58,6 +58,8 @@ const props = defineProps({
   info: { type: Object, default: () => ({}) },
   // 'info' or 'network'
   section: { type: String, default: 'info' },
+  // A visitor's demo camera: the information without the actions
+  readOnly: { type: Boolean, default: false },
 });
 const emit = defineEmits(['done']);
 const { t } = useI18n();

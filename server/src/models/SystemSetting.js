@@ -14,6 +14,18 @@ const systemSettingSchema = new mongoose.Schema({
     // Read-only demo cameras for visitors (services/demoView.js)
     demoViewEnabled: { type: Boolean, default: undefined },
     demoViewCameras: { type: [String], default: undefined },
+    // Each shared camera and what visitors may do with it (services/demoView.js PERMISSIONS)
+    demoViewShares: {
+        type: [new mongoose.Schema({
+            deviceSerial: { type: String, required: true },
+            live: { type: Boolean, default: false },
+            playback: { type: Boolean, default: false },
+            location: { type: Boolean, default: false },
+            device: { type: Boolean, default: false },
+            realSerial: { type: Boolean, default: false }
+        }, { _id: false })],
+        default: undefined
+    },
     demoViewSince: { type: Date, default: undefined },
     demoViewLive: { type: Boolean, default: undefined },
     demoViewSimulated: { type: Boolean, default: undefined },

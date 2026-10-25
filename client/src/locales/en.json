@@ -1856,17 +1856,17 @@
     "demo": {
       "title": "Demo access for visitors",
       "desc": "Let visitors (for example competition judges) look at a few cameras right after they sign up, without anyone sharing them by hand. They see photos, counts, charts, the agent's traces and proposals, and can ask the chatbot about them.",
-      "cameras": "Demo cameras",
-      "camerasPlaceholder": "Choose cameras or type a serial",
-      "camerasDesc": "Up to 20. Their owner keeps full control; visitors are not told who owns them.",
+      "cameras": "Shared cameras",
+      "camerasPlaceholder": "Add a camera: choose one or type a serial",
+      "camerasDesc": "Up to 20. Their owner keeps full control; visitors are not told who owns them. Set for each camera what visitors may see.",
       "audience": "Who sees them",
       "audienceAll": "Every account",
       "audienceSince": "Accounts created from a date",
       "sincePlaceholder": "Pick a date",
       "sinceRequired": "Pick the date accounts must be created from.",
       "audienceDesc": "Administrators always see every camera. Visitors get no alerts, emails or reports about demo cameras.",
-      "live": "Open live view",
-      "liveDesc": "Visitors may also watch these cameras live and play back their recordings. Off: they see photos only.",
+      "live": "Live view for newly added cameras",
+      "liveDesc": "The first value of Live view and Recorded video when you add a camera. Each camera's own switches decide.",
       "readOnly": "Visitors never change anything on a demo camera: no settings, captures, deleting, sharing, maintenance, treatments or approvals. Turn this off when the demo ends; access stops within a minute.",
       "simTitle": "Simulated demo farm",
       "simStatus": "{farms} farms, {cameras} traps, {photos} photos; latest photo {time}.",
@@ -1878,7 +1878,24 @@
       "simUntil": "Until",
       "guest": "Guest access",
       "guestDesc": "Shows a Guest access button on the sign-in page. It opens one shared, read-only account for 2 hours that sees the demo cameras and, if shown, the simulated farm, so customer accounts need not see the demo.",
-      "audienceGuest": "Only the guest account"
+      "audienceGuest": "Only the guest account",
+      "camera": "Camera",
+      "remove": "Stop sharing this camera",
+      "noShares": "No camera is shared yet.",
+      "photosAlways": "Photos, counts and analysis of a shared camera are always shown. A hidden serial shows as a DEMO- name to visitors, in the app and in every answer of the server.",
+      "rawSerialWarning": "{names}: live view and recorded video give the viewer's video player the real serial (EZVIZ and AWS need it), even though the page shows it hidden.",
+      "perm": {
+        "live": "Live view",
+        "liveDesc": "Watch the camera live (EZVIZ, or KVS WebRTC for a CamOS camera, which is woken at its next check-in when it sleeps).",
+        "playback": "Recorded video",
+        "playbackDesc": "Play back the recordings on the camera's SD card or in the cloud.",
+        "location": "Location",
+        "locationDesc": "Its place on the map, its address and the GPS or 4G cell position. Off: the camera is not on the map.",
+        "device": "Device details",
+        "deviceDesc": "The status bar (battery, signal, network), the firmware version and the camera's log, read-only.",
+        "realSerial": "Real serial",
+        "realSerialDesc": "Show the camera's real serial number. Off: visitors see a DEMO- name instead, in links too."
+      }
     },
     "fleet": {
       "title": "Camera fleet",
@@ -4220,5 +4237,10 @@
       "brownout": "a power dip",
       "software": "a software restart"
     }
+  },
+  "demoDevice": {
+    "open": "Device details",
+    "title": "Device details: {name}",
+    "readOnly": "Shared for the demo: you can read the camera's details, firmware and log, not change them."
   }
 }

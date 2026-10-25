@@ -171,7 +171,7 @@ All settings are environment variables, read from `.env` at the repository root 
 | `DEMO_VIEW_ENABLED` | `false` | `true` lets visitors view `DEMO_VIEW_CAMERAS` read-only (first value of Admin → System → Demo access) |
 | `DEMO_VIEW_CAMERAS` | | Comma-separated serials of the read-only demo cameras |
 | `DEMO_VIEW_SINCE` | | Only accounts created on or after this date (`YYYY-MM-DD`) see them; empty: every account |
-| `DEMO_VIEW_LIVE` | `false` | `true` also opens live view and SD playback of the demo cameras |
+| `DEMO_VIEW_LIVE` | `false` | `true` also opens live view and SD playback of the demo cameras (until Admin → System → Demo access sets them per camera) |
 | `DEMO_VIEW_AUDIENCE` | `guest` | Who sees the demo cameras besides the guest account: `guest` (nobody), `all`, or `since` (accounts from `DEMO_VIEW_SINCE`) |
 | `GUEST_ACCESS` | `false` | `true` shows a Guest access button on the sign-in page: a shared, read-only demo account for 2 hours |
 | `DEMO_VIEW_SIMULATED` | `false` | `true` also shows the simulated demo farm (`server/scripts/demo_sim.js`, DEPLOY.md) to those visitors |

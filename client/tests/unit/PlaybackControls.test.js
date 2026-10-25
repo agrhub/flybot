@@ -47,3 +47,15 @@ describe('playback timeline from the keyboard', () => {
     // Mounting Element Plus can take seconds on a busy machine
   }, 20000);
 });
+
+describe('a demo camera whose recordings are not open to visitors', () => {
+  it('lists no clips and never asks for them', async () => {
+    const { default: api } = await import('@/services/api');
+    api.getRecords.mockClear();
+    i18n.global.locale.value = 'en';
+    const wrapper = mount(PlaybackControls, { props: { camera: { deviceSerial: 'DEMO-0000000001', access: 'demo', liveOpen: true, playbackOpen: false } }, global: { plugins: [i18n, ElementPlus] } });
+    await flushPromises();
+    expect(api.getRecords).not.toHaveBeenCalled();
+    wrapper.unmount();
+  }, 20000);
+});

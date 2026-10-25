@@ -1167,7 +1167,7 @@ async function chatWithAssistant(req, res) {
     try {
         const input = readChatRequest(req.body);
         if (input.error) return res.status(400).json({ success: false, message: input.error });
-        const result = await agent.chatWithAgent({ ...input, sessionId: chatIdOf(req, input.sessionId), userId: req.user.id, user: req.user });
+        const result = await agent.chatWithAgent({ ...input, sessionId: chatIdOf(req, input.sessionId), userId: req.user.id, user: req.user, demoMask: req.demoMask });
         res.json({ success: true, ...chatPayload(result) });
     } catch (err) {
         console.error("❌ AI Agent chat error:", err);
@@ -1197,7 +1197,7 @@ async function chatWithAssistantStream(req, res) {
     // Proxies close quiet connections: a comment line now and then while tools run
     const heartbeat = setInterval(() => { if (open) res.write(': keep-alive\n\n'); }, 15000);
     try {
-        const result = await agent.chatWithAgent({ ...input, sessionId: chatIdOf(req, input.sessionId), userId: req.user.id, user: req.user, onEvent: send });
+        const result = await agent.chatWithAgent({ ...input, sessionId: chatIdOf(req, input.sessionId), userId: req.user.id, user: req.user, demoMask: req.demoMask, onEvent: send });
         send('done', chatPayload(result));
     } catch (err) {
         console.error("❌ AI Agent chat error:", err.message);
