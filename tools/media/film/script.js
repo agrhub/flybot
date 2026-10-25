@@ -4,19 +4,32 @@
 // (film.js lengthens it when a recorded voice is longer than planned). Numbers on screen come from
 // flybot-aws docs/REPORT.md and the files it names; simulated material is labelled on screen.
 export const SCENES = [
-    { id: 'intro', dur: 9, lines: [
-        { at: 0.8, en: 'Farms count fruit flies on traps. FlyBot photographs the traps and counts the flies, with OpenCV 5 on AWS.',
-          vi: 'Nhà vườn đếm ruồi vàng trên bẫy. FlyBot chụp ảnh bẫy và đếm ruồi bằng OpenCV 5 trên AWS.' }] },
-    { id: 'problem', dur: 12, lines: [
-        { at: 0.3, en: "But a count alone can't tell a bad photo from a catch. Glare, blur or a moved camera give wrong numbers, and the camera never reacts.",
-          vi: 'Nhưng chỉ đếm thì không phân biệt được ảnh hỏng với ruồi thật. Lóa, mờ hay camera lệch đều cho số sai, và camera không phản ứng.' }] },
-    { id: 'idea', dur: 10, lines: [
-        { at: 0.3, en: 'FlyBot Sentinel checks every photo, decides what to do, and proposes it. Nothing reaches a camera until a person confirms.',
-          vi: 'FlyBot Sentinel kiểm tra từng ảnh, quyết định cần làm gì và đề xuất. Không lệnh nào tới camera khi chưa có người xác nhận.' }] },
+    // Why it matters: what fruit flies cost (sources on screen), then the farmer's problem, then FlyBot
+    { id: 'harm', dur: 19, lines: [
+        { at: 0.5, en: 'Fruit flies are the most damaging pest of fruit in the world. They lay their eggs inside ripening fruit, and the maggots ruin it from within.',
+          vi: 'Ruồi đục quả là loài gây hại cây ăn quả nặng nhất thế giới. Chúng đẻ trứng vào trái đang chín, và giòi phá hỏng trái từ bên trong.' },
+        { at: 9.6, en: 'In Africa alone they cost two billion dollars a year. Mango orchards lose ten to forty percent of the harvest, and infested fruit is turned away at export.',
+          vi: 'Riêng ở châu Phi, thiệt hại ước 2 tỷ USD mỗi năm. Vườn xoài mất 10 đến 40% sản lượng, và trái nhiễm ruồi bị từ chối khi xuất khẩu.' }] },
+    { id: 'farmers', dur: 11, lines: [
+        { at: 0.3, en: 'To protect the crop, farmers walk to every trap and count the flies by eye. It is slow, the numbers come late, and they spray too late or too much.',
+          vi: 'Để giữ mùa màng, nhà vườn đi tới từng bẫy và đếm ruồi bằng mắt. Việc này chậm, số liệu đến trễ, và họ phun thuốc quá muộn hoặc quá nhiều.' }] },
+    { id: 'intro', dur: 10, lines: [
+        { at: 0.6, en: 'FlyBot does that work for them: a camera on each trap takes the photos, and OpenCV 5 on AWS counts the flies and warns the farmer in time.',
+          vi: 'FlyBot làm việc đó thay họ: camera trên mỗi bẫy chụp ảnh, OpenCV 5 trên AWS đếm ruồi và báo cho nhà vườn kịp lúc.' }] },
+    // How it works: one photo from the trap to the report (replaces the AWS diagram)
+    { id: 'pipeline', dur: 29.4, lines: [
+        { at: 0.3, en: "Here is how it works. A fly comes to the lure, and the trap's camera takes a photo.",
+          vi: 'FlyBot hoạt động thế này. Ruồi bị mồi dụ vào bẫy, và camera trong bẫy chụp ảnh.' },
+        { at: 5.6, en: 'Over 4G it reaches FlyBot on EC2, which keeps it in Amazon S3 and MongoDB.',
+          vi: 'Qua mạng 4G, ảnh tới FlyBot trên EC2 và được lưu vào Amazon S3 và MongoDB.' },
+        { at: 13.0, en: 'AWS Lambda runs OpenCV 5: YOLO26n counts the flies and checks the photo. Then the Sentinel agent proposes what to do.',
+          vi: 'AWS Lambda chạy OpenCV 5: YOLO26n đếm ruồi và kiểm tra ảnh. Sau đó tác tử Sentinel đề xuất việc cần làm.' },
+        { at: 23.5, en: "The count goes into the farm's reports, and any action waits for a person to confirm it.",
+          vi: 'Số liệu vào báo cáo của vườn, và mọi hành động đều chờ con người xác nhận.' }] },
     { id: 'bom', dur: 12, lines: [
         { at: 0.3, en: 'This is our open trap camera: an ESP32-S3 board with a five-megapixel camera, a 4G modem, GPS, a flat lithium-polymer cell and a small solar panel.',
           vi: 'Đây là camera bẫy mã nguồn mở: board ESP32-S3 với camera 5 megapixel, modem 4G, GPS, pin lithium-polymer dạng dẹt và tấm pin mặt trời nhỏ.' }] },
-    { id: 'wiring', dur: 25, lines: [
+    { id: 'wiring', dur: 22, lines: [
         { at: 0.3, en: 'First the cell and its charger. A boost converter makes five volts for the board.',
           vi: 'Đầu tiên là pin và mạch sạc. Mạch tăng áp tạo 5 V cho board.' },
         { at: 6.6, en: 'The 4G modem runs from the cell through a switch, and talks to the board on two pins.',
@@ -25,19 +38,19 @@ export const SCENES = [
           vi: 'GPS cũng lấy điện từ pin và nói chuyện với board qua hai dây.' },
         { at: 18.0, en: 'Two resistors let the camera measure its own battery.',
           vi: 'Hai điện trở giúp camera tự đo pin của mình.' }] },
-    { id: 'board', dur: 9, lines: [
+    { id: 'board', dur: 7, lines: [
         { at: 0.3, en: 'This is the real board. It goes into the lid of a solar trap housing.',
           vi: 'Đây là board thật. Nó được lắp vào nắp của vỏ bẫy năng lượng mặt trời.' }] },
-    { id: 'field', dur: 30, footage: true, lines: [
+    { id: 'field', dur: 22, footage: true, lines: [
         { at: 0.8, en: 'In the orchard, the trap hangs at fruit height. The camera photographs the inside of the trap on a schedule and sends each photo to AWS over 4G.',
           vi: 'Ngoài vườn, bẫy được treo ngang tầm trái. Camera chụp bên trong bẫy theo lịch và gửi từng ảnh lên AWS qua 4G.' }] },
-    { id: 'guest', dur: 12, rec: true, lines: [
+    { id: 'guest', dur: 10, rec: true, lines: [
         { at: 0.3, en: 'Anyone can try FlyBot: one click on Guest access opens a read-only demo for two hours, with no sign-up.',
           vi: 'Ai cũng dùng thử được FlyBot: một cú nhấp vào Truy cập khách mở bản demo chỉ xem trong hai giờ, không cần đăng ký.' }] },
-    { id: 'dashboard', dur: 15, rec: true, lines: [
+    { id: 'dashboard', dur: 12.5, rec: true, lines: [
         { at: 0.3, en: 'The dashboard shows two real orchard traps, and a clearly labelled simulated network of 114 traps on 47 farms, to show FlyBot at scale.',
           vi: 'Bảng điều khiển có hai bẫy thật ngoài vườn, và một mạng mô phỏng được ghi rõ gồm 114 bẫy trên 47 vườn, để thấy FlyBot ở quy mô lớn.' }] },
-    { id: 'cameras', dur: 11, rec: true, lines: [
+    { id: 'cameras', dur: 9.5, rec: true, lines: [
         { at: 0.3, en: 'The camera list searches and filters real and simulated traps, sticky cards or lures, in two to five columns.',
           vi: 'Danh sách camera tìm kiếm và lọc bẫy thật hay mô phỏng, bẫy dính hay bẫy dẫn dụ, hiển thị từ hai đến năm cột.' }] },
     { id: 'sticky', dur: 13, rec: true, lines: [
@@ -51,10 +64,10 @@ export const SCENES = [
     { id: 'approve', dur: 12, rec: true, lines: [
         { at: 0.3, en: 'Proposals wait for a person. Only after the owner confirms, in the chat, on Telegram or here, does a camera act, and its new photo starts the loop again.',
           vi: 'Đề xuất chờ con người. Chỉ khi chủ vườn xác nhận, trong khung chat, trên Telegram hay tại đây, camera mới hành động, và ảnh mới lại bắt đầu vòng lặp.' }] },
-    { id: 'assistant', dur: 12, rec: true, lines: [
+    { id: 'assistant', dur: 10, rec: true, lines: [
         { at: 0.3, en: 'Growers can ask the assistant in plain words. It answers from the counts FlyBot measured.',
           vi: 'Nhà vườn hỏi trợ lý bằng lời thường. Trợ lý trả lời từ số liệu FlyBot đã đo.' }] },
-    { id: 'esp32', dur: 22, rec: true, owner: true, lines: [
+    { id: 'esp32', dur: 20, rec: true, owner: true, lines: [
         { at: 0.3, en: 'Our ESP32 camera streams live through Kinesis Video Streams.',
           vi: 'Camera ESP32 của chúng tôi phát trực tiếp qua Kinesis Video Streams.' },
         { at: 6.5, en: 'It sends its log to the console, and the camera fleet updates over the air through AWS IoT Core, on alpha, beta and stable channels.',
@@ -62,9 +75,6 @@ export const SCENES = [
     { id: 'mapreports', dur: 9, rec: true, lines: [
         { at: 0.3, en: 'Traps sit on a field map with a heat map, and reports gather the numbers for each farm.',
           vi: 'Bẫy nằm trên bản đồ vườn có bản đồ nhiệt, và báo cáo tổng hợp số liệu cho từng vườn.' }] },
-    { id: 'architecture', dur: 14, lines: [
-        { at: 0.3, en: 'Two camera families, one vision Lambda, one agent, and a person on every action. It all runs in one SAM stack in Sydney, deployed with one command.',
-          vi: 'Hai dòng camera, một Lambda thị giác, một tác tử, và con người duyệt mọi hành động. Tất cả chạy trong một stack SAM ở Sydney, triển khai bằng một lệnh.' }] },
     { id: 'opencv', dur: 15, lines: [
         { at: 0.3, en: "YOLO26n runs on OpenCV 5's new DNN engine, with a test mAP at fifty of 0.953. On synthetic sticky cards, tiling the frame raised recall from 0.07 to 0.82.",
           vi: 'YOLO26n chạy trên engine DNN mới của OpenCV 5, mAP@50 trên tập kiểm tra là 0,953. Trên bẫy dính tổng hợp, chia ô khung hình nâng độ nhạy từ 0,07 lên 0,82.' }] },

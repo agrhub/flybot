@@ -2,7 +2,7 @@
 // window.renderAt(t) draws second t exactly (and resolves once every picture is decoded), so render-film.mjs can take
 // frame after frame. ?subs=en|vi|none picks the subtitles; ?t=<s> shows one moment; without ?render it plays.
 // Pictures come from media/ (not versioned): rec/ (record-app.mjs), photos/ (the owner's component photos),
-// assets/ (flybot-aws diagrams and samples, the logo), footage/ (the owner's orchard clip), voice/ (voice.mjs).
+// assets/ (the logo), footage/ (the owner's orchard clip), voice/ (voice.mjs).
 import { SCENES, MAX_SECONDS } from './script.js';
 import { EDIT } from './edit.js';
 
@@ -181,6 +181,46 @@ function recView(sceneEl, id) {
 const FLY = '<svg viewBox="0 0 40 40"><ellipse cx="20" cy="22" rx="6" ry="9" fill="#3b2a12"/><circle cx="20" cy="11" r="4.5" fill="#5a3a12"/><circle cx="18" cy="10" r="1.6" fill="#c0392b"/><circle cx="22" cy="10" r="1.6" fill="#c0392b"/><ellipse cx="11" cy="18" rx="9" ry="4" fill="rgba(220,240,255,0.55)" transform="rotate(-25 11 18)"/><ellipse cx="29" cy="18" rx="9" ry="4" fill="rgba(220,240,255,0.55)" transform="rotate(25 29 18)"/></svg>';
 
 const VIEWS = {
+    harm(s) {
+        const k = place(el('div', 'abs kicker', 'Why it matters', s), 120, 90);
+        const t = place(el('div', 'abs title', 'Fruit flies: the most damaging pest of fruit worldwide', s), 120, 140, 1700); t.style.fontSize = '58px';
+        const lead = place(el('div', 'abs sub', 'Females lay their eggs inside ripening fruit; the maggots ruin it from within.', s), 120, 232, 1700);
+        const stats = [
+            ['US$2 billion', 'lost every year to fruit flies in Africa alone', 'icipe, Fruit fly integrated pest management'],
+            ['10 – 40 %', 'of a mango harvest lost to the flies', 'ICAR-IIHR, via ICRISAT ISSCA'],
+            ['Closed markets', 'infested fruit is turned away at export: trade is restricted', 'De Meyer et al., ZooKeys 2015 (FAO/IAEA); icipe']
+        ].map(([n, p, src], i) => place(el('div', 'card stat', `<b>${n}</b><p>${p}</p><small>${src}</small>`, s), 120 + i * 570, 360, 530, 330));
+        const src = place(el('div', 'abs source', 'Tephritid fruit flies are "by far the most important group of horticultural pests worldwide" (De Meyer, Clarke, Vera, Hendrichs, ZooKeys 2015). Figures are estimates from the sources named.', s), 120, 760, 1700);
+        const flies = [...Array(6)].map((_, i) => { const fl = place(el('div', 'abs', FLY, s), 0, 0, 40, 40); return fl; });
+        return (tt) => {
+            show(k, prog(tt, 0, 0.6)); show(t, prog(tt, 0.2, 0.8)); show(lead, prog(tt, 1.2, 0.8));
+            stats.forEach((c, i) => show(c, prog(tt, 9.6 + i * 1.6, 0.8), 40));
+            show(src, prog(tt, 10.5, 0.8), 10);
+            flies.forEach((fl, i) => {
+                const a = tt * (0.5 + i * 0.07) + i * 2.1;
+                const x = 1500 + Math.cos(a) * (220 + (i % 3) * 60);
+                const y = 280 + Math.sin(a * 1.4) * 60;
+                fl.style.transform = `translate(${x}px, ${y}px) rotate(${Math.cos(a) * 40}deg)`;
+                fl.style.opacity = 0.8 * prog(tt, 0.4 + i * 0.15, 0.6) * (1 - prog(tt, 9, 0.8));
+            });
+        };
+    },
+    farmers(s) {
+        const k = place(el('div', 'abs kicker', 'The farmer’s problem', s), 120, 90);
+        const t = place(el('div', 'abs title', 'Checking traps by hand is slow, and the numbers come late', s), 120, 140, 1700); t.style.fontSize = '58px';
+        const steps = [
+            ['Walk the orchard', 'to every trap, every few days'],
+            ['Count by eye', 'flies on each card or in each lure trap'],
+            ['Act too late', 'or spray too much, to be safe']
+        ].map(([h, p], i) => place(el('div', 'node', `<h3>${h}</h3><p>${p}</p>`, s), 120 + i * 440, 330));
+        const fix = place(el('div', 'node hl', '<h3>FlyBot</h3><p>a camera on every trap: the flies are counted and the farmer is told in time</p>', s), 1440, 330);
+        fix.style.width = '360px';
+        return (tt) => {
+            show(k, prog(tt, 0, 0.6)); show(t, prog(tt, 0.2, 0.8));
+            steps.forEach((n, i) => show(n, prog(tt, 0.8 + i * 1.4, 0.8), 40));
+            show(fix, prog(tt, 7.5, 0.9), 40);
+        };
+    },
     intro(s) {
         const logo = place(el('img', 'abs', undefined, s), 860, 230, 200, 200); logo.src = M + 'assets/logo.png';
         const t1 = place(el('div', 'abs title', 'FlyBot on AWS', s), 0, 470, W); t1.style.textAlign = 'center'; t1.style.fontSize = '104px';
@@ -201,42 +241,7 @@ const VIEWS = {
             });
         };
     },
-    problem(s) {
-        const k = place(el('div', 'abs kicker', 'The problem', s), 120, 90);
-        const t = place(el('div', 'abs title', 'A count can’t tell a bad photo from a catch', s), 120, 140, 1700);
-        const pics = [['glare.jpg', 'Glare on a real lure trap: flagged, not counted', 'data/samples (BE4111159, 7 Oct) · eval/RESULTS.md section 7b'], ['blur.jpg', 'Strong blur (failure-injection frame)', 'docs/evidence/eval/failure_injection']].map(([f, cap, src], i) => {
-            const c = place(el('div', 'card', '', s), 120 + i * 860, 300, 820, 560);
-            c.style.overflow = 'hidden';
-            const im = place(el('img', 'abs', undefined, c), 0, 0, 820, 461); im.src = M + 'assets/' + f; im.style.objectFit = 'cover';
-            place(el('div', 'abs', `<div style="font-size:28px;font-weight:700">${cap}</div><div class="source">${src}</div>`, c), 26, 476, 770);
-            const q = place(el('div', 'abs chip ph', 'Count: ?', c), 26, 24);
-            return { c, q };
-        });
-        return (tt) => {
-            show(k, prog(tt, 0, 0.6)); show(t, prog(tt, 0.2, 0.8));
-            pics.forEach(({ c, q }, i) => { show(c, prog(tt, 1 + i * 0.6, 0.9), 50); q.style.opacity = prog(tt, 3 + i * 0.6, 0.5); q.style.transform = `rotate(${Math.sin(tt * 9 + i) * 3}deg)`; });
-        };
-    },
-    idea(s) {
-        const k = place(el('div', 'abs kicker', 'FlyBot Sentinel', s), 120, 90);
-        const t = place(el('div', 'abs title', 'Perception → Decision → Action, and a person decides', s), 120, 140, 1700);
-        const steps = [
-            ['Trap camera', 'EZVIZ trap cameras and our ESP32-S3 camera take a photo'],
-            ['OpenCV 5 on Lambda', 'count, photo quality, change since the last photo'],
-            ['Sentinel agent', 'rules decide; every step is traced'],
-            ['A person confirms', 'chat, Telegram or the console; then FlyBot acts']
-        ].map(([h, p], i) => place(el('div', 'node' + (i === 3 ? ' hl' : ''), `<h3>${h}</h3><p>${p}</p>`, s), 120 + i * 440, 400));
-        const svg = place(el('div', 'abs', `<svg width="1920" height="300"><defs><marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#3ecf8e"/></marker></defs>${[0, 1, 2].map(i => `<line id="ia${i}" x1="${450 + i * 440}" y1="105" x2="${555 + i * 440}" y2="105" stroke="#3ecf8e" stroke-width="5" marker-end="url(#ar)"/>`).join('')}<path id="iloop" d="M1720 215 C1720 290, 290 290, 290 215" fill="none" stroke="#3ecf8e" stroke-width="4" stroke-dasharray="12 10" marker-end="url(#ar)"/></svg>`, s), 0, 400, 1920, 300);
-        const loopText = place(el('div', 'abs sub', 'a confirmed photo starts the loop again', s), 0, 720, W); loopText.style.textAlign = 'center';
-        return (tt) => {
-            show(k, prog(tt, 0, 0.6)); show(t, prog(tt, 0.2, 0.8));
-            steps.forEach((n, i) => show(n, prog(tt, 0.8 + i * 1.3, 0.8), 40));
-            [0, 1, 2].forEach(i => { svg.querySelector('#ia' + i).style.opacity = prog(tt, 1.5 + i * 1.3, 0.5); });
-            svg.querySelector('#iloop').style.opacity = prog(tt, 5.5, 0.8);
-            svg.querySelector('#iloop').style.strokeDashoffset = -tt * 30;
-            show(loopText, prog(tt, 5.8, 0.8));
-        };
-    },
+    pipeline: pipelineView,
     bom(s) {
         const k = place(el('div', 'abs kicker', 'The trap camera · bill of materials', s), 120, 60);
         const t = place(el('div', 'abs title', 'Open hardware: about US$39 per trap camera', s), 120, 108, 1700); t.style.fontSize = '48px';
@@ -302,17 +307,6 @@ const VIEWS = {
         };
     },
     field: fieldView,
-    architecture(s) {
-        const frame = place(el('div', 'abs', '', s), 0, 0, W, H); frame.style.overflow = 'hidden'; frame.style.background = '#fff';
-        const im = place(el('img', 'abs', undefined, frame), 0, 0, 1920, 1080); im.src = M + 'assets/architecture.png'; im.style.transformOrigin = '0 0';
-        const keys = [[0, 960, 540, 1], [2.5, 960, 540, 1], [4.5, 640, 470, 1.9], [7, 1110, 470, 1.9], [9.5, 1740, 420, 2.1], [12, 960, 540, 1]];
-        return (tt) => {
-            const [cx, cy, z] = zoomAt(keys, tt);
-            let x = 960 - cx * z, y = 540 - cy * z;
-            x = Math.min(0, Math.max(1920 - 1920 * z, x)); y = Math.min(0, Math.max(1080 - 1080 * z, y));
-            im.style.transform = `translate(${x}px, ${y}px) scale(${z})`;
-        };
-    },
     opencv(s) {
         const k = place(el('div', 'abs kicker', 'OpenCV 5', s), 120, 80);
         const t = place(el('div', 'abs title', 'YOLO26n on the new DNN engine, tiled on sticky cards', s), 120, 124, 1700); t.style.fontSize = '54px';
@@ -356,6 +350,136 @@ const VIEWS = {
         return (tt) => { show(limits, prog(tt, 0.2, 0.8)); show(endc, prog(tt, 5.5, 1)); };
     }
 };
+
+// ---------------------------------------------------------------- how one photo becomes a report
+// The path of flybot-aws docs/SYSTEM_ARCHITECTURE.md (2.1), drawn as one photo going through it: the trap camera, 4G,
+// FlyBot on EC2 (S3 and MongoDB), the vision Lambda (OpenCV 5), the Sentinel agent, the farm's reports, and a person,
+// whose confirmation alone sends the camera a command through AWS IoT Core.
+const PIPE_ICON = {
+    trap: '<svg width="200" height="160"><line x1="100" y1="0" x2="100" y2="14" stroke="#c9d0da" stroke-width="3"/><polygon class="cone" points="100,40 64,146 136,146" fill="rgba(62,207,142,0.2)" opacity="0"/><rect x="58" y="32" width="84" height="120" rx="12" fill="rgba(200,240,255,0.10)" stroke="rgba(200,240,255,0.55)" stroke-width="3"/><circle cx="60" cy="86" r="7" fill="#0b1310"/><circle cx="140" cy="86" r="7" fill="#0b1310"/><rect x="88" y="118" width="24" height="26" rx="5" fill="#f5b83d"/><rect x="50" y="12" width="100" height="22" rx="6" fill="#1b3358" stroke="#6eaaff" stroke-width="2"/><circle cx="100" cy="38" r="7" fill="#0b1310" stroke="#3ecf8e" stroke-width="3"/><circle class="flash" cx="100" cy="38" r="40" fill="#fff" opacity="0"/></svg>',
+    tower: '<svg width="200" height="160"><path d="M100 50 L76 150 M100 50 L124 150 M84 118 L116 118 M90 88 L110 88" stroke="#c9d0da" stroke-width="5" fill="none" stroke-linecap="round"/><circle cx="100" cy="46" r="8" fill="#3ecf8e"/><path class="w1" d="M76 26 A31.2 31.2 0 0 0 76 66 M124 26 A31.2 31.2 0 0 1 124 66" stroke="#3ecf8e" stroke-width="5" fill="none" stroke-linecap="round" opacity="0.3"/><path class="w2" d="M58 12 A54 54 0 0 0 58 80 M142 12 A54 54 0 0 1 142 80" stroke="#3ecf8e" stroke-width="5" fill="none" stroke-linecap="round" opacity="0.3"/></svg>',
+    ec2: '<svg width="200" height="160">' + [14, 60, 106].map((y, i) => `<rect x="44" y="${y}" width="112" height="38" rx="8" fill="#2a1d10" stroke="#ff9a3c" stroke-width="3"/><circle class="led" cx="62" cy="${y + 19}" r="5" fill="#3ecf8e" opacity="0.3"/><line x1="78" y1="${y + 19}" x2="138" y2="${y + 19}" stroke="#ff9a3c" stroke-width="4" stroke-linecap="round" opacity="0.6"/>`).join('') + '</svg>',
+    store: '<svg width="200" height="160"><path d="M22 40 L36 140 Q62 152 88 140 L102 40" fill="#2b3d12" stroke="#8cc63f" stroke-width="3"/><ellipse cx="62" cy="40" rx="40" ry="12" fill="#3d5a17" stroke="#8cc63f" stroke-width="3"/><path d="M122 44 L122 132 A32 11 0 0 0 186 132 L186 44" fill="#10301f" stroke="#3ecf8e" stroke-width="3"/><ellipse cx="154" cy="44" rx="32" ry="11" fill="#17432b" stroke="#3ecf8e" stroke-width="3"/><path d="M122 74 A32 11 0 0 0 186 74 M122 104 A32 11 0 0 0 186 104" stroke="#3ecf8e" stroke-width="2" fill="none"/></svg>',
+    lambda: '<svg width="200" height="160"><rect x="40" y="12" width="120" height="120" rx="26" fill="#ff9a3c"/><text x="100" y="108" font-size="100" font-weight="800" text-anchor="middle" fill="#2a1600" font-family="Georgia, serif">λ</text></svg>',
+    agent: '<svg width="200" height="160"><rect x="50" y="14" width="100" height="134" rx="12" fill="#13241d" stroke="#3ecf8e" stroke-width="3"/><rect x="78" y="6" width="44" height="18" rx="6" fill="#3ecf8e"/>' + [54, 88, 122].map((y, i) => `<rect x="64" y="${y - 10}" width="20" height="20" rx="4" fill="none" stroke="#c9d0da" stroke-width="2.5"/><line x1="96" y1="${y}" x2="136" y2="${y}" stroke="#c9d0da" stroke-width="5" stroke-linecap="round"/><path class="ck${i}" d="M67 ${y} L73 ${y + 6} L83 ${y - 8}" stroke="#3ecf8e" stroke-width="4" fill="none" stroke-linecap="round" opacity="0"/>`).join('') + '</svg>',
+    report: '<svg width="200" height="160"><rect x="24" y="12" width="152" height="108" rx="10" fill="#0f1c17" stroke="#c9d0da" stroke-width="3"/><rect x="90" y="120" width="20" height="16" fill="#c9d0da"/><rect x="64" y="134" width="72" height="8" rx="4" fill="#c9d0da"/>' + [0, 1, 2, 3].map(i => `<rect class="bar${i}" x="${44 + i * 30}" y="104" width="20" height="0" rx="3" fill="${i === 3 ? '#f5b83d' : '#3ecf8e'}"/>`).join('') + '</svg>',
+    person: '<svg width="200" height="160"><circle cx="66" cy="44" r="22" fill="#c9d0da"/><path d="M26 146 Q26 86 66 86 Q106 86 106 146 Z" fill="#c9d0da"/><rect x="118" y="34" width="60" height="108" rx="10" fill="#0f1c17" stroke="#6eaaff" stroke-width="3"/><rect class="btn" x="128" y="108" width="40" height="22" rx="6" fill="#3ecf8e" opacity="0.5"/><path class="ok" d="M132 70 L144 82 L164 58" stroke="#3ecf8e" stroke-width="6" fill="none" stroke-linecap="round" opacity="0"/></svg>'
+};
+// The flies on the photo the token carries (card pixels), the ones YOLO26n boxes at the Lambda step
+const TOKEN_FLIES = [[18, 16], [40, 40], [62, 20], [80, 46], [26, 50], [56, 52], [84, 16]];
+function pipelineView(s) {
+    // When things happen (scene seconds), set to the voice lines of script.js
+    const T = { fly: 0.8, flash: 4.4, s2: 6.2, s3: 8.4, s4: 10.8, s5: 13.8, boxes: 15.6, s6: 20.0, chip: 20.8, s7: 24.2, chipGo: 25.4, s8: 26.4, ok: 27.0, loop: 27.3, flash2: 28.6 };
+    const k = place(el('div', 'abs kicker', 'How it works', s), 120, 56);
+    const t = place(el('div', 'abs title', 'From one fly to the farm’s report', s), 120, 94, 1700); t.style.fontSize = '52px';
+    const zones = [['', 'In the orchard', 110, 185, 800, 335], ['aws', 'AWS · Sydney · one SAM stack', 1010, 185, 850, 715], ['', 'For the farmer', 110, 560, 800, 340]]
+        .map(([cls, label, x, y, w, h]) => place(el('div', 'zone ' + cls, `<span>${label}</span>`, s), x, y, w, h));
+    const CX = [300, 720, 1220, 1640], CY = [320, 700];
+    const STAGES = [
+        ['trap', 'A fly enters the trap', 'the camera in the lid takes a photo', 0, 0, 'fly'],
+        ['tower', 'Sent over 4G', 'HTTPS, with the camera’s own token', 1, 0, 's2'],
+        ['ec2', 'FlyBot on EC2', 'receives every photo', 2, 0, 's3'],
+        ['store', 'Amazon S3 · MongoDB', 'the photo and its record', 3, 0, 's4'],
+        ['lambda', 'AWS Lambda · OpenCV 5', 'YOLO26n counts the flies', 3, 1, 's5'],
+        ['agent', 'Sentinel agent', 'checks the rules, proposes', 2, 1, 's6'],
+        ['report', 'Dashboard and reports', 'counts, map, alerts', 1, 1, 's7'],
+        ['person', 'A person confirms', 'on Telegram or in the app', 0, 1, 's8']
+    ].map(([icon, h, p, c, r, at]) => {
+        const st = place(el('div', 'stg', `<div class="ic">${PIPE_ICON[icon]}</div><h3>${h}</h3><p>${p}</p>`, s), CX[c] - 220, CY[r] - 80);
+        return { st, ic: st.firstChild, svg: st.querySelector('svg'), at: T[at], x: CX[c], y: CY[r] };
+    });
+    // Connectors, drawn as the photo goes along them; the last one is the confirmed command going back to the camera
+    const LINKS = [['M400 320 H620', 's2'], ['M820 320 H1120', 's3'], ['M1320 320 H1540', 's4'], ['M1740 320 H1835 V700 H1740', 's5'], ['M1540 700 H1320', 's6'], ['M1120 700 H820', 's7'], ['M620 700 H400', 'chipGo'], ['M200 700 H92 V320 H200', 'loop']];
+    const svg = place(el('div', 'abs', `<svg width="1920" height="1080"><defs><marker id="pa" markerUnits="userSpaceOnUse" markerWidth="22" markerHeight="22" refX="18" refY="11" orient="auto"><path d="M0,0 L22,11 L0,22 z" fill="#3ecf8e"/></marker><marker id="pl" markerUnits="userSpaceOnUse" markerWidth="22" markerHeight="22" refX="18" refY="11" orient="auto"><path d="M0,0 L22,11 L0,22 z" fill="#f5b83d"/></marker></defs>${LINKS.map(([d], i) => `<path id="pk${i}" d="${d}" pathLength="1" stroke="${i === 7 ? '#f5b83d' : '#3ecf8e'}" stroke-width="5" fill="none" stroke-linejoin="round" stroke-dasharray="1 1" stroke-dashoffset="1" data-marker="url(#${i === 7 ? 'pl' : 'pa'})"/>`).join('')}</svg>`, s), 0, 0);
+    const links = LINKS.map(([, at], i) => ({ p: svg.querySelector('#pk' + i), at: T[at] }));
+    const lab4g = place(el('div', 'plink', '4G · HTTPS', s), 965, 282);
+    const labAlert = place(el('div', 'plink', 'alerts', s), 965, 662);
+    const labLoop = place(el('div', 'plink amber', 'AWS IoT Core → a new photo', s), 300, 540);
+    // The fly, the photo (a sticky card with seven flies) and the proposal
+    const fly = place(el('div', 'abs', FLY, s), 0, 0, 36, 36);
+    const tok = place(el('div', 'ptok', `<svg width="96" height="66"><rect x="1" y="1" width="94" height="64" rx="6" fill="#f2d33b" stroke="#fff" stroke-width="2"/>${TOKEN_FLIES.map(([x, y]) => `<ellipse cx="${x}" cy="${y}" rx="3.5" ry="5" fill="#3b2a12"/>`).join('')}${TOKEN_FLIES.map(([x, y], i) => `<rect class="bx${i}" x="${x - 8}" y="${y - 9}" width="16" height="18" fill="none" stroke="#c0392b" stroke-width="2.5" opacity="0"/>`).join('')}</svg><div class="pbadge"></div>`, s), 0, 0);
+    const badge = tok.querySelector('.pbadge');
+    const chip = place(el('div', 'pchip', 'Proposal: take a new photo', s), 0, 0);
+    const rest = (i) => [STAGES[i].x + 95, STAGES[i].y - 70];
+    // A point a fraction k along a polyline
+    const along = (pts, k) => {
+        const seg = pts.slice(1).map((p, i) => Math.hypot(p[0] - pts[i][0], p[1] - pts[i][1]));
+        let d = clamp(k) * seg.reduce((a, b) => a + b, 0);
+        for (let i = 0; i < seg.length; i++) {
+            if (d <= seg[i] || i === seg.length - 1) { const f = seg[i] ? d / seg[i] : 0; return [pts[i][0] + (pts[i + 1][0] - pts[i][0]) * f, pts[i][1] + (pts[i + 1][1] - pts[i][1]) * f]; }
+            d -= seg[i];
+        }
+    };
+    // [start, end, points]: the photo's moves from stage to stage
+    const MOVES = [[T.s2 - 0.8, T.s2, rest(0), rest(1)], [T.s3 - 1.2, T.s3, rest(1), rest(2)], [T.s4 - 0.8, T.s4, rest(2), rest(3)], [T.s5 - 1.0, T.s5, rest(3), [1835, 250], [1835, 630], rest(4)], [T.s6 - 0.8, T.s6, rest(4), rest(5)], [T.s7 - 0.8, T.s7, rest(5), rest(6)]];
+    const tokenAt = (tt) => {
+        let at = rest(0);
+        for (const [t0, t1, ...pts] of MOVES) if (tt >= t0) at = along(pts, ease((tt - t0) / (t1 - t0)));
+        return at;
+    };
+    return (tt) => {
+        show(k, prog(tt, 0, 0.6)); show(t, prog(tt, 0.2, 0.8));
+        zones.forEach((z, i) => { z.style.opacity = prog(tt, 0.3 + i * 0.2, 0.6); });
+        // Stages: dim until the photo reaches them, then lit, with a glow that fades
+        STAGES.forEach((st, i) => {
+            st.st.style.opacity = prog(tt, 0.4 + i * 0.1, 0.5) * (0.4 + 0.6 * prog(tt, st.at - 0.3, 0.5));
+            const g = tt < st.at ? 0 : Math.max(0, 1 - (tt - st.at) / 2.5);
+            st.ic.style.filter = g ? `drop-shadow(0 0 ${24 * g}px rgba(62, 207, 142, ${0.9 * g}))` : '';
+        });
+        links.forEach(({ p, at }, i) => {
+            const t0 = i === 7 ? T.loop : i === 6 ? T.chipGo : MOVES[i][0];
+            const d = prog(tt, t0, Math.max(0.6, at - t0 - (i === 7 ? 0 : 0.2)));
+            p.style.strokeDashoffset = 1 - d;
+            // The arrowhead only once the line has reached it
+            if (d > 0.97) p.setAttribute('marker-end', p.dataset.marker); else p.removeAttribute('marker-end');
+        });
+        // Opacity only: the labels are centred with their own transform
+        lab4g.style.opacity = prog(tt, T.s3 - 1.2, 0.5); labAlert.style.opacity = prog(tt, T.s7 - 0.6, 0.5); labLoop.style.opacity = prog(tt, T.loop + 0.4, 0.5);
+        // 1: the fly comes in through a hole in the wall, down to the lure; the camera flashes
+        const [tx, ty] = [STAGES[0].x, STAGES[0].y];
+        const f = clamp((tt - T.fly) / 2.6);
+        const fx = f < 0.8 ? tx - 220 + 180 * (f / 0.8) : tx - 40 + 30 * ((f - 0.8) / 0.2);
+        const fy = f < 0.8 ? ty - 100 + 106 * (f / 0.8) + Math.sin(f * 14) * 22 * (1 - f) : ty + 6 + 32 * ((f - 0.8) / 0.2);
+        fly.style.transform = `translate(${fx - 18}px, ${fy - 18}px) rotate(${f < 1 ? Math.sin(tt * 40) * 12 + 30 : 0}deg) scale(${1 - 0.25 * clamp((f - 0.8) / 0.2)})`;
+        fly.style.opacity = prog(tt, T.fly - 0.4, 0.4);
+        const flash = Math.max(0, 1 - Math.abs(tt - T.flash) / 0.35) + Math.max(0, 1 - Math.abs(tt - T.flash2) / 0.35);
+        STAGES[0].svg.querySelector('.flash').setAttribute('opacity', 0.85 * flash);
+        STAGES[0].svg.querySelector('.cone').setAttribute('opacity', clamp(flash * 2));
+        // The photo leaves the lens and goes along the path; at the Lambda its flies get boxes and a count
+        const [px, py] = tokenAt(tt);
+        const born = prog(tt, T.flash, 0.6), gone = prog(tt, T.s7 + 0.1, 0.6);
+        const [lx, ly] = [tx, ty - 42];
+        const bx = tt < T.s2 - 0.8 ? lx + (px - lx) * born : px, by = tt < T.s2 - 0.8 ? ly + (py - ly) * born : py;
+        tok.style.opacity = born * (1 - gone);
+        tok.style.transform = `translate(${bx - 48}px, ${by - 33}px) scale(${(0.3 + 0.7 * born) * (1 - 0.6 * gone)})`;
+        const n = Math.floor(clamp((tt - T.boxes) / 1.8) * TOKEN_FLIES.length + 0.001);
+        TOKEN_FLIES.forEach((_, i) => tok.querySelector('.bx' + i).setAttribute('opacity', i < n ? 1 : 0));
+        badge.textContent = n ? `${n} flies` : '';
+        badge.style.opacity = n ? 1 : 0;
+        // 2, 3: the radio and the server come alive as the photo passes
+        const wave = tt > T.s2 - 0.8 && tt < T.s3 ? 0.5 + 0.5 * Math.sin(tt * 9) : 0;
+        STAGES[1].svg.querySelector('.w1').setAttribute('opacity', 0.3 + 0.7 * wave);
+        STAGES[1].svg.querySelector('.w2').setAttribute('opacity', 0.3 + 0.7 * (tt > T.s2 - 0.8 && tt < T.s3 ? 0.5 + 0.5 * Math.sin(tt * 9 - 1.5) : 0));
+        STAGES[2].svg.querySelectorAll('.led').forEach((l, i) => l.setAttribute('opacity', tt < T.s3 ? 0.3 : 0.45 + 0.55 * (Math.sin(tt * 6 + i * 2) > 0 ? 1 : 0)));
+        // 6: the agent ticks its rules and makes a proposal, which goes to the person
+        [0, 1, 2].forEach(i => STAGES[5].svg.querySelector('.ck' + i).setAttribute('opacity', prog(tt, T.s6 + i * 0.3, 0.3)));
+        const cp = prog(tt, T.chipGo, T.s8 - T.chipGo);
+        // From above the agent to the arrow that ends at the person's phone
+        chip.style.left = (STAGES[5].x + (510 - STAGES[5].x) * cp) + 'px';
+        chip.style.top = (600 + 100 * cp) + 'px';
+        chip.style.opacity = prog(tt, T.chip, 0.5) * (1 - prog(tt, T.ok + 0.2, 0.4));
+        // 7: the count goes into the report's bars
+        [30, 46, 38, 74].forEach((h, i) => {
+            const v = h * prog(tt, i === 3 ? T.s7 : 0.6, i === 3 ? 1.2 : 0.8);
+            const bar = STAGES[6].svg.querySelector('.bar' + i);
+            bar.setAttribute('height', v); bar.setAttribute('y', 104 - v);
+        });
+        // 8: confirmed; the command goes back to the camera through AWS IoT Core, and the camera takes the next photo
+        STAGES[7].svg.querySelector('.ok').setAttribute('opacity', prog(tt, T.ok, 0.3));
+        STAGES[7].svg.querySelector('.btn').setAttribute('opacity', 0.5 + 0.5 * prog(tt, T.ok - 0.2, 0.2));
+        STAGES[0].ic.style.filter = tt > T.flash2 - 0.3 ? `drop-shadow(0 0 ${24 * Math.max(0, 1 - Math.abs(tt - T.flash2) / 1.5)}px rgba(245, 184, 61, 0.9))` : STAGES[0].ic.style.filter;
+    };
+}
 
 // ---------------------------------------------------------------- wiring animation (4G build)
 // Modules and pins follow camos-esp32-trap docs/WIRING.md (25 Oct 2026), the hanging trap's wiring: the panel and the

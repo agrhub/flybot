@@ -90,6 +90,21 @@ body { font-family: 'Be Vietnam Pro', 'Segoe UI', sans-serif; color: #fff; -webk
 .node p { font-size: 21px; color: var(--muted); margin-top: 10px; line-height: 1.35; }
 .node.hl { border-color: rgba(62, 207, 142, 0.8); background: rgba(62, 207, 142, 0.12); }
 
+/* How it works: one photo's path */
+.zone { position: absolute; border-radius: 28px; border: 2px dashed rgba(255, 255, 255, 0.18); background: rgba(255, 255, 255, 0.025); }
+.zone.aws { border-color: rgba(255, 154, 60, 0.6); background: rgba(255, 154, 60, 0.05); }
+.zone span { position: absolute; left: 24px; top: 14px; font-size: 20px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); }
+.zone.aws span { color: #ff9a3c; }
+.stg { position: absolute; width: 440px; text-align: center; }
+.stg .ic { position: relative; width: 200px; height: 160px; margin: 0 auto; }
+.stg h3 { font-size: 30px; font-weight: 800; line-height: 1.15; margin-top: 10px; }
+.stg p { font-size: 22px; color: var(--muted); margin-top: 4px; }
+.ptok { position: absolute; left: 0; top: 0; width: 96px; height: 66px; z-index: 5; filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.5)); }
+.pbadge { position: absolute; left: 50%; top: 72px; transform: translateX(-50%); padding: 2px 14px; border-radius: 999px; background: var(--mint); color: var(--ink); font-size: 22px; font-weight: 800; white-space: nowrap; }
+.pchip { position: absolute; z-index: 5; padding: 8px 18px; border-radius: 14px; background: rgba(245, 184, 61, 0.95); color: #2a1a00; font-size: 22px; font-weight: 800; white-space: nowrap; transform: translate(-50%, -50%); }
+.plink { position: absolute; transform: translate(-50%, -50%); padding: 4px 12px; border-radius: 10px; background: rgba(7, 21, 16, 0.92); font-size: 21px; font-weight: 700; color: var(--mint); white-space: nowrap; }
+.plink.amber { color: var(--amber); }
+
 /* Code */
 .code { position: absolute; padding: 26px 30px; border-radius: 18px; background: #0b1210; border: 1px solid var(--line); font-family: 'JetBrains Mono', Consolas, monospace; font-size: 25px; line-height: 1.6; color: #cfe9dc; white-space: pre; }
 .code .k { color: #ffa24a; }
