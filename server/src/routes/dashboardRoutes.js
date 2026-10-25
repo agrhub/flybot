@@ -9,8 +9,9 @@ const { shareLimiter, reportSendLimiter } = require('../middlewares/rateLimit');
 router.use(authenticate, requireStringFields);
 
 router.get('/', dashboardController.listDashboards);
-// Viewers (role "user") only see dashboards shared with them
-router.post('/', requireWorkspaceRole, dashboardController.createDashboard);
+// Viewers (role "user") only see dashboards shared with them; the guest account makes its own
+// session's reports (services/guestAccess.js)
+router.post('/', (req, res, next) => (req.user?.guest ? next() : requireWorkspaceRole(req, res, next)), dashboardController.createDashboard);
 router.get('/:id', dashboardController.getDashboard);
 router.put('/:id', dashboardController.updateDashboard);
 router.delete('/:id', dashboardController.deleteDashboard);

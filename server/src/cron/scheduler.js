@@ -63,6 +63,8 @@ const demoSimJob = exclusive('Demo simulation', async () => {
 }, 'demoSim');
 // Firmware updates: send pending ones to awake cameras, settle stale ones, automatic updates
 const firmwareJob = exclusive('Firmware updates', () => require('../services/firmwareService').sweep(), 'firmware');
+// Reports guests made in sessions that have ended (services/guestAccess.js)
+const guestReportJob = exclusive('Guest report cleanup', async () => ({ removed: await require('../services/guestAccess').cleanupGuestReports() }));
 const ezvizPolicyJob = exclusive('EZVIZ sub-account policies', async () => ({ changed: await resyncEzvizPolicies() }), 'ezvizPolicies');
 
 /**
@@ -163,6 +165,11 @@ function startCronJobs() {
     // Removed camera access leaves the EZVIZ sub-accounts within the hour (no-op unless EZVIZ_RAM_TOKENS)
     cron.schedule('17 * * * *', () => {
         ezvizPolicyJob();
+    });
+
+    // Guest reports: within 15 minutes of the end of their session
+    cron.schedule('4,19,34,49 * * * *', () => {
+        guestReportJob();
     });
 
     console.log("⏰ Periodic Cron jobs initialized.");

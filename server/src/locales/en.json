@@ -475,6 +475,8 @@
     "invalid_widget_filter": "Invalid widget filter.",
     "too_many_requests_please_try_again_in_a_moment": "Too many requests. Please try again in a moment.",
     "a_public_report_can_only_include_cameras_you_own": "A public report can only include cameras you own.",
+    "a_guest_public_report_serial": "A guest's public report can only include cameras whose serial visitors may see.",
+    "guest_reports_no_schedule": "Guest reports cannot be sent on a schedule.",
     "invalid_report_schedule": "Invalid report schedule.",
     "confirm_your_email_address_first": "Confirm your email address first.",
     "only_people_a_report_is_shared_with_can_change_this": "Only people a report is shared with can change this.",

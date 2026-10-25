@@ -475,6 +475,8 @@
     "invalid_widget_filter": "Bộ lọc của khối không hợp lệ.",
     "too_many_requests_please_try_again_in_a_moment": "Quá nhiều yêu cầu. Vui lòng thử lại sau giây lát.",
     "a_public_report_can_only_include_cameras_you_own": "Báo cáo công khai chỉ dùng được camera bạn sở hữu.",
+    "a_guest_public_report_serial": "Báo cáo công khai của khách chỉ dùng được camera mà khách được xem số sê-ri.",
+    "guest_reports_no_schedule": "Báo cáo của khách không gửi theo lịch được.",
     "invalid_report_schedule": "Lịch gửi báo cáo không hợp lệ.",
     "confirm_your_email_address_first": "Hãy xác nhận địa chỉ email trước.",
     "only_people_a_report_is_shared_with_can_change_this": "Chỉ người được chia sẻ báo cáo mới đổi được mục này.",

@@ -2226,7 +2226,8 @@
       "rotateConfirm": "The current link stops working. Continue?",
       "rotated": "New link created.",
       "peopleTitle": "People",
-      "peopleDesc": "People you add can view the report after signing in. Unknown emails get an invitation."
+      "peopleDesc": "People you add can view the report after signing in. Unknown emails get an invitation.",
+      "guestHint": "As a guest you can turn on a public link (for cameras whose serial is shown to visitors). The report and its link are removed when your guest session ends; sharing by email and schedules are not available."
     },
     "public": {
       "badge": "Public report",
@@ -2335,7 +2336,8 @@
       "receive": "Receive scheduled reports",
       "receiveOff": "Scheduled reports are off for you.",
       "receiveOn": "Scheduled reports are on again."
-    }
+    },
+    "guestHint": "This report is yours for this guest visit: other visitors do not see it, and it is removed when you sign out or the session ends. Up to 5 reports."
   },
   "audit": {
     "tab": "Activity log",

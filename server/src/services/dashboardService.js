@@ -29,28 +29,34 @@ function dashboardViewFilter(user) {
     const id = idOf(user);
     if (!id) return { _id: null };
     const notExpired = { $or: [{ expiresAt: null }, { expiresAt: { $gt: new Date() } }] };
-    const base = { $or: [{ ownerId: id }, { $and: [{ 'sharedWith.userId': id }, notExpired] }] };
+    // The shared guest account: its reports are each guest session's own (services/guestAccess.js)
+    const mine = user?.guest ? { ownerId: id, guestSession: String(user.guestSession || '') } : { ownerId: id };
+    const base = { $or: [mine, { $and: [{ 'sharedWith.userId': id }, notExpired] }] };
     // More than one workspace: the current one's dashboards (and, in the personal one, those shared with the person)
     const scope = require('./workspaceService').scopeFilter(user, { ownerField: 'ownerId' });
     return scope ? { $and: [base, scope] } : base;
 }
 
+/** Is it this person's report? On the shared guest account: only the guest session that made it. */
+const ownsDashboard = (user, dashboard) => ownerIdOf(dashboard) === idOf(user)
+    && (!user?.guest || (!!dashboard.guestSession && dashboard.guestSession === String(user.guestSession || '')));
+
 function canViewDashboard(user, dashboard) {
     if (!dashboard) return false;
     if (isAdmin(user)) return true;
     const id = idOf(user);
-    if (ownerIdOf(dashboard) === id) return true;
+    if (ownsDashboard(user, dashboard)) return true;
     return !isExpired(dashboard) && (dashboard.sharedWith || []).some(sh => sh.userId && String(sh.userId) === id);
 }
 
 function canEditDashboard(user, dashboard) {
     if (!dashboard) return false;
     if (isAdmin(user)) return true;
-    return ownerIdOf(dashboard) === idOf(user);
+    return ownsDashboard(user, dashboard);
 }
 
 function accessOf(user, dashboard) {
-    if (ownerIdOf(dashboard) === idOf(user)) return 'owner';
+    if (ownsDashboard(user, dashboard)) return 'owner';
     if ((dashboard.sharedWith || []).some(sh => sh.userId && String(sh.userId) === idOf(user))) return 'shared';
     return 'admin';
 }
@@ -60,6 +66,7 @@ function accessOf(user, dashboard) {
  */
 async function ownerPublishableSerials(owner, serials, { simulated = false } = {}) {
     if (!owner || owner.disabled || !serials.length) return [];
+    if (owner.guest) return guestPublishableSerials(serials, { simulated });
     const filter = { deviceSerial: { $in: serials } };
     // Simulated demo cameras: on screen (labeled) only, never in emailed reports and their PDFs
     if (!simulated) filter.simulated = { $ne: true };
@@ -69,12 +76,29 @@ async function ownerPublishableSerials(owner, serials, { simulated = false } = {
 }
 
 /**
+ * A guest's report owns no camera: its public link may show the cameras shared with guests whose real
+ * serial the admin shows them (Admin > System > Demo access; a public page masks nothing), and the
+ * simulated demo farm's cameras (on screen only, like every simulated camera).
+ */
+async function guestPublishableSerials(serials, { simulated = false } = {}) {
+    const demoView = require('./demoView');
+    const settings = await require('./settingsService').getSettings();
+    const orgId = settings.demoViewSimulated ? await demoView.simulatedOrgId() : null;
+    const access = demoView.accessFor({ guest: true, role: 'user' }, settings, orgId);
+    const shown = access.serials.filter(serial => access.shares[serial]?.realSerial);
+    const allowed = [{ deviceSerial: { $in: shown }, simulated: { $ne: true } }];
+    if (simulated && access.orgId) allowed.push({ simulated: true, orgId: access.orgId });
+    const cams = await Camera.find({ deviceSerial: { $in: serials }, unclaimed: { $ne: true }, $or: allowed }).select('deviceSerial');
+    return cams.map(c => c.deviceSerial);
+}
+
+/**
  * Cameras whose data this audience may see on the dashboard. `viewer` is null for the public link.
  */
 async function effectiveSerials(dashboard, viewer) {
     const serials = dashboard.cameraSerials || [];
     if (!serials.length) return [];
-    const owner = await User.findById(ownerIdOf(dashboard)).select('role disabled');
+    const owner = await User.findById(ownerIdOf(dashboard)).select('role disabled guest');
     // A signed-in request (req.user) or the public link shows simulated cameras, labeled; a User
     // document (emailed and scheduled reports) never gets them
     const simulated = viewer === null || Array.isArray(viewer?.demoSerials);

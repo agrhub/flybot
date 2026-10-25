@@ -58,6 +58,8 @@
 
     <!-- Create -->
     <el-dialog v-model="createVisible" :title="t('dashboards.create')" width="520px" align-center>
+      <!-- The shared guest account: the report is this visit's own -->
+      <el-alert v-if="user?.guest" type="info" :closable="false" show-icon class="mb-4" :title="t('dashboards.guestHint')" data-test="guest-report-hint" />
       <el-form label-position="top" @submit.prevent="create">
         <el-form-item :label="t('dashboards.name')" required>
           <el-input v-model="form.name" maxlength="80" show-word-limit />
@@ -105,7 +107,7 @@ import { overviewWidgets, dashboardErrorText } from '@/utils/dashboards';
 
 const router = useRouter();
 const { t, locale } = useI18n();
-const { canBuildDashboards } = useAuth();
+const { canBuildDashboards, user } = useAuth();
 const { cameras } = useCameras();
 
 const dashboards = ref([]);
@@ -133,8 +135,8 @@ const form = reactive({ name: '', description: '', cameraSerials: [], range: { p
 const openCreate = () => {
   form.name = '';
   form.description = '';
-  // Default to the cameras you manage (the ones you can also publish)
-  form.cameraSerials = cameras.value.filter(c => c.canManage !== false).map(c => c.deviceSerial).slice(0, 50);
+  // Default to the cameras you manage (the ones you can also publish); a guest manages none: every camera it sees
+  form.cameraSerials = cameras.value.filter(c => user.value?.guest || c.canManage !== false).map(c => c.deviceSerial).slice(0, 50);
   form.range = { preset: '7d' };
   form.template = 'overview';
   createVisible.value = true;

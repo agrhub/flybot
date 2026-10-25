@@ -2226,7 +2226,8 @@
       "rotateConfirm": "Liên kết hiện tại sẽ ngừng hoạt động. Tiếp tục?",
       "rotated": "Đã tạo liên kết mới.",
       "peopleTitle": "Người được chia sẻ",
-      "peopleDesc": "Người được thêm có thể xem báo cáo sau khi đăng nhập. Email chưa có tài khoản sẽ nhận lời mời."
+      "peopleDesc": "Người được thêm có thể xem báo cáo sau khi đăng nhập. Email chưa có tài khoản sẽ nhận lời mời.",
+      "guestHint": "Với tư cách khách, bạn có thể bật liên kết công khai (cho các camera được hiện số sê-ri với khách). Báo cáo và liên kết bị xoá khi phiên khách kết thúc; không chia sẻ qua email hay gửi theo lịch được."
     },
     "public": {
       "badge": "Báo cáo công khai",
@@ -2335,7 +2336,8 @@
       "receive": "Nhận báo cáo định kỳ",
       "receiveOff": "Đã tắt nhận báo cáo định kỳ cho bạn.",
       "receiveOn": "Đã bật lại nhận báo cáo định kỳ."
-    }
+    },
+    "guestHint": "Báo cáo này là của riêng lượt xem khách này: khách khác không thấy, và báo cáo bị xoá khi bạn đăng xuất hoặc phiên kết thúc. Tối đa 5 báo cáo."
   },
   "audit": {
     "tab": "Nhật ký hoạt động",

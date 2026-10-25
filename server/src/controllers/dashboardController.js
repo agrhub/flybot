@@ -17,6 +17,7 @@ const { SNAPSHOT_KEY_REGEX, pipeSnapshot } = require('./s3Controller');
 const { EMAIL_REGEX, normalizeEmail, findUserByEmail, safeUrl, withAccountStatus } = require('./shareController');
 
 const MAX_DASHBOARDS_PER_OWNER = 50;
+const { MAX_GUEST_REPORTS } = require('../services/guestAccess');
 const MAX_CAMERAS = 50;
 const MAX_WIDGETS = 20;
 const MAX_SHARES = 50;
@@ -124,7 +125,7 @@ function toDetail(dashboard, user) {
 
 async function findDashboard(id) {
     if (!mongoose.isValidObjectId(id)) return null;
-    return Dashboard.findById(id).populate('ownerId', 'email name role disabled');
+    return Dashboard.findById(id).populate('ownerId', 'email name role disabled guest');
 }
 
 /**
@@ -227,6 +228,8 @@ async function validateInput(body, { editor, owner, partial = false, current = n
             || !isInt(weekday, 1, 7) || !isInt(monthDay, 1, 28) || !isInt(hour, 0, 23)) {
             return { error: "Invalid report schedule." };
         }
+        // A guest's report is gone when the session ends: nothing to send later
+        if (editor?.guest && frequency !== 'off') return { error: "Guest reports cannot be sent on a schedule.", code: 'GUEST_READ_ONLY' };
         value.schedule = { frequency, weekday, monthDay, hour, recipients };
     }
 
@@ -251,7 +254,7 @@ async function validateInput(body, { editor, owner, partial = false, current = n
         const foreign = serials.filter(s => !publishable.has(s));
         if (foreign.length) {
             return {
-                error: "A public report can only include cameras you own.",
+                error: owner?.guest ? "A guest's public report can only include cameras whose serial visitors may see." : "A public report can only include cameras you own.",
                 code: 'PUBLIC_FOREIGN_CAMERA',
                 cameras: foreign
             };
@@ -283,20 +286,24 @@ async function listDashboards(req, res) {
  */
 async function createDashboard(req, res) {
     try {
-        const count = await Dashboard.countDocuments({ ownerId: req.user.id });
-        if (count >= MAX_DASHBOARDS_PER_OWNER) {
-            return res.status(400).json({ success: false, message: `You can have at most ${MAX_DASHBOARDS_PER_OWNER} reports.` });
+        // The shared guest account: a few reports per guest session, which are that session's alone
+        const guestSession = req.user.guest ? String(req.user.guestSession || '') : null;
+        if (req.user.guest && !guestSession) return res.status(403).json({ success: false, code: 'GUEST_READ_ONLY', message: 'Guest access is read-only.' });
+        const limit = guestSession ? MAX_GUEST_REPORTS : MAX_DASHBOARDS_PER_OWNER;
+        const count = await Dashboard.countDocuments(guestSession ? { ownerId: req.user.id, guestSession } : { ownerId: req.user.id });
+        if (count >= limit) {
+            return res.status(400).json({ success: false, code: 'REPORT_LIMIT', message: `You can have at most ${limit} reports.` });
         }
-        const owner = await User.findById(req.user.id).select('role disabled');
+        const owner = await User.findById(req.user.id).select('role disabled guest');
         const result = await validateInput(req.body || {}, { editor: req.user, owner });
         if (result.error) return sendValidationError(res, result);
 
-        const dashboard = new Dashboard({ ...result.value, ownerId: req.user.id, orgId: req.user.workspace?.id || null });
+        const dashboard = new Dashboard({ ...result.value, ownerId: req.user.id, orgId: req.user.workspace?.id || null, ...(guestSession ? { guestSession } : {}) });
         if (dashboard.visibility === 'public') dashboard.publicToken = newPublicToken();
         await dashboard.save();
         recordAudit(req, { action: 'dashboard.created', target: dashboardTarget(dashboard), details: { visibility: dashboard.visibility } });
         if (dashboard.visibility === 'public') recordAudit(req, { action: 'dashboard.published', target: dashboardTarget(dashboard) });
-        await dashboard.populate('ownerId', 'email name role disabled');
+        await dashboard.populate('ownerId', 'email name role disabled guest');
         res.status(201).json({ success: true, dashboard: toDetail(dashboard, req.user) });
     } catch (err) {
         sendServerError(res, err, { context: 'Create dashboard' });
@@ -590,7 +597,7 @@ const publicCompute = createLimiter(2, { maxQueue: 20 });
 
 async function findPublicDashboard(token) {
     if (typeof token !== 'string' || !TOKEN_REGEX.test(token)) return null;
-    const dashboard = await Dashboard.findOne({ publicToken: token, visibility: 'public' }).populate('ownerId', 'name email role disabled');
+    const dashboard = await Dashboard.findOne({ publicToken: token, visibility: 'public' }).populate('ownerId', 'name email role disabled guest');
     // A disabled or deleted owner takes their public dashboards offline
     if (!dashboard || !dashboard.ownerId?.email || dashboard.ownerId.disabled) return null;
     return dashboard;

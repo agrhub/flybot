@@ -26,8 +26,8 @@
                 <el-button :icon="MoreFilled" circle :aria-label="t('common.moreActions')" />
                 <template #dropdown>
                   <el-dropdown-menu>
-                    <el-dropdown-item command="schedule" :icon="AlarmClock">{{ t('dashboards.schedule.menu') }}</el-dropdown-item>
-                    <el-dropdown-item command="delete" :icon="Delete" divided>{{ t('dashboards.delete') }}</el-dropdown-item>
+                    <el-dropdown-item v-if="!user?.guest" command="schedule" :icon="AlarmClock">{{ t('dashboards.schedule.menu') }}</el-dropdown-item>
+                    <el-dropdown-item command="delete" :icon="Delete" :divided="!user?.guest">{{ t('dashboards.delete') }}</el-dropdown-item>
                   </el-dropdown-menu>
                 </template>
               </el-dropdown>

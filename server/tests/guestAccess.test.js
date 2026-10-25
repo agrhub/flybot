@@ -41,7 +41,7 @@ test('accessFor: the guest account sees the demo while guest access is on; other
     assert.deepEqual(accessFor({ role: 'user', createdAt: new Date() }, { ...settings, demoViewAudience: 'all' }).serials, ['A']);
 });
 
-test('what a guest may send: reads, sign-out, the AI diagnosis and the assistant only', () => {
+test('what a guest may send: reads, sign-out, the AI diagnosis, the assistant, streams and its own reports', () => {
     assert.equal(guestMayRequest('GET', '/api/user/cameras?x=1'), true);
     assert.equal(guestMayRequest('GET', '/api/auth/export'), false);
     assert.equal(guestMayRequest('GET', '/api/integrations/keys'), false);
@@ -50,8 +50,13 @@ test('what a guest may send: reads, sign-out, the AI diagnosis and the assistant
     assert.equal(guestMayRequest('POST', '/api/ai/chat/confirm'), false);
     assert.equal(guestMayRequest('POST', '/api/ai/diagnose'), true, 'the dashboard diagnosis only reads');
     assert.equal(guestMayRequest('POST', '/api/ai/analyze-roboflow/abc'), false);
-    for (const [method, path] of [['POST', '/api/user/add-camera'], ['PUT', '/api/admin/settings'], ['POST', '/api/auth/profile'], ['DELETE', '/api/user/delete-camera'], ['POST', '/api/dashboards']]) {
+    for (const [method, path] of [['POST', '/api/user/add-camera'], ['PUT', '/api/admin/settings'], ['POST', '/api/auth/profile'], ['DELETE', '/api/user/delete-camera'],
+        ['POST', '/api/dashboards/64b000000000000000000009/share'], ['POST', '/api/dashboards/64b000000000000000000009/send'], ['PUT', '/api/dashboards/64b000000000000000000009/schedule-mute']]) {
         assert.equal(guestMayRequest(method, path), false, `${method} ${path}`);
+    }
+    // Its own session's reports (dashboardController checks whose they are)
+    for (const [method, path] of [['POST', '/api/dashboards'], ['PUT', '/api/dashboards/64b000000000000000000009'], ['DELETE', '/api/dashboards/64b000000000000000000009'], ['POST', '/api/dashboards/64b000000000000000000009/public-token']]) {
+        assert.equal(guestMayRequest(method, path), true, `${method} ${path}`);
     }
 });
 
@@ -114,7 +119,7 @@ test('read-only: every write is refused, sign-out and the assistant pass', async
         ['PUT', '/api/user/camera', { deviceSerial: 'DEMO1', deviceName: 'Mine' }],
         ['POST', '/api/auth/profile', { name: 'Hacker' }],
         ['POST', '/api/auth/change-password', { currentPassword: 'x', newPassword: 'yyyyyyyy' }],
-        ['POST', '/api/dashboards', { name: 'x' }],
+        ['POST', '/api/dashboards/64b000000000000000000009/share', { email: 'a@example.test' }],
         ['POST', '/api/farms', { name: 'x' }],
         ['POST', '/api/ai/chat/confirm', { sessionId: 's', messageId: 'm', cardIndex: 0, decision: 'confirm' }],
         ['POST', '/api/telegram/link', {}]

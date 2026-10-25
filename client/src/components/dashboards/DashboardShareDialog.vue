@@ -29,6 +29,10 @@
       </div>
     </div>
 
+    <!-- The guest account: a public link only; the report and its link end with the guest session -->
+    <el-alert v-if="isGuest" type="info" :closable="false" show-icon class="mt-4" :title="t('dashboards.share.guestHint')" data-test="guest-share-hint" />
+
+    <template v-if="!isGuest">
     <el-divider />
 
     <!-- People -->
@@ -95,6 +99,7 @@
       <el-button type="primary" plain :loading="savingExpiry" :disabled="!expiryChanged" @click="saveExpiry">{{ t('common.save') }}</el-button>
     </div>
     <el-alert v-if="dashboard?.expired" type="warning" :closable="false" show-icon class="mt-3" :title="t('dashboards.expiry.expiredHint')" />
+    </template>
 
     <template #footer>
       <el-button @click="emit('update:modelValue', false)">{{ t('common.close') }}</el-button>
@@ -111,6 +116,7 @@ import api from '@/services/api';
 import { dashboardErrorText } from '@/utils/dashboards';
 import ShareStatus from '@/components/common/ShareStatus.vue';
 import UserAvatar from '@/components/common/UserAvatar.vue';
+import { useAuth } from '@/composables/useAuth';
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
@@ -120,6 +126,8 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'updated']);
 
 const { t } = useI18n();
+const { user } = useAuth();
+const isGuest = computed(() => !!user.value?.guest);
 const email = ref('');
 const adding = ref(false);
 const savingVisibility = ref(false);

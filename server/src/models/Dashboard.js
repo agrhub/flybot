@@ -64,6 +64,9 @@ const dashboardSchema = new mongoose.Schema({
     sharedWith: { type: [dashboardShareSchema], default: [] },
     // A sample report of the simulated demo farm (services/demoSim.js ensureReports), by its stable key
     simKey: { type: String, default: undefined },
+    // A report a visitor made on the shared guest account (services/guestAccess.js): only that guest
+    // session sees and changes it, and it is removed when the session ends
+    guestSession: { type: String, default: undefined, index: true },
     // Default time range of the report; viewers can pick another one
     range: {
         preset: { type: String, enum: RANGE_PRESETS, default: '7d' },

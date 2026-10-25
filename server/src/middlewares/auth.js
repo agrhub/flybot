@@ -79,7 +79,8 @@ async function authenticate(req, res, next) {
             language: user.language,
             role: roleOf(user),
             sentinelViewer: !!user.sentinelViewer,
-            ...(user.guest ? { guest: true } : {})
+            // A guest's own reports belong to its session (services/guestAccess.js)
+            ...(user.guest ? { guest: true, guestSession: String(sessionId) } : {})
         };
         // The guest account reads; it writes nothing but its sign-out and the assistant
         if (user.guest && !require('../services/guestAccess').guestMayRequest(req.method, req.originalUrl)) {

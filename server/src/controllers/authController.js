@@ -116,7 +116,8 @@ async function publicUser(user, req = null, { sessionId = null } = {}) {
         plan: { code: ent.plan, name: ent.planName, expired: !!ent.expired, expiresAt: ent.expiresAt || null },
         capabilities: {
             addCameras: works,
-            buildDashboards: works,
+            // The guest account too: reports of its own session (services/guestAccess.js)
+            buildDashboards: works || !!user.guest,
             createFarms: works,
             claimCameras: works,
             integrations: works && !!ent.features.apiAndWebhooks,
@@ -375,6 +376,8 @@ async function logout(req, res) {
         const resolved = token ? await resolveToken(token) : null;
         if (resolved?.sessionId) {
             await Session.updateOne({ _id: resolved.sessionId, revokedAt: null }, { $set: { revokedAt: new Date() } });
+            // A guest's reports end with its session
+            if (resolved.user.guest) await require('../models').Dashboard.deleteMany({ ownerId: resolved.user._id, guestSession: String(resolved.sessionId) });
         }
     } catch (err) {
         console.warn('⚠️ Logout session revoke failed:', err.message);
