@@ -51,8 +51,7 @@ function crop(parent, src, natW, natH, [x0, y0, x1, y1], w, h, fit = 'contain') 
     }
     return box;
 }
-// The finished build (24 Oct 2026): the ESP32-S3 N16R8 board in the trap lid, its OV5640 with the wide-angle lens.
-// Every part shown on its own (parts list, wiring) is cut out of this photo.
+// The build of 24 Oct 2026, a sharp photo: the parts shown on their own (parts list, wiring) are cut out of it
 const BUILD = M + 'photos/IMG_20261024_143114_539.jpg';
 const UW = 4160, UH = 3120;
 const ON_BUILD = {
@@ -62,8 +61,23 @@ const ON_BUILD = {
     modem: [0.598, 0.25, 0.748, 0.443],
     charger: [0.62, 0.453, 0.733, 0.667],
     gps: [0.306, 0.243, 0.405, 0.363],
-    reg: [0.299, 0.383, 0.389, 0.543],
     antenna: [0.678, 0.147, 0.71, 0.247]
+};
+// The 5 V boost board, from the first board's photo (19 Oct 2026): the same mini boost board the trap uses again
+const FIRST = M + 'photos/IMG_20261019_150930.jpg';
+const FW = 2592, FH = 4608;
+const BOOST = [0.482, 0.694, 0.737, 0.766];
+// The trap as it is now (25 Oct 2026): the 5 V boost board in place of the 3.3 V regulator
+const NOW = M + 'photos/build-2026-10-25.webp';
+const NW = 844, NH = 633;
+const ON_NOW = {
+    esp32: [0.48, 0.34, 0.687, 0.632],
+    lens: [0.498, 0.103, 0.658, 0.332],
+    modem: [0.687, 0.229, 0.853, 0.395],
+    charger: [0.711, 0.403, 0.865, 0.648],
+    gps: [0.355, 0.221, 0.468, 0.34],
+    boost: [0.338, 0.348, 0.415, 0.521],
+    antenna: [0.752, 0.063, 0.791, 0.158]
 };
 // The assembled trap, and its lid from above
 const TRAP = 'IMG_20261024_144403_702.jpg';
@@ -225,14 +239,14 @@ const VIEWS = {
     },
     bom(s) {
         const k = place(el('div', 'abs kicker', 'The trap camera · bill of materials', s), 120, 60);
-        const t = place(el('div', 'abs title', 'Open hardware: about US$40 per trap camera', s), 120, 108, 1700); t.style.fontSize = '48px';
+        const t = place(el('div', 'abs title', 'Open hardware: about US$39 per trap camera', s), 120, 108, 1700); t.style.fontSize = '48px';
         const parts = [
             ['photo', 'esp32', 'ESP32-S3 N16R8 CAM board', 'sold without a camera · US$6.91'],
             ['photo', 'lens', 'OV5640, wide-angle lens', '5 MP; the lens turns to focus · US$9.20'],
             ['photo', 'modem', '4G modem A7680C', 'antenna included · US$6.49'],
             ['photo', 'gps', 'GPS ATGM336H', 'antenna included · US$6.65'],
             ['photo', 'charger', 'Charger TP4056 + DW01', 'USB-C, protected · US$0.24'],
-            ['photo', 'reg', '3.3 V buck-boost regulator', 'feeds the board’s 3V3 pin · US$0.89'],
+            ['boost', null, 'Mini 5 V boost', 'set to 5 V, on the board’s 5V pin · US$0.22'],
             ['cell', null, 'LiPo pouch cell 103450', '3.7 V, 2000 mAh, flat: fits the lid · US$2.76'],
             ['housing', null, 'Solar trap housing + lure', 'hanging, with lid · US$3.00 + US$0.34']
         ].map(([kind, key, h, p], i) => {
@@ -240,12 +254,13 @@ const VIEWS = {
             const card = place(el('div', 'part', '', s), 120 + (i % 4) * 430, 188 + Math.floor(i / 4) * 340);
             const pic = el('div', 'pic', '', card);
             if (kind === 'photo') crop(pic, BUILD, UW, UH, ON_BUILD[key], 400, 220);
+            else if (kind === 'boost') crop(pic, FIRST, FW, FH, BOOST, 400, 220);
             else if (kind === 'housing') { const im = place(el('img', 'abs', undefined, pic), 0, 0, 400, 220); im.src = M + 'photos/' + TRAP; im.style.objectFit = 'cover'; }
             else if (kind === 'cell') pic.innerHTML = '<svg width="400" height="220"><rect x="70" y="70" width="240" height="80" rx="16" fill="#2f7d4f" stroke="#9fe3bd" stroke-width="3"/><rect x="310" y="92" width="18" height="36" rx="4" fill="#9fe3bd"/><text x="190" y="122" font-size="30" font-weight="800" fill="#eafff3" text-anchor="middle" font-family="Be Vietnam Pro">LiPo · 3.7 V</text></svg>';
             el('div', 'txt', `<h4>${h}</h4><p>${p}</p>`, card);
             return card;
         });
-        const src = place(el('div', 'abs source', 'Prices read on shop pages on 17 and 24 Oct 2026 (camos-esp32-trap docs/BOM.md, the field camera in the hanging solar trap); VND prices at 26,050 ₫/USD (Vietcombank, 21 Oct 2026). Total ≈ US$39.93 (962,160 ₫ + US$3.00 housing), with the 4G power switch, resistors, capacitors, prototype board and terminals (US$3.45); SIM not included.', s), 120, 870, 1700);
+        const src = place(el('div', 'abs source', 'Prices read on shop pages on 17, 24 and 25 Oct 2026 (camos-esp32-trap docs/BOM.md, the field camera in the hanging solar trap); VND prices at 26,050 ₫/USD (Vietcombank, 21 Oct 2026). Total ≈ US$39.27 (944,760 ₫ + US$3.00 housing), with the 4G power switch, resistors, capacitors, prototype board and terminals (US$3.45); SIM not included.', s), 120, 870, 1700);
         return (tt) => {
             show(k, prog(tt, 0, 0.6)); show(t, prog(tt, 0.2, 0.8));
             parts.forEach((c, i) => show(c, prog(tt, 0.7 + i * 0.35, 0.7), 40, 0.92));
@@ -257,15 +272,15 @@ const VIEWS = {
         const k = place(el('div', 'abs kicker', 'The real build', s), 120, 70);
         const t = place(el('div', 'abs title', 'Wired on a perfboard, mounted in the trap lid', s), 120, 112, 1700); t.style.fontSize = '50px';
         const frame = place(el('div', 'card', '', s), 140, 210, 640, 736); frame.style.overflow = 'hidden';
-        // The lid, cut to the frame's 640:736 shape so that the marks land on their modules
-        const R = [0.267, 0.09, 0.763, 0.85];
+        // The lid as it is now, cut to the frame's 640:736 shape so that the marks land on their modules
+        const R = [0.274, 0, 0.926, 1];
         const inner = place(el('div', 'abs', '', frame), 0, 0, 640, 736);
-        crop(inner, BUILD, UW, UH, R, 640, 736, 'cover');
+        crop(inner, NOW, NW, NH, R, 640, 736, 'cover');
         const toFrame = ([x0, y0, x1, y1]) => [((x0 + x1) / 2 - R[0]) / (R[2] - R[0]) * 640, ((y0 + y1) / 2 - R[1]) / (R[3] - R[1]) * 736];
         // Where each label is centred from its mark: above it, or below where a neighbour's label would cover it
-        const OFFSET = { gps: [0, 50], reg: [0, 50], charger: [0, 50], antenna: [-120, -46] };
-        const tags = [['esp32', 'ESP32-S3 N16R8'], ['lens', 'OV5640, wide-angle lens'], ['modem', '4G A7680C'], ['charger', 'TP4056 charger'], ['gps', 'GPS ATGM336H'], ['reg', '3.3 V regulator'], ['antenna', 'LTE antenna']].map(([key, label], i) => {
-            const [x, y] = toFrame(ON_BUILD[key]);
+        const OFFSET = { gps: [-30, -46], boost: [-40, 50], charger: [0, 50], antenna: [-60, -46], esp32: [-60, 60] };
+        const tags = [['esp32', 'ESP32-S3 N16R8'], ['lens', 'OV5640, wide-angle lens'], ['modem', '4G A7680C'], ['charger', 'TP4056 charger'], ['gps', 'GPS ATGM336H'], ['boost', '5 V boost'], ['antenna', 'LTE antenna']].map(([key, label], i) => {
+            const [x, y] = toFrame(ON_NOW[key]);
             const [dx, dy] = OFFSET[key] || [0, -46];
             const d = place(el('div', 'dotmark', '', s), 140 + x, 210 + y);
             const tag = place(el('div', 'tag', label, s), 140 + x + dx, 210 + y + dy);
@@ -343,23 +358,25 @@ const VIEWS = {
 };
 
 // ---------------------------------------------------------------- wiring animation (4G build)
-// Modules and pins follow camos-esp32-trap docs/WIRING.md (24 Oct 2026), the hanging trap's wiring: the panel and the
-// LiPo on the charger, a 3.3 V buck-boost regulator on the board's 3V3 pin, the modem from the cell through its power
-// switch on GPIO47, the GPS also from the cell with its ground switched on GPIO21, a divider on GPIO1. Only the wiring is
+// Modules and pins follow camos-esp32-trap docs/WIRING.md (25 Oct 2026), the hanging trap's wiring: the panel and the
+// LiPo on the charger, a 5 V boost board on the board's 5V pin (the board makes its own 3.3 V), the modem from the cell
+// through its power switch on GPIO47, the GPS also from the cell with its ground switched on GPIO21 and its UART on
+// GPIO14 / GPIO3, a divider on GPIO1. Only the wiring is
 // shown.
 function wiringView(s) {
     const STEPS = [
         [0, '1', 'Cell, charger and solar panel'],
-        [6.6, '2', '3.3 V buck-boost regulator → board 3V3'],
+        [6.6, '2', '5 V boost converter → board 5V'],
         [12.4, '3', '4G modem: from the cell through its switch, UART on GPIO41 / 42'],
-        [18.0, '4', 'GPS: from the cell, TX → GPIO14 · battery divider → GPIO1']
+        [18.0, '4', 'GPS: from the cell, UART on GPIO14 / GPIO3 · battery divider → GPIO1']
     ];
     const step = place(el('div', 'step', '<i></i><span></span>', s), 90, 34);
     const mods = {};
     const mod = (key, x, y, w, h, name, sub, pic, at) => {
         const m = place(el('div', 'mod', '', s), x, y, w, h);
         const p = place(el('div', 'pic', '', m), 0, 0, w, h - 74);
-        if (pic === 'photo') crop(p, BUILD, UW, UH, ON_BUILD[key === 'esp32' ? 'esp32cam' : key], w, h - 74);
+        if (pic === 'boost') crop(p, FIRST, FW, FH, BOOST, w, h - 74);
+        else if (pic === 'photo') crop(p, BUILD, UW, UH, ON_BUILD[key === 'esp32' ? 'esp32cam' : key], w, h - 74);
         else p.innerHTML = pic;
         el('div', 'name', `${name}<small>${sub}</small>`, m);
         mods[key] = { m, at };
@@ -369,7 +386,7 @@ function wiringView(s) {
     mod('solar', 90, 150, 300, 170, 'Solar panel 6 V 2 W', 'optional', panelSvg, 0.6);
     mod('charger', 90, 400, 300, 200, 'TP4056 charger', 'with DW01 protection', 'photo', 0.2);
     mod('cell', 90, 700, 300, 150, 'LiPo cell', '3.7 – 4.2 V, flat', cellSvg, 0.2);
-    mod('reg', 520, 400, 270, 200, '3.3 V buck-boost', 'EN tied to VIN', 'photo', 6.8);
+    mod('boost', 520, 400, 270, 200, '5 V boost', 'set to 5.0 – 5.2 V', 'boost', 6.8);
     mod('esp32', 920, 250, 400, 600, 'ESP32-S3 CAM', 'N16R8 · OV5640 wide-angle', 'photo', 6.8);
     mod('modem', 1460, 160, 380, 300, '4G A7680C', 'TDM2309 · nano SIM', 'photo', 12.6);
     mod('gps', 1460, 560, 380, 260, 'GPS ATGM336H', 'patch antenna faces up', 'photo', 18.2);
@@ -378,10 +395,10 @@ function wiringView(s) {
     const pins = [
         ['IN+', 150, 400, 'b', 0.6], ['IN−', 330, 400, 'b', 0.6], ['B+', 150, 600, 'u', 0.2], ['B−', 330, 600, 'u', 0.2], ['OUT+', 390, 450, 'r', 0.2], ['OUT−', 390, 500, 'r', 0.2],
         ['IN+', 520, 450, 'l', 6.8], ['IN−', 520, 500, 'l', 6.8], ['OUT+', 790, 450, 'r', 6.8], ['OUT−', 790, 500, 'r', 6.8],
-        ['3V3', 920, 330, 'l', 6.8], ['GND', 920, 390, 'l', 6.8], ['GPIO1', 920, 760, 'l', 18.2],
-        ['GPIO47', 1320, 270, 'r', 12.6], ['GPIO41', 1320, 320, 'r', 12.6], ['GPIO42', 1320, 370, 'r', 12.6], ['GPIO14', 1320, 690, 'r', 18.2], ['GPIO21', 1320, 814, 'r', 18.2],
+        ['5V', 920, 330, 'l', 6.8], ['GND', 920, 390, 'l', 6.8], ['GPIO1', 920, 760, 'l', 18.2],
+        ['GPIO47', 1320, 270, 'r', 12.6], ['GPIO41', 1320, 320, 'r', 12.6], ['GPIO42', 1320, 370, 'r', 12.6], ['GPIO14', 1320, 668, 'r', 18.2], ['GPIO3', 1320, 704, 'r', 18.2], ['GPIO21', 1320, 814, 'r', 18.2],
         ['VCC', 1460, 210, 'l', 12.6], ['GND', 1460, 260, 'l', 12.6], ['RXD', 1460, 320, 'l', 12.6], ['TXD', 1460, 370, 'l', 12.6],
-        ['VCC', 1840, 600, 'r', 18.2], ['TX', 1460, 690, 'l', 18.2], ['GND', 1460, 750, 'l', 18.2]
+        ['VCC', 1840, 600, 'r', 18.2], ['TX', 1460, 668, 'l', 18.2], ['RX', 1460, 704, 'l', 18.2], ['GND', 1460, 740, 'l', 18.2]
     ].map(([label, x, y, side, at]) => {
         const p = el('div', 'pin', label, s);
         p.style.top = y + 'px';
@@ -398,12 +415,12 @@ function wiringView(s) {
         ['bat', [[150, 700], [150, 600]], 0.9, 0.8], ['gnd', [[330, 700], [330, 600]], 1.3, 0.8],
         ['solar', [[150, 320], [150, 400]], 2.2, 0.8, true], ['gnd', [[330, 320], [330, 400]], 2.5, 0.8, true],
         ['bat', [[390, 450], [520, 450]], 7.4, 0.8], ['gnd', [[390, 500], [520, 500]], 7.8, 0.8],
-        ['v33', [[790, 450], [855, 450], [855, 330], [920, 330]], 8.6, 1.0], ['gnd', [[790, 500], [875, 500], [875, 390], [920, 390]], 9.2, 1.0],
+        ['v5', [[790, 450], [855, 450], [855, 330], [920, 330]], 8.6, 1.0], ['gnd', [[790, 500], [875, 500], [875, 390], [920, 390]], 9.2, 1.0],
         ['bat', [[455, 450], [455, 120], [1410, 120], [1410, 210], [1460, 210]], 13.0, 1.6], ['gnd', [[1460, 260], [1420, 260], [1420, 290]], 14.4, 0.5],
         ['sense', [[1320, 270], [1360, 270], [1360, 170], [1190, 170], [1190, 146]], 14.2, 0.8, true],
         ['uart', [[1320, 320], [1460, 320]], 15.0, 0.7], ['uart', [[1460, 370], [1320, 370]], 15.6, 0.7],
-        ['bat', [[1410, 120], [1880, 120], [1880, 600], [1840, 600]], 18.6, 1.0], ['gps', [[1460, 690], [1320, 690]], 19.2, 0.7],
-        ['gnd', [[1460, 750], [1420, 750], [1420, 866]], 19.8, 0.5], ['sense', [[1320, 814], [1336, 814], [1336, 890], [1350, 890]], 20.2, 0.5, true],
+        ['bat', [[1410, 120], [1880, 120], [1880, 600], [1840, 600]], 18.6, 1.0], ['gps', [[1460, 668], [1320, 668]], 19.2, 0.7], ['gps', [[1320, 704], [1460, 704]], 19.5, 0.7],
+        ['gnd', [[1460, 740], [1420, 740], [1420, 866]], 19.8, 0.5], ['sense', [[1320, 814], [1336, 814], [1336, 890], [1350, 890]], 20.2, 0.5, true],
         ['bat', [[455, 450], [455, 700], [560, 700]], 21.0, 0.8], ['gnd', [[680, 700], [680, 792]], 22.0, 0.4], ['sense', [[680, 700], [860, 700], [860, 760], [920, 760]], 22.2, 0.9]
     ];
     const svgNS = 'http://www.w3.org/2000/svg';
@@ -439,11 +456,11 @@ function wiringView(s) {
     ].map(([at, x, y, w, h, sub]) => ({ b: place(el('div', 'note', `${h}<br><span style="font-size:16px;font-weight:500">${sub}</span>`, s), x, y, w), at }));
     switches.forEach(({ b }) => { b.style.padding = '4px 12px'; b.style.fontSize = '18px'; b.style.background = '#0f1c17'; b.style.textAlign = 'center'; });
     const notes = [
-        [7.4, 9, 'Boards with an EN pin: tie EN to VIN, or the regulator stays off', 470, 640, 400],
+        [7.4, 9, 'Set the boost to 5 V (pads A/B to 0/0) and measure 5.0 – 5.2 V before it touches the board', 470, 640, 400],
         [13.0, 7, 'Modem VCC from the cell (3.7 – 4.2 V), never 5 V or 3.3 V; 1000 µF + 100 nF at VCC', 930, 880, 900],
         [22.6, 3.4, 'All grounds common · wire it as drawn', 470, 880, 860]
     ].map(([at, len, text, x, y, w]) => ({ n: place(el('div', 'note', text, s), x, y, w), at, len }));
-    const legend = place(el('div', 'abs source', 'Drawn by function, not by position on the board · camos-esp32-trap docs/WIRING.md (24 Oct 2026)', s), 162, 98, 1300);
+    const legend = place(el('div', 'abs source', 'Drawn by function, not by position on the board · camos-esp32-trap docs/WIRING.md (25 Oct 2026)', s), 162, 98, 1300);
     return (tt) => {
         const cur = STEPS.filter(x => tt >= x[0]).pop();
         step.querySelector('i').textContent = cur[1];

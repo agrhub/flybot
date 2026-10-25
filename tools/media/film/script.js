@@ -17,12 +17,12 @@ export const SCENES = [
         { at: 0.3, en: 'This is our open trap camera: an ESP32-S3 board with a five-megapixel camera, a 4G modem, GPS, a flat lithium-polymer cell and a small solar panel.',
           vi: 'Đây là camera bẫy mã nguồn mở: board ESP32-S3 với camera 5 megapixel, modem 4G, GPS, pin lithium-polymer dạng dẹt và tấm pin mặt trời nhỏ.' }] },
     { id: 'wiring', dur: 25, lines: [
-        { at: 0.3, en: 'First the cell and its charger. A regulator makes three point three volts for the board.',
-          vi: 'Đầu tiên là pin và mạch sạc. Mạch ổn áp tạo 3,3 V cho board.' },
+        { at: 0.3, en: 'First the cell and its charger. A boost converter makes five volts for the board.',
+          vi: 'Đầu tiên là pin và mạch sạc. Mạch tăng áp tạo 5 V cho board.' },
         { at: 6.6, en: 'The 4G modem runs from the cell through a switch, and talks to the board on two pins.',
           vi: 'Module 4G lấy điện từ pin qua một công tắc và nói chuyện với board qua hai chân.' },
-        { at: 12.4, en: 'The GPS also runs from the cell, and sends its position on one wire.',
-          vi: 'GPS cũng lấy điện từ pin và gửi vị trí qua một dây.' },
+        { at: 12.4, en: 'The GPS also runs from the cell, and talks to the board on two wires.',
+          vi: 'GPS cũng lấy điện từ pin và nói chuyện với board qua hai dây.' },
         { at: 18.0, en: 'Two resistors let the camera measure its own battery.',
           vi: 'Hai điện trở giúp camera tự đo pin của mình.' }] },
     { id: 'board', dur: 9, lines: [
