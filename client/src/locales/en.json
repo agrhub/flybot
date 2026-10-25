@@ -3098,6 +3098,257 @@
         "title": "All set",
         "desc": "Start by adding your first camera. Replay this tour any time from the account menu, \"Quick tour\"."
       }
+    },
+    "pageButton": "Tour of this page",
+    "pages": {
+      "cameras": {
+        "intro": {
+          "title": "Cameras",
+          "desc": "Every trap camera you can see, each with its latest photo or live picture. Open one to watch it live, play back recordings and see its catches."
+        },
+        "add": {
+          "title": "Add a camera",
+          "desc": "Add an EZVIZ camera with its serial number and verification code, or claim a FlyBot camera with its claim code."
+        },
+        "layout": {
+          "title": "Columns",
+          "desc": "How many cameras per row. Your choice is remembered on this browser."
+        },
+        "filters": {
+          "title": "Search and filters",
+          "desc": "Find a camera by name or serial, or show only online, offline, a camera type or a trap kind."
+        },
+        "grid": {
+          "title": "Camera grid",
+          "desc": "Click a camera to open its own page: live view, recordings, trap upkeep and detection history."
+        },
+        "pager": {
+          "title": "Pages",
+          "desc": "Move between pages and choose how many cameras each page shows."
+        }
+      },
+      "camera": {
+        "intro": {
+          "title": "One camera",
+          "desc": "Everything about one trap camera on one page: live picture, recordings, upkeep and what the AI found."
+        },
+        "live": {
+          "title": "Live view",
+          "desc": "The camera's live picture. A simulated camera shows its latest photo here instead."
+        },
+        "switcher": {
+          "title": "Other cameras",
+          "desc": "Jump to another camera without going back to the grid."
+        },
+        "status": {
+          "title": "Status bar",
+          "desc": "Live or playback, the camera type, signal strength on FlyBot cameras and image quality warnings."
+        },
+        "actions": {
+          "title": "Camera actions",
+          "desc": "Take a photo now, open the camera settings or see its details: firmware, last photo, AI success rate and schedule. Buttons you have no rights for are hidden."
+        },
+        "playback": {
+          "title": "Playback",
+          "desc": "Recordings from the memory card: pick a day, then a clip, and come back to live when you are done."
+        },
+        "upkeep": {
+          "title": "Trap upkeep",
+          "desc": "When the sticky card was last changed, its reminder, and the log of cleaning and other work on this trap."
+        },
+        "history": {
+          "title": "Detection history",
+          "desc": "Every photo the AI checked on this camera, with counts and risk. Filter it, open a photo or export the list."
+        }
+      },
+      "analytics": {
+        "intro": {
+          "title": "Analytics",
+          "desc": "Charts and findings over all your traps or one camera, for the time range you choose."
+        },
+        "filters": {
+          "title": "Camera and time range",
+          "desc": "Every chart starts from this camera and range; each chart can also set its own."
+        },
+        "tabs": {
+          "title": "Three views",
+          "desc": "Trends over time, insights the AI picked out, and the full detection history."
+        },
+        "export": {
+          "title": "Export PDF",
+          "desc": "Put every chart of this page in one PDF report."
+        }
+      },
+      "reports": {
+        "intro": {
+          "title": "Reports",
+          "desc": "Your saved reports and the reports others shared with you. Each one shows chosen charts for chosen cameras."
+        },
+        "create": {
+          "title": "New report",
+          "desc": "Start from the overview template or a blank page, then add the charts you need."
+        },
+        "list": {
+          "title": "Your reports",
+          "desc": "Click a report to open it. The tags show who can see it and until when."
+        }
+      },
+      "report": {
+        "intro": {
+          "title": "A report",
+          "desc": "Charts for the cameras of this report, worked out again each time you open it."
+        },
+        "range": {
+          "title": "Time range",
+          "desc": "Look at another period without changing the report; its owner can keep it as the default."
+        },
+        "pdf": {
+          "title": "PDF",
+          "desc": "Download this report as a PDF to print or send."
+        },
+        "send": {
+          "title": "Send by email",
+          "desc": "Email this report with its PDF to yourself now. Its owner can also send it weekly or monthly."
+        },
+        "share": {
+          "title": "Share",
+          "desc": "Share the report with people or by a public link with an end date. On a report shared with you, copy its public link to pass it on."
+        },
+        "edit": {
+          "title": "Edit",
+          "desc": "Add, move or remove charts and choose the report's cameras."
+        }
+      },
+      "farms": {
+        "intro": {
+          "title": "Farms",
+          "desc": "Your farms and their plots, with the cameras on each plot."
+        },
+        "create": {
+          "title": "New farm",
+          "desc": "Add a farm, then draw its plots on the map and put cameras on them."
+        },
+        "compare": {
+          "title": "Compare farms",
+          "desc": "Flies per trap per day on each farm against the period before. Open a row to see its plots."
+        },
+        "season": {
+          "title": "Season report",
+          "desc": "One PDF for the whole period: by farm and by month, the busiest days, the effect of each active ingredient and the VietGAP treatment record."
+        },
+        "list": {
+          "title": "Farm list",
+          "desc": "Click a farm to see its map, plots and cameras."
+        }
+      },
+      "logbook": {
+        "intro": {
+          "title": "Field log",
+          "desc": "Sprays, baits, card changes and other field work, with the harvest wait after each spray and how well it worked."
+        },
+        "add": {
+          "title": "New entry",
+          "desc": "Record a treatment: when, which product and dose, and on which traps."
+        },
+        "import": {
+          "title": "Import",
+          "desc": "Bring in entries from an Excel or CSV file."
+        },
+        "export": {
+          "title": "VietGAP record",
+          "desc": "Download the log as a VietGAP spray record."
+        },
+        "filters": {
+          "title": "Filters",
+          "desc": "Show one camera, one kind of work or a date range."
+        },
+        "list": {
+          "title": "Entries",
+          "desc": "Each entry with its harvest wait and its effect: catches before and after. Click the effect for the details."
+        },
+        "ingredients": {
+          "title": "By active ingredient",
+          "desc": "Which active ingredients worked best across all their uses."
+        }
+      },
+      "map": {
+        "intro": {
+          "title": "Trap map",
+          "desc": "Where every trap is, colored by its risk."
+        },
+        "layers": {
+          "title": "Layers",
+          "desc": "Show a heat map of catches and the outlines of your plots."
+        },
+        "legend": {
+          "title": "Risk colors",
+          "desc": "Green is safe, orange is moderate, red is over the alert threshold."
+        },
+        "basemap": {
+          "title": "Street or satellite",
+          "desc": "Switch the background between the street map and satellite photos."
+        },
+        "traps": {
+          "title": "Trap list",
+          "desc": "Search by name, serial or address and click a trap to find it on the map."
+        }
+      },
+      "sentinel": {
+        "intro": {
+          "title": "FlyBot Sentinel",
+          "desc": "An AI agent watches your traps: what OpenCV found on each photo, what the agent decided and what it did."
+        },
+        "overview": {
+          "title": "Overview",
+          "desc": "The agent's state, its latest decisions and what waits for approval."
+        },
+        "traces": {
+          "title": "Traces",
+          "desc": "Each decision step by step: what the agent saw, which tools it used and what it decided."
+        },
+        "approvals": {
+          "title": "Approvals",
+          "desc": "Changes the agent proposed. Nothing is written to the field log until a person approves."
+        },
+        "devices": {
+          "title": "Devices",
+          "desc": "The cameras the agent watches: last photo, battery and signal."
+        },
+        "refresh": {
+          "title": "Refresh",
+          "desc": "Load the latest state."
+        }
+      },
+      "settings": {
+        "intro": {
+          "title": "Settings",
+          "desc": "Your account, your cameras and how FlyBot works for you."
+        },
+        "sections": {
+          "title": "Sections",
+          "desc": "Choose a part of the settings: account, cameras, notifications, theme and more."
+        },
+        "account": {
+          "title": "Account",
+          "desc": "Profile, password, signed-in devices and your plan."
+        },
+        "system": {
+          "title": "Cameras and teams",
+          "desc": "Cameras, organizations, notifications, theme and language, storage and AI models."
+        },
+        "notifications": {
+          "title": "Notifications",
+          "desc": "How pest and camera alerts reach you, and which ones."
+        },
+        "preferences": {
+          "title": "Theme and language",
+          "desc": "Light or dark theme and the language of the app."
+        },
+        "admin": {
+          "title": "Administration",
+          "desc": "Users, all cameras, firmware, the AI pipeline and system settings."
+        }
+      }
     }
   },
   "offline": {

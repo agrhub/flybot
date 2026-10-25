@@ -3098,6 +3098,257 @@
         "title": "Sẵn sàng",
         "desc": "Bắt đầu bằng việc thêm camera đầu tiên. Xem lại phần giới thiệu này bất cứ lúc nào từ menu tài khoản, mục \"Hướng dẫn nhanh\"."
       }
+    },
+    "pageButton": "Hướng dẫn trang này",
+    "pages": {
+      "cameras": {
+        "intro": {
+          "title": "Camera",
+          "desc": "Tất cả camera bẫy bạn được xem, mỗi camera kèm ảnh mới nhất hoặc hình trực tiếp. Mở một camera để xem trực tiếp, xem lại và xem số côn trùng vào bẫy."
+        },
+        "add": {
+          "title": "Thêm camera",
+          "desc": "Thêm camera EZVIZ bằng số serial và mã xác thực, hoặc nhận camera FlyBot bằng mã nhận camera."
+        },
+        "layout": {
+          "title": "Số cột",
+          "desc": "Số camera trên mỗi hàng. Lựa chọn được ghi nhớ trên trình duyệt này."
+        },
+        "filters": {
+          "title": "Tìm kiếm và bộ lọc",
+          "desc": "Tìm camera theo tên hoặc số serial, hoặc chỉ hiện camera trực tuyến, ngoại tuyến, một loại camera hay một loại bẫy."
+        },
+        "grid": {
+          "title": "Lưới camera",
+          "desc": "Bấm vào một camera để mở trang riêng: xem trực tiếp, xem lại, bảo trì bẫy và lịch sử nhận diện."
+        },
+        "pager": {
+          "title": "Trang",
+          "desc": "Chuyển trang và chọn số camera hiện trên mỗi trang."
+        }
+      },
+      "camera": {
+        "intro": {
+          "title": "Một camera",
+          "desc": "Mọi thông tin của một camera bẫy trên một trang: hình trực tiếp, bản ghi, bảo trì bẫy và kết quả AI nhận diện."
+        },
+        "live": {
+          "title": "Xem trực tiếp",
+          "desc": "Hình trực tiếp từ camera. Camera mô phỏng hiện ảnh mới nhất ở đây."
+        },
+        "switcher": {
+          "title": "Camera khác",
+          "desc": "Chuyển sang camera khác mà không cần quay lại lưới camera."
+        },
+        "status": {
+          "title": "Thanh trạng thái",
+          "desc": "Đang xem trực tiếp hay xem lại, loại camera, cường độ tín hiệu trên camera FlyBot và cảnh báo chất lượng ảnh."
+        },
+        "actions": {
+          "title": "Thao tác với camera",
+          "desc": "Chụp ngay, mở cài đặt camera hoặc xem thông tin: phần mềm thiết bị, ảnh gần nhất, tỉ lệ AI xử lý thành công và lịch chụp. Nút nào bạn không có quyền sẽ được ẩn."
+        },
+        "playback": {
+          "title": "Xem lại",
+          "desc": "Bản ghi trên thẻ nhớ: chọn ngày, chọn đoạn ghi, rồi quay lại xem trực tiếp khi xong."
+        },
+        "upkeep": {
+          "title": "Bảo trì bẫy",
+          "desc": "Lần thay tấm dính gần nhất, lời nhắc thay và nhật ký vệ sinh cùng các việc khác trên bẫy này."
+        },
+        "history": {
+          "title": "Lịch sử nhận diện",
+          "desc": "Mọi ảnh AI đã kiểm tra trên camera này, kèm số lượng và mức nguy cơ. Lọc, mở từng ảnh hoặc xuất danh sách."
+        }
+      },
+      "analytics": {
+        "intro": {
+          "title": "Phân tích",
+          "desc": "Biểu đồ và nhận định trên tất cả các bẫy hoặc một camera, trong khoảng thời gian bạn chọn."
+        },
+        "filters": {
+          "title": "Camera và khoảng thời gian",
+          "desc": "Mọi biểu đồ bắt đầu từ camera và khoảng thời gian này; mỗi biểu đồ cũng có thể chọn riêng."
+        },
+        "tabs": {
+          "title": "Ba góc nhìn",
+          "desc": "Xu hướng theo thời gian, các nhận định AI rút ra và toàn bộ lịch sử nhận diện."
+        },
+        "export": {
+          "title": "Xuất PDF",
+          "desc": "Gộp mọi biểu đồ của trang này vào một báo cáo PDF."
+        }
+      },
+      "reports": {
+        "intro": {
+          "title": "Báo cáo",
+          "desc": "Các báo cáo bạn đã lưu và báo cáo người khác chia sẻ với bạn. Mỗi báo cáo gồm các biểu đồ đã chọn cho các camera đã chọn."
+        },
+        "create": {
+          "title": "Báo cáo mới",
+          "desc": "Bắt đầu từ mẫu tổng quan hoặc trang trống, rồi thêm các biểu đồ bạn cần."
+        },
+        "list": {
+          "title": "Danh sách báo cáo",
+          "desc": "Bấm vào một báo cáo để mở. Các nhãn cho biết ai được xem và xem đến khi nào."
+        }
+      },
+      "report": {
+        "intro": {
+          "title": "Một báo cáo",
+          "desc": "Biểu đồ cho các camera của báo cáo này, được tính lại mỗi lần bạn mở."
+        },
+        "range": {
+          "title": "Khoảng thời gian",
+          "desc": "Xem một giai đoạn khác mà không đổi báo cáo; chủ báo cáo có thể lưu làm mặc định."
+        },
+        "pdf": {
+          "title": "PDF",
+          "desc": "Tải báo cáo này dưới dạng PDF để in hoặc gửi đi."
+        },
+        "send": {
+          "title": "Gửi qua email",
+          "desc": "Gửi ngay báo cáo này kèm PDF vào email của bạn. Chủ báo cáo cũng có thể gửi hằng tuần hoặc hằng tháng."
+        },
+        "share": {
+          "title": "Chia sẻ",
+          "desc": "Chia sẻ báo cáo với từng người hoặc qua đường dẫn công khai có ngày hết hạn. Với báo cáo được chia sẻ cho bạn, hãy sao chép đường dẫn công khai để chuyển tiếp."
+        },
+        "edit": {
+          "title": "Chỉnh sửa",
+          "desc": "Thêm, sắp xếp hoặc bỏ biểu đồ và chọn camera của báo cáo."
+        }
+      },
+      "farms": {
+        "intro": {
+          "title": "Vườn & lô",
+          "desc": "Các vườn của bạn và các lô trong vườn, kèm camera trên từng lô."
+        },
+        "create": {
+          "title": "Vườn mới",
+          "desc": "Thêm vườn, rồi vẽ các lô trên bản đồ và gắn camera vào lô."
+        },
+        "compare": {
+          "title": "So sánh các vườn",
+          "desc": "Số ruồi/bẫy/ngày của từng vườn so với kỳ trước. Mở một dòng để xem các lô."
+        },
+        "season": {
+          "title": "Báo cáo cả vụ",
+          "desc": "Một tệp PDF cho cả giai đoạn: theo vườn và theo tháng, những ngày cao điểm, hiệu quả của từng hoạt chất và sổ ghi chép xử lý theo VietGAP."
+        },
+        "list": {
+          "title": "Danh sách vườn",
+          "desc": "Bấm vào một vườn để xem bản đồ, các lô và camera."
+        }
+      },
+      "logbook": {
+        "intro": {
+          "title": "Nhật ký vườn",
+          "desc": "Các lần phun, đặt bả, thay tấm dính và việc khác ngoài vườn, kèm thời gian cách ly trước thu hoạch và hiệu quả của từng lần."
+        },
+        "add": {
+          "title": "Ghi mới",
+          "desc": "Ghi một lần xử lý: thời điểm, thuốc và liều lượng, trên những bẫy nào."
+        },
+        "import": {
+          "title": "Nhập từ tệp",
+          "desc": "Đưa các dòng nhật ký vào từ tệp Excel hoặc CSV."
+        },
+        "export": {
+          "title": "Sổ VietGAP",
+          "desc": "Tải nhật ký dưới dạng sổ ghi chép sử dụng thuốc theo VietGAP."
+        },
+        "filters": {
+          "title": "Bộ lọc",
+          "desc": "Xem theo một camera, một loại công việc hoặc một khoảng ngày."
+        },
+        "list": {
+          "title": "Các lần ghi",
+          "desc": "Mỗi lần ghi kèm thời gian cách ly và hiệu quả: số ruồi trước và sau xử lý. Bấm vào hiệu quả để xem chi tiết."
+        },
+        "ingredients": {
+          "title": "Theo hoạt chất",
+          "desc": "Hoạt chất nào hiệu quả nhất qua tất cả các lần sử dụng."
+        }
+      },
+      "map": {
+        "intro": {
+          "title": "Bản đồ bẫy",
+          "desc": "Vị trí từng bẫy, tô màu theo mức nguy cơ."
+        },
+        "layers": {
+          "title": "Lớp hiển thị",
+          "desc": "Hiện bản đồ nhiệt số côn trùng vào bẫy và đường ranh các lô."
+        },
+        "legend": {
+          "title": "Màu mức nguy cơ",
+          "desc": "Xanh là an toàn, cam là trung bình, đỏ là vượt ngưỡng cảnh báo."
+        },
+        "basemap": {
+          "title": "Bản đồ hay vệ tinh",
+          "desc": "Chuyển nền giữa bản đồ đường phố và ảnh vệ tinh."
+        },
+        "traps": {
+          "title": "Danh sách bẫy",
+          "desc": "Tìm theo tên, số serial hoặc địa chỉ và bấm vào một bẫy để tìm nó trên bản đồ."
+        }
+      },
+      "sentinel": {
+        "intro": {
+          "title": "Giám sát AI",
+          "desc": "Một tác tử AI theo dõi các bẫy của bạn: OpenCV tìm thấy gì trên từng ảnh, tác tử quyết định gì và đã làm gì."
+        },
+        "overview": {
+          "title": "Tổng quan",
+          "desc": "Trạng thái của tác tử, các quyết định mới nhất và những việc đang chờ duyệt."
+        },
+        "traces": {
+          "title": "Nhật ký xử lý",
+          "desc": "Từng quyết định theo từng bước: tác tử thấy gì, dùng công cụ nào và quyết định ra sao."
+        },
+        "approvals": {
+          "title": "Phê duyệt",
+          "desc": "Các thay đổi tác tử đề xuất. Không có gì được ghi vào nhật ký vườn cho đến khi có người duyệt."
+        },
+        "devices": {
+          "title": "Thiết bị",
+          "desc": "Các camera tác tử đang theo dõi: ảnh gần nhất, pin và tín hiệu."
+        },
+        "refresh": {
+          "title": "Làm mới",
+          "desc": "Tải trạng thái mới nhất."
+        }
+      },
+      "settings": {
+        "intro": {
+          "title": "Cài đặt",
+          "desc": "Tài khoản, camera của bạn và cách FlyBot làm việc với bạn."
+        },
+        "sections": {
+          "title": "Các mục",
+          "desc": "Chọn một phần của cài đặt: tài khoản, camera, thông báo, giao diện và các mục khác."
+        },
+        "account": {
+          "title": "Tài khoản",
+          "desc": "Hồ sơ, mật khẩu, thiết bị đăng nhập và gói dịch vụ."
+        },
+        "system": {
+          "title": "Camera và tổ chức",
+          "desc": "Camera, tổ chức, thông báo, giao diện và ngôn ngữ, lưu trữ và dịch vụ AI."
+        },
+        "notifications": {
+          "title": "Thông báo",
+          "desc": "Cảnh báo dịch hại và camera đến với bạn qua kênh nào, và những cảnh báo nào."
+        },
+        "preferences": {
+          "title": "Giao diện và ngôn ngữ",
+          "desc": "Giao diện sáng hoặc tối và ngôn ngữ của ứng dụng."
+        },
+        "admin": {
+          "title": "Quản trị",
+          "desc": "Người dùng, toàn bộ camera, phần mềm thiết bị, quy trình AI và cài đặt hệ thống."
+        }
+      }
     }
   },
   "offline": {

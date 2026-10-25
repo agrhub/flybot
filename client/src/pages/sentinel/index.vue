@@ -1,9 +1,9 @@
 <template>
   <div class="w-full max-w-7xl mx-auto pb-12">
-    <PageHeader :title="t('sentinel.title')" :subtitle="t(`sentinel.pages.${activeTab}`)">
+    <PageHeader :title="t('sentinel.title')" :subtitle="t(`sentinel.pages.${activeTab}`)" :tour="enabled ? 'sentinel' : ''">
       <template v-if="enabled" #actions>
         <span v-if="state.loadedAt" class="meta-text hidden sm:inline">{{ t('sentinel.common.updated', { time: relative(state.loadedAt, locale) }) }}</span>
-        <el-button :icon="Refresh" :loading="state.loading" data-test="sentinel-refresh" @click="refresh">{{ t('common.refresh') }}</el-button>
+        <el-button :icon="Refresh" :loading="state.loading" data-test="sentinel-refresh" data-tour="sentinel-refresh" @click="refresh">{{ t('common.refresh') }}</el-button>
       </template>
     </PageHeader>
 
@@ -47,7 +47,7 @@
       <el-tabs :model-value="activeTab" class="sentinel-tabs" @tab-change="openTab">
         <el-tab-pane v-for="tab in TABS" :key="tab.name" :name="tab.name">
           <template #label>
-            <span class="inline-flex items-center gap-1.5" :data-test="`sentinel-tab-${tab.name}`">
+            <span class="inline-flex items-center gap-1.5" :data-test="`sentinel-tab-${tab.name}`" :data-tour="`sentinel-tab-${tab.name}`">
               <el-icon><component :is="tab.icon" /></el-icon>
               <span>{{ t(`sentinel.tabs.${tab.name}`) }}</span>
               <el-badge v-if="tab.name === 'approvals' && pendingCount" :value="pendingCount" type="warning" class="tab-badge" />

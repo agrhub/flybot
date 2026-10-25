@@ -10,7 +10,7 @@
         <div class="min-w-0">
           <!-- Video player -->
           <!-- CamOS cameras send 4:3 pictures: a 4:3 box as wide as the column, without side bars -->
-          <div class="live-tab__viewport bg-black rounded-lg overflow-hidden w-full relative group flex items-center justify-center"
+          <div data-tour="camera-live" class="live-tab__viewport bg-black rounded-lg overflow-hidden w-full relative group flex items-center justify-center"
             :class="isCamos ? 'live-tab__viewport--43 aspect-[4/3]' : 'aspect-video max-h-[65vh]'">
             <div id="hls-video" ref="hlsContainer" class="w-full h-full object-contain hidden"></div>
             <video ref="hlsVideo" controls autoplay playsinline class="w-full h-full object-contain hidden"></video>
@@ -64,7 +64,7 @@
 
       <!-- Under the video: what is playing, and the camera actions -->
       <div class="flex flex-wrap items-center justify-between gap-2">
-        <div class="flex flex-wrap items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2" data-tour="camera-status">
           <!-- Live or Playback only: connecting, errors and sleep are on the player, online / offline next to the name -->
           <el-tag :type="streamTagType" effect="light" round size="small" data-test="live-status">{{ streamTagText }}</el-tag>
           <el-tag :type="isCamos ? 'primary' : 'info'" effect="plain" size="small">{{ t(`cameras.platform.${camera?.platform || 'ezviz'}`) }}</el-tag>
@@ -73,7 +73,7 @@
           <DeviceSignal v-if="isCamos && camera?.device" :device="camera.device" :online="camera.status === 1" />
           <el-tag v-if="health?.imageIssues?.length" type="warning" effect="light" round size="small">{{ t('cameras.imageQuality.label') }}: {{ health.imageIssues.map(i => t(`cameras.imageQuality.issues.${i}`)).join(', ') }}</el-tag>
         </div>
-        <div class="flex flex-wrap items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2" data-tour="camera-actions">
           <el-button
             v-if="camera && camera.canManage !== false"
             size="small"
@@ -185,13 +185,14 @@
     <!-- Recordings: clips and a timeline under the video (EZVIZ SD card; CamOS photos are in the history) -->
     <PlaybackControls
       v-if="!isCamos"
+      data-tour="camera-playback"
       :camera="camera"
       @play-playback="handlePlayPlayback"
       @back-to-live="playLiveStream"
     />
 
     <!-- Sticky card and other field work -->
-    <TrapMaintenanceCard v-if="camera" :camera="camera" />
+    <TrapMaintenanceCard v-if="camera" :camera="camera" data-tour="camera-upkeep" />
 
     <!-- Firmware of an EZVIZ camera; a CamOS camera's firmware and console log are tabs of its Camera settings -->
     <CameraFirmwareCard v-if="camera && !camera.simulated && !isCamos" :camera="camera" />

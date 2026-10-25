@@ -8,20 +8,20 @@
 
     <template v-else-if="dashboard">
       <!-- Header -->
-      <PageHeader :title="editing ? t('dashboards.editing', { name: dashboard.name }) : dashboard.name" :subtitle="editing ? '' : dashboard.description">
+      <PageHeader :title="editing ? t('dashboards.editing', { name: dashboard.name }) : dashboard.name" :subtitle="editing ? '' : dashboard.description" :tour="editing ? '' : 'report'">
         <template #actions>
           <template v-if="!editing">
             <el-button :icon="Back" @click="router.push('/reports')">{{ t('dashboards.backToList') }}</el-button>
             <el-button :icon="Refresh" :loading="loadingData" @click="loadData">{{ t('common.refresh') }}</el-button>
-            <el-button :icon="Download" :loading="exporting" :disabled="!widgetData || !dashboard.widgets.length" @click="exportPdf">{{ t('dashboards.exportPdf') }}</el-button>
+            <el-button :icon="Download" data-tour="report-pdf" :loading="exporting" :disabled="!widgetData || !dashboard.widgets.length" @click="exportPdf">{{ t('dashboards.exportPdf') }}</el-button>
             <el-tooltip v-if="!user?.guest" :content="t('dashboards.sendNowHint')" placement="bottom">
-              <el-button :icon="Message" :loading="sending" :disabled="!dashboard.widgets.length" @click="sendNow">{{ t('dashboards.sendNow') }}</el-button>
+              <el-button :icon="Message" data-tour="report-send" :loading="sending" :disabled="!dashboard.widgets.length" @click="sendNow">{{ t('dashboards.sendNow') }}</el-button>
             </el-tooltip>
             <!-- Shared with me and public: I can pass its link on (changing it stays with the owner) -->
-            <el-button v-if="!dashboard.canEdit && publicUrl" :icon="Share" data-test="copy-public-link" @click="copyPublicLink">{{ t('dashboards.copyPublicLink') }}</el-button>
+            <el-button v-if="!dashboard.canEdit && publicUrl" :icon="Share" data-test="copy-public-link" data-tour="report-share" @click="copyPublicLink">{{ t('dashboards.copyPublicLink') }}</el-button>
             <template v-if="dashboard.canEdit">
-              <el-button :icon="Share" @click="shareVisible = true">{{ t('share.button') }}</el-button>
-              <el-button type="primary" :icon="Edit" @click="startEditing">{{ t('dashboards.edit') }}</el-button>
+              <el-button :icon="Share" data-tour="report-share" @click="shareVisible = true">{{ t('share.button') }}</el-button>
+              <el-button type="primary" :icon="Edit" data-tour="report-edit" @click="startEditing">{{ t('dashboards.edit') }}</el-button>
               <el-dropdown trigger="click" @command="onCommand">
                 <el-button :icon="MoreFilled" circle :aria-label="t('common.moreActions')" />
                 <template #dropdown>
@@ -61,7 +61,7 @@
             {{ t('dashboards.schedule.receive') }}
           </span>
         </div>
-        <div class="flex flex-wrap items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2" data-tour="report-range">
           <ReportRangePicker v-model="viewRange" />
           <el-button v-if="dashboard.canEdit && !sameRange(viewRange, dashboard.range)" link type="primary" :loading="savingRange" @click="saveDefaultRange">
             {{ t('dashboards.saveDefaultRange') }}

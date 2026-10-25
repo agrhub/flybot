@@ -4,10 +4,13 @@
       <!-- Left settings navigation -->
       <aside class="settings-nav w-full md:w-64 shrink-0 flex flex-col overflow-y-auto custom-scrollbar">
         <div class="px-4 md:px-5 pt-4 md:pt-5 pb-3">
-          <h1 class="settings-nav__title">{{ t('settings.title') }}</h1>
+          <div class="flex items-center justify-between gap-2">
+            <h1 class="settings-nav__title">{{ t('settings.title') }}</h1>
+            <PageTour page="settings" />
+          </div>
           <p v-if="!isMobile" class="settings-nav__desc">{{ t('settings.desc') }}</p>
           <!-- Phones: the section list is a dropdown, so the page content stays on screen -->
-          <el-select :aria-label="t('settings.section')" v-if="isMobile" v-model="activeTab" class="w-full mt-3" size="large">
+          <el-select :aria-label="t('settings.section')" v-if="isMobile" v-model="activeTab" class="w-full mt-3" size="large" data-tour="settings-sections">
             <el-option-group v-for="group in mobileSections" :key="group.label" :label="group.label">
               <el-option v-for="item in group.items" :key="item.value" :label="item.label" :value="item.value" />
             </el-option-group>
@@ -16,7 +19,7 @@
 
         <!-- One menu per group: a group inside el-menu is not a valid menu for screen readers -->
         <nav v-if="!isMobile" :aria-label="t('settings.section')">
-          <div class="settings-group">
+          <div class="settings-group" data-tour="settings-account">
             <p class="settings-group__title">{{ t('settings.account') }}</p>
             <el-menu :default-active="activeTab" class="settings-menu" :aria-label="t('settings.account')" @select="(key) => (activeTab = key)">
               <el-menu-item index="profile">
@@ -38,7 +41,7 @@
             </el-menu>
           </div>
 
-          <div class="settings-group">
+          <div class="settings-group" data-tour="settings-system">
             <p class="settings-group__title">{{ t('settings.system') }}</p>
             <el-menu :default-active="activeTab" class="settings-menu" :aria-label="t('settings.system')" @select="(key) => (activeTab = key)">
               <el-menu-item index="cameras">
@@ -49,7 +52,7 @@
                 <el-icon><OfficeBuilding /></el-icon>
                 <span>{{ t('orgs.tab') }}</span>
               </el-menu-item>
-              <el-menu-item index="notifications">
+              <el-menu-item index="notifications" data-tour="settings-notifications">
                 <el-icon><Bell /></el-icon>
                 <span>{{ t('settings.notificationsTab') }}</span>
               </el-menu-item>
@@ -57,7 +60,7 @@
                 <el-icon><Connection /></el-icon>
                 <span>{{ t('integrations.tab') }}</span>
               </el-menu-item>
-              <el-menu-item index="preferences">
+              <el-menu-item index="preferences" data-tour="settings-preferences">
                 <el-icon><Brush /></el-icon>
                 <span>{{ t('settings.preferencesTab') }}</span>
               </el-menu-item>
@@ -68,7 +71,7 @@
             </el-menu>
           </div>
 
-          <div v-if="isAdmin || isSupport" class="settings-group">
+          <div v-if="isAdmin || isSupport" class="settings-group" data-tour="settings-admin">
             <p class="settings-group__title">{{ t('admin.group') }}</p>
             <el-menu :default-active="activeTab" class="settings-menu" :aria-label="t('admin.group')" @select="(key) => (activeTab = key)">
               <el-menu-item index="adminUsers">
@@ -794,6 +797,7 @@ import { useAuth } from '@/composables/useAuth';
 import { useBreakpoints } from '@/composables/useBreakpoints';
 import { useLanguage } from '@/composables/useLanguage';
 import PageHeader from '@/components/common/PageHeader.vue';
+import PageTour from '@/components/common/PageTour.vue';
 import CameraShareDialog from '@/components/cameras/CameraShareDialog.vue';
 import OrganizationsPanel from '@/components/settings/OrganizationsPanel.vue';
 import IntegrationsPanel from '@/components/settings/IntegrationsPanel.vue';

@@ -1,18 +1,18 @@
 <template>
   <div class="w-full max-w-7xl mx-auto pb-12">
-    <PageHeader :title="t('logbook.title')" :subtitle="t('logbook.subtitle')">
+    <PageHeader :title="t('logbook.title')" :subtitle="t('logbook.subtitle')" tour="logbook">
       <template #actions>
-        <el-button :icon="Download" :loading="exporting" @click="exportVietGap">{{ t('logbook.export') }}</el-button>
-        <el-button v-if="canManageCameras" :icon="Upload" @click="importVisible = true">{{ t('logbook.import.open') }}</el-button>
+        <el-button :icon="Download" data-tour="logbook-export" :loading="exporting" @click="exportVietGap">{{ t('logbook.export') }}</el-button>
+        <el-button v-if="canManageCameras" :icon="Upload" data-tour="logbook-import" @click="importVisible = true">{{ t('logbook.import.open') }}</el-button>
         <el-tooltip :content="t('logbook.sendMonthlyHint')" placement="bottom">
           <el-button :icon="Message" :loading="sendingRecord" @click="sendMonthlyRecord">{{ t('logbook.sendMonthly') }}</el-button>
         </el-tooltip>
-        <el-button v-if="canManageCameras" type="primary" :icon="Plus" @click="openForm()">{{ t('logbook.add') }}</el-button>
+        <el-button v-if="canManageCameras" type="primary" :icon="Plus" data-tour="logbook-add" @click="openForm()">{{ t('logbook.add') }}</el-button>
       </template>
     </PageHeader>
 
     <!-- Filters -->
-    <div class="flex flex-wrap items-center gap-3 mb-4">
+    <div class="flex flex-wrap items-center gap-3 mb-4" data-tour="logbook-filters">
       <el-select :aria-label="t('analytics.selectCamera')" v-model="filters.deviceSerial" class="w-full sm:!w-60" @change="reload">
         <template #prefix><el-icon><VideoCamera /></el-icon></template>
         <el-option :label="t('analytics.allCameras')" value="all" />
@@ -32,7 +32,7 @@
       />
     </div>
 
-    <el-card shadow="never" v-loading="loading">
+    <el-card shadow="never" v-loading="loading" data-tour="logbook-list">
       <el-empty v-if="!items.length && !loading" :description="t('logbook.empty')">
         <el-button v-if="canManageCameras" type="primary" :icon="Plus" @click="openForm()">{{ t('logbook.add') }}</el-button>
       </el-empty>
@@ -101,7 +101,7 @@
     </el-card>
 
     <!-- Which active ingredients worked, across all their uses (same filters as the list) -->
-    <el-card shadow="never" class="mt-4" v-loading="ingredientsLoading">
+    <el-card shadow="never" class="mt-4" v-loading="ingredientsLoading" data-tour="logbook-ingredients">
       <template #header>
         <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
           <div class="min-w-0">

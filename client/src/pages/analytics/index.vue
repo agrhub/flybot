@@ -1,15 +1,15 @@
 <template>
   <div class="w-full max-w-7xl mx-auto pb-12">
-    <PageHeader :title="t('analytics.title')" :subtitle="t('analytics.subtitle')">
+    <PageHeader :title="t('analytics.title')" :subtitle="t('analytics.subtitle')" tour="analytics">
       <template #actions>
-        <el-button type="primary" :icon="Document" :loading="exportingPdf" @click="exportToPdf">
+        <el-button type="primary" :icon="Document" data-tour="analytics-export" :loading="exportingPdf" @click="exportToPdf">
           {{ exportingPdf ? progressText : t('analytics.exportAllPdf') }}
         </el-button>
       </template>
     </PageHeader>
 
     <!-- Page filters: every widget starts from them and can set its own -->
-    <div class="flex flex-wrap items-center gap-3 mb-4">
+    <div class="flex flex-wrap items-center gap-3 mb-4" data-tour="analytics-filters">
       <el-select :aria-label="t('analytics.selectCamera')"
         v-if="cameras.length > 0"
         :model-value="selectedCamera?.deviceSerial || 'all'"
@@ -27,7 +27,7 @@
       <span class="filters-hint">{{ t('filters.pageHint') }}</span>
     </div>
 
-    <el-tabs v-model="activeSubTab">
+    <el-tabs v-model="activeSubTab" data-tour="analytics-tabs">
       <el-tab-pane name="trends">
         <template #label>
           <span class="inline-flex items-center gap-1.5">

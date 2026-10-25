@@ -4,6 +4,7 @@
     <PageHeader
       :title="t('dashboard.title')"
       :subtitle="`${t('dashboard.welcome')}, ${userName}`"
+      tour="dashboard"
     />
 
     <!-- Areas still inside a pre-harvest interval after a treatment -->

@@ -1,16 +1,16 @@
 <template>
   <div class="w-full max-w-7xl mx-auto pb-12">
-    <PageHeader :title="t('farms.title')" :subtitle="t('farms.subtitle')">
+    <PageHeader :title="t('farms.title')" :subtitle="t('farms.subtitle')" tour="farms">
       <template #actions>
-        <el-button v-if="canManageCameras" type="primary" :icon="Plus" @click="openCreate">{{ t('farms.create') }}</el-button>
+        <el-button v-if="canManageCameras" type="primary" :icon="Plus" data-tour="farms-create" @click="openCreate">{{ t('farms.create') }}</el-button>
       </template>
     </PageHeader>
 
     <!-- A cooperative's growers side by side (organization owners and managers) -->
     <OrgOverviewCard />
     <!-- Several farms (a cooperative): side by side -->
-    <FarmCompareCard v-if="farms.length" />
-    <SeasonReportCard v-if="farms.length" />
+    <FarmCompareCard v-if="farms.length" data-tour="farms-compare" />
+    <SeasonReportCard v-if="farms.length" data-tour="farms-season" />
 
     <div v-loading="loading">
       <el-card v-if="!farms.length && !loading" shadow="never">
@@ -18,7 +18,7 @@
           <el-button v-if="canManageCameras" type="primary" :icon="Plus" @click="openCreate">{{ t('farms.create') }}</el-button>
         </el-empty>
       </el-card>
-      <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" data-tour="farms-list">
         <el-card v-for="farm in farms" :key="farm.id" shadow="hover" class="cursor-pointer" @click="router.push(`/farms/${farm.id}`)" @keydown.enter.prevent="router.push(`/farms/${farm.id}`)" @keydown.space.prevent="router.push(`/farms/${farm.id}`)" role="button" tabindex="0">
           <div class="flex items-start justify-between gap-3">
             <div class="min-w-0">

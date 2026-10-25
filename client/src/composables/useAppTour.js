@@ -28,5 +28,5 @@ export function useAppTour() {
   const startIfNew = () => {
     if (!readDone()) start();
   };
-  return { open, start, finish, startIfNew };
+  return { open, start, finish, startIfNew, isDone: readDone };
 }

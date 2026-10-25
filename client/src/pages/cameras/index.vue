@@ -2,7 +2,7 @@
   <div class="w-full max-w-7xl mx-auto pb-12 select-none">
     <!-- SUB-PAGE 1: ALL CAMERAS GRID (DEFAULT VIEW) -->
     <template v-if="subPage === 'grid'">
-      <PageHeader :title="t('cameras.title')" :subtitle="t('cameras.subtitle')">
+      <PageHeader :title="t('cameras.title')" :subtitle="t('cameras.subtitle')" tour="cameras">
         <template #actions>
           <!-- Columns per row (phones: always one) -->
           <el-segmented
@@ -10,16 +10,17 @@
             :model-value="activeGridCols"
             :options="gridLayouts"
             data-test="grid-cols"
+            data-tour="cameras-layout"
             @change="setGridLayout"
           />
 
           <!-- Add camera covers claiming a self-registered CamOS camera; people who cannot add cameras
                here may still claim one into their personal workspace -->
-          <el-button v-if="!canManageCameras" :icon="Connection" data-test="claim-link" @click="router.push({ name: 'claim' })">
+          <el-button v-if="!canManageCameras" :icon="Connection" data-test="claim-link" data-tour="cameras-add" @click="router.push({ name: 'claim' })">
             {{ t('claim.button') }}
           </el-button>
           <!-- Add Camera Button -->
-          <el-button v-if="canManageCameras" type="primary" :icon="Plus" @click="openAddCameraModal">
+          <el-button v-if="canManageCameras" type="primary" :icon="Plus" data-tour="cameras-add" @click="openAddCameraModal">
             {{ t('cameras.addCameraBtn') }}
           </el-button>
         </template>
@@ -41,7 +42,7 @@
       <!-- Multi-Camera Live Grid View with Pagination -->
       <div v-else class="flex flex-col gap-6">
         <!-- Search and filters over the whole list; the grid shows one page of the result -->
-        <el-card shadow="never">
+        <el-card shadow="never" data-tour="cameras-filters">
           <div class="flex flex-wrap items-center gap-2">
             <el-input v-model="filters.query" :placeholder="t('cameras.switcher.search')" :prefix-icon="Search" clearable class="cameras-filters__search" data-test="cameras-search" />
             <el-select v-model="filters.status" class="cameras-filters__select" :aria-label="t('cameras.switcher.status')" data-test="cameras-status">
@@ -70,7 +71,7 @@
 
         <el-empty v-if="!filteredCameras.length" :description="t('cameras.switcher.none')" :image-size="72" />
 
-        <div v-else class="grid gap-6" :class="gridColClass">
+        <div v-else class="grid gap-6" :class="gridColClass" data-tour="cameras-grid">
           <GridCameraCard
             v-for="cam in paginatedCameras"
             :key="cam.deviceSerial"
@@ -81,7 +82,7 @@
         </div>
 
         <!-- Pagination Controls Bar -->
-        <el-card v-if="filteredCameras.length > 0" shadow="never">
+        <el-card v-if="filteredCameras.length > 0" shadow="never" data-tour="cameras-pager">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <!-- Left: Range Info -->
             <div class="cameras-meta">
@@ -139,14 +140,15 @@
           </div>
           <p class="cameras-meta font-mono truncate">SN: {{ currentDetailCamera?.deviceSerial }}</p>
         </div>
-        <el-button v-if="!isWide" :icon="Menu" data-test="switcher-open" @click="switcherOpen = true">{{ t('cameras.switcher.open') }}</el-button>
+        <el-button v-if="!isWide" :icon="Menu" data-test="switcher-open" data-tour="camera-switcher" @click="switcherOpen = true">{{ t('cameras.switcher.open') }}</el-button>
+        <PageTour page="camera" />
       </div>
 
       <!-- Live view (the camera list beside the video on wide screens), recordings, trap upkeep, then the history -->
       <div class="flex flex-col gap-4 min-w-0">
         <LiveTab :camera="currentDetailCamera">
           <template v-if="isWide" #aside>
-            <CameraSwitcher class="h-full" :cameras="cameras" :model-value="currentDetailCamera?.deviceSerial || ''" @select="handleSelectDetailCamera" />
+            <CameraSwitcher class="h-full" data-tour="camera-switcher" :cameras="cameras" :model-value="currentDetailCamera?.deviceSerial || ''" @select="handleSelectDetailCamera" />
           </template>
         </LiveTab>
         <DetectionHistory
@@ -155,6 +157,7 @@
           :camera-serials="historySerials"
           :default-range="HISTORY_RANGE"
           :title="t('history.cameraTitle')"
+          data-tour="camera-history"
         />
       </div>
       <el-drawer v-if="!isWide" v-model="switcherOpen" :title="t('cameras.switcher.title')" direction="rtl" size="min(360px, 92vw)" append-to-body>
@@ -174,6 +177,7 @@ import { useCameras } from '@/composables/useCameras';
 import { useAuth } from '@/composables/useAuth';
 import { useBreakpoints } from '@/composables/useBreakpoints';
 import PageHeader from '@/components/common/PageHeader.vue';
+import PageTour from '@/components/common/PageTour.vue';
 import LiveTab from '@/components/cameras/LiveTab.vue';
 import GridCameraCard from '@/components/cameras/GridCameraCard.vue';
 import CameraSwitcher from '@/components/cameras/CameraSwitcher.vue';

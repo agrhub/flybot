@@ -4,17 +4,22 @@
       <h1 class="page-header__title">{{ title }}</h1>
       <p v-if="subtitle" class="page-header__subtitle">{{ subtitle }}</p>
     </div>
-    <div v-if="$slots.actions" class="flex flex-wrap items-center gap-2">
+    <div v-if="$slots.actions || tour" class="flex flex-wrap items-center gap-2">
       <slot name="actions" />
+      <PageTour v-if="tour" :page="tour" />
     </div>
   </div>
 </template>
 
 <script setup>
-// Standard page title row: title, optional subtitle, optional actions on the right
+import PageTour from './PageTour.vue';
+
+// Standard page title row: title, optional subtitle, optional actions on the right, then the page's tour button
 defineProps({
   title: { type: String, required: true },
-  subtitle: { type: String, default: '' }
+  subtitle: { type: String, default: '' },
+  // The page's tour (utils/pageTours.js)
+  tour: { type: String, default: '' }
 });
 </script>
 

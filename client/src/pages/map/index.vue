@@ -1,19 +1,23 @@
 <template>
   <div class="w-full max-w-7xl mx-auto pb-12 select-none">
-    <PageHeader :title="t('dashboard.mapViewTitle')" :subtitle="t('dashboard.mapViewSubtitle')">
+    <PageHeader :title="t('dashboard.mapViewTitle')" :subtitle="t('dashboard.mapViewSubtitle')" tour="map">
       <template #actions>
-        <div class="flex items-center gap-2 mr-2">
-          <el-switch v-model="showHeatmap" size="small" :aria-label="t('map.heatmap')" />
-          <span class="text-sm">{{ t('map.heatmap') }}</span>
-        </div>
-        <div class="flex items-center gap-2 mr-2">
-          <el-switch v-model="showPlots" size="small" :aria-label="t('map.plots')" />
-          <span class="text-sm">{{ t('map.plots') }}</span>
+        <div class="flex flex-wrap items-center gap-2" data-tour="map-layers">
+          <div class="flex items-center gap-2 mr-2">
+            <el-switch v-model="showHeatmap" size="small" :aria-label="t('map.heatmap')" />
+            <span class="text-sm">{{ t('map.heatmap') }}</span>
+          </div>
+          <div class="flex items-center gap-2 mr-2">
+            <el-switch v-model="showPlots" size="small" :aria-label="t('map.plots')" />
+            <span class="text-sm">{{ t('map.plots') }}</span>
+          </div>
         </div>
         <!-- Outbreak legend -->
-        <el-tag type="success" effect="light" round size="small">{{ t('map.safe') }}</el-tag>
-        <el-tag type="warning" effect="light" round size="small">{{ t('map.moderate') }}</el-tag>
-        <el-tag type="danger" effect="light" round size="small">{{ t('map.alert') }}</el-tag>
+        <div class="flex flex-wrap items-center gap-2" data-tour="map-legend">
+          <el-tag type="success" effect="light" round size="small">{{ t('map.safe') }}</el-tag>
+          <el-tag type="warning" effect="light" round size="small">{{ t('map.moderate') }}</el-tag>
+          <el-tag type="danger" effect="light" round size="small">{{ t('map.alert') }}</el-tag>
+        </div>
       </template>
     </PageHeader>
 
@@ -26,7 +30,7 @@
 
           <!-- Layer switcher & drag hint overlay (bottom-left) -->
           <div class="absolute bottom-4 left-4 z-[400] flex items-center gap-3">
-            <el-button-group>
+            <el-button-group data-tour="map-basemap">
               <el-button
                 size="small"
                 :type="activeLayerType === 'street' ? 'primary' : 'default'"
@@ -56,7 +60,7 @@
       </el-card>
 
       <!-- Trap roster & quick editor -->
-      <el-card shadow="never" class="roster-card">
+      <el-card shadow="never" class="roster-card" data-tour="map-traps">
         <template #header>
           <div class="roster-card__title">{{ t('map.trapList') }}</div>
           <div class="roster-card__meta">{{ t('map.monitoringDevices', { count: enrichedCameras.length }) }}</div>

@@ -1,9 +1,9 @@
 <template>
   <div class="w-full max-w-7xl mx-auto pb-12">
-    <PageHeader :title="t('dashboards.title')" :subtitle="t('dashboards.subtitle')">
+    <PageHeader :title="t('dashboards.title')" :subtitle="t('dashboards.subtitle')" tour="reports">
       <template #actions>
         <el-button :icon="Refresh" @click="load">{{ t('common.refresh') }}</el-button>
-        <el-button v-if="canBuildDashboards" type="primary" :icon="Plus" @click="openCreate">
+        <el-button v-if="canBuildDashboards" type="primary" :icon="Plus" data-tour="reports-create" @click="openCreate">
           {{ t('dashboards.create') }}
         </el-button>
       </template>
@@ -18,7 +18,7 @@
         </el-empty>
       </el-card>
 
-      <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" data-tour="reports-list">
         <el-card
           v-for="d in dashboards"
           :key="d.id"
