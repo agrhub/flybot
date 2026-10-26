@@ -352,7 +352,34 @@ const requestLive = async () => {
 }
 const liveUnsupported = ref(false)
 const liveLocalUrl = ref('')
+// A camera that was asleep or away when live view opened: its status every 4 s, and live view again (a new viewer
+// session and live.start) as soon as it is awake. A battery camera's check-in keeps it up for only a few seconds.
+const WAKE_POLL_MS = 4000
+const WAKE_WATCH_MS = 15 * 60 * 1000
+let wakeTimer = null
+const stopWakeWatch = () => {
+  clearInterval(wakeTimer)
+  wakeTimer = null
+}
+const watchWake = (serial) => {
+  stopWakeWatch()
+  const until = Date.now() + WAKE_WATCH_MS
+  wakeTimer = setInterval(async () => {
+    if (props.camera?.deviceSerial !== serial || !kvsConfig.value || currentStreamType.value === t('cameras.live') || Date.now() > until) {
+      stopWakeWatch()
+      return
+    }
+    try {
+      const s = (await api.getCameraStatus(serial)).data?.status
+      if (wakeTimer && s?.online && !s.sleeping) {
+        stopWakeWatch()
+        playKvs()
+      }
+    } catch { /* try again at the next tick */ }
+  }, WAKE_POLL_MS)
+}
 const playKvs = async () => {
+  stopWakeWatch()
   kvsConfig.value = null
   liveUnsupported.value = false
   liveLocalUrl.value = ''
@@ -371,6 +398,7 @@ const playKvs = async () => {
       kvsConfig.value = data
       currentStreamType.value = t('cameras.kvs.connecting')
       if (data.camera?.sleeping) placeholderText.value = sleepText.value
+      if (data.camera && (data.camera.sleeping || !data.camera.online)) watchWake(props.camera.deviceSerial)
     } else {
       placeholderText.value = data?.message || t('cameras.player.streamUnavailable')
     }
@@ -499,6 +527,7 @@ const handleSaveValidateCode = async () => {
 }
 
 const resetPlayer = () => {
+  stopWakeWatch()
   kvsConfig.value = null
   if (hlsEzPlayer) {
     try { hlsEzPlayer.destroy() } catch (e) {}
