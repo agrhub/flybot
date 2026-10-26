@@ -151,8 +151,10 @@
             </div>
           </div>
 
+          <!-- The overview takes a few seconds with many traps: loading, not "no data", until it answers -->
+          <el-skeleton v-if="loadingOverview && !overviewData.cameraRealtimeList?.length" :rows="5" animated data-test="density-loading" />
           <el-empty
-            v-if="!overviewData.cameraRealtimeList?.length"
+            v-else-if="!overviewData.cameraRealtimeList?.length"
             :description="t('dashboard.noRealtimeData')"
             :image-size="80"
           />
@@ -543,7 +545,8 @@ const onlineCount = computed(() => {
   return cameras.value.filter(c => c.status === 1).length;
 });
 
-const loadingOverview = ref(false);
+// True until the first overview answers: the page opens on it
+const loadingOverview = ref(true);
 const overviewData = ref({
   peakRealtimeInsects: 0,
   peakCamera: null,
