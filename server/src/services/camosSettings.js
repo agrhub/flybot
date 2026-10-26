@@ -1,8 +1,8 @@
 /**
  * Settings of a camos-esp32-trap camera that FlyBot can change remotely (camos-esp32-trap docs/dev/CONFIG.md
  * section 6): the camera applies them from the desired document (camos/<serial>/shadow/desired) and reports the
- * applied values in shadow/reported. Network settings, the console password and anything the firmware answers
- * NOT_SUPPORTED are left out on purpose.
+ * applied values in shadow/reported. Network credentials (Wi-Fi, APN), the console password and anything the firmware
+ * answers NOT_SUPPORTED are left out on purpose; the choice of network (network.prefer) carries no secret and is in.
  *
  * Each field: path (dot path in the desired document), type (int | bool | enum | time | window | area), a range or
  * the values, and the section the settings form puts it in. The client renders its form from this list.
@@ -50,6 +50,11 @@ const FIELDS = [
     { path: 'storage.sdSave', section: 'device', type: 'bool' },
     { path: 'led.enabled', section: 'device', type: 'bool' },
     { path: 'gps.enabled', section: 'device', type: 'bool' },
+    // Satellites the GPS module uses (d4a37cb): auto picks GPS + BeiDou, or GPS + GLONASS from latitude 55° up
+    { path: 'gps.systems', section: 'device', type: 'enum', values: ['auto', 'gps', 'bds', 'gps+bds', 'gps+glonass'] },
+    // Firmware 0.9.2-rc.16: auto (Wi-Fi first, 4G when Wi-Fi has no IP or no cloud), Wi-Fi only, or 4G only; the camera
+    // restarts on the new network 5 s after a change
+    { path: 'network.prefer', section: 'device', type: 'enum', values: ['auto', 'wifi', '4g'] },
     { path: 'console.language', section: 'device', type: 'enum', values: ['en', 'vi'] },
 ];
 const SECTIONS = ['capture', 'image', 'motion', 'power', 'device'];

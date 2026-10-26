@@ -4059,10 +4059,14 @@
         "enabled": "Status LED"
       },
       "gps": {
-        "enabled": "GPS"
+        "enabled": "GPS",
+        "systems": "Satellite systems"
       },
       "console": {
         "language": "Language of the camera's web page"
+      },
+      "network": {
+        "prefer": "Network"
       }
     },
     "values": {
@@ -4102,6 +4106,22 @@
         "language": {
           "en": "English",
           "vi": "Tiếng Việt"
+        }
+      },
+      "gps": {
+        "systems": {
+          "auto": "Automatic by region",
+          "gps": "GPS only",
+          "bds": "BeiDou only",
+          "gps+bds": "GPS + BeiDou",
+          "gps+glonass": "GPS + GLONASS"
+        }
+      },
+      "network": {
+        "prefer": {
+          "auto": "Automatic (Wi-Fi first, 4G when Wi-Fi fails)",
+          "wifi": "Wi-Fi only",
+          "4g": "4G only"
         }
       }
     },

@@ -4059,10 +4059,14 @@
         "enabled": "Đèn trạng thái"
       },
       "gps": {
-        "enabled": "GPS"
+        "enabled": "GPS",
+        "systems": "Hệ thống vệ tinh"
       },
       "console": {
         "language": "Ngôn ngữ trang web của camera"
+      },
+      "network": {
+        "prefer": "Mạng"
       }
     },
     "values": {
@@ -4102,6 +4106,22 @@
         "language": {
           "en": "English",
           "vi": "Tiếng Việt"
+        }
+      },
+      "gps": {
+        "systems": {
+          "auto": "Tự động theo khu vực",
+          "gps": "Chỉ GPS",
+          "bds": "Chỉ BeiDou",
+          "gps+bds": "GPS + BeiDou",
+          "gps+glonass": "GPS + GLONASS"
+        }
+      },
+      "network": {
+        "prefer": {
+          "auto": "Tự động (ưu tiên Wi-Fi, dùng 4G khi Wi-Fi lỗi)",
+          "wifi": "Chỉ Wi-Fi",
+          "4g": "Chỉ 4G"
         }
       }
     },

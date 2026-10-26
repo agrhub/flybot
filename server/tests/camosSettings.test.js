@@ -36,6 +36,10 @@ test('camosSettings: values are checked against the firmware key list', () => {
     // Night mode for live view (firmware 0.6.3, off by default): a boolean like the other switches
     assert.deepEqual(settings.toDesired({ 'video.image.nightMode': true }).desired, { video: { image: { nightMode: true } } });
     assert.equal(settings.toDesired({ 'video.image.nightMode': 'on' }).errors[0].error, 'not_boolean');
+    // The network to use (0.9.2-rc.16) and the GPS satellites: choices, no credentials
+    assert.deepEqual(settings.toDesired({ 'network.prefer': '4g', 'gps.systems': 'gps+bds' }).desired, { network: { prefer: '4g' }, gps: { systems: 'gps+bds' } });
+    assert.equal(settings.toDesired({ 'network.prefer': 'lte' }).errors[0].error, 'not_allowed');
+    assert.equal(settings.toDesired({ 'network.ssid': 'x' }).errors[0].error, 'unknown_setting');
 });
 
 test('device settings: the owner reads applied and pending values and changes them; others and other cameras cannot', async () => {
