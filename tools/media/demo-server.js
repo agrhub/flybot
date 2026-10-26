@@ -74,6 +74,23 @@ ezvizService.getLocalRecords = async ({ startTime }) => {
     return { code: '200', data: list };
 };
 ezvizService.getPlaybackAddress = async () => ({ responseData: { code: '500', msg: 'Demo: no recording stream' } });
+// CamOS "Capture now": the camera's photo arrives after a moment (no AWS IoT behind it), one fly more than the last
+const camosPlatform = req('src/platforms/camos');
+camosPlatform.snapshot = async (serial) => {
+    const last = await models.Snapshot.findOne({ deviceSerial: serial }).sort({ createdAt: -1 }).lean();
+    const flies = (last?.aiResults?.summary?.fruit_fly || 0) + 1;
+    const at = new Date();
+    const key = `snapshots/${serial}/${serial}_0_${flies}_0_${at.getTime()}.jpg`;
+    const seed = [...serial].reduce((a, ch) => a * 31 + ch.charCodeAt(0), 7);
+    await new Promise(r => setTimeout(r, 2500));
+    const doc = await models.Snapshot.create({
+        deviceSerial: serial, imageUrl: key, s3Key: key, createdAt: at, aiProcessed: true, aiProvider: 'roboflow', trigger: 'rpc',
+        aiResults: { detected: true, insects: trapImageBoxes(seed, flies, 0), summary: { fruit_fly: flies }, raw_description: `Roboflow detected ${flies} insect(s).` },
+        quality: { brightness: 182, contrast: 41, sharpness: 640, clipped: 0, coverage: 0.02, issues: [], checkedAt: at }
+    });
+    await models.Camera.updateOne({ deviceSerial: serial }, { $set: { thumbnailUrl: key, lastSync: at } });
+    return { snapshot: doc };
+};
 
 // Assistant without Vertex: picks a real tool from the question, then writes a short answer from
 // its result, streamed in small pieces like the model does
@@ -261,6 +278,31 @@ async function seedShowcase() {
     for (const c of cams) {
         const last = events.filter(e => e.deviceSerial === c.serial).at(-1) || { at: null };
         await models.Camera.updateOne({ deviceSerial: c.serial }, { $set: { cardReplacedAt: last.at, thumbnailUrl: docs.filter(d => d.deviceSerial === c.serial).at(-1)?.s3Key, imageQuality: { issues: [], checkedAt: new Date() }, lastCaptureAt: new Date(), lastSync: new Date() } });
+    }
+    // A CamOS trap that registered itself and waits to be claimed, with the made-up identity of the firmware's mock
+    // camera (camos-esp32-trap tools/mock: serial ESP000000000001, verify code ABC123): the CamOS tutorial claims it
+    const CAMOS = 'ESP000000000001';
+    await models.Camera.create({
+        deviceSerial: CAMOS, userId: null, platform: 'camos', selfRegistered: true, unclaimed: true, validateCode: 'ABC123',
+        deviceName: `CamOS ${CAMOS.slice(-4)}`, model: 'AIC-FREENOVE-S3CAM', captureIntervalMinutes: 60, status: 1,
+        latitude: 10.3392, longitude: 106.0314, lastCaptureAt: new Date(), lastSync: new Date(),
+        device: { thingName: CAMOS, registeredAt: new Date(Date.now() - 2 * HOUR_MS), fw: '0.9.2', kvsChannelName: `cam-${CAMOS}` }
+    });
+    const camosDocs = [];
+    for (let h = 6, flies = 0; h <= Math.min(18, new Date().getHours()); h++) {
+        flies += 1 + (h % 3 === 0 ? 1 : 0);
+        const at = new Date(dayStart(0).getTime() + h * HOUR_MS + 5 * 60000);
+        const key = `snapshots/${CAMOS}/${CAMOS}_0_${flies}_0_${at.getTime()}.jpg`;
+        const seed = [...CAMOS].reduce((a, ch) => a * 31 + ch.charCodeAt(0), 7);
+        camosDocs.push({
+            deviceSerial: CAMOS, imageUrl: key, s3Key: key, createdAt: at, aiProcessed: true, aiProvider: 'roboflow',
+            aiResults: { detected: flies > 0, insects: trapImageBoxes(seed, flies, 0), summary: { fruit_fly: flies }, raw_description: `Roboflow detected ${flies} insect(s).` },
+            quality: { brightness: 182, contrast: 41, sharpness: 640, clipped: 0, coverage: 0.02, issues: [], checkedAt: at }
+        });
+    }
+    if (camosDocs.length) {
+        await models.Snapshot.insertMany(camosDocs);
+        await models.Camera.updateOne({ deviceSerial: CAMOS }, { $set: { thumbnailUrl: camosDocs.at(-1).s3Key } });
     }
     // A few photos reviewed by the technician
     const reviewed = docs.filter((d, i) => d.deviceSerial === 'BC1001' && i % 9 === 0).slice(-6);

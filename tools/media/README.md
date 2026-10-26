@@ -106,6 +106,34 @@ Privacy while recording: `inject.js` runs in every recorded page before the app.
 
 The voice: `voice.mjs` speaks the English lines of `script.js` with Kokoro (open weights, Apache-2.0) on this computer. Download `kokoro-v1.0.onnx` and `voices-v1.0.bin` from https://github.com/thewh1teagle/kokoro-onnx/releases/tag/model-files-v1.0 into `film/media/tts/`. A recorded voice can replace any line: `media/voice/<scene>-<n>.wav` with its length in `media/voice/manifest.json`.
 
+## CamOS tutorial videos
+
+Five short videos for the CamOS trap camera (firmware repository `camos-esp32-trap`): flashing a board, the Wi-Fi setup on a phone, the camera's web console, wiring and assembly, and daily use in FlyBot. Silent, 1920x1080, captions burned in (English, and a Vietnamese cut with the pages in Vietnamese), about 1.8 MB a minute.
+
+The screens come from the firmware's mock camera (serial ESP000000000001, verify code ABC123, drawn pictures) and, for the FlyBot video, from the demo above. `demo-server.js` seeds an unclaimed CamOS trap with the mock's identity and answers its "Capture now"; the video puts it on the Pro plan to have room for it. The flasher page is the real one with ESP Web Tools: a stand-in serial port (`tutorials/inject.js`) is picked in a drawn port chooser and the install progress is played, since no board is attached. The phone's Wi-Fi settings are a drawing (`tutorials/props/phone-wifi.html`).
+
+From the `tutorials` folder, with the mock camera running (`node tools/mock/server.js 8099` in camos-esp32-trap):
+
+```bash
+# For the FlyBot video, the demo first (DEMO_LANG=en for the English cut, vi for the Vietnamese one)
+DEMO_LANG=en node ../demo-server.js
+node ../demo-client.mjs
+
+# 1. The takes: the pages played in headless Chrome, a picture each time the page changes (media/takes/<lesson>-<lang>)
+node record.mjs all en        # or a list: flash,wifi,console,wiring,flybot
+# 2. The videos and their posters: media/out/camos-<n>-<lesson>-<lang>.mp4 and .jpg
+node render.mjs all en
+# Stills of chosen seconds, to check the layout
+CAMOS_TUTORIAL_STILL=10,25,40 node render.mjs console en
+```
+
+The FlyBot video claims the demo's CamOS trap: restart `demo-server.js` before recording it again. Set `CAMOS_REPO` when camos-esp32-trap is not next to this repository, `CAMOS_MOCK` for another mock address, `DEMO_CLIENT_PORT` (or `FLYBOT_DEMO_URL`) for the demo, and `CAMOS_TUTORIAL_WORK` for the work folder (default `tutorials/media`, not versioned).
+
+- `tutorials/lessons.mjs`: the five videos, their clicks and their captions in both languages.
+- `tutorials/record.mjs`: plays a lesson and writes its take (the distinct pictures, and for every frame the picture, cursor, zoom, highlight and caption). Nothing depends on real time except the page itself, so a slow machine records the same video.
+- `tutorials/compose.html`: draws each frame (browser window or phone, cursor and clicks, zoom, highlight, caption) and encodes it with WebCodecs.
+- `tutorials/render.mjs`: the MP4 (`tvc/mux-mp4.mjs`, index in front, no sound track) and its poster. `CAMOS_TUTORIAL_QP` sets the H.264 quantizer (default 28).
+
 ## Simulated demo farm, locally
 
 `sim-demo.js` runs the simulated demo farm (`server/src/services/demoSim.js`, DEPLOY.md) the way production does, with the real vision handler: an in-memory MongoDB, the photos in a folder instead of S3, and the flybot-aws vision Lambda running on this computer.

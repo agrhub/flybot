@@ -1,0 +1,65 @@
+<!doctype html>
+<!-- A phone's Wi-Fi settings, drawn for the Wi-Fi setup video: join CAM-0001 with its password. Not any real phone's screen. -->
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+body{margin:0;font-family:system-ui,'Segoe UI',Roboto,sans-serif;background:#f6f7f9;color:#1b1d21}
+.bar{display:flex;justify-content:space-between;padding:10px 20px 6px;font-size:14px;font-weight:600}
+h1{font-size:28px;font-weight:500;margin:18px 20px 14px}
+.sw{display:flex;justify-content:space-between;align-items:center;background:#dfeee9;border-radius:28px;margin:0 14px 18px;padding:16px 20px;font-size:17px}
+.tg{width:46px;height:26px;border-radius:13px;background:#0f8a6c;position:relative}.tg:after{content:'';position:absolute;right:3px;top:3px;width:20px;height:20px;border-radius:50%;background:#fff}
+.sec{font-size:13px;color:#0f8a6c;font-weight:600;margin:6px 20px 8px}
+.list{background:#fff;border-radius:22px;margin:0 14px 14px;overflow:hidden}
+.net{display:flex;align-items:center;gap:16px;padding:14px 18px;font-size:17px;cursor:pointer}
+.net+.net{border-top:1px solid #eef0f2}.net small{display:block;color:#6a717c;font-size:13px;margin-top:2px}
+.ic{width:26px;height:22px;flex-shrink:0;position:relative}
+.ic i{position:absolute;bottom:0;width:5px;border-radius:2px;background:#c7ccd3}.ic i.on{background:#1b1d21}
+.lock{margin-left:auto;font-size:13px;color:#6a717c}
+.sheet{position:fixed;left:0;right:0;bottom:0;background:#fff;border-radius:24px 24px 0 0;box-shadow:0 -6px 24px rgba(0,0,0,.18);padding:22px 22px 30px}
+.sheet h2{font-size:21px;font-weight:500;margin:0 0 16px}
+.sheet label{font-size:13px;color:#0f8a6c}
+.sheet input{width:100%;box-sizing:border-box;font-size:18px;border:0;border-bottom:2px solid #0f8a6c;padding:8px 2px;outline:none;margin-bottom:22px;font-family:inherit}
+.btns{display:flex;justify-content:flex-end;gap:12px}
+.btns button{border:0;border-radius:20px;padding:10px 22px;font-size:15px;font-family:inherit}
+#cancel{background:transparent;color:#0f8a6c}#join{background:#0f8a6c;color:#fff}
+.toast{position:fixed;left:14px;right:14px;top:44px;background:#2b2f36;color:#fff;border-radius:16px;padding:14px 16px;font-size:15px;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+.toast small{display:block;color:#c9ced6;margin-top:3px;font-size:13px}
+[hidden]{display:none!important}
+</style></head><body>
+<div class="bar"><span>10:20</span><span>▾ ▮</span></div>
+<h1 id="tWifi">Wi-Fi</h1>
+<div class="sw"><span id="tUse">Use Wi-Fi</span><span class="tg"></span></div>
+<div class="sec" id="tNow" hidden>Current network</div>
+<div class="list" id="current" hidden></div>
+<div class="sec" id="tAvail">Available networks</div>
+<div class="list" id="list"></div>
+<div class="sheet" id="sheet" hidden>
+ <h2>CAM-0001</h2>
+ <label id="tPw">Password</label>
+ <input id="pw" type="text" autocomplete="off" spellcheck="false">
+ <div class="btns"><button id="cancel">Cancel</button><button id="join">Connect</button></div>
+</div>
+<div class="toast" id="toast" hidden><b id="tSign">Sign in to Wi-Fi network</b><small>CAM-0001</small></div>
+<script>
+const vi = new URLSearchParams(location.search).get('lang') === 'vi';
+const T = vi
+  ? { wifi: 'Wi-Fi', use: 'Dùng Wi-Fi', now: 'Mạng hiện tại', avail: 'Mạng khả dụng', pw: 'Mật khẩu', cancel: 'Hủy', join: 'Kết nối', saved: 'Đã lưu', noNet: 'Đã kết nối, không có Internet', sign: 'Đăng nhập vào mạng Wi-Fi' }
+  : { wifi: 'Wi-Fi', use: 'Use Wi-Fi', now: 'Current network', avail: 'Available networks', pw: 'Password', cancel: 'Cancel', join: 'Connect', saved: 'Saved', noNet: 'Connected, no Internet', sign: 'Sign in to Wi-Fi network' };
+for (const [id, k] of [['tWifi', 'wifi'], ['tUse', 'use'], ['tNow', 'now'], ['tAvail', 'avail'], ['tPw', 'pw'], ['cancel', 'cancel'], ['join', 'join'], ['tSign', 'sign']]) document.getElementById(id).textContent = T[k];
+const nets = [['Orchard-AP', 4, true, T.saved], ['CAM-0001', 4, true, ''], ['FarmHouse', 3, true, ''], ['Pump-Station', 2, true, ''], ['Guest', 1, false, '']];
+const bars = (n) => `<span class="ic">${[0, 1, 2, 3].map((k) => `<i class="${k < n ? 'on' : ''}" style="left:${k * 7}px;height:${6 + k * 5}px"></i>`).join('')}</span>`;
+const row = ([name, n, lock, sub]) => `<div class="net" data-n="${name}">${bars(n)}<div>${name}${sub ? `<small>${sub}</small>` : ''}</div>${lock ? '<span class="lock">🔒</span>' : ''}</div>`;
+const list = document.getElementById('list');
+list.innerHTML = nets.map(row).join('');
+list.onclick = (e) => { const n = e.target.closest('.net'); if (n && n.dataset.n === 'CAM-0001') { document.getElementById('sheet').hidden = false; document.getElementById('pw').focus(); } };
+document.getElementById('cancel').onclick = () => { document.getElementById('sheet').hidden = true; };
+document.getElementById('join').onclick = () => {
+  document.getElementById('sheet').hidden = true;
+  document.getElementById('tNow').hidden = false;
+  const cur = document.getElementById('current');
+  cur.hidden = false;
+  cur.innerHTML = row(['CAM-0001', 4, true, T.noNet]);
+  list.innerHTML = nets.filter((n) => n[0] !== 'CAM-0001').map(row).join('');
+  setTimeout(() => { document.getElementById('toast').hidden = false; }, 900);
+};
+</script>
+</body></html>

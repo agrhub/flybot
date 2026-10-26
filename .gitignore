@@ -16,6 +16,8 @@ tools/media/sim-tokens.json
 # Demo film: recordings, photos, footage, renders and the values the recordings mask
 tools/media/film/media/
 tools/media/film/privacy.local.json
+# CamOS tutorial videos: takes and renders
+tools/media/tutorials/media/
 # Written by the deploy script from .env (holds real settings)
 deploy/cloudrun.env.generated.yaml
 test-results.tap

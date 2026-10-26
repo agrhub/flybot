@@ -81,7 +81,8 @@ export function writeMp4(file, { video, audio }) {
     const tracks = [
         // Video at 1000 ticks a frame, audio in samples
         { ...video, kind: 'video', timescale: video.fps * 1000, deltas: video.samples.map(() => 1000) },
-        { ...audio, kind: 'audio', timescale: audio.rate, deltas: audio.samples.map((s) => Math.round(s.dur * audio.rate / 1e6) || 1024) }
+        // No audio: a silent video (the CamOS tutorials)
+        ...(audio ? [{ ...audio, kind: 'audio', timescale: audio.rate, deltas: audio.samples.map((s) => Math.round(s.dur * audio.rate / 1e6) || 1024) }] : [])
     ];
     // Decode order must be presentation order: there is no composition offset table
     for (let i = 1; i < video.samples.length; i++) {
