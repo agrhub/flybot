@@ -36,8 +36,8 @@ async function prepare(page) {
     const p = privacyRules();
     const boot = `window.__FILM_RULES = ${JSON.stringify(p.rules || [])};` +
         (p.emailOk ? `window.__FILM_EMAIL_OK = ${JSON.stringify(p.emailOk)};` : '') +
-        // English, and no first-visit tour over the recording
-        `try { localStorage.setItem('flybot_language', 'en'); localStorage.setItem('flybot_tour_done', '1'); } catch (e) {}\n` +
+        // English, and no first-visit tour (the dashboard's or a page's) over the recording
+        `try { localStorage.setItem('flybot_language', 'en'); localStorage.setItem('flybot_tour_done', '1'); for (const p of ['cameras', 'camera', 'analytics', 'reports', 'report', 'farms', 'logbook', 'map', 'sentinel', 'settings']) localStorage.setItem('flybot_tour_' + p + '_done', '1'); } catch (e) {}\n` +
         fs.readFileSync(path.join(here, 'inject.js'), 'utf8');
     await page.send('Page.addScriptToEvaluateOnNewDocument', { source: boot });
     await page.send('Emulation.setDeviceMetricsOverride', { width: W, height: H, deviceScaleFactor: 1, mobile: false });

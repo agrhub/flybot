@@ -42,7 +42,7 @@ export const EDIT = {
     esp32: {
         badges: ['owner'],
         clips: [
-            { shot: 'esp32-live', from: 100, dur: 8, speed: 1 },
+            { shot: 'esp32-live', from: 58, dur: 8, speed: 1 },
             { shot: 'camera-log', from: 3, dur: 3.5, speed: 1.5 },
             { shot: 'firmware', from: 4, speed: 3 }
         ]

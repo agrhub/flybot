@@ -188,12 +188,22 @@ export const SHOTS = [
         name: 'esp32-live', session: 'owner',
         async run(a) {
             await a.goto('/cameras', 6000);
-            await select(a, 'All types', 'CamOS');
-            await a.sleep(1500);
-            await a.click({ text: 'Details', sel: 'a, button, span', exact: true }, { after: 4000 });
-            await a.click({ sel: '.kvs-viewer__quality' }, { after: 900 });
-            await a.click({ sel: '.el-dropdown-menu__item', text: '480p' }, { after: 1000 });
-            for (let i = 0; i < 90; i++) {
+            try {
+                await select(a, 'All types', 'CamOS');
+                await a.sleep(1500);
+                await a.click({ text: 'Details', sel: 'a, button, span', exact: true }, { after: 4000 });
+            } catch (err) {
+                // The type filter did not open (a slow page): straight to the trap camera's page, whose serial comes
+                // from the environment (never from this file)
+                if (!process.env.FLYBOT_FILM_ESP32) throw err;
+                await a.goto('/cameras/' + process.env.FLYBOT_FILM_ESP32, 6000);
+            }
+            try {
+                await a.click({ sel: '.kvs-viewer__quality' }, { after: 900 });
+                await a.click({ sel: '.el-dropdown-menu__item', text: '480p' }, { after: 1000 });
+            } catch { /* a firmware without the 480p tier: the camera's own choice */ }
+            // A camera on battery opens live at its next check-in (every 2 or 10 minutes by day): wait up to 12 minutes
+            for (let i = 0; i < 1440; i++) {
                 const playing = await a.js(`return [...document.querySelectorAll('video, canvas, img.kvs-viewer__jpeg')].some(v => (v.videoWidth || v.naturalWidth || 0) > 0);`);
                 if (playing) break;
                 await a.sleep(500);
@@ -208,16 +218,26 @@ export const SHOTS = [
             await a.goto('/cameras', 6000);
             await select(a, 'All types', 'CamOS');
             await a.click({ text: 'Details', sel: 'a, button, span', exact: true }, { after: 5000 });
-            // The log card in the middle of the screen (the detection history below it stays out of the picture)
-            await a.js(`const h = [...document.querySelectorAll('.el-card__header')].find(e => /Camera log/.test(e.innerText)); h.closest('.el-card').scrollIntoView({ block: 'center' }); return true;`);
+            // The log lives in the camera's settings dialog (its Camera log tab, #pane-log), next to the firmware
+            await a.click({ sel: '[data-test="camos-settings-open"]' }, { after: 1500 });
+            // The dialog loads the camera's settings first; a click that did not open it is repeated in the page
+            for (let i = 0; i < 40; i++) {
+                if (await a.js(`return !!document.querySelector('#tab-log');`)) break;
+                if (i === 10) await a.js(`document.querySelector('[data-test="camos-settings-open"]').click(); return true;`);
+                await a.sleep(500);
+            }
+            // After the dialog's opening animation: a click that lands on the overlay would close it
+            await a.sleep(1200);
+            await a.move({ sel: '#tab-log' }, 600);
+            await a.js(`document.querySelector('#tab-log').click(); return true;`);
             await a.sleep(1500);
         },
         async run(a) {
             await a.sleep(1000);
             // Turned on already (it stays on 15 min)? Then only watch the lines come in
-            const off = await a.js(`return [...document.querySelectorAll('.el-card button')].some(b => b.innerText.trim() === 'Turn on');`);
-            if (off) await a.click({ text: 'Turn on', sel: '.el-card button' }, { after: 1500 });
-            await a.js(`const c = [...document.querySelectorAll('.el-card')].find(e => /Camera log/.test(e.querySelector('.el-card__header')?.innerText || '')); c.id = '__film_log'; return true;`);
+            const off = await a.js(`return [...document.querySelectorAll('#pane-log button')].some(b => b.innerText.trim() === 'Turn on');`);
+            if (off) await a.click({ text: 'Turn on', sel: '#pane-log button' }, { after: 1500 });
+            await a.js(`document.querySelector('#pane-log').id = '__film_log'; return true;`);
             await settle(a, '#__film_log', 6000, 40000);
             await a.sleep(6000);
         }
