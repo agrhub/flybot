@@ -198,6 +198,32 @@ test('camos: a disconnect during a GPS fix (4G radio off) is not an outage; the 
     assert.equal((await models.Camera.findOne({ deviceSerial: 'ESP4' }).lean()).device.locatingUntil, undefined);
 });
 
+test('camos: a critical cell with no charge warns who sees the camera, and shows until the camera charges', async () => {
+    const owner = await createUser({ role: 'manager' });
+    await createCamera(owner, { deviceSerial: 'ESP5', deviceName: 'Vĩnh Long', platform: 'camos', status: 1, device: { thingName: 'ESP5', lastSeenAt: new Date() } });
+    const waitFor = async (check) => { for (let i = 0; i < 60 && !(await check()); i++) await new Promise(r => setTimeout(r, 50)); };
+    // Low but not critical, or critical while charging: kept, nobody is warned
+    await camos.handleMessage('camos/ESP5/event', { v: 1, type: 'low_power', voltage: 3.45, percent: 12, charging: false, critical: false });
+    await camos.handleMessage('camos/ESP5/event', { v: 1, type: 'low_power', voltage: 3.2, percent: 0, charging: true, critical: true });
+    assert.equal((await camos.getStatus('ESP5')).lowPower, null);
+    // Critical, no charge, about to sleep an hour at a time: the owner is told once
+    await camos.handleMessage('camos/ESP5/event', { v: 1, type: 'low_power', voltage: 2.104, percent: 0, charging: false, critical: true, sleepS: 3600 });
+    await waitFor(() => models.Notification.exists({ type: 'battery_critical' }));
+    const notice = await models.Notification.findOne({ type: 'battery_critical' }).lean();
+    assert.equal(String(notice.userId), String(owner._id));
+    assert.equal(notice.severity, 'critical');
+    assert.deepEqual(notice.params, { camera: 'Vĩnh Long', voltage: '2.10', percent: 0, hours: 1 });
+    await camos.handleMessage('camos/ESP5/event', { v: 1, type: 'low_power', voltage: 2.1, percent: 0, charging: false, critical: true, sleepS: 3600 });
+    await new Promise(r => setTimeout(r, 200));
+    assert.equal(await models.Notification.countDocuments({ type: 'battery_critical' }), 1, 'once in 6 hours');
+    const lowPower = (await camos.getStatus('ESP5')).lowPower;
+    assert.equal(lowPower.voltage, 2.1, "the latest report");
+    assert.equal(lowPower.sleepS, 3600);
+    // Charging again: the warning goes
+    await camos.handleMessage('camos/ESP5/state', { v: 1, online: true, battery: { mv: 3600, pct: 5, charging: true } });
+    assert.equal((await camos.getStatus('ESP5')).lowPower, null);
+});
+
 test('camos: messages from the camera update its status, power, battery and sleep (MQTT or IoT rule)', async () => {
     const owner = await createUser({ role: 'manager' });
     await createCamera(owner, { deviceSerial: 'ESP2', platform: 'camos', status: 0, device: { thingName: 'ESP2' } });

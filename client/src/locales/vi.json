@@ -561,7 +561,9 @@
       "allSources": "Thật và mô phỏng",
       "real": "Camera thật",
       "simulated": "Mô phỏng"
-    }
+    },
+    "batteryCritical": "Pin cạn: {hours} giờ thức một lần",
+    "batteryCriticalHint": "Báo lúc {time}: {voltage} V ({percent} %), không sạc. Camera không chụp ảnh cho tới khi được sạc."
   },
   "analytics": {
     "title": "Báo Cáo & Lịch Sử Nhận Dạng AI",
@@ -1548,6 +1550,10 @@
       "camera_enabled": {
         "title": "Camera hoạt động trở lại",
         "desc": "{camera} đã hoạt động trở lại."
+      },
+      "battery_critical": {
+        "title": "Pin cạn",
+        "desc": "{camera}: {voltage} V ({percent} %), không sạc. Camera ngừng chụp và cứ {hours} giờ thức dậy kiểm tra pin."
       }
     }
   },

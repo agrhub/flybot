@@ -330,6 +330,18 @@ function nextWakeOf(camera, now = new Date()) {
     return next > now ? next : null;
 }
 
+/**
+ * The camera's last critical low_power while it lasts: not charging since, the cell not clearly higher in a later
+ * report, and at most a day old (the camera repeats it every 6 h while the cell stays low). Null otherwise.
+ */
+function lowPowerOf(device, now = new Date()) {
+    const lp = device?.lowPower;
+    if (!lp?.critical || lp.charging || device.battery?.charging === true) return null;
+    if (!lp.at || now.getTime() - new Date(lp.at).getTime() > 24 * 60 * 60 * 1000) return null;
+    if (Number.isFinite(lp.voltage) && Number.isFinite(device.battery?.mv) && device.battery.mv / 1000 > lp.voltage + 0.3) return null;
+    return { at: lp.at, voltage: lp.voltage ?? null, percent: lp.percent ?? null, sleepS: lp.sleepS ?? null };
+}
+
 /** Status for the UI: online, power mode, sleeping and next wake, battery, network. */
 async function getStatus(deviceSerial, now = new Date()) {
     const camera = await Camera.findOne({ deviceSerial }).select('status captureIntervalMinutes lastSync device').lean();
@@ -346,6 +358,7 @@ async function getStatus(deviceSerial, now = new Date()) {
         nextWakeAt: sleeping || Number(camera.status) !== 1 ? nextWakeOf(camera, now) : null,
         lastSeenAt: d.lastSeenAt || null,
         battery: d.battery || null,
+        lowPower: lowPowerOf(d, now),
         net: d.net || null,
         rssi: d.rssi ?? null,
         location: d.location || null,
@@ -564,6 +577,20 @@ async function handleMessage(topicName, payload, { now = new Date() } = {}) {
         if (type === 'gps_fix' && doc.state && doc.state !== 'started') {
             await Camera.updateMany({ deviceSerial, platform: PLATFORM }, { $unset: { 'device.locatingUntil': 1, 'device.locatingRpcId': 1 } });
         }
+        // A low battery (event low_power {voltage, percent, charging, critical, sleepS}, firmware 0.9.2-rc.21): kept for the
+        // camera page; a critical cell with no charge, about to sleep to protect itself (sleepS), warns who sees the camera
+        if (type === 'low_power') {
+            const lowPower = strip({ at: now, voltage: num(doc.voltage), percent: num(doc.percent), charging: doc.charging === true, critical: doc.critical === true, sleepS: num(doc.sleepS) });
+            set['device.lowPower'] = lowPower;
+            if (lowPower.critical && !lowPower.charging && lowPower.sleepS > 0) {
+                require('../services/notificationService').notifyCameraOwners(deviceSerial, 'battery_critical', (cam) => ({
+                    camera: cam.deviceName || cam.deviceSerial,
+                    voltage: lowPower.voltage !== undefined ? lowPower.voltage.toFixed(2) : '?',
+                    percent: lowPower.percent !== undefined ? Math.round(lowPower.percent) : '?',
+                    hours: Math.round(lowPower.sleepS / 360) / 10
+                })).catch(err => console.warn(`⚠️ Battery notice ${deviceSerial}: ${err.message}`));
+            }
+        }
         if (type === 'goodbye' || doc.sleeping === true) {
             const wakeAt = dateOf(doc.wakeAt);
             await Camera.updateMany({ deviceSerial, platform: PLATFORM }, { $set: { ...set, 'device.sleeping': true, 'device.wakeAt': wakeAt, status: 0 } });
@@ -673,6 +700,7 @@ module.exports = {
     playback,
     setCaptureSchedule,
     getStatus,
+    lowPowerOf,
     nextWakeOf,
     deviceFieldsOf,
     handleMessage

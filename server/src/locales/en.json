@@ -107,6 +107,10 @@
       "camera_enabled": {
         "subject": "▶️ Camera {camera} is back in service",
         "body": "An administrator resumed camera {camera} ({deviceSerial}). It takes photos on its schedule again."
+      },
+      "battery_critical": {
+        "subject": "🔋 {camera}: battery critical, not charging",
+        "body": "Camera {camera} ({deviceSerial}) reports a critical battery ({voltage} V, {percent} %) that is not charging. To protect the cell it takes no photos and wakes every {hours} h to check it, until it charges again. Check the solar panel or charge the camera."
       }
     },
     "cameraShared": {

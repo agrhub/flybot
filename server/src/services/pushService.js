@@ -23,6 +23,7 @@ const TEXT_KEYS = {
     firmware_available: 'email.alerts.firmware_available',
     firmware_updated: 'email.alerts.firmware_updated',
     firmware_failed: 'email.alerts.firmware_failed',
+    battery_critical: 'email.alerts.battery_critical',
     camera_disabled: 'email.alerts.camera_disabled',
     farm_shared: 'email.farmShared',
     org_joined: 'email.orgShared',
@@ -47,6 +48,7 @@ const TARGET_PATH = {
     firmware_available: '/cameras',
     firmware_updated: '/cameras',
     firmware_failed: '/cameras',
+    battery_critical: '/cameras',
     camera_disabled: '/cameras',
     org_joined: '/settings?tab=organizations'
 };

@@ -47,6 +47,8 @@ const COOLDOWN_MINUTES = {
     firmware_available: 0,
     firmware_updated: 0,
     firmware_failed: 0,
+    // A cell too low to run on: the camera repeats low_power every 6 h at most
+    battery_critical: 6 * 60,
     camera_disabled: 0,
     camera_enabled: 0
 };
@@ -76,12 +78,13 @@ const SEVERITY = {
     firmware_available: 'info',
     firmware_updated: 'info',
     firmware_failed: 'warning',
+    battery_critical: 'critical',
     camera_disabled: 'warning',
     camera_enabled: 'info'
 };
 
 // "Back online" is good news: in-app only
-const EMAIL_TYPES = new Set(['pest_threshold', 'camera_offline', 'ai_failure', 'card_due', 'plot_threshold', 'pest_surge', 'image_quality', 'harvest_ready', 'weather_risk', 'log_reminder', 'org_digest', 'upgrade_requested', 'upgrade_decided', 'firmware_available', 'firmware_failed', 'camera_disabled']);
+const EMAIL_TYPES = new Set(['pest_threshold', 'camera_offline', 'ai_failure', 'card_due', 'plot_threshold', 'pest_surge', 'image_quality', 'harvest_ready', 'weather_risk', 'log_reminder', 'org_digest', 'upgrade_requested', 'upgrade_decided', 'firmware_available', 'firmware_failed', 'camera_disabled', 'battery_critical']);
 // Phone/browser push: the alerts, plus something new shared with you, and a finished firmware update
 const PUSH_TYPES = new Set([...EMAIL_TYPES, 'camera_shared', 'dashboard_shared', 'farm_shared', 'org_joined', 'firmware_updated']);
 

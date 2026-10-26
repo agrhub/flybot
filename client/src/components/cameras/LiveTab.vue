@@ -71,6 +71,9 @@
           <el-tag v-if="isCamos && playingTier" type="info" effect="plain" size="small" data-test="live-tier">{{ playingTier }}</el-tag>
           <el-tag v-if="!isCamos && !camera?.simulated" type="success" effect="plain" size="small">HD</el-tag>
           <DeviceSignal v-if="isCamos && camera?.device && demoAllows(camera, 'device')" :device="camera.device" :online="camera.status === 1" />
+          <el-tooltip v-if="lowPower" :content="lowPowerHint" placement="top">
+            <el-tag type="danger" effect="light" round size="small" data-test="battery-critical">{{ t('cameras.batteryCritical', { hours: lowPowerHours }) }}</el-tag>
+          </el-tooltip>
           <el-tag v-if="health?.imageIssues?.length" type="warning" effect="light" round size="small">{{ t('cameras.imageQuality.label') }}: {{ health.imageIssues.map(i => t(`cameras.imageQuality.issues.${i}`)).join(', ') }}</el-tag>
         </div>
         <div class="flex flex-wrap items-center gap-2" data-tour="camera-actions">
@@ -350,6 +353,18 @@ const requestLive = async () => {
     requestingLive.value = false
   }
 }
+// A critical cell with no charge (the camera's low_power): it takes no photos and wakes to check the cell
+const lowPower = computed(() => (isCamos.value && demoAllows(props.camera, 'device') ? props.camera?.device?.lowPower || null : null))
+const lowPowerHours = computed(() => (lowPower.value?.sleepS ? Math.round(lowPower.value.sleepS / 360) / 10 : 1))
+const lowPowerHint = computed(() => {
+  const lp = lowPower.value
+  if (!lp) return ''
+  return t('cameras.batteryCriticalHint', {
+    time: new Date(lp.at).toLocaleString([], { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }),
+    voltage: lp.voltage != null ? Number(lp.voltage).toFixed(2) : '?',
+    percent: lp.percent != null ? Math.round(lp.percent) : '?'
+  })
+})
 const liveUnsupported = ref(false)
 const liveLocalUrl = ref('')
 // A camera that was asleep or away when live view opened: its status every 4 s, and live view again (a new viewer

@@ -25,6 +25,7 @@ function deviceView(camera, now = new Date()) {
         net: d.net || null,
         rssi: d.rssi ?? null,
         battery: d.battery || null,
+        lowPower: camosPlatform.lowPowerOf(d, now),
         location: d.location || null,
         power: { mode: d.power?.mode || 'auto', level: d.power?.level || null },
         sleeping,

@@ -93,6 +93,10 @@ const deviceSchema = new mongoose.Schema({
     locatingRpcId: { type: String, default: undefined },
     // A GPS fix asked for while the camera was offline or asleep: sent at its next state message
     locateRequestedAt: { type: Date, default: undefined },
+    // The last low_power event (firmware 0.9.2-rc.21): { at, voltage, percent, charging, critical, sleepS }
+    lowPower: { type: mongoose.Schema.Types.Mixed, default: undefined },
+    // An administrator let the camera register again in place (its NVS was erased)
+    reregisterAllowedAt: { type: Date, default: undefined },
     shadow: {
         reported: { type: mongoose.Schema.Types.Mixed, default: undefined },
         desired: { type: mongoose.Schema.Types.Mixed, default: undefined },

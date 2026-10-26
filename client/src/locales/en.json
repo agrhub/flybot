@@ -561,7 +561,9 @@
       "allSources": "Real and simulated",
       "real": "Real cameras",
       "simulated": "Simulated"
-    }
+    },
+    "batteryCritical": "Battery critical: wakes every {hours} h",
+    "batteryCriticalHint": "Last report {time}: {voltage} V ({percent} %), not charging. The camera takes no photos until it charges."
   },
   "analytics": {
     "title": "AI Analytics & Detection History",
@@ -1548,6 +1550,10 @@
       "camera_enabled": {
         "title": "Camera resumed",
         "desc": "{camera} is back in service."
+      },
+      "battery_critical": {
+        "title": "Battery critical",
+        "desc": "{camera}: {voltage} V ({percent} %), not charging. It takes no photos and wakes every {hours} h to check the cell."
       }
     }
   },

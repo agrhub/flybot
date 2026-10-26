@@ -107,6 +107,10 @@
       "camera_enabled": {
         "subject": "▶️ Camera {camera} đã hoạt động trở lại",
         "body": "Quản trị viên đã bật lại camera {camera} ({deviceSerial}). Camera chụp ảnh theo lịch như trước."
+      },
+      "battery_critical": {
+        "subject": "🔋 {camera}: pin cạn, không sạc",
+        "body": "Camera {camera} ({deviceSerial}) báo pin cạn ({voltage} V, {percent} %) và không được sạc. Để bảo vệ pin, camera ngừng chụp ảnh và cứ {hours} giờ thức dậy một lần để kiểm tra pin, cho tới khi được sạc lại. Hãy kiểm tra tấm pin mặt trời hoặc sạc cho camera."
       }
     },
     "cameraShared": {
