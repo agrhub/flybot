@@ -26,6 +26,7 @@ const AUDIT_ACTIONS = [
     'camera.disabled',
     'camera.enabled',
     'camera.verify_code_revealed',
+    'camera.reregister_allowed',
     // Remote console log of a camera
     'camera.log_started',
     'camera.log_stopped',

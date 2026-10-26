@@ -278,6 +278,26 @@ async function listCameras(req, res) {
 }
 
 /**
+ * POST /api/admin/cameras/:deviceSerial/reregister { verifyCode }: a CamOS camera that lost its NVS (certificate,
+ * token, settings) registers again in place with its new verify code, keeping its owner, farm, photos and history.
+ */
+async function allowReregistration(req, res) {
+    try {
+        const result = await require('../services/registrationService').allowReregistration(req.params.deviceSerial, req.body?.verifyCode);
+        if (result.status === 200) {
+            recordAudit(req, {
+                action: 'camera.reregister_allowed',
+                target: { type: 'camera', id: String(req.params.deviceSerial).toUpperCase() },
+                details: { revokeErrors: result.body.revokeErrors.length }
+            });
+        }
+        res.status(result.status).json({ success: result.status === 200, ...result.body });
+    } catch (err) {
+        sendServerError(res, err, { context: 'Admin allow re-registration' });
+    }
+}
+
+/**
  * PUT /api/admin/cameras/:deviceSerial/owner  { email, keepPreviousOwnerAccess = true }
  * The new owner must be a manager or admin (owners manage their cameras).
  */
@@ -514,6 +534,7 @@ module.exports = {
     deleteUser,
     listCameras,
     transferCamera,
+    allowReregistration,
     getSystemSettings,
     updateSystemSettings,
     toAdminUser

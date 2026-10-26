@@ -2410,7 +2410,8 @@
         "shared": "Chia sẻ camera",
         "unshared": "Gỡ quyền xem camera",
         "transferred": "Chuyển quyền sở hữu camera",
-        "claimed": "Đã nhận camera"
+        "claimed": "Đã nhận camera",
+        "reregister_allowed": "Cho phép camera đăng ký lại"
       },
       "dashboard": {
         "created": "Tạo báo cáo",

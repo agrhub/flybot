@@ -112,6 +112,11 @@ async function checkRegister(serial, verifyCode) {
     return null;
 }
 
+/** A camera that lost its factory data made a new verify code: its entry, if any, takes it. */
+async function setCode(serial, verifyCode, now = new Date()) {
+    await DeviceRegistry.updateOne({ serial: normSerial(serial) }, { $set: { verifyCode: normCode(verifyCode), updatedAt: now } });
+}
+
 /** A customer added the camera: remember who and when (first time only). */
 async function markClaimed(serial, userId, now = new Date()) {
     await DeviceRegistry.updateOne({ serial: normSerial(serial), claimedAt: { $exists: false } }, { $set: { claimedAt: now, claimedBy: userId, updatedAt: now } }).catch(() => {});
@@ -371,6 +376,7 @@ module.exports = {
     lookup,
     checkClaim,
     checkRegister,
+    setCode,
     markClaimed,
     list,
     add,

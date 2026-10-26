@@ -2410,7 +2410,8 @@
         "shared": "Camera shared",
         "unshared": "Camera access removed",
         "transferred": "Camera ownership transferred",
-        "claimed": "Camera claimed"
+        "claimed": "Camera claimed",
+        "reregister_allowed": "Camera allowed to register again"
       },
       "dashboard": {
         "created": "Report created",

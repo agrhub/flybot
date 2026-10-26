@@ -12,6 +12,7 @@ router.put('/users/:userId', adminController.updateUser);
 router.delete('/users/:userId', adminController.deleteUser);
 router.get('/cameras', adminController.listCameras);
 router.put('/cameras/:deviceSerial/owner', adminController.transferCamera);
+router.post('/cameras/:deviceSerial/reregister', adminController.allowReregistration);
 router.get('/settings', adminController.getSystemSettings);
 router.put('/settings', adminController.updateSystemSettings);
 router.get('/demo-sim', adminController.getDemoSim);

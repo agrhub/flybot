@@ -378,6 +378,47 @@ test('re-add: an owner adds an ESP serial before it registers; the camera then j
     assert.equal((await register()).status, 409);
 });
 
+test('re-register: an owned camera that lost its NVS registers again in place after an admin allows it', async () => {
+    const person = await createUser({ role: 'user', email: 'nvs-owner@example.test' });
+    const admin = await createUser({ role: 'admin', email: 'nvs-admin@example.test' });
+    const first = await register();
+    assert.equal((await claim(person, { serial: 'ESP1234567890AB', verifyCode: 'K7Q2MX' })).status, 200);
+    await require('../src/platforms/camos').handleMessage('$aws/events/presence/connected/ESP1234567890AB', { clientId: 'ESP1234567890AB' });
+    const before = await models.Camera.findOne({ deviceSerial: 'ESP1234567890AB' }).lean();
+    await models.DeviceRegistry.create({ serial: 'ESP1234567890AB', verifyCode: 'K7Q2MX', model: 'AIC-FREENOVE-S3CAM' });
+
+    // The flash was erased: a new key and a new verify code, refused until an admin allows it
+    const lost = body({ verifyCode: 'P9R4TA', csr: CSR('b') });
+    assert.equal((await register(lost)).status, 409);
+    const allow = (as, b) => request('/api/admin/cameras/ESP1234567890AB/reregister', { method: 'POST', as, body: b }).then(json);
+    assert.equal((await allow(person, { verifyCode: 'P9R4TA' })).status, 403, 'admins only');
+    assert.equal((await allow(admin, { verifyCode: 'nope' })).status, 400);
+    iotCalls = [];
+    const ok = await allow(admin, { verifyCode: 'p9r4ta' });
+    assert.equal(ok.status, 200, JSON.stringify(ok.body));
+    assert.deepEqual(ok.body.revokeErrors, []);
+    // The old certificate is revoked; the thing and the channel stay
+    assert.deepEqual(iotCalls.map(c => c.name), ['DetachThingPrincipalCommand', 'DetachPolicyCommand', 'UpdateCertificateCommand', 'DeleteCertificateCommand']);
+    assert.equal(iotCalls[3].input.certificateId, before.device.certificateId);
+    let cam = await models.Camera.findOne({ deviceSerial: 'ESP1234567890AB' }).lean();
+    assert.equal(cam.device.tokenHash, undefined);
+    assert.equal(cam.device.certificatePem, undefined);
+    assert.equal(cam.selfRegistered, false);
+    assert.equal(cam.validateCode, 'P9R4TA');
+    assert.equal((await upload('ESP1234567890AB', first.body.deviceToken)).status, 401, 'the old token is gone');
+    assert.ok(await models.AuditLog.findOne({ action: 'camera.reregister_allowed' }));
+
+    const again = await register(lost);
+    assert.equal(again.status, 201, JSON.stringify(again.body));
+    assert.equal(again.body.claimed, true);
+    cam = await models.Camera.findOne({ deviceSerial: 'ESP1234567890AB' }).lean();
+    assert.equal(String(cam.userId), String(person._id), 'the same owner');
+    assert.equal(String(cam._id), String(before._id), 'the same camera, so its photos and history stay');
+    assert.equal(cam.selfRegistered, true);
+    assert.ok(cam.device.tokenHash && cam.device.certificateId !== before.device.certificateId);
+    assert.equal((await register(lost)).status, 409, 'registered again: the usual 409');
+});
+
 /** Set the FREE plan's numbers as the admin would (Admin > Plans). */
 async function freePlan(values) {
     const planService = require('../src/services/planService');

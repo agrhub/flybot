@@ -277,6 +277,56 @@ async function registerForOwner(camera, { serial, csr, csrHash, fw, model, now }
     }
 }
 
+/**
+ * Let an owned CamOS camera register again in place, after it lost its NVS (a flash erase): the old certificate is
+ * revoked (detached, made inactive, deleted; the thing and the KVS channel stay), the device token goes, and the
+ * camera's new verify code is kept, so its next POST /api/device/register takes the registerForOwner path and the
+ * camera keeps its owner, farm, photos and history. A registry entry gets the new code too.
+ * Returns { status, body }: 200 { ok, revokeErrors }, 400 bad_code, 404 not_found, 409 not_owned.
+ */
+async function allowReregistration(deviceSerial, verifyCode, now = new Date()) {
+    const serial = String(deviceSerial || '').trim().toUpperCase();
+    const code = normCode(verifyCode);
+    if (!VERIFY_CODE.test(code)) return fail(400, 'bad_code', 'verifyCode must be 6 Crockford base32 characters.');
+    const camera = await Camera.findOne({ deviceSerial: serial, platform: 'camos' }).lean();
+    if (!camera) return fail(404, 'not_found', 'No CamOS camera with this serial.');
+    if (!camera.userId) return fail(409, 'not_owned', 'Only a camera with an owner can register again in place.');
+    const d = camera.device || {};
+    const revoked = d.certificateArn || d.certificateId ? await revokeCertificate(d.thingName || serial, d) : { errors: [] };
+    await Camera.updateOne({ _id: camera._id }, {
+        $set: { validateCode: code, selfRegistered: false, 'device.reregisterAllowedAt': now },
+        $unset: {
+            'device.tokenHash': 1, 'device.tokenIssuedAt': 1, 'device.csrHash': 1,
+            'device.certificateArn': 1, 'device.certificateId': 1, 'device.certificatePem': 1
+        }
+    });
+    await require('./registryService').setCode(serial, code, now);
+    console.log(`📟 Camera ${serial} may register again (old certificate revoked${revoked.errors.length ? ' with errors' : ''})`);
+    return { status: 200, body: { ok: true, revokeErrors: revoked.errors } };
+}
+
+/** Revoke one certificate of a thing: detach it from the thing and the policy, make it inactive, delete it. */
+async function revokeCertificate(thingName, device) {
+    const iot = require('@aws-sdk/client-iot');
+    const errors = [];
+    const step = async (name, fn) => {
+        try {
+            await fn();
+        } catch (err) {
+            if (!notFound(err)) errors.push(`${name}: ${awsError(err)} ${String(err.message || '').slice(0, 120)}`);
+        }
+    };
+    if (device.certificateArn) {
+        await step('DetachThingPrincipal', () => iotSend(iot.DetachThingPrincipalCommand, { thingName, principal: device.certificateArn }));
+        await step('DetachPolicy', () => iotSend(iot.DetachPolicyCommand, { policyName: env.IOT_POLICY_NAME, target: device.certificateArn }));
+    }
+    if (device.certificateId) {
+        await step('UpdateCertificate', () => iotSend(iot.UpdateCertificateCommand, { certificateId: device.certificateId, newStatus: 'INACTIVE' }));
+        await step('DeleteCertificate', () => iotSend(iot.DeleteCertificateCommand, { certificateId: device.certificateId }));
+    }
+    return { errors };
+}
+
 function created(serial, certificatePem, deviceToken, channelName) {
     return {
         status: 201,
@@ -548,6 +598,7 @@ module.exports = {
     CLAIM_MAX_FAILURES,
     checkCsr,
     register,
+    allowReregistration,
     uploadLimit,
     markUnclaimedPhoto,
     unclaimedNextWake,
