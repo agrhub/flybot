@@ -21,3 +21,27 @@ export function filterCameras(cameras, { query = '', status = 'all', type = 'all
     return [cam.deviceName, cam.deviceSerial, cam.model, cam.deviceType].some((v) => fold(v).includes(q));
   });
 }
+
+/**
+ * What a camera's tag says: 'online', 'sleeping' or 'offline'. A CamOS camera that said goodbye before a planned
+ * sleep is sleeping until its wake time has passed (the rule of the server's fleet state), not offline.
+ */
+export function cameraState(cam, now = Date.now()) {
+  const d = cam?.device;
+  if (platformOf(cam) === 'camos' && d?.sleeping && (!d.wakeAt || new Date(d.wakeAt).getTime() > now)) return 'sleeping';
+  return cam?.status === 1 ? 'online' : 'offline';
+}
+
+/** When a sleeping camera next wakes (the planned wake, else the one the server expects), or null. */
+export const nextWakeOf = (cam) => cam?.device?.nextWakeAt || cam?.device?.wakeAt || null;
+
+/** The state's words: Online, Offline, or Sleeping with the next wake time. */
+export function cameraStateLabel(cam, t, now = Date.now()) {
+  const state = cameraState(cam, now);
+  if (state !== 'sleeping') return t(`common.${state}`);
+  const at = nextWakeOf(cam);
+  return at ? t('cameras.sleepingNextWake', { time: new Date(at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }) : t('cameras.sleeping');
+}
+
+/** The Element Plus tag type of each state: a sleeping camera is not a fault. */
+export const STATE_TAG = { online: 'success', sleeping: 'info', offline: 'danger' };

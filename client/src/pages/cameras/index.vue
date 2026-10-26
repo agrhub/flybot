@@ -134,8 +134,8 @@
         <div class="min-w-0 flex-1">
           <div class="flex items-center gap-2 min-w-0">
             <h3 class="cameras-detail__title truncate">{{ currentDetailCamera?.deviceName }}</h3>
-            <el-tag :type="currentDetailCamera?.status === 1 ? 'success' : 'danger'" effect="light" round size="small" class="shrink-0">
-              {{ currentDetailCamera?.status === 1 ? t('common.online') : t('common.offline') }}
+            <el-tag :type="STATE_TAG[cameraState(currentDetailCamera)]" effect="light" round size="small" class="shrink-0" data-test="detail-state">
+              {{ cameraStateLabel(currentDetailCamera, t) }}
             </el-tag>
           </div>
           <p class="cameras-meta font-mono truncate">SN: {{ currentDetailCamera?.deviceSerial }}</p>
@@ -172,7 +172,7 @@ import { ref, reactive, computed, watch, onUnmounted, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import { Plus, Back, ArrowLeft, ArrowRight, VideoCamera, Connection, Menu, Search } from '@element-plus/icons-vue';
-import { filterCameras } from '@/utils/cameraFilter';
+import { filterCameras, cameraState, cameraStateLabel, STATE_TAG } from '@/utils/cameraFilter';
 import { useCameras } from '@/composables/useCameras';
 import { useAuth } from '@/composables/useAuth';
 import { useBreakpoints } from '@/composables/useBreakpoints';

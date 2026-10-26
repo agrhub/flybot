@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { filterCameras } from '@/utils/cameraFilter';
+import { filterCameras, cameraState, nextWakeOf } from '@/utils/cameraFilter';
 
 const cams = [
   { deviceSerial: 'ESP0A1B2C3D4E5F', deviceName: 'Vĩnh Long', platform: 'camos', status: 1, model: 'AIC-FREENOVE-S3CAM' },
@@ -35,5 +35,24 @@ describe('filterCameras', () => {
     expect(serials(filterCameras(mixed, { kind: 'lure' }))).toEqual(['REAL-LURE']);
     expect(serials(filterCameras(mixed, { source: 'real' }))).toEqual(['REAL-LURE', 'REAL-STICKY']);
     expect(serials(filterCameras(mixed, { source: 'simulated', kind: 'sticky' }))).toEqual(['SIM-STICKY']);
+  });
+});
+
+describe('cameraState', () => {
+  const now = Date.parse('2026-10-26T08:00:00Z');
+  it('says sleeping for a CamOS camera until its wake time, then offline', () => {
+    const cam = { platform: 'camos', status: 0, device: { sleeping: true, wakeAt: '2026-10-26T08:30:00Z' } };
+    expect(cameraState(cam, now)).toBe('sleeping');
+    expect(cameraState(cam, Date.parse('2026-10-26T08:31:00Z'))).toBe('offline');
+    expect(cameraState({ ...cam, device: { sleeping: true } }, now)).toBe('sleeping');
+    expect(nextWakeOf(cam)).toBe('2026-10-26T08:30:00Z');
+  });
+
+  it('follows the status otherwise', () => {
+    expect(cameraState({ platform: 'ezviz', status: 1 }, now)).toBe('online');
+    expect(cameraState({ platform: 'ezviz', status: 0, device: { sleeping: true } }, now)).toBe('offline');
+    expect(cameraState({ platform: 'kinesis', status: 0, device: { sleeping: false } }, now)).toBe('offline');
+    expect(cameraState(null, now)).toBe('offline');
+    expect(nextWakeOf({})).toBeNull();
   });
 });

@@ -29,11 +29,11 @@
           <img v-if="thumbOf(cam)" :src="thumbOf(cam)" alt="" loading="lazy" @error="broken[cam.deviceSerial] = true" />
           <img v-else-if="isCamos(cam)" src="/images/camos-logo.png" alt="" class="cam-switch__logo" />
           <el-icon v-else :size="18"><VideoCamera /></el-icon>
-          <span class="cam-switch__dot" :class="cam.status === 1 ? 'is-online' : 'is-offline'"></span>
+          <span class="cam-switch__dot" :class="'is-' + cameraState(cam)"></span>
         </span>
         <span class="min-w-0 flex-1 text-left">
           <span class="cam-switch__name truncate">{{ cam.deviceName || cam.deviceSerial }}</span>
-          <span class="cam-switch__meta truncate">{{ t(`cameras.platform.${platformOf(cam)}`) }} · {{ cam.status === 1 ? t('common.online') : t('common.offline') }}</span>
+          <span class="cam-switch__meta truncate">{{ t(`cameras.platform.${platformOf(cam)}`) }} · {{ cameraStateLabel(cam, t) }}</span>
         </span>
       </button>
       <p v-if="!filtered.length" class="cam-switch__count text-center py-4">{{ t('cameras.switcher.none') }}</p>
@@ -46,7 +46,7 @@ import { computed, reactive, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Search, VideoCamera } from '@element-plus/icons-vue';
 import api from '@/services/api';
-import { filterCameras } from '@/utils/cameraFilter';
+import { filterCameras, cameraState, cameraStateLabel } from '@/utils/cameraFilter';
 
 /** The camera list beside the detail view: thumbnails, search, online/offline and type filters. */
 const props = defineProps({
@@ -134,6 +134,9 @@ const filtered = computed(() => filterCameras(props.cameras, { query: query.valu
 }
 .cam-switch__dot.is-offline {
   background: var(--el-color-danger);
+}
+.cam-switch__dot.is-sleeping {
+  background: var(--el-color-info);
 }
 .cam-switch__name {
   display: block;
