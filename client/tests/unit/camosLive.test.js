@@ -49,6 +49,23 @@ describe('JpegAssembler', () => {
     expect(a.push(chunk(1, 6, 3, bytes(3, 2)))).toBeNull();
   });
 
+  it('finishes a frame whose last chunk comes after the next frame started', () => {
+    const a = new JpegAssembler();
+    a.push(chunk(1, 6, 0, bytes(3, 1)));
+    expect(a.push(chunk(2, 4, 0, bytes(2, 5)))).toBeNull();
+    expect(a.push(chunk(1, 6, 3, bytes(3, 2)))?.seq).toBe(1);
+    expect(a.push(chunk(2, 4, 2, bytes(2, 6)))?.seq).toBe(2);
+    expect(a.dropped).toBe(0);
+  });
+
+  it('keeps at most three frames in assembly', () => {
+    const a = new JpegAssembler();
+    for (const seq of [1, 2, 3, 4]) a.push(chunk(seq, 4, 0, bytes(2, seq)));
+    expect(a.dropped).toBe(1);
+    expect(a.push(chunk(1, 4, 2, bytes(2, 1)))).toBeNull(); // given up
+    expect(a.push(chunk(2, 4, 2, bytes(2, 2)))?.seq).toBe(2);
+  });
+
   it('ignores a repeated chunk and frames already shown', () => {
     const a = new JpegAssembler();
     a.push(chunk(3, 4, 0, bytes(2, 1)));
@@ -169,9 +186,9 @@ describe('auto and picked sizes', () => {
 });
 
 describe('data channel lifetime', () => {
-  it('gives chunks 2 s over 4G (TURN relay) and 300 ms over Wi-Fi', () => {
+  it('gives chunks 2 s over 4G (TURN relay) and 1.5 s over Wi-Fi', () => {
     expect(channelOptions(true)).toEqual({ ordered: false, maxPacketLifeTime: 2000 });
-    expect(channelOptions(false)).toEqual({ ordered: false, maxPacketLifeTime: 300 });
+    expect(channelOptions(false)).toEqual({ ordered: false, maxPacketLifeTime: 1500 });
   });
 });
 

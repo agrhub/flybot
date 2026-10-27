@@ -9,9 +9,11 @@
  */
 
 export const CAMOS_CHANNEL = 'camos';
-// Unordered, and a chunk not delivered within 300 ms is given up: esp_peer's fully reliable SCTP stalls for seconds
-// after a loss on a busy Wi-Fi, while a lost chunk here only costs one frame (and a lost ack, one ack timeout)
-export const CHANNEL_OPTIONS = { ordered: false, maxPacketLifeTime: 300 };
+// Unordered, and a chunk not delivered within 1.5 s is given up: esp_peer's fully reliable SCTP stalls for seconds
+// after a loss on a busy Wi-Fi, while a lost chunk here only costs one frame (and a lost ack, one ack timeout). The
+// lifetime counts from the camera queuing the chunk, so it must cover a whole frame: at 300 ms the last chunks of a
+// FullHD (105 KB) or 2K (170 KB) frame were always given up and those sizes stayed at 0 fps (27 Oct 2026)
+export const CHANNEL_OPTIONS = { ordered: false, maxPacketLifeTime: 1500 };
 // Over 4G the carrier NAT forces a TURN relay (the KVS channel is in Sydney): round trips of 300 ms and more, so a
 // JPEG's chunks need longer than 300 ms and would all be given up
 export const CELLULAR_CHANNEL_OPTIONS = { ordered: false, maxPacketLifeTime: 2000 };
@@ -157,38 +159,48 @@ export function parseChunk(buffer) {
 /**
  * Puts JPEG frames back together from their chunks. push() returns a complete frame
  * ({ seq, ts, bytes: Uint8Array }) or null; `dropped` counts frames overtaken before they were complete.
+ * Up to `keep` frames are assembled at once: the camera has two frames in flight and the channel is unordered, so the
+ * next frame's first chunks often come before the last (resent) chunk of a FullHD or 2K frame, which with one frame at a
+ * time was always given up (27 Oct 2026).
  */
 export class JpegAssembler {
-  constructor({ maxBytes = 2 * 1024 * 1024 } = {}) {
+  constructor({ maxBytes = 2 * 1024 * 1024, keep = 3 } = {}) {
     this.maxBytes = maxBytes;
+    this.keep = keep;
     this.dropped = 0;
     this.lastSeq = 0;
-    this.frame = null;
+    this.frames = new Map();
   }
 
   push(buffer) {
     const c = parseChunk(buffer);
     if (!c || c.total === 0 || c.total > this.maxBytes) return null;
     if (c.seq <= this.lastSeq) return null; // a frame already shown (or given up)
-    if (!this.frame || c.seq > this.frame.seq) {
-      if (this.frame) this.dropped++;
-      this.frame = { seq: c.seq, ts: c.ts, total: c.total, bytes: new Uint8Array(c.total), got: 0, seen: new Set() };
-    } else if (c.seq < this.frame.seq) {
-      return null; // a late chunk of a frame already dropped
+    let f = this.frames.get(c.seq);
+    if (!f) {
+      f = { seq: c.seq, ts: c.ts, total: c.total, bytes: new Uint8Array(c.total), got: 0, seen: new Set() };
+      this.frames.set(c.seq, f);
+      while (this.frames.size > this.keep) this.giveUp(Math.min(...this.frames.keys()));
     }
-    const f = this.frame;
     if (c.total !== f.total || f.seen.has(c.offset)) return null;
     f.seen.add(c.offset);
     f.bytes.set(c.payload, c.offset);
     f.got += c.payload.byteLength;
     if (f.got < f.total) return null;
-    this.frame = null;
+    this.frames.delete(f.seq);
+    for (const seq of [...this.frames.keys()]) if (seq < f.seq) this.giveUp(seq); // older frames: too late now
     this.lastSeq = f.seq;
     return { seq: f.seq, ts: f.ts, bytes: f.bytes };
   }
 
+  giveUp(seq) {
+    this.frames.delete(seq);
+    this.dropped++;
+    this.lastSeq = Math.max(this.lastSeq, seq);
+  }
+
   reset() {
-    this.frame = null;
+    this.frames.clear();
     this.lastSeq = 0;
   }
 }
