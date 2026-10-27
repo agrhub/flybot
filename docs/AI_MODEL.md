@@ -65,7 +65,7 @@ Google Vertex AI (Gemini) is not used for counting by default. It powers the ass
 
 | Variable | Meaning |
 |---|---|
-| `AI_PROVIDER` | `roboflow` (default), `vertex` or `both` |
+| `AI_PROVIDER` | `roboflow` (the `.env.example` value; unset: `vertex`), `opencv-lambda`, `vertex`, `both` or `sentinel` |
 | `ROBOFLOW_WORKFLOW_URL` | Workflow endpoint, `https://serverless.roboflow.com/camos/workflows/<workflow id>` |
 | `ROBOFLOW_API_KEY` | Roboflow API key of the `camos` workspace (secret) |
 | `ROBOFLOW_UPLOAD_PROJECT` | Project that receives reviewed photos for retraining, e.g. `fruit-fly-wmcqi` (empty = off) |

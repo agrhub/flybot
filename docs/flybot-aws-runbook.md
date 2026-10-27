@@ -11,7 +11,7 @@ How FlyBot runs on AWS, what each AWS service does, the permissions it needs, an
 | Database | MongoDB on the same instance | |
 | Photos | Amazon S3, private bucket | Read and written with the instance role; photos reach the browser only through FlyBot's access checks |
 | Counting and the vision agent | AWS Lambda (arm64 container, OpenCV 5) | `AI_PROVIDER=opencv-lambda`; FlyBot invokes it for every photo and for the assistant's deep analysis |
-| Trap cameras | AWS IoT Core | Device Shadow (schedule, live view request, clock), RPC topics, connection events; certificates for self-registered cameras |
+| Trap cameras | AWS IoT Core | Device Shadow (schedule, live view request, clock, remote settings such as Wi-Fi or 4G and the GPS satellites), RPC topics, connection events; certificates for self-registered cameras |
 | Live view | Kinesis Video Streams WebRTC | One signaling channel per camera (`cam-<serial>`); the browser joins as viewer with 15-minute credentials |
 | Secrets | AWS Secrets Manager | `FLYBOT_SECRETS` names the secrets FlyBot reads at start-up |
 
@@ -55,6 +55,7 @@ Every setting is listed in the [README](../README.md#configuration).
 2. It connects to the network, makes its own key pair, and registers with FlyBot (`POST /api/device/register`). FlyBot asks AWS IoT to sign the camera's certificate, creates its IoT thing and live view channel, and keeps it **unclaimed**: one photo an hour, analyzed but shown to nobody, deleted after 24 hours.
 3. The grower signs in, opens **Cameras → Claim a camera** (or the link in the QR code), scans the QR or types the serial and code, and picks the trap kind (lure or sticky), the farm and the photo schedule. The camera is theirs at once; its first photo shows on the page, and at its next wake it takes the grower's schedule and the farm's time zone.
 4. A camera nobody claims within 7 days is removed (certificate, IoT thing, channel and photos). Deleting a claimed camera does the same, so it can register again.
+5. A claimed camera that lost its registration (its NVS was erased) can register again in place: an administrator calls `POST /api/admin/cameras/{serial}/reregister` with the camera's new code ([API.md](../API.md#administration)). The old certificate is revoked; the camera keeps its owner, farm, photos and history.
 
 ### A camera from your own fleet (pairing)
 

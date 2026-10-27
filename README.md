@@ -16,7 +16,7 @@ Commercial (1080p, 60 s, with music): [English](https://ezviz.agrhub.com/media/f
 - **Warns in time.** Per-trap thresholds, sudden rises, plots over their limit, a weather-based "wave of flies is coming" warning, by email, Telegram and phone notifications, with quiet hours and a 06:30 morning brief.
 - **Says what to do next.** A to-do card per plot (treat now, check the effect, bait before the next generation, sanitation), a treatment log with VietGAP export, and the effect of each treatment on the catches.
 - **Answers questions.** The FlyBot assistant looks up the real data (catches, alerts, cameras, treatments), shows photos and charts, takes a new photo, and asks the vision agent to look at a photo in depth ("why did the count jump today?"). Anything it proposes only happens after you press Confirm.
-- **Keeps the cameras healthy.** Live view, playback, scheduled captures, photo quality checks (dark, blurry, full card), a card-replacement reminder, battery and signal of solar cameras.
+- **Keeps the cameras healthy.** Live view, playback, scheduled captures, photo quality checks (dark, blurry, full card), a card-replacement reminder, battery and signal of solar cameras, a sleeping trap camera's next wake, and a warning when its battery is critical and not charging.
 - **Works for one farm or a cooperative.** Farms with plots on a map, organizations with owner/manager/member roles, sharing per camera, farm or report, a cooperative overview and report.
 - **Reports and data.** A report builder with scheduled PDF emails, shareable links with expiry, PDF/Excel export with the detection boxes, a public API and webhooks ([API.md](API.md)).
 
@@ -48,7 +48,7 @@ Commercial (1080p, 60 s, with music): [English](https://ezviz.agrhub.com/media/f
 <br><sub>Installs on the phone like an app, with push notifications</sub>
 </p>
 
-Other screens: **Sentinel** (what the vision agent saw and proposed for each photo, and the proposals waiting for a decision), **Claim a camera** (take over a camera that registered itself), **Plan & usage** and **Plans** (limits and upgrades), and the admin pages (users, workspaces, plans, upgrade requests, audit log, capture pipeline). Screenshots in Vietnamese are in [client/public/manual/vi](client/public/manual/vi); the in-app **Guide** (`/manual`) explains every screen.
+Other screens: **Sentinel** (what the vision agent saw and proposed for each photo, and the proposals waiting for a decision), **Claim a camera** (take over a camera that registered itself), **Plan & usage** and **Plans** (limits and upgrades), and the admin pages (users, camera fleet, serial registry, firmware, system settings, capture pipeline, usage, activity log, plans, workspaces, upgrade requests). Screenshots in Vietnamese are in [client/public/manual/vi](client/public/manual/vi); the in-app **Guide** (`/manual`) explains every screen.
 
 ## Cameras
 
@@ -59,6 +59,8 @@ Each camera has a platform; the rest of FlyBot works the same for all of them.
 | **EZVIZ** | Wi-Fi cameras on the EZVIZ Open Platform | FlyBot takes them on the camera's schedule | EZVIZ stream, SD-card playback |
 | **CamOS on AWS IoT Core** | Open ESP32-S3 / AMB82 trap cameras (Wi-Fi or 4G, solar and battery, GPS) | The camera uploads on its own schedule and sleeps in between; **Capture now** asks it for a photo | Kinesis Video Streams WebRTC; a sleeping camera starts live view at its next wake |
 | **Kinesis Video Streams** | Any camera that publishes to a KVS signaling channel | none | Kinesis Video Streams WebRTC |
+
+The CamOS trap camera as built: an ESP32-S3 N16R8 CAM board with an OV5640 sensor in the lid of a hanging solar lure trap, a SIMCom A7680C 4G modem, an ATGM336H GPS and a flat LiPo cell, about US$39 in parts. Its open firmware is [agrhub/camos-esp32-trap](https://github.com/agrhub/camos-esp32-trap) (v0.9.1 released).
 
 A CamOS camera flashed with the public firmware **registers itself**: it shows a QR code with its serial and a 6-character code, and anyone signed in claims it on the **Claim a camera** page. Nothing secret is built into the firmware; FlyBot asks AWS IoT for the camera's certificate.
 
@@ -142,7 +144,7 @@ All settings are environment variables, read from `.env` at the repository root 
 | Variable | Default | Meaning |
 |---|---|---|
 | `NODE_ENV` | `development` | `production` on a server |
-| `PORT` | `3003` | Port the server listens on |
+| `PORT` | `3003` in `.env.example` (unset: `3000`) | Port the server listens on |
 | `MONGO_URI` | `mongodb://localhost:27017/ezviz_manager` | MongoDB connection string |
 | `JWT_SECRET` | (required) | At least 32 random characters; signs the sign-in tokens |
 | `APP_BASE_URL` | | Public address of the app, used in email links and claim links (required in production) |
@@ -168,10 +170,10 @@ All settings are environment variables, read from `.env` at the repository root 
 | `DEMO_LIVE_MINUTES` | `5` | FREE plan's first live view minutes per request |
 | `DEMO_MAX_UNCLAIMED` | `200` | Self-registered cameras that may wait for a claim at the same time |
 | `DEMO_EXEMPT_EMAILS` | | Accounts without any plan limit, comma-separated (administrators have none either) |
-| `DEMO_VIEW_ENABLED` | `false` | `true` lets visitors view `DEMO_VIEW_CAMERAS` read-only (first value of Admin → System → Demo access) |
+| `DEMO_VIEW_ENABLED` | `false` | `true` lets visitors view `DEMO_VIEW_CAMERAS` read-only (first value of Settings → System settings → Demo cameras for visitors) |
 | `DEMO_VIEW_CAMERAS` | | Comma-separated serials of the read-only demo cameras |
 | `DEMO_VIEW_SINCE` | | Only accounts created on or after this date (`YYYY-MM-DD`) see them; empty: every account |
-| `DEMO_VIEW_LIVE` | `false` | `true` also opens live view and SD playback of the demo cameras (until Admin → System → Demo access sets them per camera) |
+| `DEMO_VIEW_LIVE` | `false` | `true` also opens live view and SD playback of the demo cameras (until Settings → System settings → Demo cameras for visitors sets them per camera) |
 | `DEMO_VIEW_AUDIENCE` | `guest` | Who sees the demo cameras besides the guest account: `guest` (nobody), `all`, or `since` (accounts from `DEMO_VIEW_SINCE`) |
 | `GUEST_ACCESS` | `false` | `true` shows a Guest access button on the sign-in page: a shared, read-only demo account for 2 hours |
 | `DEMO_VIEW_SIMULATED` | `false` | `true` also shows the simulated demo farm (`server/scripts/demo_sim.js`, DEPLOY.md) to those visitors |
@@ -182,7 +184,7 @@ All settings are environment variables, read from `.env` at the repository root 
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `S3_BUCKET_NAME` | | Bucket for photos (keep it private) |
+| `S3_BUCKET_NAME` | `ezviz-manager` | Bucket for photos (keep it private) |
 | `S3_REGION` | `auto` | Bucket region (on AWS: `AWS_REGION`) |
 | `S3_ENDPOINT` | | Empty for Amazon S3; the endpoint URL for MinIO or another S3-compatible store |
 | `S3_ACCESS_KEY`, `S3_SECRET_KEY` | | Only for MinIO and similar; on AWS the instance role is used |
@@ -193,13 +195,13 @@ All settings are environment variables, read from `.env` at the repository root 
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `AI_PROVIDER` | `roboflow` | `opencv-lambda` (the OpenCV 5 vision Lambda, recommended on AWS), `roboflow`, `vertex`, `both` or `sentinel` (an external agent posts the counts) |
+| `AI_PROVIDER` | `roboflow` in `.env.example` (unset: `vertex`) | `opencv-lambda` (the OpenCV 5 vision Lambda, recommended on AWS), `roboflow`, `vertex`, `both` or `sentinel` (an external agent posts the counts) |
 | `VISION_LAMBDA_NAME` | | Name of the vision Lambda (invoked with the AWS SDK) |
 | `VISION_LAMBDA_URL` | | Local development: address of a vision Lambda running on your computer (wins over the name) |
 | `VISION_LAMBDA_TIMEOUT_S` | `120` | Seconds to wait for the Lambda |
 | `ROBOFLOW_API_KEY`, `ROBOFLOW_WORKFLOW_URL` | | Roboflow workflow for `AI_PROVIDER=roboflow` ([docs/AI_MODEL.md](docs/AI_MODEL.md)) |
 | `ROBOFLOW_UPLOAD_PROJECT`, `ROBOFLOW_UPLOAD_API_KEY`, `ROBOFLOW_UPLOAD_CLASS` | | Send reviewed photos to Roboflow for retraining |
-| `VERTEX_PROJECT_ID`, `VERTEX_LOCATION`, `VERTEX_MODEL` | `global`, `gemini-3.5-flash-lite` | Google Vertex AI (Gemini) for the assistant |
+| `VERTEX_PROJECT_ID`, `VERTEX_LOCATION`, `VERTEX_MODEL` | `global`, `gemini-3.5-flash-lite` in `.env.example` (unset: `us-central1`, `gemini-2.5-flash`) | Google Vertex AI (Gemini) for the assistant |
 | `GOOGLE_APPLICATION_CREDENTIALS` | | Google service account key file for Vertex AI |
 | `SENTINEL_CONSOLE` | `false` | `true` shows the Sentinel screen with another `AI_PROVIDER` (it is on with `opencv-lambda`) |
 | `SENTINEL_API_SECRET` | | Shared key of the signed vision agent API (`/api/sentinel`, at least 32 characters); empty = off |
@@ -215,11 +217,14 @@ All settings are environment variables, read from `.env` at the repository root 
 | `IOT_RULE_SECRET` | | Shared secret of that IoT rule |
 | `IOT_THING_TYPE`, `IOT_POLICY_NAME` | `camos-camera` | Thing type and device policy for self-registered cameras |
 | `KVS_VIEWER_ROLE_ARN` | | IAM role the browser uses (through FlyBot, 15 minutes) to watch a camera over Kinesis Video Streams; empty = no live view for CamOS cameras |
+| `IOT_CREDENTIALS_ENDPOINT`, `IOT_ROLE_ALIAS` | | The cameras' own live view keys: the IoT credential provider host (`aws iot describe-endpoint --endpoint-type iot:CredentialProvider`) and the role alias their certificate assumes; both empty = cameras cannot stream |
 | `SELF_REGISTRATION` | `true` | `false` turns off camera self-registration |
 | `REGISTER_MAX_PER_IP_HOUR`, `REGISTER_MAX_PER_HOUR` | `5`, `60` | Self-registrations per client address and in total, per hour |
 | `DEVICE_API_BASE_URL` | `APP_BASE_URL` | Address the cameras call |
 | `DEVICE_DEFAULT_TIMEZONE` | `Asia/Ho_Chi_Minh` | Camera clock when neither the farm, GPS nor the network tells |
 | `DEVICE_OTA_FW`, `DEVICE_OTA_URL`, `DEVICE_OTA_SHA256` | | Firmware version, link and checksum offered to the cameras |
+| `FIRMWARE_MAX_BYTES` | `4194304` | Largest firmware image an administrator may upload (bytes) |
+| `REGISTRY_MODE` | `open` | `strict`: only serials in the serial registry join an account (also in Settings → Serial registry) |
 
 **EZVIZ cameras**
 

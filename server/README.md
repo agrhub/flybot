@@ -1,6 +1,6 @@
 # FlyBot API server
 
-The FlyBot API server: cameras (EZVIZ, CamOS on AWS IoT Core, Kinesis Video Streams), insect counting (the OpenCV 5 vision Lambda, Roboflow or Vertex AI), photo storage on S3, alerts, reports, workspaces and plans, and the FlyBot assistant. Every setting is listed in the [README](../README.md#configuration).
+The FlyBot API server: cameras (EZVIZ, CamOS on AWS IoT Core, Kinesis Video Streams), insect counting (the OpenCV 5 vision Lambda, Roboflow or Vertex AI), photo storage on S3, alerts, reports, workspaces and plans, and the FlyBot assistant (Gemini on Vertex AI). Every setting is listed in the [README](../README.md#configuration).
 
 ## Running
 ```bash
@@ -33,7 +33,7 @@ The web app can be installed (Chrome/Edge: install button in the address bar or 
    This prints `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` and `VAPID_SUBJECT` (set a real `mailto:` address).
 2. Users turn it on per device in Settings → Notifications → "Push notifications on this device".
 
-Push needs HTTPS (or `localhost`). Pest alerts, cameras going offline, failing AI analysis and new camera/dashboard shares are pushed; "back online" stays in-app. Signing out removes the device, so the next person on a shared phone does not get the previous account's alerts.
+Push needs HTTPS (or `localhost`). The alerts that are also emailed (pests, cameras going offline, failing AI analysis, card due, photo quality, harvest and weather, field-log reminders, the organization digest, firmware, a critical trap camera battery, a paused camera, upgrade requests), new shares and a finished firmware update are pushed; "back online" stays in-app. Signing out removes the device, so the next person on a shared phone does not get the previous account's alerts.
 
 ## Accounts, workspaces and sharing
 - **System roles:** **admin** (everything: every workspace, every account, plans and system settings; the first account ever created), **support** (reads the admin pages) and **user**.
