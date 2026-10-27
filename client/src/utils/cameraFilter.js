@@ -32,6 +32,16 @@ export function cameraState(cam, now = Date.now()) {
   return cam?.status === 1 ? 'online' : 'offline';
 }
 
+/**
+ * A camera seen awake (its live view plays): online and no longer sleeping in the page's copy, so its tag and the
+ * camera list stop saying "Sleeping, next wake ..." until the list is loaded again.
+ */
+export function markAwake(cam) {
+  if (!cam) return;
+  cam.status = 1;
+  if (cam.device?.sleeping) cam.device.sleeping = false;
+}
+
 /** When a sleeping camera next wakes (the planned wake, else the one the server expects), or null. */
 export const nextWakeOf = (cam) => cam?.device?.nextWakeAt || cam?.device?.wakeAt || null;
 

@@ -253,6 +253,7 @@ import KvsViewer from './KvsViewer.vue'
 import CamosSettingsDialog from './CamosSettingsDialog.vue'
 import DemoDeviceDialog from './DemoDeviceDialog.vue'
 import { demoAllows, showsDemoDevice } from '@/utils/demoCamera'
+import { markAwake } from '@/utils/cameraFilter'
 import { ElNotification } from 'element-plus'
 import { VideoCamera, Key, Lock, EditPen, Camera, InfoFilled, Clock, Setting, Cpu } from '@element-plus/icons-vue'
 import { useBreakpoints } from '@/composables/useBreakpoints'
@@ -325,6 +326,7 @@ const onKvsState = (state) => {
   if (state === 'playing') {
     isPlaceholderVisible.value = false
     currentStreamType.value = t('cameras.live')
+    markAwake(props.camera) /* a camera that woke for its viewer: the page's tag says Online, not Sleeping */
   } else if (state === 'waiting') {
     currentStreamType.value = t('cameras.kvs.waiting')
   } else if (state === 'error') {

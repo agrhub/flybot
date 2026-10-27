@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { filterCameras, cameraState, nextWakeOf } from '@/utils/cameraFilter';
+import { filterCameras, cameraState, nextWakeOf, markAwake } from '@/utils/cameraFilter';
 
 const cams = [
   { deviceSerial: 'ESP0A1B2C3D4E5F', deviceName: 'Vĩnh Long', platform: 'camos', status: 1, model: 'AIC-FREENOVE-S3CAM' },
@@ -54,5 +54,16 @@ describe('cameraState', () => {
     expect(cameraState({ platform: 'kinesis', status: 0, device: { sleeping: false } }, now)).toBe('offline');
     expect(cameraState(null, now)).toBe('offline');
     expect(nextWakeOf({})).toBeNull();
+  });
+});
+
+describe('markAwake', () => {
+  it('turns a sleeping camera whose live view plays into an online one', () => {
+    const now = Date.parse('2026-10-27T07:30:00Z');
+    const cam = { platform: 'camos', status: 0, device: { sleeping: true, nextWakeAt: '2026-10-27T07:29:00Z' } };
+    expect(cameraState(cam, now)).toBe('sleeping');
+    markAwake(cam);
+    expect(cameraState(cam, now)).toBe('online');
+    expect(() => markAwake(null)).not.toThrow();
   });
 });
