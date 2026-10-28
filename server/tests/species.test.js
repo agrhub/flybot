@@ -22,6 +22,19 @@ test('aggregation expression maps every alias to the canonical key', () => {
     assert.ok(FRUIT_FLY_ALIASES.includes(FRUIT_FLY));
 });
 
+test('other insects on the trap are kept but never counted as pests', () => {
+    const { OTHER_INSECT, NON_PEST_LABELS } = require('../src/constants/species');
+    const { pestCountOf } = require('../src/models/Snapshot');
+    const { countPests } = require('../src/services/notificationService');
+    assert.equal(OTHER_INSECT, 'other_insect');
+    assert.ok(NON_PEST_LABELS.includes(OTHER_INSECT));
+    assert.ok(!isFruitFly(OTHER_INSECT));
+    const summary = { fruit_fly: 4, other_insect: 7 };
+    assert.equal(pestCountOf(summary), 4);
+    assert.equal(countPests(summary), 4);
+    assert.equal(countPests(new Map(Object.entries(summary))), 4);
+});
+
 test('pest count expression references MongoDB $$ variables correctly', () => {
     const { pestCountExpr } = require('../src/constants/species');
     const json = JSON.stringify(pestCountExpr());

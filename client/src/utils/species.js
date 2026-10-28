@@ -13,6 +13,8 @@ const MOTH_ALIASES = ['moth', 'bướm'];
 
 const I18N_KEYS = {
   [FRUIT_FLY]: 'species.fruitFly',
+  // Bycatch the detector tells apart from the fruit fly; the server never counts it as a pest
+  other_insect: 'species.otherInsect',
   bug: 'species.bug',
   caterpillar: 'species.caterpillar',
   moth: 'species.moth'

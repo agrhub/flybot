@@ -10,9 +10,13 @@ const FRUIT_FLY = 'fruit_fly';
 // Legacy labels that all mean "fruit fly" ('ruồi vàng' / 'ruoi vang' are the Vietnamese name)
 const FRUIT_FLY_ALIASES = ['fruit_fly', 'fruit fly', 'fruit-fly', 'bactrocera', 'ruồi vàng', 'ruoi vang'];
 
+// Insects on the trap that are not the target fruit fly (Drosophila, bees, other bycatch): the
+// detector's `other_insect` class, kept in the summary but never counted as a pest
+const OTHER_INSECT = 'other_insect';
+
 // Detection labels that are not pests and are excluded from statistics
 // ('người' = "person", produced by older Vietnamese-language model output)
-const NON_PEST_LABELS = ['car', 'bike', 'motocycle', 'motorcycle', 'person', 'người', 'truck', 'dog', 'cat'];
+const NON_PEST_LABELS = ['car', 'bike', 'motocycle', 'motorcycle', 'person', 'người', 'truck', 'dog', 'cat', OTHER_INSECT];
 
 function isFruitFly(label) {
     if (!label) return false;
@@ -50,6 +54,7 @@ module.exports = {
     pestCountExpr,
     FRUIT_FLY,
     FRUIT_FLY_ALIASES,
+    OTHER_INSECT,
     NON_PEST_LABELS,
     isFruitFly,
     normalizeSpeciesExpr
