@@ -4058,7 +4058,9 @@
       "power": {
         "mode": "Chế độ nguồn",
         "highMv": "Pin đầy khi trên (mV)",
-        "lowMv": "Pin yếu khi dưới (mV)"
+        "lowMv": "Pin yếu khi dưới (mV)",
+        "nightSleep": "Ngủ đêm (không chụp, không xem trực tiếp)",
+        "nightWindow": "Giờ ngủ từ – đến"
       },
       "storage": {
         "sdSave": "Lưu mọi ảnh vào thẻ nhớ"

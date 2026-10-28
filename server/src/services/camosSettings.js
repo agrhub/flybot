@@ -46,6 +46,9 @@ const FIELDS = [
     { path: 'power.mode', section: 'power', type: 'enum', values: ['auto', 'battery', 'powered'], nullable: true },
     { path: 'power.highMv', section: 'power', type: 'int', min: 3000, max: 4400 },
     { path: 'power.lowMv', section: 'power', type: 'int', min: 3000, max: 4400 },
+    // Night sleep: the camera deep sleeps through the window in every power mode (the BOOT button wakes it for 10 min)
+    { path: 'power.nightSleep', section: 'power', type: 'bool' },
+    { path: 'power.nightWindow', section: 'power', type: 'window', default: { from: '18:00', to: '06:00' } },
     // Device
     { path: 'storage.sdSave', section: 'device', type: 'bool' },
     { path: 'led.enabled', section: 'device', type: 'bool' },

@@ -40,6 +40,12 @@ test('camosSettings: values are checked against the firmware key list', () => {
     assert.deepEqual(settings.toDesired({ 'network.prefer': '4g', 'gps.systems': 'gps+bds' }).desired, { network: { prefer: '4g' }, gps: { systems: 'gps+bds' } });
     assert.equal(settings.toDesired({ 'network.prefer': 'lte' }).errors[0].error, 'not_allowed');
     assert.equal(settings.toDesired({ 'network.ssid': 'x' }).errors[0].error, 'unknown_setting');
+    // Night sleep: a switch and a window across midnight that cannot be "all day"
+    assert.deepEqual(settings.toDesired({ 'power.nightSleep': false, 'power.nightWindow': { from: '19:00', to: '05:30' } }).desired,
+        { power: { nightSleep: false, nightWindow: { from: '19:00', to: '05:30' } } });
+    assert.equal(settings.toDesired({ 'power.nightWindow': null }).errors[0].error, 'not_nullable');
+    assert.equal(settings.toDesired({ 'power.nightWindow': { from: '18:00', to: '18:00' } }).errors[0].error, 'bad_window');
+    assert.deepEqual(settings.FIELDS.find(f => f.path === 'power.nightWindow').default, { from: '18:00', to: '06:00' });
 });
 
 test('device settings: the owner reads applied and pending values and changes them; others and other cameras cannot', async () => {

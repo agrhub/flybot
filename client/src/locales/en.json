@@ -4058,7 +4058,9 @@
       "power": {
         "mode": "Power mode",
         "highMv": "Battery full above (mV)",
-        "lowMv": "Battery low below (mV)"
+        "lowMv": "Battery low below (mV)",
+        "nightSleep": "Night sleep (no photos, no live view)",
+        "nightWindow": "Asleep from – to"
       },
       "storage": {
         "sdSave": "Save every photo to the memory card"

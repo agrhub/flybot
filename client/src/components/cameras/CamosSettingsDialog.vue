@@ -41,9 +41,9 @@
                 <el-select v-else-if="f.type === 'enum' || f.type === 'resolution'" v-model="form[f.path]" :clearable="f.nullable" :placeholder="f.nullable ? t('camosSettings.automatic') : ''" class="!w-56">
                   <el-option v-for="v in f.values" :key="v" :value="v" :label="valueLabel(f, v)" />
                 </el-select>
-                <!-- window: capture between two times, or all day -->
+                <!-- window: between two times, or (a nullable one) all day -->
                 <template v-else-if="f.type === 'window'">
-                  <el-switch v-model="windowOn[f.path]" :active-text="t('camosSettings.window.between')" :inactive-text="t('camosSettings.window.allDay')" />
+                  <el-switch v-if="f.nullable" v-model="windowOn[f.path]" :active-text="t('camosSettings.window.between')" :inactive-text="t('camosSettings.window.allDay')" />
                   <template v-if="windowOn[f.path]">
                     <el-time-select v-model="windowForm[f.path].from" start="00:00" end="23:30" step="00:30" class="!w-28" />
                     <span>–</span>
@@ -164,10 +164,12 @@ function fill(view) {
   data.value = view;
   initial = {};
   for (const f of view.fields) {
-    const v = effectiveValue(view.values[f.path]);
+    let v = effectiveValue(view.values[f.path]);
+    // a window that cannot be "all day" starts from its default until the camera reports one
+    if (f.type === 'window' && !f.nullable && !v && f.default) v = { ...f.default };
     initial[f.path] = v;
     if (f.type === 'window') {
-      windowOn[f.path] = !!v;
+      windowOn[f.path] = !f.nullable || !!v;
       windowForm[f.path] = { from: v?.from || '06:00', to: v?.to || '18:00' };
     } else if (f.type === 'area') {
       areaForm[f.path] = Array.isArray(v) ? [...v] : [0, 0, 100, 100];
