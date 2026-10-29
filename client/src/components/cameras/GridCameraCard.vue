@@ -76,16 +76,18 @@
         >
           {{ t('cameras.waitingConnection') }}
         </el-tag>
-        <el-tag
-          v-else-if="sleeping"
-          type="warning"
-          effect="light"
-          round
-          size="small"
-          data-test="sleeping-pill"
-        >
-          {{ nextWakeText }}
-        </el-tag>
+        <!-- Short in the header, so the name and serial keep their room; the wake time is in the tooltip and the panel -->
+        <el-tooltip v-else-if="sleeping" :content="nextWakeText" placement="top">
+          <el-tag
+            type="warning"
+            effect="light"
+            round
+            size="small"
+            data-test="sleeping-pill"
+          >
+            {{ t('cameras.sleeping') }}
+          </el-tag>
+        </el-tooltip>
         <el-tag
           v-else
           :type="camera.status === 1 ? 'success' : 'danger'"
