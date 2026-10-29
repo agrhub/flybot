@@ -46,6 +46,18 @@ async function setup() {
     await models.MaintenanceEvent.create({ deviceSerial: 'TRAP1', type: 'card_replaced', source: 'detected', at: new Date('2026-10-21T03:00:00Z') });
     await models.MaintenanceEvent.create({ deviceSerial: 'TRAP1', type: 'card_replaced', source: 'manual', at: new Date('2026-10-15T03:00:00Z') });
     await models.Camera.updateOne({ deviceSerial: 'TRAP1' }, { $set: { cardReplacedAt: new Date('2026-10-21T03:00:00Z') } });
+    const proposal = (serials, messageId, at) => models.SentinelProposal.create({
+        userId: owner._id, type: 'capture_now', deviceSerials: serials, sessionId: 'sentinel', messageId,
+        expiresAt: new Date('2026-12-01T00:00:00Z'), createdAt: new Date(at)
+    });
+    await proposal(['TRAP1'], 'm1', '2026-10-20T06:00:00Z');           // removed with its card
+    await proposal(['TRAP1', 'OTHER'], 'm2', '2026-10-20T06:00:00Z');  // about two cameras: kept
+    await proposal(['TRAP1'], 'm3', '2026-10-28T06:00:00Z');           // after the range: kept
+    await models.ChatSession.create({
+        userId: owner._id, sessionId: 'sentinel',
+        messages: ['m1', 'm2', 'm3'].map(id => ({ id, role: 'assistant', content: id }))
+    });
+    return owner;
 }
 
 test('remove_snapshots: the preview counts the local days and changes nothing', async () => {
@@ -56,6 +68,7 @@ test('remove_snapshots: the preview counts the local days and changes nothing', 
     assert.equal(r.pests, 550);
     assert.equal(r.notifications, 1, 'count alerts only');
     assert.equal(r.detectedEvents, 1, 'detected card changes only');
+    assert.equal(r.proposals, 1, 'proposals about this camera alone');
     assert.deepEqual(Object.keys(r.byDay).sort(), ['2026-10-17', '2026-10-20', '2026-10-26']);
     assert.equal(s3.calls.length, 0);
     assert.equal(await models.Snapshot.countDocuments(), 6);
@@ -72,10 +85,13 @@ test('remove_snapshots --apply: backup first, then photos, alerts, detected card
     assert.equal(backup.snapshots.length, 3);
     assert.equal(backup.notifications.length, 1);
     assert.equal(backup.maintenanceEvents.length, 1);
+    assert.equal(backup.sentinelProposals.length, 1);
     assert.match(s3.calls[0].input.Key, /^backup\/TRAP1-2026-10-17-2026-10-26-2026-10-29T08-00-00-000Z\/records\.json$/);
     assert.equal(s3.calls[1].input.CopySource, 'b/snapshots/TRAP1/2026-10-16T17%3A30%3A00Z.jpg');
     assert.equal(s3.calls[4].input.Delete.Objects.length, 3);
-    assert.deepEqual(r.deleted, { photos: 3, notifications: 1, detectedEvents: 1 });
+    assert.deepEqual(r.deleted, { photos: 3, notifications: 1, detectedEvents: 1, proposals: 1 });
+    assert.deepEqual((await models.SentinelProposal.find().lean()).map(p => p.messageId).sort(), ['m2', 'm3']);
+    assert.deepEqual((await models.ChatSession.findOne({ sessionId: 'sentinel' }).lean()).messages.map(m => m.id), ['m2', 'm3']);
 
     assert.equal(await models.Snapshot.countDocuments({ deviceSerial: 'TRAP1' }), 2);
     assert.equal(await models.Snapshot.countDocuments({ deviceSerial: 'OTHER' }), 1);
@@ -94,4 +110,14 @@ test('remove_snapshots --apply: a failed photo copy stops before anything is del
     assert.ok(!s3.calls.some(c => c.name === 'DeleteObjectsCommand'));
     assert.equal(await models.Snapshot.countDocuments({ deviceSerial: 'TRAP1' }), 5);
     assert.equal(await models.Notification.countDocuments(), 2);
+    assert.equal(await models.SentinelProposal.countDocuments(), 3);
+});
+
+test('remove_snapshots --apply: proposals and alerts go even when the photos are already gone', async () => {
+    await setup();
+    await models.Snapshot.deleteMany({ deviceSerial: 'TRAP1' });
+    const s3 = fakeS3();
+    const r = await removeSnapshots({ serial: 'TRAP1', from: '2026-10-17', to: '2026-10-26', apply: true, s3, bucket: 'b' });
+    assert.deepEqual(s3.calls.map(c => c.name), ['PutObjectCommand'], 'the backup only, no photo to copy');
+    assert.deepEqual(r.deleted, { photos: 0, notifications: 1, detectedEvents: 1, proposals: 1 });
 });

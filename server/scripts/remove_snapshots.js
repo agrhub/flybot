@@ -2,14 +2,15 @@ const mongoose = require('mongoose');
 const { PutObjectCommand, CopyObjectCommand, DeleteObjectsCommand } = require('@aws-sdk/client-s3');
 const config = require('../src/config/env');
 const { s3Client } = require('../src/config/s3');
-const { Snapshot, Notification, MaintenanceEvent } = require('../src/models');
+const { Snapshot, Notification, MaintenanceEvent, SentinelProposal, ChatSession } = require('../src/models');
 const dailyStats = require('../src/services/dailyStats');
 const { deleteEvent } = require('../src/services/maintenanceService');
 
 // Usage: node scripts/remove_snapshots.js <serial> <from YYYY-MM-DD> <to YYYY-MM-DD> [--apply]
 // Removes one camera's photos taken on those local days (DEVICE_DEFAULT_TIMEZONE, both inclusive), for example
-// bench tests before the trap went to the field, with what they caused: the count alerts about the camera and the
-// card changes detected from them. Without --apply it only reports. With --apply it first writes a backup to the
+// bench tests before the trap went to the field, with what they caused: the count alerts about the camera, the
+// card changes detected from them and the Sentinel proposals about this camera alone (with their cards in the
+// owner's Sentinel conversation). Without --apply it only reports. With --apply it first writes a backup to the
 // photo bucket under backup/<serial>-<from>-<to>-<time>/ (records.json + every photo at its own key; restore =
 // copy the photos back, insert the records, node scripts/rebuild_daily_stats.js), then deletes and rebuilds the
 // daily statistics of those days.
@@ -34,6 +35,9 @@ async function removeSnapshots({ serial, from, to, apply = false, s3 = s3Client,
     const notifications = (await Notification.find({ deviceSerial: serial, type: { $in: COUNT_NOTIFICATIONS }, createdAt: window }).lean())
         .filter(n => inRange(n.createdAt));
     const events = (await MaintenanceEvent.find({ deviceSerial: serial, source: 'detected', at: window }).lean()).filter(e => inRange(e.at));
+    // A proposal about several cameras stays: it is not only about this one's photos
+    const proposals = (await SentinelProposal.find({ deviceSerials: serial, createdAt: window }).lean())
+        .filter(p => inRange(p.createdAt) && p.deviceSerials.every(s => s === serial));
     const keys = [...new Set(snapshots.map(s => s.s3Key).filter(Boolean))];
 
     const byDay = {};
@@ -45,13 +49,13 @@ async function removeSnapshots({ serial, from, to, apply = false, s3 = s3Client,
     const report = {
         serial, from, to, apply,
         photos: snapshots.length, files: keys.length, pests: snapshots.reduce((n, s) => n + (s.pestCount || 0), 0),
-        notifications: notifications.length, detectedEvents: events.length, byDay
+        notifications: notifications.length, detectedEvents: events.length, proposals: proposals.length, byDay
     };
-    if (!apply || !snapshots.length) return report;
+    if (!apply || !(snapshots.length + notifications.length + events.length + proposals.length)) return report;
 
     // 1. Backup: the records, then a copy of every photo. Any failure stops before anything is deleted.
     const prefix = `backup/${serial}-${from}-${to}-${now.toISOString().replace(/[:.]/g, '-')}/`;
-    const records = { serial, from, to, removedAt: now.toISOString(), snapshots, notifications, maintenanceEvents: events };
+    const records = { serial, from, to, removedAt: now.toISOString(), snapshots, notifications, maintenanceEvents: events, sentinelProposals: proposals };
     await s3.send(new PutObjectCommand({
         Bucket: bucket, Key: `${prefix}records.json`, Body: JSON.stringify(records), ContentType: 'application/json'
     }));
@@ -82,6 +86,13 @@ async function removeSnapshots({ serial, from, to, apply = false, s3 = s3Client,
     };
     for (const event of events) await deleteEvent(event); // also moves Camera.cardReplacedAt back
     report.deleted.detectedEvents = events.length;
+    const cards = {};
+    for (const p of proposals) (cards[`${p.userId}|${p.sessionId}`] ||= []).push(p.messageId);
+    for (const [owner, ids] of Object.entries(cards)) {
+        const [userId, sessionId] = owner.split('|');
+        await ChatSession.updateOne({ userId, sessionId }, { $pull: { messages: { id: { $in: ids } } } });
+    }
+    report.deleted.proposals = (await SentinelProposal.deleteMany({ _id: { $in: proposals.map(p => p._id) } })).deletedCount;
 
     // 3. Daily statistics of those days, from what is left
     report.statDays = await dailyStats.rebuildRange(serial, localNoon(from), localNoon(to));
