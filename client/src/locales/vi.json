@@ -3983,6 +3983,37 @@
       "apn": "Đã gửi APN: dùng từ lần khởi động sau."
     }
   },
+  "camosPower": {
+    "title": "Lịch sử pin",
+    "reload": "Tải lại",
+    "range": {
+      "day": "Ngày",
+      "week": "Tuần",
+      "month": "30 ngày"
+    },
+    "cell": "Pin (V)",
+    "percent": "Pin (%)",
+    "input": "Điện áp tấm pin mặt trời / bộ sạc (V)",
+    "measured": "Số đo khi đang sạc (V)",
+    "charging": "Đang sạc",
+    "chargingSlow": "Sạc chậm",
+    "rateTitle": "Tiêu thụ và sạc",
+    "rateHint": "Dưới 0 là pin đang hao, trên 0 là pin đang được sạc (trung bình mỗi khoảng).",
+    "rate": "Thay đổi",
+    "rateUnit": "mV/giờ",
+    "noRate": "Chưa đủ số đo để tính mức thay đổi.",
+    "drain": "Tiêu thụ",
+    "charge": "Tốc độ sạc",
+    "chargingTime": "Thời gian sạc",
+    "inputMax": "Điện áp vào cao nhất",
+    "hoursLeft": "Còn lại theo mức tiêu thụ này",
+    "perHour": "{mv} mV/giờ",
+    "perHourPct": "{mv} mV/giờ ({pct} %/giờ)",
+    "hours": "{n} giờ",
+    "empty": "Không có số đo pin trong khoảng này.",
+    "loadFailed": "Không tải được lịch sử pin.",
+    "inputLow": "Trong khoảng này điện áp vào chưa lần nào đạt 4,5 V (cao nhất {v} V): tấm pin mặt trời không sạc được pin."
+  },
   "camosSettings": {
     "open": "Cài đặt camera",
     "title": "Cài đặt camera: {name}",

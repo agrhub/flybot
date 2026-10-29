@@ -424,10 +424,25 @@ async function followLocation(deviceSerial, location) {
     await Camera.updateMany(filter, { $set: { latitude: location.lat, longitude: location.lng } });
 }
 
-// The battery as a camera reports it; `charge` (0.9.2): normal, slow (a small or shaded panel) or none
+// The battery as a camera reports it; `charge` (0.9.2): normal, slow (a small or shaded panel) or none; `mv` is the
+// cell without the charger's lift and `measuredMv` the reading itself while a charger lifts it (0.9.3-rc.3)
 const batteryOf = (b) => (b && typeof b === 'object'
-    ? strip({ mv: num(b.mv), pct: num(b.pct), charging: typeof b.charging === 'boolean' ? b.charging : undefined, charge: ['normal', 'slow', 'none'].includes(b.charge) ? b.charge : undefined, solarMv: num(b.solarMv) })
+    ? strip({ mv: num(b.mv), pct: num(b.pct), charging: typeof b.charging === 'boolean' ? b.charging : undefined, charge: ['normal', 'slow', 'none'].includes(b.charge) ? b.charge : undefined, solarMv: num(b.solarMv), measuredMv: num(b.measuredMv) })
     : undefined);
+
+/**
+ * Keep the battery of a state, telemetry or event message for the power charts (services/powerHistory.js); a
+ * low_power event carries it as voltage / percent (the raw reading: skipped while a charger lifts it). Never throws.
+ */
+async function keepPowerReading(deviceSerial, doc, source, now) {
+    if (doc.type === 'low_power' && !doc.battery && doc.charging === true) return;
+    const battery = doc.type === 'low_power' && !doc.battery
+        ? strip({ mv: Number.isFinite(num(doc.voltage)) ? Math.round(num(doc.voltage) * 1000) : undefined, pct: num(doc.percent), charging: typeof doc.charging === 'boolean' ? doc.charging : undefined })
+        : batteryOf(doc.battery);
+    if (!Number.isFinite(battery?.mv)) return;
+    const power = require('../services/powerHistory');
+    await power.record(deviceSerial, battery, { at: power.readingTime(doc.ts, now), source });
+}
 
 /** Fields of Camera.device from a state / telemetry / reported-shadow document. */
 function deviceFieldsOf(doc) {
@@ -548,6 +563,7 @@ async function handleMessage(topicName, payload, { now = new Date() } = {}) {
         if (kind === 'state') {
             const online = doc.online !== false;
             const fields = deviceFieldsOf(doc);
+            await keepPowerReading(deviceSerial, doc, 'state', now);
             if (online) await setOnline(deviceSerial, true, now, fields);
             else await setOnline(deviceSerial, false, now, { ...fields, ...(doc.sleeping ? { 'device.sleeping': true, 'device.wakeAt': dateOf(doc.wakeAt) } : {}) });
             if (online) firmwareAware(deviceSerial, fields['device.fw'], now);
@@ -557,6 +573,8 @@ async function handleMessage(topicName, payload, { now = new Date() } = {}) {
         }
         if (kind === 'telemetry' || kind === 'shadow/reported') {
             const fields = deviceFieldsOf(doc);
+            // The retained shadow repeats the last telemetry without a time: only telemetry is kept
+            if (kind === 'telemetry') await keepPowerReading(deviceSerial, doc, 'telemetry', now);
             const set = { ...fields, 'device.lastSeenAt': now };
             if (kind === 'shadow/reported') Object.assign(set, { 'device.shadow.reported': doc, 'device.shadow.reportedAt': now });
             if (kind === 'shadow/reported') await offerLiveCredentials(deviceSerial, doc).catch(err => console.warn(`⚠️ Live credentials not offered (${deviceSerial}): ${err.message}`));
@@ -569,6 +587,7 @@ async function handleMessage(topicName, payload, { now = new Date() } = {}) {
         // event
         const type = String(doc.type || '');
         const set = { 'device.lastSeenAt': now, ...deviceFieldsOf(doc) };
+        await keepPowerReading(deviceSerial, doc, 'event', now);
         // A GPS fix the camera starts itself (event gps_fix {state: started, seconds}): its 4G goes off meanwhile
         if (type === 'gps_fix' && doc.state === 'started') {
             const seconds = Math.min(Math.max(num(doc.seconds) || 300, 30), 600);

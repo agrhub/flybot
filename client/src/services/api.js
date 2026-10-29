@@ -612,6 +612,10 @@ export default {
   cameraDeviceAction(deviceSerial, body) {
     return apiClient.post(`/cameras/${encodeURIComponent(deviceSerial)}/device-action`, body);
   },
+  // Battery history of a CamOS camera over the last 1..30 days: readings, charging periods, rate of change
+  getPowerHistory(deviceSerial, days = 1) {
+    return apiClient.get(`/cameras/${encodeURIComponent(deviceSerial)}/power-history`, { params: { days } });
+  },
   // Firmware: running and latest version, check, confirmed install, automatic updates
   getCameraFirmware(deviceSerial) {
     return apiClient.get(`/cameras/${encodeURIComponent(deviceSerial)}/firmware`);

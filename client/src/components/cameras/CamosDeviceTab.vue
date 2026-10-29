@@ -19,6 +19,12 @@
       <el-button size="small" type="warning" plain :icon="SwitchButton" :loading="busy === 'restart'" data-test="device-restart" @click="restart">{{ t('camosDevice.restart') }}</el-button>
     </div>
 
+    <!-- Battery over time: consumption and charging -->
+    <template v-if="section === 'info'">
+      <el-divider class="!my-1" />
+      <CamosPowerCard :camera="camera" />
+    </template>
+
     <!-- Network of the camera's web console: Wi-Fi or the 4G APN, stored now and used from the next boot -->
     <template v-if="section === 'network'">
       <el-alert type="info" :closable="false" show-icon :title="t('camosDevice.networkHint')" />
@@ -48,10 +54,11 @@ import api from '@/services/api';
 import { requestErrorText } from '@/utils/requestError';
 import { locationText as formatLocation } from '@/utils/location';
 import { useBreakpoints } from '@/composables/useBreakpoints';
+import CamosPowerCard from './CamosPowerCard.vue';
 
 /**
- * The parts of the camera's web console that are not settings: Device Information with refresh, GPS fix and restart,
- * and the Network page (Wi-Fi or 4G APN). Each action is one RPC through FlyBot (POST .../device-action).
+ * The parts of the camera's web console that are not settings: Device Information with refresh, GPS fix and restart and
+ * the battery history, and the Network page (Wi-Fi or 4G APN). Each action is one RPC through FlyBot (POST .../device-action).
  */
 const props = defineProps({
   camera: { type: Object, required: true },

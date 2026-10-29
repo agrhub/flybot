@@ -3983,6 +3983,37 @@
       "apn": "APN sent: used from the next start."
     }
   },
+  "camosPower": {
+    "title": "Battery history",
+    "reload": "Reload",
+    "range": {
+      "day": "Day",
+      "week": "Week",
+      "month": "30 days"
+    },
+    "cell": "Battery (V)",
+    "percent": "Battery (%)",
+    "input": "Panel / charger input (V)",
+    "measured": "Reading while charging (V)",
+    "charging": "Charging",
+    "chargingSlow": "Charging slowly",
+    "rateTitle": "Consumption and charging",
+    "rateHint": "Below zero the battery drains, above zero it charges (mean over each interval).",
+    "rate": "Change",
+    "rateUnit": "mV/h",
+    "noRate": "Not enough readings for a rate yet.",
+    "drain": "Consumption",
+    "charge": "Charging rate",
+    "chargingTime": "Time charging",
+    "inputMax": "Highest input",
+    "hoursLeft": "Left at this consumption",
+    "perHour": "{mv} mV/h",
+    "perHourPct": "{mv} mV/h ({pct} %/h)",
+    "hours": "{n} h",
+    "empty": "No battery readings in this period.",
+    "loadFailed": "Could not load the battery history.",
+    "inputLow": "The input never reached 4.5 V in this period (highest {v} V): the panel cannot charge the battery."
+  },
   "camosSettings": {
     "open": "Camera settings",
     "title": "Camera settings: {name}",

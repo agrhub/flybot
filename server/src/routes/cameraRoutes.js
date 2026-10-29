@@ -52,6 +52,8 @@ router.get('/cameras/:serial/crashes', cameraController.getCameraCrashes);
 router.post('/cameras/:serial/log/start', cameraController.startCameraLog);
 router.post('/cameras/:serial/log/stop', cameraController.stopCameraLog);
 router.post('/cameras/:serial/log/watch', cameraController.watchCameraLog);
+// Battery history (CamOS): readings, charging periods and the rate of change, for the power charts
+router.get('/cameras/:serial/power-history', cameraController.getPowerHistory);
 // Firmware: status, check, install now (confirmed), automatic updates
 router.get('/cameras/:serial/firmware', cameraController.getFirmware);
 router.post('/cameras/:serial/firmware/check', rateLimit({ windowMs: 60 * 1000, max: 10, keyFn: (req) => String(req.user?.id || ''), message: 'Too many attempts.' }), cameraController.checkFirmware);

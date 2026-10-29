@@ -1036,6 +1036,24 @@ async function getCameraCrashes(req, res) {
     }
 }
 
+/**
+ * GET /api/cameras/:serial/power-history?days=1..30: the battery of a CamOS camera over time (its photos' readings and
+ * those of its messages in between), the charging periods and the rate of change, for the power charts. Who sees the
+ * camera's device details sees it (a demo visitor only where the device permission is open).
+ */
+async function getPowerHistory(req, res) {
+    try {
+        const deviceSerial = String(req.params.serial || '');
+        const camera = await findViewableCamera(req.user, deviceSerial);
+        if (!camera || !canSeeDevice(req.user, camera)) return res.status(404).json({ success: false, code: 'NOT_FOUND', message: "Camera not found or permission denied." });
+        const history = await require('../services/powerHistory').history(deviceSerial, { days: req.query.days });
+        res.setHeader('Cache-Control', 'no-store');
+        res.json({ success: true, deviceSerial, ...history });
+    } catch (err) {
+        sendServerError(res, err, { context: 'Power history' });
+    }
+}
+
 async function startCameraLog(req, res) {
     try {
         const camera = await logCamera(req, res);
@@ -1239,6 +1257,7 @@ module.exports = {
     getCameraLog,
     downloadCameraLog,
     getCameraCrashes,
+    getPowerHistory,
     startCameraLog,
     stopCameraLog,
     watchCameraLog,
