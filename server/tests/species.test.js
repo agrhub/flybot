@@ -1,5 +1,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
+require('./isolation'); // the last test loads models and services: no real .env value in this process
 const { FRUIT_FLY, FRUIT_FLY_ALIASES, isFruitFly, normalizeSpeciesExpr } = require('../src/constants/species');
 
 test('new data uses the English canonical key', () => {
