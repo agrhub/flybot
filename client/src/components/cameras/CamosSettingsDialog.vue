@@ -56,6 +56,7 @@
                   <span class="camos-settings__range">% · {{ t('camosSettings.drawHint') }}</span>
                 </template>
                 <el-tag v-if="data.values[f.path]?.pending" type="warning" effect="light" size="small" round>{{ t('camosSettings.pending') }}</el-tag>
+                <el-tag v-if="f.path === 'capture.intervalMin' && stretchedInterval" type="info" effect="light" size="small" round data-test="adaptive-now">{{ t('camosSettings.adaptiveNow', { min: stretchedInterval }) }}</el-tag>
               </div>
             </el-form-item>
           </el-form>
@@ -159,6 +160,12 @@ async function loadPreview() {
 const fieldsOf = (s) => (data.value?.fields || []).filter((f) => f.section === s);
 const fieldLabel = (f) => (te(`camosSettings.fields.${f.path}`) ? t(`camosSettings.fields.${f.path}`) : f.path);
 const valueLabel = (f, v) => (te(`camosSettings.values.${f.path}.${v}`) ? t(`camosSettings.values.${f.path}.${v}`) : v);
+// power.adaptive: the interval the camera uses now, when a low battery has stretched the set one
+const stretchedInterval = computed(() => {
+  const now = data.value?.info?.effectiveIntervalMin;
+  const set = data.value?.values?.['capture.intervalMin']?.reported;
+  return Number.isInteger(now) && Number.isInteger(set) && now > set ? now : null;
+});
 
 function fill(view) {
   data.value = view;

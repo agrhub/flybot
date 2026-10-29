@@ -46,6 +46,13 @@ test('camosSettings: values are checked against the firmware key list', () => {
     assert.equal(settings.toDesired({ 'power.nightWindow': null }).errors[0].error, 'not_nullable');
     assert.equal(settings.toDesired({ 'power.nightWindow': { from: '18:00', to: '18:00' } }).errors[0].error, 'bad_window');
     assert.deepEqual(settings.FIELDS.find(f => f.path === 'power.nightWindow').default, { from: '18:00', to: '06:00' });
+    // Adaptive interval: a switch; the interval in use comes back from the camera
+    assert.deepEqual(settings.toDesired({ 'power.adaptive': false }).desired, { power: { adaptive: false } });
+    assert.equal(settings.toDesired({ 'power.adaptive': 'on' }).errors[0].error, 'not_boolean');
+    const v = settings.view({ device: { shadow: { reported: { capture: { intervalMin: 30, effectiveIntervalMin: 120 }, power: { adaptive: true } } } } });
+    assert.equal(v.info.effectiveIntervalMin, 120);
+    assert.equal(v.values['power.adaptive'].reported, true);
+    assert.equal(settings.view({}).info.effectiveIntervalMin, null, 'older firmware: not reported');
 });
 
 test('device settings: the owner reads applied and pending values and changes them; others and other cameras cannot', async () => {

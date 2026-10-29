@@ -3989,6 +3989,7 @@
     "intro": "The settings of the camera's own web page. The camera applies a change at once when it is online, else at its next connection; until then the field shows \"Waiting for the camera\".",
     "automatic": "Automatic",
     "pending": "Waiting for the camera",
+    "adaptiveNow": "Battery low: one photo every {min} min for now",
     "save": "Save",
     "saveCount": "Save {n} change(s)",
     "saved": "Sent to the camera.",
@@ -4060,7 +4061,8 @@
         "highMv": "Battery full above (mV)",
         "lowMv": "Battery low below (mV)",
         "nightSleep": "Night sleep (no photos, no live view)",
-        "nightWindow": "Asleep from – to"
+        "nightWindow": "Asleep from – to",
+        "adaptive": "Save power on a low battery (photos further apart, GPS and 4G paused)"
       },
       "storage": {
         "sdSave": "Save every photo to the memory card"

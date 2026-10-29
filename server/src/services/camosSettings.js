@@ -49,6 +49,10 @@ const FIELDS = [
     // Night sleep: the camera deep sleeps through the window in every power mode (the BOOT button wakes it for 10 min)
     { path: 'power.nightSleep', section: 'power', type: 'bool' },
     { path: 'power.nightWindow', section: 'power', type: 'window', default: { from: '18:00', to: '06:00' } },
+    // Power saving (firmware 0.9.3-rc.4): a low cell with little charge stretches the capture interval (x2 to x4, 4 h at
+    // most) and stops check-ins and the daily GPS fix below 40 %, the 4G fallback below 20 %; the interval in use comes
+    // back as capture.effectiveIntervalMin (info.effectiveIntervalMin)
+    { path: 'power.adaptive', section: 'power', type: 'bool' },
     // Device
     { path: 'storage.sdSave', section: 'device', type: 'bool' },
     { path: 'led.enabled', section: 'device', type: 'bool' },
@@ -187,7 +191,9 @@ function deviceInfo(camera, cam) {
         powerLevel: d.power?.level || null,
         location: d.location || null,
         lastSeenAt: d.lastSeenAt || null,
-        sleeping: !!d.sleeping
+        sleeping: !!d.sleeping,
+        // power.adaptive: the all-day capture interval the camera uses now (longer than the set one on a low cell)
+        effectiveIntervalMin: Number.isInteger(d.shadow?.reported?.capture?.effectiveIntervalMin) ? d.shadow.reported.capture.effectiveIntervalMin : null
     };
 }
 

@@ -3989,6 +3989,7 @@
     "intro": "Các cài đặt của trang web trên camera. Camera áp dụng ngay khi đang trực tuyến, nếu không thì ở lần kết nối kế tiếp; trong lúc đó ô cài đặt hiện \"Đang chờ camera\".",
     "automatic": "Tự động",
     "pending": "Đang chờ camera",
+    "adaptiveNow": "Pin yếu: tạm chụp {min} phút một lần",
     "save": "Lưu",
     "saveCount": "Lưu {n} thay đổi",
     "saved": "Đã gửi tới camera.",
@@ -4060,7 +4061,8 @@
         "highMv": "Pin đầy khi trên (mV)",
         "lowMv": "Pin yếu khi dưới (mV)",
         "nightSleep": "Ngủ đêm (không chụp, không xem trực tiếp)",
-        "nightWindow": "Giờ ngủ từ – đến"
+        "nightWindow": "Giờ ngủ từ – đến",
+        "adaptive": "Tiết kiệm pin khi pin yếu (giãn thời gian chụp, tạm tắt GPS và 4G)"
       },
       "storage": {
         "sdSave": "Lưu mọi ảnh vào thẻ nhớ"
