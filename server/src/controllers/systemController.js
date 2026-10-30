@@ -1,5 +1,6 @@
 const { Camera, Snapshot } = require('../models');
-const { S3_BUCKET, AI_PROVIDER, VERTEX_MODEL, TELEGRAM_BOT_USERNAME } = require('../config/env');
+const { S3_BUCKET, VERTEX_MODEL, CLAUDE_VISION_MODEL, TELEGRAM_BOT_USERNAME } = require('../config/env');
+const { providerChain } = require('../services/aiService');
 const { getSettings } = require('../services/settingsService');
 const telegramService = require('../services/telegramService');
 const { sendServerError } = require('../utils/http');
@@ -46,7 +47,8 @@ async function getSystemInfo(req, res) {
             ]))
             : [];
 
-        const provider = ['vertex', 'roboflow', 'both', 'sentinel', 'opencv-lambda'].includes(AI_PROVIDER) ? AI_PROVIDER : 'vertex';
+        // The first model counts the photos; the others take over when it fails
+        const [provider, ...fallbacks] = providerChain();
         res.json({
             success: true,
             info: {
@@ -56,8 +58,9 @@ async function getSystemInfo(req, res) {
                 },
                 ai: {
                     provider,
-                    // The detector for the OpenCV Lambda (from its latest answer), the Gemini model for Vertex; Roboflow runs a hosted workflow
-                    model: provider === 'opencv-lambda' ? await visionModelName() : provider === 'roboflow' || provider === 'sentinel' ? null : VERTEX_MODEL
+                    fallbacks,
+                    // The detector for the OpenCV Lambda (from its latest answer), the Gemini or Claude model; Roboflow runs a hosted workflow
+                    model: provider === 'opencv-lambda' ? await visionModelName() : provider === 'claude' ? CLAUDE_VISION_MODEL : provider === 'roboflow' || provider === 'sentinel' ? null : VERTEX_MODEL
                 },
                 // Lets the client show or hide the Telegram option
                 telegram: {

@@ -140,9 +140,14 @@ const config = {
     // Roboflow
     ROBOFLOW_API_KEY: process.env.ROBOFLOW_API_KEY || "",
     ROBOFLOW_WORKFLOW_URL: process.env.ROBOFLOW_WORKFLOW_URL || "https://serverless.roboflow.com/new-workspace-z1wc7/workflows/fruit-fly-detection-and-count-1790390843624",
-    // vertex | roboflow | both | sentinel | opencv-lambda ("sentinel": no cloud model at capture;
-    // FlyBot Sentinel sets the counts through POST /api/sentinel/analysis. "opencv-lambda": the
-    // vision Lambda of flybot-aws is called for every photo, services/visionLambda.js)
+    // Claude (Anthropic API): AI_PROVIDER "claude" counts the insects on the photo itself
+    ANTHROPIC_API_KEY: (process.env.ANTHROPIC_API_KEY || "").trim(),
+    CLAUDE_VISION_MODEL: (process.env.CLAUDE_VISION_MODEL || "claude-haiku-5-5").trim(),
+    // vertex | roboflow | claude | opencv-lambda, or several of them in the order to try
+    // ("roboflow,opencv-lambda,claude,vertex": the next one counts the photo when one fails;
+    // services/aiService.js providerChain). Alone: both | sentinel ("sentinel": no cloud model at
+    // capture; FlyBot Sentinel sets the counts through POST /api/sentinel/analysis.
+    // "opencv-lambda": the vision Lambda of flybot-aws, services/visionLambda.js)
     AI_PROVIDER: process.env.AI_PROVIDER || "vertex",
 
     // ---------- AWS (flybot-aws): vision Lambda, IoT Core, Kinesis Video Streams ----------

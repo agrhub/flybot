@@ -3,7 +3,7 @@ const { GoogleGenAI } = require('@google/genai');
 const { Snapshot } = require('../models');
 const { pestCountOf } = require('../models/Snapshot');
 const dailyStats = require('./dailyStats');
-const { FRUIT_FLY, isFruitFly } = require('../constants/species');
+const { FRUIT_FLY, OTHER_INSECT, isFruitFly } = require('../constants/species');
 const env = require('../config/env');
 const {
     VERTEX_PROJECT_ID,
@@ -13,8 +13,42 @@ const {
     ROBOFLOW_WORKFLOW_URL
 } = env;
 
+// Models AI_PROVIDER may list, in any order ('both' and 'sentinel' only stand alone)
+const PROVIDERS = ['roboflow', 'opencv-lambda', 'claude', 'vertex'];
+
+/**
+ * The models to try on a photo, in order: "roboflow,opencv-lambda,claude,vertex" tries the
+ * next one when one fails. Unknown names are dropped; nothing left means vertex.
+ */
+function providerChain(value = env.AI_PROVIDER) {
+    const names = String(value || '').split(',').map(name => name.trim().toLowerCase()).filter(Boolean);
+    if (names.length === 1 && (names[0] === 'both' || names[0] === 'sentinel')) return names;
+    const chain = [...new Set(names.filter(name => PROVIDERS.includes(name)))];
+    return chain.length ? chain : ['vertex'];
+}
+
 /** AI_PROVIDER=sentinel: no cloud model at capture, FlyBot Sentinel sets the counts. */
-const isSentinelMode = () => env.AI_PROVIDER === 'sentinel';
+const isSentinelMode = () => providerChain()[0] === 'sentinel';
+
+// A model that refused the account (no credit left, a wrong key) is skipped this long, so the
+// next ones in the chain count the photos without waiting on it first
+const PROVIDER_COOLDOWN_MS = 30 * 60 * 1000;
+const coolingUntil = new Map();
+
+/** HTTP answers that mean the account cannot use the model now: no credit, a bad or missing key. */
+function isAccountRefusal(status, message = '') {
+    return status === 401 || status === 402 || status === 403 || (status === 400 && /credit balance/i.test(message));
+}
+
+function coolDown(provider, reason) {
+    coolingUntil.set(provider, Date.now() + PROVIDER_COOLDOWN_MS);
+    console.warn(`⏸️ AI provider ${provider} skipped for ${PROVIDER_COOLDOWN_MS / 60000} min: ${reason}`);
+}
+
+/** Tests: forget every cooldown. */
+function resetCooldowns() {
+    coolingUntil.clear();
+}
 
 const vertexAI = new GoogleGenAI({
     vertexai: true,
@@ -164,6 +198,11 @@ MANDATORY COORDINATE RULES:
             }
         } catch (error) {
             retries++;
+            if (isAccountRefusal(error.status, error.message)) {
+                console.error(`❌ Vertex AI refused snapshot ${snapshotId} (${error.status}):`, error.message);
+                coolDown('vertex', `HTTP ${error.status}`);
+                return;
+            }
             if (retries === 3) {
                 console.error(`❌ Vertex AI Error after 3 attempts for ${snapshotId}:`, error.message);
             } else {
@@ -242,6 +281,7 @@ async function analyzeInsectsRoboflow(base64Image, snapshotId, imageUrl = null) 
             const status = error.response?.status;
             if (status >= 400 && status < 500 && status !== 408 && status !== 429) {
                 console.error(`❌ Roboflow refused snapshot ${snapshotId} (${status}):`, error.message);
+                if (isAccountRefusal(status)) coolDown('roboflow', `HTTP ${status}`);
                 return;
             }
             if (retries === 3) {
@@ -253,29 +293,171 @@ async function analyzeInsectsRoboflow(base64Image, snapshotId, imageUrl = null) 
     }
 }
 
+const CLAUDE_API_URL = 'https://api.anthropic.com/v1/messages';
+
+// The answer Claude must give (structured output): boxes normalized 0-1000, like Vertex's
+const CLAUDE_SCHEMA = {
+    type: 'object',
+    additionalProperties: false,
+    required: ['insects', 'description'],
+    properties: {
+        insects: {
+            type: 'array',
+            items: {
+                type: 'object',
+                additionalProperties: false,
+                required: ['name', 'confidence', 'box_2d'],
+                properties: {
+                    name: { type: 'string', enum: [FRUIT_FLY, OTHER_INSECT] },
+                    confidence: { type: 'number' },
+                    box_2d: { type: 'array', items: { type: 'integer' } }
+                }
+            }
+        },
+        description: { type: 'string' }
+    }
+};
+
+const CLAUDE_SYSTEM = `You count insects on photos from fruit-fly trap cameras (a lure trap seen from above, or a yellow sticky card).
+List every insect you can see, one entry each:
+- name "${FRUIT_FLY}" for a fruit fly (Bactrocera and similar tephritid flies: about 6-8 mm, often yellow or brown markings, banded or clear wings);
+- name "${OTHER_INSECT}" for any other insect (bees, ants, moths, small black flies, beetles).
+Do not list dirt, drops, lure, leaves, shadows or reflections. An empty list is a valid answer.
+box_2d is [ymin, xmin, ymax, xmax], integers from 0 to 1000 relative to the image, origin at the top-left, tight around the insect.
+confidence is from 0.0 to 1.0. description is one short sentence on what the photo shows.`;
+
 /**
- * Analyze a stored snapshot with the configured provider(s). `imageUrl`: a link Roboflow can
- * fetch the image from (the camera's fresh picture link); without it the image is sent inline.
- * Returns true when the snapshot now has an AI result.
+ * Detect and count insects with Claude (Anthropic Messages API, structured output).
  */
-async function analyzeSnapshot(base64Image, snapshotId, imageUrl = null, { buffer = null } = {}) {
-    const provider = env.AI_PROVIDER;
-    // Sentinel analyzes the photo itself (POST /api/sentinel/analysis)
-    if (provider === 'sentinel') return false;
+async function analyzeInsectsClaude(base64Image, snapshotId) {
+    if (!env.ANTHROPIC_API_KEY) {
+        coolDown('claude', 'ANTHROPIC_API_KEY is not set');
+        return;
+    }
+    const imgBuffer = Buffer.from(base64Image, 'base64');
+    const { width: imgWidth, height: imgHeight } = getImageDimensions(imgBuffer);
+    const mediaType = imgBuffer[0] === 0x89 && imgBuffer[1] === 0x50 ? 'image/png' : 'image/jpeg';
+    const delays = [1000, 2000, 4000];
+
+    for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+            const response = await axios.post(CLAUDE_API_URL, {
+                model: env.CLAUDE_VISION_MODEL,
+                max_tokens: 16000,
+                system: CLAUDE_SYSTEM,
+                output_config: { format: { type: 'json_schema', schema: CLAUDE_SCHEMA } },
+                messages: [{
+                    role: 'user',
+                    content: [
+                        { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64Image } },
+                        { type: 'text', text: 'Find and box every insect on this trap photo.' }
+                    ]
+                }]
+            }, {
+                timeout: 120000,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': env.ANTHROPIC_API_KEY,
+                    'anthropic-version': '2026-10-21'
+                }
+            });
+
+            const message = response.data || {};
+            if (message.stop_reason !== 'end_turn') {
+                console.error(`❌ Claude did not answer snapshot ${snapshotId} (stop_reason ${message.stop_reason})`);
+                return;
+            }
+            const text = (message.content || []).find(block => block.type === 'text')?.text;
+            const aiData = JSON.parse(text || '{}');
+            const insects = (Array.isArray(aiData.insects) ? aiData.insects : [])
+                .filter(item => Array.isArray(item.box_2d) && item.box_2d.length === 4)
+                .map(item => {
+                    const [ymin, xmin, ymax, xmax] = item.box_2d;
+                    return {
+                        name: item.name === OTHER_INSECT ? OTHER_INSECT : FRUIT_FLY,
+                        confidence: Number(Math.min(Math.max(Number(item.confidence) || 0, 0), 1).toFixed(2)),
+                        bbox: [
+                            Math.round((xmin / 1000) * imgWidth),
+                            Math.round((ymin / 1000) * imgHeight),
+                            Math.round((xmax / 1000) * imgWidth),
+                            Math.round((ymax / 1000) * imgHeight)
+                        ]
+                    };
+                });
+            const summary = {};
+            for (const insect of insects) summary[insect.name] = (summary[insect.name] || 0) + 1;
+            const count = pestCountOf(summary);
+
+            const claudeSnap = await Snapshot.findByIdAndUpdate(snapshotId, {
+                aiProcessed: true,
+                aiProvider: 'claude',
+                pestCount: count,
+                'aiResults.detected': insects.length > 0,
+                'aiResults.insects': insects,
+                'aiResults.summary': summary,
+                'aiResults.raw_description': aiData.description || `Claude counted ${count} fruit fly(s).`
+            });
+            await dailyStats.refreshForSnapshot(claudeSnap);
+            console.log(`🤖 Claude (${env.CLAUDE_VISION_MODEL}) processed snapshot ${snapshotId}: ${count} fruit fly(s), ${insects.length} insect(s) (image: ${imgWidth}x${imgHeight})`);
+            return;
+        } catch (error) {
+            const status = error.response?.status;
+            const detail = error.response?.data?.error?.message || error.message;
+            if (isAccountRefusal(status, detail)) {
+                console.error(`❌ Claude refused snapshot ${snapshotId} (${status}):`, detail);
+                coolDown('claude', `HTTP ${status}`);
+                return;
+            }
+            // Other refusals (a bad request) fail the same way again; 408, 429, 5xx and network errors are retried
+            if ((status >= 400 && status < 500 && status !== 408 && status !== 429) || attempt === 3) {
+                console.error(`❌ Claude Error for ${snapshotId} (attempt ${attempt}${status ? `, ${status}` : ''}):`, detail);
+                return;
+            }
+            await new Promise(res => setTimeout(res, delays[attempt - 1]));
+        }
+    }
+}
+
+const isAnalyzed = async (snapshotId) => !!(await Snapshot.exists({ _id: snapshotId, aiProcessed: true }));
+
+/** One model of the chain on one photo; true when the photo now has its result. */
+async function runProvider(provider, { base64Image, snapshotId, imageUrl, buffer }) {
     if (provider === 'opencv-lambda') {
         // The vision Lambda reads the photo from storage (by reference); the buffer only gives its size
         const result = await require('./visionLambda').analyzeSnapshot(snapshotId, { buffer: buffer || (base64Image ? Buffer.from(base64Image, 'base64') : null) });
+        if (!result.ok && result.error?.code === 'not_configured') coolDown('opencv-lambda', result.error.message);
         return result.ok;
     }
-    if (provider === 'roboflow') {
-        await analyzeInsectsRoboflow(base64Image, snapshotId, imageUrl);
-    } else if (provider === 'both') {
+    if (provider === 'roboflow') await analyzeInsectsRoboflow(base64Image, snapshotId, imageUrl);
+    else if (provider === 'claude') await analyzeInsectsClaude(base64Image, snapshotId);
+    else await analyzeInsects(base64Image, snapshotId);
+    return isAnalyzed(snapshotId);
+}
+
+/**
+ * Analyze a stored snapshot with the configured provider(s): each model of the chain in turn
+ * until one counts the photo, skipping a model that refused the account a short while ago
+ * (all of them are tried when every one is skipped). `imageUrl`: a link Roboflow can fetch the
+ * image from (the camera's fresh picture link); without it the image is sent inline.
+ * Returns true when the snapshot now has an AI result.
+ */
+async function analyzeSnapshot(base64Image, snapshotId, imageUrl = null, { buffer = null } = {}) {
+    const chain = providerChain();
+    // Sentinel analyzes the photo itself (POST /api/sentinel/analysis)
+    if (chain[0] === 'sentinel') return false;
+    if (chain[0] === 'both') {
         await analyzeInsects(base64Image, snapshotId);
         await analyzeInsectsRoboflow(base64Image, snapshotId, imageUrl);
-    } else {
-        await analyzeInsects(base64Image, snapshotId);
+        return isAnalyzed(snapshotId);
     }
-    return !!(await Snapshot.exists({ _id: snapshotId, aiProcessed: true }));
+    const now = Date.now();
+    const ready = chain.filter(provider => !(coolingUntil.get(provider) > now));
+    const order = ready.length ? ready : chain;
+    for (const [index, provider] of order.entries()) {
+        if (index > 0) console.warn(`↪️ Snapshot ${snapshotId}: ${order[index - 1]} failed, trying ${provider}`);
+        if (await runProvider(provider, { base64Image, snapshotId, imageUrl, buffer })) return true;
+    }
+    return false;
 }
 
 /**
@@ -308,11 +490,14 @@ async function describePhoto(imageBuffer, question, { context = '', language = '
 }
 
 module.exports = {
+    providerChain,
     isSentinelMode,
+    resetCooldowns,
     describePhoto,
     readImageSize,
     getImageDimensions,
     analyzeInsects,
     analyzeInsectsRoboflow,
+    analyzeInsectsClaude,
     analyzeSnapshot
 };

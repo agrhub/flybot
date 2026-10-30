@@ -800,7 +800,8 @@
       "roboflow": "Roboflow detection workflow",
       "both": "Vertex AI + Roboflow",
       "sentinel": "FlyBot Sentinel (OpenCV 5)",
-      "opencv-lambda": "OpenCV 5 on AWS Lambda"
+      "opencv-lambda": "OpenCV 5 on AWS Lambda",
+      "claude": "Claude (Anthropic)"
     },
     "usageSnapshots": "Your snapshots",
     "usageSnapshotsValue": "{snapshots} snapshots ({analyzed} analyzed) from {cameras} cameras",

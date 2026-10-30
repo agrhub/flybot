@@ -650,7 +650,7 @@
               </el-descriptions-item>
               <el-descriptions-item :label="t('settings.storageModel')">
                 <template v-if="systemInfo">
-                  {{ t(`settings.aiProvider.${systemInfo.ai.provider}`) }}
+                  {{ [systemInfo.ai.provider, ...(systemInfo.ai.fallbacks || [])].map(p => t(`settings.aiProvider.${p}`)).join(' → ') }}
                   <span v-if="systemInfo.ai.model" class="font-mono"> · {{ systemInfo.ai.model }}</span>
                 </template>
                 <template v-else>--</template>

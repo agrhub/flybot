@@ -44,7 +44,7 @@ class VisionError extends Error {
 }
 
 const isConfigured = () => !!(env.VISION_LAMBDA_URL || env.VISION_LAMBDA_NAME);
-const isLambdaProvider = () => env.AI_PROVIDER === 'opencv-lambda';
+const isLambdaProvider = () => require('./aiService').providerChain().includes('opencv-lambda');
 
 // ---------- Request ----------
 

@@ -195,7 +195,8 @@ All settings are environment variables, read from `.env` at the repository root 
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `AI_PROVIDER` | `roboflow` in `.env.example` (unset: `vertex`) | `opencv-lambda` (the OpenCV 5 vision Lambda, recommended on AWS), `roboflow`, `vertex`, `both` or `sentinel` (an external agent posts the counts) |
+| `AI_PROVIDER` | `roboflow` in `.env.example` (unset: `vertex`) | `opencv-lambda` (the OpenCV 5 vision Lambda, recommended on AWS), `roboflow`, `claude`, `vertex`, `both` or `sentinel` (an external agent posts the counts). A comma list such as `roboflow,opencv-lambda,claude,vertex` is a fallback chain: when one model fails the next counts the photo, and a model that answers "no credit" or "wrong key" is skipped for 30 minutes |
+| `ANTHROPIC_API_KEY`, `CLAUDE_VISION_MODEL` | `claude-haiku-5-5` | Claude for the `claude` provider: it boxes fruit flies and other insects on the photo |
 | `VISION_LAMBDA_NAME` | | Name of the vision Lambda (invoked with the AWS SDK) |
 | `VISION_LAMBDA_URL` | | Local development: address of a vision Lambda running on your computer (wins over the name) |
 | `VISION_LAMBDA_TIMEOUT_S` | `120` | Seconds to wait for the Lambda |

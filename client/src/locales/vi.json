@@ -800,7 +800,8 @@
       "roboflow": "Quy trình nhận diện Roboflow",
       "both": "Vertex AI + Roboflow",
       "sentinel": "FlyBot Sentinel (OpenCV 5)",
-      "opencv-lambda": "OpenCV 5 trên AWS Lambda"
+      "opencv-lambda": "OpenCV 5 trên AWS Lambda",
+      "claude": "Claude (Anthropic)"
     },
     "usageSnapshots": "Ảnh của bạn",
     "usageSnapshotsValue": "{snapshots} ảnh ({analyzed} đã phân tích) từ {cameras} camera",

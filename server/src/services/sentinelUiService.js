@@ -22,7 +22,7 @@ const MAX_LIMIT = 100;
 const EVIDENCE_KEY = /^(snapshots|evidence|frames)\/([A-Za-z0-9_-]{1,64})\/[A-Za-z0-9_./-]{1,300}\.(jpe?g|png|webp)$/i;
 const MAX_MEDIA_BYTES = 25 * 1024 * 1024;
 
-const isEnabled = () => env.AI_PROVIDER === 'opencv-lambda' || env.SENTINEL_CONSOLE;
+const isEnabled = () => require('./aiService').providerChain().includes('opencv-lambda') || env.SENTINEL_CONSOLE;
 
 /** What the signed-in person may do in the Sentinel console (for the client's menu). */
 function accessFor(user) {
