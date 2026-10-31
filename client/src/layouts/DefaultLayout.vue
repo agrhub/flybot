@@ -64,7 +64,7 @@ const footerLinks = {
         <div class="flex items-center gap-3">
           <!-- Theme Toggle Switch -->
           <el-switch
-            v-model="isDark"
+            :model-value="isDark"
             :aria-label="t('common.darkTheme')"
             :active-icon="Moon"
             :inactive-icon="Sunny"

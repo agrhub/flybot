@@ -72,7 +72,7 @@ function handleNavClick(href, e) {
 
         <!-- Dark/Light Theme Switch -->
         <el-switch
-          v-model="isDark"
+          :model-value="isDark"
           :aria-label="t('common.darkTheme')"
           :active-icon="Moon"
           :inactive-icon="Sunny"
