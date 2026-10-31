@@ -42,7 +42,8 @@ function toWav(buf) {
 
 async function mix(film) {
     const seconds = film.duration;
-    const music = await makeMusic(seconds, arrangement(film), RATE);
+    // Another cut (../promo) brings its own arrangement
+    const music = await makeMusic(seconds, film.arrangement || arrangement(film), RATE);
     const ctx = new OfflineAudioContext(2, Math.ceil(seconds * RATE), RATE);
     // Music: 0.32, ducked to 0.11 while a line is spoken
     const bed = ctx.createBufferSource(); bed.buffer = music;

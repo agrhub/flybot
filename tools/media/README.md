@@ -65,6 +65,26 @@ FLYBOT_TVC_PAGE=tvc-vertical.html node render-tvc.mjs vi flybot-tvc-vertical-vi.
 
 Rendering takes about ten minutes a language; `FLYBOT_TVC_KEEP=1` keeps the frames and `FLYBOT_TVC_REUSE=1` encodes them again without rendering. The MP4 needs no `remux-mp4.ps1` or `faststart-mp4.mjs`: it already has its index in front. Copy the videos and posters (`flybot-tvc-<lang>-poster.webp`) to `client/public/media/`.
 
+## Introduction film (Vietnamese)
+
+A 2:20 film that introduces FlyBot to Vietnamese growers, cooperatives and agricultural companies, in `promo/`: a Vietnamese voice-over, on-screen text and subtitles over the music bed of the commercial. Nothing is recorded for it. It reuses parts of the Vietnamese commercial (`client/public/media/flybot-tvc-vi.mp4`), the orchard clip and the trap photos of the demo film (`film/media/footage`, `film/media/photos`), and the Vietnamese guide screenshots (`client/public/manual/vi`). The scenes, what each one shows and the subtitle lines are in `promo/script.js`.
+
+From the `promo` folder:
+
+```bash
+# Watch it play: http://127.0.0.1:8091/promo/promo.html (?t=42 for one moment)
+node render-promo.mjs --serve
+# Stills at chosen seconds or scene ids
+node render-promo.mjs --stills stills 10 trap end
+# The voice-over: the subtitle lines spoken by Microsoft's online neural voice vi-VN-NamMinhNeural (Edge TTS; only the
+# lines are sent), written to film/media/promo-voice/<scene>-<n>.wav with manifest.json. About ten minutes.
+node voice.mjs
+# The film (about 1 GB of frames in film/media/work-promo, removed afterwards): film/media/out/flybot-intro-vi.mp4 and .vi.srt
+node render-promo.mjs
+```
+
+The orchard clip is cut to its first 19 seconds: a face is flagged later in the clip. Run `film/peoplecheck.py` on any new picture before using it. The music ducks under each spoken line. The service returns no audio for some longer Vietnamese sentences, and the female voice vi-VN-HoaiMyNeural fails more often than the male one, so `tts_edge.py` retries a line and splits it (sentences, then clauses) only when it still gets nothing back; a line spoken in one piece sounds far more natural than joined clauses. A recorded voice can replace any line: put its `<scene>-<n>.wav` in `film/media/promo-voice/` and its length in seconds in `manifest.json`. The lines of the commercial's two parts must end before the next line starts, since those scenes do not grow.
+
 ## Demo film (OpenCV AI Competition 2026)
 
 The competition video (at most 5 minutes, 1920x1080, English voice and subtitles) lives in `film/`: screen recordings of the live app at https://flybot.agrhub.com and motion graphics (the problem, the trap camera's parts and wiring, results) on one timeline, rendered frame by frame like the commercial. Its shot list is flybot-aws `docs/VIDEO_SCRIPT.md`.
